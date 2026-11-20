@@ -11,13 +11,12 @@ import {
   useInvestorVerifyEmail,
   useInvestorVerifyTwoFactor,
 } from '@workspace/api-client-react';
-import { resolvePostAuthHref } from '@/lib/post-auth-route';
 import { useColors } from '@/hooks/useColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotionReveal, motionHaptic } from '@/lib/motion';
 import { buildTwoFactorVerifyPayload, normalizeAuthResponse } from '@/lib/auth-response';
 import { RouteBrandBackdrop } from "@/components/GlassSurface";
-import { isBuyerOnlyAccount } from '@/lib/account-role';
+import { postAuthRouteForAccount } from '@/lib/account-role';
 
 export default function Verify() {
   const { challenge, acceptSession } = useAuth();
@@ -52,9 +51,7 @@ export default function Verify() {
         throw new Error('The verification response did not include a session token.');
       }
       const user = record(response.user);
-      const destination = isBuyerOnlyAccount(user)
-        ? '/(buyer-tabs)/buyer-home'
-        : resolvePostAuthHref(challenge.returnTo);
+      const destination = postAuthRouteForAccount(user, challenge.returnTo);
       postAuthRedirect.current = true;
       await acceptSession(response.token, user);
       router.replace(destination);

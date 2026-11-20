@@ -1,13 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Action, Card, EmptyState, ErrorState, Field, LoadingCard, Screen } from '@/components/InvestorUI';
 import { useColors } from '@/hooks/useColors';
-import { useAddBuyerCartItem, useGetProductCategories, useGetProducts, getGetBuyerCartQueryKey } from '@workspace/api-client-react';
+import { useAddBuyerCartItem, useGetProductCategories, useGetProducts, getGetBuyerCartQueryKey, getGetProductCategoriesQueryKey, getGetProductsQueryKey } from '@workspace/api-client-react';
 import { amount, first, list, messageOf, record } from '@/lib/data';
 import { categoryName, displayPrice, productMinimumQuantity, rowsFromResponse } from '@/lib/buyer-data';
 import { motionHaptic } from '@/lib/motion';
+import { useAuth } from '@/context/AuthContext';
 
 function categoryOptions(response: unknown): string[] {
   const parents = rowsFromResponse(response);
@@ -21,16 +23,35 @@ function categoryOptions(response: unknown): string[] {
 export default function BuyerProducts() {
   const colors = useColors();
   const queryClient = useQueryClient();
-  const productsQuery = useGetProducts({ per_page: 50 }, { query: { staleTime: 60_000 } });
-  const categoriesQuery = useGetProductCategories({ query: { staleTime: 300_000 } });
+  const { ready, token, apiOrigin } = useAuth();
+  const { category: routeCategory, search: routeSearch, pendingProduct: routePendingProduct } = useLocalSearchParams<{
+    category?: string | string[];
+    search?: string | string[];
+    pendingProduct?: string | string[];
+  }>();
+  const initialCategory = Array.isArray(routeCategory) ? routeCategory[0] : routeCategory;
+  const initialSearch = Array.isArray(routeSearch) ? routeSearch[0] : routeSearch;
+  const pendingProduct = Array.isArray(routePendingProduct) ? routePendingProduct[0] : routePendingProduct;
+  const catalogEnabled = ready && !!apiOrigin;
+  const productsQuery = useGetProducts({ per_page: 50 }, { query: { queryKey: getGetProductsQueryKey({ per_page: 50 }), enabled: catalogEnabled, retry: false, staleTime: 60_000 } });
+  const categoriesQuery = useGetProductCategories({ query: { queryKey: getGetProductCategoriesQueryKey(), enabled: catalogEnabled, retry: false, staleTime: 300_000 } });
   const addToCart = useAddBuyerCartItem();
   const products = rowsFromResponse(productsQuery.data);
   const categories = categoryOptions(categoriesQuery.data);
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('All');
+  const [search, setSearch] = useState(initialSearch || '');
+  const [category, setCategory] = useState(initialCategory || 'All');
   const [expandedId, setExpandedId] = useState('');
   const [addedId, setAddedId] = useState('');
   const [actionError, setActionError] = useState('');
+  const autoAddHandled = useRef('');
+
+  useEffect(() => {
+    if (initialCategory) setCategory(initialCategory);
+  }, [initialCategory]);
+
+  useEffect(() => {
+    if (initialSearch) setSearch(initialSearch);
+  }, [initialSearch]);
 
   const filteredProducts = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -50,11 +71,18 @@ export default function BuyerProducts() {
     });
   }, [category, products, search]);
 
-  async function addProduct(product: ReturnType<typeof record>) {
+  const addProduct = useCallback(async (product: ReturnType<typeof record>): Promise<boolean> => {
     const productId = amount(product, ['id']);
     if (!productId) {
       setActionError('This product is missing its catalogue ID, so it cannot be added to your cart.');
-      return;
+      return false;
+    }
+    if (!token) {
+      router.push({
+        pathname: '/(auth)/login',
+        params: { returnTo: `/buyer-products?pendingProduct=${productId}` },
+      });
+      return false;
     }
     setActionError('');
     try {
@@ -63,17 +91,37 @@ export default function BuyerProducts() {
       });
       await queryClient.invalidateQueries({ queryKey: getGetBuyerCartQueryKey() });
       setAddedId(String(productId));
-      motionHaptic('success');
+      motionHaptic('action');
+      return true;
     } catch (error) {
       motionHaptic('error');
       setActionError(messageOf(error));
+      return false;
     }
-  }
+  }, [token, addToCart, queryClient]);
+
+  useEffect(() => {
+    const id = Number(pendingProduct);
+    if (!ready || !apiOrigin || !token || !pendingProduct || productsQuery.isLoading || productsQuery.isError || !Number.isInteger(id) || id < 1) return;
+    if (autoAddHandled.current === pendingProduct) return;
+    const product = products.find(item => amount(item, ['id']) === id);
+    if (!product) {
+      autoAddHandled.current = pendingProduct;
+      setActionError('The selected product is no longer in the current catalogue. Choose it again to add it to your cart.');
+      return;
+    }
+    autoAddHandled.current = pendingProduct;
+    void addProduct(product).then(added => {
+      if (added) router.replace('/(buyer-tabs)/buyer-cart');
+    });
+  }, [ready, apiOrigin, token, pendingProduct, productsQuery.isLoading, productsQuery.isError, products, addProduct]);
 
   return (
-    <Screen title="Products" subtitle="Approved export products from OG Exports" refreshable>
+    <Screen title="Categories" subtitle="Approved export products from OG Exports" refreshable>
       <Field label="Search products" value={search} onChangeText={setSearch} placeholder="Product, category, origin or SKU" />
 
+      {!ready ? <LoadingCard label="Connecting to the OG Exports catalogue…" lines={2} /> : null}
+      {ready && !apiOrigin ? <ErrorState message="The product catalogue is not connected. Please try again later." /> : null}
       {categoriesQuery.isError ? (
         <Text style={{ color: colors.destructive, fontSize: 12, marginBottom: 12 }}>
           Categories could not be loaded. You can still search all products.
@@ -188,8 +236,8 @@ export default function BuyerProducts() {
                 <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>{isExpanded ? 'Hide details' : 'View details'}</Text>
               </Pressable>
               <Action
-                title={isAdded ? 'Added to cart' : addToCart.isPending ? 'Adding…' : 'Add to cart'}
-                icon={isAdded ? 'check' : 'shopping-cart'}
+                title={!token ? 'Sign in to add' : isAdded ? 'Added to cart' : addToCart.isPending ? 'Adding…' : 'Add to cart'}
+                icon={!token ? 'log-in' : isAdded ? 'check' : 'shopping-cart'}
                 disabled={addToCart.isPending}
                 loading={addToCart.isPending}
                 onPress={() => void addProduct(product)}

@@ -11,12 +11,11 @@ import { first, messageOf, record } from '@/lib/data';
 import { useInvestorMobileLogin } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { resolvePostAuthHref } from '@/lib/post-auth-route';
 import { authenticateWithBiometrics, getBiometricInfo, type BiometricInfo } from '@/lib/biometrics';
 import { MotionReveal, motionHaptic } from '@/lib/motion';
 import { normalizeAuthResponse, readEmailVerificationChallenge, readTwoFactorLoginChallenge } from '@/lib/auth-response';
 import { RouteBrandBackdrop } from "@/components/GlassSurface";
-import { isBuyerOnlyAccount } from '@/lib/account-role';
+import { postAuthRouteForAccount } from '@/lib/account-role';
 
 export default function Login() {
   const { apiOrigin, token, user, biometricEnabled, acceptSession, setChallenge, unlockApp } = useAuth();
@@ -79,7 +78,7 @@ export default function Login() {
       if (openEmailVerification(response)) return;
       if (typeof result.token !== 'string') throw new Error('The server response did not include a session token.');
       await acceptSession(result.token, user);
-      router.replace(isBuyerOnlyAccount(user) ? '/(buyer-tabs)/buyer-home' : resolvePostAuthHref(returnTo));
+      router.replace(postAuthRouteForAccount(user, returnTo));
     } catch (err) {
       if (openEmailVerification(record(err).data)) return;
       motionHaptic('error');
@@ -104,7 +103,7 @@ export default function Login() {
       const result = await authenticateWithBiometrics('Verify your identity to sign in to OG Exports');
       if (result.success) {
         unlockApp();
-        router.replace(isBuyerOnlyAccount(user) ? '/(buyer-tabs)/buyer-home' : resolvePostAuthHref(returnTo));
+        router.replace(postAuthRouteForAccount(user, returnTo));
       } else if (!['user_cancel', 'app_cancel', 'system_cancel'].includes(result.error)) {
         setError(result.error === 'lockout'
           ? `${info.name} is temporarily locked. Sign in with your account password.`
@@ -164,7 +163,10 @@ export default function Login() {
       </MotionReveal>
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 5 }}>
         <Text style={{ color: colors.mutedForeground }}>New to OG Exports?</Text>
-        <Pressable onPress={() => router.push('/(auth)/register')}><Text style={{ color: colors.primary, fontWeight: '700' }}>Create account</Text></Pressable>
+        <Pressable onPress={() => router.push(postAuthPath
+          ? { pathname: '/(auth)/register', params: { returnTo: postAuthPath } }
+          : '/(auth)/register'
+        )}><Text style={{ color: colors.primary, fontWeight: '700' }}>Create account</Text></Pressable>
       </View>
       <View style={{ alignItems: 'center', marginTop: 22 }}>
         <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>

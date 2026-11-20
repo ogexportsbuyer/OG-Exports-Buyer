@@ -27,6 +27,53 @@ export type PostAuthHref =
   | { pathname: '/account/transaction/[id]'; params: { id: string; kind?: 'deposit' | 'withdrawal' | 'wallet'; page?: string } }
   | TransactionHref;
 
+export type BuyerPostAuthHref =
+  | '/(buyer-tabs)/buyer-home'
+  | '/(buyer-tabs)/buyer-products'
+  | '/(buyer-tabs)/buyer-cart'
+  | '/(buyer-tabs)/buyer-orders'
+  | '/(buyer-tabs)/buyer-messages'
+  | '/(buyer-tabs)/buyer-profile'
+  | '/buyer-checkout'
+  | '/account/messages'
+  | '/account/notifications'
+  | { pathname: '/(buyer-tabs)/buyer-products'; params: { pendingProduct: string } }
+  | { pathname: '/buyer-order/[id]'; params: { id: string } };
+
+export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPostAuthHref {
+  const value = Array.isArray(returnTo) ? returnTo[0] : returnTo;
+  const path = value?.split('?', 1)[0] ?? '';
+  const orderId = path.match(/^\/buyer-order\/(\d+)\/?$/)?.[1];
+  if (orderId && Number(orderId) > 0) {
+    return { pathname: '/buyer-order/[id]', params: { id: orderId } };
+  }
+  const query = value?.split('?', 2)[1] ?? '';
+  const pendingProduct = queryValue(query, 'pendingProduct');
+  if (['/buyer-products', '/(buyer-tabs)/buyer-products'].includes(path)
+    && /^\d+$/.test(pendingProduct)
+    && Number(pendingProduct) > 0) {
+    return { pathname: '/(buyer-tabs)/buyer-products', params: { pendingProduct } };
+  }
+  const buyerRoutes: Record<string, BuyerPostAuthHref> = {
+    '/buyer-home': '/(buyer-tabs)/buyer-home',
+    '/(buyer-tabs)/buyer-home': '/(buyer-tabs)/buyer-home',
+    '/buyer-products': '/(buyer-tabs)/buyer-products',
+    '/(buyer-tabs)/buyer-products': '/(buyer-tabs)/buyer-products',
+    '/buyer-cart': '/(buyer-tabs)/buyer-cart',
+    '/(buyer-tabs)/buyer-cart': '/(buyer-tabs)/buyer-cart',
+    '/buyer-orders': '/(buyer-tabs)/buyer-orders',
+    '/(buyer-tabs)/buyer-orders': '/(buyer-tabs)/buyer-orders',
+    '/buyer-messages': '/(buyer-tabs)/buyer-messages',
+    '/(buyer-tabs)/buyer-messages': '/(buyer-tabs)/buyer-messages',
+    '/buyer-profile': '/(buyer-tabs)/buyer-profile',
+    '/(buyer-tabs)/buyer-profile': '/(buyer-tabs)/buyer-profile',
+    '/buyer-checkout': '/buyer-checkout',
+    '/account/messages': '/account/messages',
+    '/account/notifications': '/account/notifications',
+  };
+  return buyerRoutes[path] ?? '/(buyer-tabs)/buyer-home';
+}
+
 function decode(value: string) {
   try {
     return decodeURIComponent(value.replace(/\+/g, ' '));

@@ -15,11 +15,11 @@ import { TabBarBehaviorProvider, useTabBarBehavior } from '@/context/TabBarBehav
 import { GlassLayers } from '@/components/GlassSurface';
 
 const buyerTabs = [
-  ['buyer-home', 'Dashboard', 'home', 'house', 'house.fill'],
-  ['buyer-products', 'Products', 'package', 'shippingbox', 'shippingbox.fill'],
+  ['buyer-home', 'Home', 'home', 'house', 'house.fill'],
+  ['buyer-products', 'Categories', 'grid', 'square.grid.2x2', 'square.grid.2x2.fill'],
+  ['buyer-messages', 'Messages', 'message-circle', 'bubble.left.and.bubble.right', 'bubble.left.and.bubble.right.fill'],
   ['buyer-cart', 'Cart', 'shopping-cart', 'cart', 'cart.fill'],
-  ['buyer-orders', 'Orders', 'clipboard', 'list.bullet.rectangle', 'list.bullet.rectangle.fill'],
-  ['buyer-profile', 'Profile', 'user', 'person.crop.circle', 'person.crop.circle.fill'],
+  ['buyer-profile', 'My account', 'user', 'person.crop.circle', 'person.crop.circle.fill'],
 ] as const;
 
 function NativeLayout() {
@@ -36,11 +36,11 @@ function NativeLayout() {
       hidden={!visible}
       minimizeBehavior="never"
     >
-      <NativeTabs.Trigger name="buyer-home"><NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} /><NativeTabs.Trigger.Label>{t('Dashboard')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
-      <NativeTabs.Trigger name="buyer-products"><NativeTabs.Trigger.Icon sf={{ default: 'shippingbox', selected: 'shippingbox.fill' }} /><NativeTabs.Trigger.Label>{t('Products')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="buyer-home"><NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} /><NativeTabs.Trigger.Label>{t('Home')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="buyer-products"><NativeTabs.Trigger.Icon sf={{ default: 'square.grid.2x2', selected: 'square.grid.2x2.fill' }} /><NativeTabs.Trigger.Label>{t('Categories')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="buyer-messages"><NativeTabs.Trigger.Icon sf={{ default: 'bubble.left.and.bubble.right', selected: 'bubble.left.and.bubble.right.fill' }} /><NativeTabs.Trigger.Label>{t('Messages')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="buyer-cart"><NativeTabs.Trigger.Icon sf={{ default: 'cart', selected: 'cart.fill' }} /><NativeTabs.Trigger.Label>{t('Cart')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
-      <NativeTabs.Trigger name="buyer-orders"><NativeTabs.Trigger.Icon sf={{ default: 'list.bullet.rectangle', selected: 'list.bullet.rectangle.fill' }} /><NativeTabs.Trigger.Label>{t('Orders')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
-      <NativeTabs.Trigger name="buyer-profile"><NativeTabs.Trigger.Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} /><NativeTabs.Trigger.Label>{t('Profile')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="buyer-profile"><NativeTabs.Trigger.Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} /><NativeTabs.Trigger.Label>{t('My account')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
     </NativeTabs>
   );
 }
@@ -120,9 +120,10 @@ function ClassicLayout() {
           title: translateUi(title, preferences.language),
           tabBarIcon: ({ color, focused }) => Platform.OS === 'ios'
             ? <SymbolView name={focused ? iosSelected : ios} tintColor={color} size={22} />
-            : <Feather name={icon} size={21} color={color} />,
+            : <Feather name={icon} size={21} color={focused ? colors.primary : colors.mutedForeground} />,
         }} />
       ))}
+      <Tabs.Screen name="buyer-orders" options={{ href: null }} />
     </Tabs>
   );
 }

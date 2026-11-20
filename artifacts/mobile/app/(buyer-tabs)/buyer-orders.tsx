@@ -3,10 +3,11 @@ import { Pressable, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Card, EmptyState, ErrorState, LoadingCard, Screen, Status } from '@/components/InvestorUI';
+import { BuyerAuthGate } from '@/components/BuyerAuthGate';
 import { useColors } from '@/hooks/useColors';
 import { useAuth } from '@/context/AuthContext';
-import { useGetBuyerOrders, useGetBuyerRfqs } from '@workspace/api-client-react';
-import { amount, first } from '@/lib/data';
+import { useGetBuyerOrders, useGetBuyerRfqs, getGetBuyerOrdersQueryKey, getGetBuyerRfqsQueryKey } from '@workspace/api-client-react';
+import { amount, first, record } from '@/lib/data';
 import { displayOrderNumber, rowsFromResponse } from '@/lib/buyer-data';
 
 function money(value: number): string {
@@ -18,12 +19,20 @@ export default function BuyerOrders() {
   const { token } = useAuth();
   const { view } = useLocalSearchParams<{ view?: string | string[] }>();
   const activeView = (Array.isArray(view) ? view[0] : view) === 'rfqs' ? 'rfqs' : 'orders';
-  const ordersQuery = useGetBuyerOrders({ per_page: 50 }, { query: { enabled: !!token, staleTime: 20_000 } });
-  const rfqsQuery = useGetBuyerRfqs({ per_page: 50 }, { query: { enabled: !!token, staleTime: 20_000 } });
+  const ordersQuery = useGetBuyerOrders({ per_page: 50 }, { query: { queryKey: getGetBuyerOrdersQueryKey({ per_page: 50 }), enabled: !!token, staleTime: 20_000 } });
+  const rfqsQuery = useGetBuyerRfqs({ per_page: 50 }, { query: { queryKey: getGetBuyerRfqsQueryKey({ per_page: 50 }), enabled: !!token, staleTime: 20_000 } });
   const orders = rowsFromResponse(ordersQuery.data);
   const rfqs = rowsFromResponse(rfqsQuery.data);
   const query = activeView === 'orders' ? ordersQuery : rfqsQuery;
   const rows = activeView === 'orders' ? orders : rfqs;
+
+  if (!token) {
+    return <BuyerAuthGate
+      title="Orders and quote requests"
+      body="Sign in to view order progress, shipment details, and quotations from OG Exports."
+      returnTo="/buyer-orders"
+    />;
+  }
 
   return (
     <Screen title="Orders" subtitle="Track orders and quotation requests" refreshable>
@@ -68,7 +77,7 @@ export default function BuyerOrders() {
         const id = first(row, ['id'], `${activeView}-${index}`);
         if (activeView === 'rfqs') {
           const reference = first(row, ['reference', 'rfq_number', 'id'], 'Quote request');
-          const product = first(row, ['product_name'], first(row.product, ['name'], 'Product quotation'));
+          const product = first(row, ['product_name'], first(record(row.product), ['name'], 'Product quotation'));
           return (
             <Card key={id} testID={`buyer-rfq-${id}`} style={{ padding: 16, marginBottom: 11 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>

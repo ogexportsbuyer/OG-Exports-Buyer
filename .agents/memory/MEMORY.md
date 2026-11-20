@@ -43,3 +43,4 @@
 - [OG Exports app identity](og-exports-app-identity.md) — `com.ogexports.app` is a separate Play listing, not a replacement for `com.ogexports.investor`.
 - [Expo pnpm injected peers](expo-pnpm-injected-peers.md) — after an SDK bumps React, refresh pnpm injected workspaces before changing shared catalog versions or overrides.
 - [Expo store versioning](expo-store-versioning.md) — EAS reads the user-facing release version from shared `expo.version`; changing it affects both platforms.
+- [Buyer marketplace flow](buyer-marketplace-flow.md) — keep buyer browsing public in the same app, gate cart/account actions with sign-in, and preserve role-based investor tabs.

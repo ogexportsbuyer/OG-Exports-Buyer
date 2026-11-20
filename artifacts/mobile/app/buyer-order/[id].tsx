@@ -4,7 +4,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Card, ErrorState, LoadingCard, Screen, Status } from '@/components/InvestorUI';
 import { useColors } from '@/hooks/useColors';
-import { useGetBuyerOrder } from '@workspace/api-client-react';
+import { useGetBuyerOrder, getGetBuyerOrderQueryKey } from '@workspace/api-client-react';
 import { amount, first, list, record } from '@/lib/data';
 import { displayOrderNumber } from '@/lib/buyer-data';
 
@@ -17,7 +17,7 @@ export default function BuyerOrderDetail() {
   const { id: rawId } = useLocalSearchParams<{ id: string | string[] }>();
   const id = Number(Array.isArray(rawId) ? rawId[0] : rawId);
   const validId = Number.isInteger(id) && id > 0;
-  const query = useGetBuyerOrder(validId ? id : 0, { query: { enabled: validId } });
+  const query = useGetBuyerOrder(validId ? id : 0, { query: { queryKey: getGetBuyerOrderQueryKey(validId ? id : 0), enabled: validId } });
   const order = record(record(query.data).data);
   const items = list(order.items);
   const shipments = list(order.shipments);

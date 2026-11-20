@@ -5,6 +5,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Action, Card, EmptyState, ErrorState, LoadingCard, Screen } from '@/components/InvestorUI';
+import { BuyerAuthGate } from '@/components/BuyerAuthGate';
+import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { useGetBuyerCart, useRemoveBuyerCartItem, useUpdateBuyerCartItem, getGetBuyerCartQueryKey } from '@workspace/api-client-react';
 import { amount, first, list, messageOf, record } from '@/lib/data';
@@ -16,7 +18,8 @@ function money(value: number): string {
 export default function BuyerCart() {
   const colors = useColors();
   const queryClient = useQueryClient();
-  const cartQuery = useGetBuyerCart({ query: { staleTime: 15_000 } });
+  const { token } = useAuth();
+  const cartQuery = useGetBuyerCart({ query: { queryKey: getGetBuyerCartQueryKey(), enabled: !!token, staleTime: 15_000 } });
   const updateItem = useUpdateBuyerCartItem();
   const removeItem = useRemoveBuyerCartItem();
   const cart = record(record(cartQuery.data).data);
@@ -53,6 +56,14 @@ export default function BuyerCart() {
     } catch (error) {
       setActionError(messageOf(error));
     }
+  }
+
+  if (!token) {
+    return <BuyerAuthGate
+      title="Your cart"
+      body="Sign in to view saved products, change quantities, and continue to order or request a quotation."
+      returnTo="/buyer-cart"
+    />;
   }
 
   return (

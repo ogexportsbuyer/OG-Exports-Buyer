@@ -16,6 +16,9 @@ import {
   getGetBuyerCartQueryKey,
   getGetBuyerOrdersQueryKey,
   getGetBuyerRfqsQueryKey,
+  getGetCountriesQueryKey,
+  getGetCountryPortsQueryKey,
+  getGetIncotermsQueryKey,
 } from '@workspace/api-client-react';
 import { amount, first, list, messageOf, record } from '@/lib/data';
 import { rowsFromResponse } from '@/lib/buyer-data';
@@ -33,9 +36,9 @@ export default function BuyerCheckout() {
   const colors = useColors();
   const queryClient = useQueryClient();
   const { token } = useAuth();
-  const cartQuery = useGetBuyerCart({ query: { enabled: !!token, staleTime: 10_000 } });
-  const countriesQuery = useGetCountries({ query: { staleTime: 300_000 } });
-  const incotermsQuery = useGetIncoterms({ query: { staleTime: 300_000 } });
+  const cartQuery = useGetBuyerCart({ query: { queryKey: getGetBuyerCartQueryKey(), enabled: !!token, staleTime: 10_000 } });
+  const countriesQuery = useGetCountries({ query: { queryKey: getGetCountriesQueryKey(), staleTime: 300_000 } });
+  const incotermsQuery = useGetIncoterms({ query: { queryKey: getGetIncotermsQueryKey(), staleTime: 300_000 } });
   const countries = rowsFromResponse(countriesQuery.data).filter(country => (amount(country, ['ports_count']) ?? 0) > 0);
   const [countryId, setCountryId] = useState<number | null>(null);
   const [portId, setPortId] = useState<number | null>(null);
@@ -43,7 +46,7 @@ export default function BuyerCheckout() {
   const [deliveryDate, setDeliveryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
-  const portsQuery = useGetCountryPorts(countryId ?? 0, { query: { enabled: countryId !== null } });
+  const portsQuery = useGetCountryPorts(countryId ?? 0, { query: { queryKey: getGetCountryPortsQueryKey(countryId ?? 0), enabled: countryId !== null } });
   const ports = rowsFromResponse(portsQuery.data);
   const terms = rowsFromResponse(incotermsQuery.data);
   const cart = record(record(cartQuery.data).data);

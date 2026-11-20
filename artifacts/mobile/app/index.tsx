@@ -13,7 +13,7 @@ const INTRO_MIN_DURATION = 5000;
 const MARK_ASPECT = 490 / 560;
 
 export default function Entry() {
-  const { ready, token, user, onboardingComplete, appUnlocked } = useAuth();
+  const { ready, token, user, appUnlocked } = useAuth();
   const colors = useColors();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -69,9 +69,9 @@ export default function Entry() {
     if (!introDurationElapsed) return;
     const destination = token
       ? appUnlocked ? homeRouteForAccount(user) : '/lock'
-      : onboardingComplete ? '/(auth)/login' : '/onboarding';
+      : '/(buyer-tabs)/buyer-home';
     router.replace(destination);
-  }, [ready, motionSettingsReady, introDurationElapsed, token, user, onboardingComplete, appUnlocked]);
+  }, [ready, motionSettingsReady, introDurationElapsed, token, user, appUnlocked]);
 
   const animate = motionSettingsReady && !reduceMotion;
   const staticShown = !motionSettingsReady || reduceMotion;

@@ -42,7 +42,8 @@ function RootLayoutNav() {
   const colors = useColors();
   const t = (value: string) => translateUi(value, preferences.language);
   const segments = useSegments();
-  const isHomeRoute = (segments[0] === '(tabs)' || segments[0] === '(buyer-tabs)') && !segments[1];
+  const isHomeRoute = (segments[0] === '(tabs)' && !segments[1])
+    || (segments[0] === '(buyer-tabs)' && segments[1] === 'buyer-home');
   const isDarkStatusBar = resolvedAppearance === 'dark';
   const useLightStatusBar = isHomeRoute || isDarkStatusBar;
   const statusBar = Platform.OS === 'android'
@@ -161,7 +162,7 @@ function RootLayoutNav() {
   useEffect(() => {
     if (!ready) return;
     const firstSegment = String(segments[0] ?? '');
-    const publicSegments = new Set(['', 'index', 'onboarding', '(auth)', 'forgot-password']);
+    const publicSegments = new Set(['', 'index', 'onboarding', '(auth)', 'forgot-password', '(buyer-tabs)']);
     const buyerOnly = isBuyerOnlyAccount(user);
     const sharedBuyerRoutes = new Set(['/account/messages', '/account/notifications']);
     if (token && buyerOnly && firstSegment === '(tabs)') {

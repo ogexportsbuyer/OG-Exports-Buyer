@@ -4,15 +4,15 @@ import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Action, Card, Screen } from '@/components/InvestorUI';
+import { BuyerAuthGate } from '@/components/BuyerAuthGate';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { useInvestorMobileLogout } from '@workspace/api-client-react';
 import { first, messageOf, record } from '@/lib/data';
-import { MOTION } from '@/lib/motion';
 
 export default function BuyerProfile() {
   const colors = useColors();
-  const { user, signOut } = useAuth();
+  const { token, user, signOut } = useAuth();
   const logout = useInvestorMobileLogout();
   const [error, setError] = useState('');
   const profile = record(record(user).profile);
@@ -25,14 +25,23 @@ export default function BuyerProfile() {
     try {
       await logout.mutateAsync(undefined);
       await signOut();
-      router.replace('/(auth)/login');
+      router.replace('/(buyer-tabs)/buyer-home');
     } catch (err) {
       setError(`${messageOf(err)} Your session is still active; try signing out again when you are online.`);
     }
   }
 
+  if (!token) {
+    return <BuyerAuthGate
+      title="My account"
+      body="Sign in to manage your buyer profile, orders, messages, and account notifications."
+      returnTo="/buyer-profile"
+      showInvestorSignup
+    />;
+  }
+
   return (
-    <Screen title="Profile" subtitle="Your OG Exports buyer account">
+    <Screen title="My account" subtitle="Your OG Exports buyer account">
       <Card style={{ padding: 19, marginBottom: 18 }}>
         <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: colors.lightGreen, alignItems: 'center', justifyContent: 'center', marginBottom: 13 }}>
           <Feather name="user" size={24} color={colors.primary} />
@@ -43,6 +52,16 @@ export default function BuyerProfile() {
       </Card>
 
       <Card style={{ padding: 5, marginBottom: 18 }}>
+        <Pressable
+          testID="buyer-profile-orders"
+          accessibilityRole="button"
+          onPress={() => router.push('/(buyer-tabs)/buyer-orders')}
+          style={{ minHeight: 52, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+        >
+          <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '600' }}>My orders and quote requests</Text>
+          <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+        </Pressable>
+        <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: 13 }} />
         <Pressable
           testID="buyer-profile-support"
           accessibilityRole="button"

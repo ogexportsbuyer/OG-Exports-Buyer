@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { AuthBrandHeader } from '@/components/AuthBrandHeader';
 import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/components/LocalizedText';
@@ -98,10 +98,13 @@ function RegisterField({
 
 export default function Register() {
   const { apiOrigin, setChallenge } = useAuth();
+  const { returnTo, accountType: accountTypeParam } = useLocalSearchParams<{ returnTo?: string | string[]; accountType?: string | string[] }>();
+  const postAuthPath = Array.isArray(returnTo) ? returnTo[0] : returnTo;
+  const initialAccountType = Array.isArray(accountTypeParam) ? accountTypeParam[0] : accountTypeParam;
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const mutation = useInvestorRegister({ request: { timeoutMs: 45000, responseType: 'json' } });
-  const [accountType, setAccountType] = useState<'buyer' | 'investor'>('buyer');
+  const [accountType, setAccountType] = useState<'buyer' | 'investor'>(initialAccountType === 'investor' ? 'investor' : 'buyer');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -114,6 +117,10 @@ export default function Register() {
     { label: 'At least one number', met: /\d/.test(password) },
     { label: 'At least one symbol', met: /[^A-Za-z0-9\s]/.test(password) },
   ];
+
+  useEffect(() => {
+    setAccountType(initialAccountType === 'investor' ? 'investor' : 'buyer');
+  }, [initialAccountType]);
 
   async function submit() {
     setError('');
@@ -138,6 +145,7 @@ export default function Register() {
         email: typeof result.email === 'string' ? result.email : email.trim(),
         mode: 'email',
         message: typeof result.message === 'string' ? result.message : '',
+        ...(postAuthPath ? { returnTo: postAuthPath } : {}),
       });
       router.replace('/(auth)/verify');
     } catch (err) {
@@ -146,6 +154,7 @@ export default function Register() {
         setChallenge({
           ...challenge,
           mode: 'email',
+          ...(postAuthPath ? { returnTo: postAuthPath } : {}),
         });
         router.replace('/(auth)/verify');
         return;
@@ -299,7 +308,10 @@ export default function Register() {
 
       <View style={s.footer}>
         <Text style={[s.footerText, { color: colors.mutedForeground }]}>Already have an account?</Text>
-        <Pressable accessibilityRole="link" onPress={() => router.replace('/(auth)/login')}>
+        <Pressable accessibilityRole="link" onPress={() => router.replace(postAuthPath
+          ? { pathname: '/(auth)/login', params: { returnTo: postAuthPath } }
+          : '/(auth)/login'
+        )}>
           <Text style={[s.footerLink, { color: colors.primary }]}>Sign in</Text>
         </Pressable>
       </View>
