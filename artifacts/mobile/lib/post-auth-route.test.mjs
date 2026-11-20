@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   resolveAccountPostAuthHref,
@@ -128,19 +129,24 @@ test('buyer app route allowlist blocks investor screens and permits buyer suppor
   assert.equal(isBuyerAppRoute('account', '/account/portfolio'), false);
   assert.equal(isBuyerAppRoute('buyer-system-settings', '/buyer-system-settings'), true);
   assert.equal(isBuyerAppRoute('buyer-notifications', '/buyer-notifications'), true);
-  for (const route of [
-    'buyer-profile-details',
-    'buyer-company',
-    'buyer-security',
-    'buyer-overview',
-    'buyer-analytics',
-    'buyer-repeat-orders',
-    'buyer-rfq',
-    'buyer-shipments',
-    'buyer-documents',
-    'buyer-trade-finance',
-  ]) {
-    assert.equal(isBuyerAppRoute(route, `/${route}`), true, `${route} should stay inside the buyer app`);
+  const profileRoutes = [
+    '/buyer-overview',
+    '/buyer-analytics',
+    '/buyer-profile-details',
+    '/buyer-company',
+    '/buyer-system-settings',
+    '/buyer-security',
+    '/buyer-notifications',
+    '/buyer-repeat-orders',
+    '/buyer-rfq',
+    '/buyer-shipments',
+    '/buyer-documents',
+    '/buyer-trade-finance',
+  ];
+  for (const path of profileRoutes) {
+    const segment = path.slice(1);
+    assert.equal(isBuyerAppRoute(segment, path), true, `${path} should stay inside the buyer app`);
+    assert.equal(resolveBuyerPostAuthHref(path), path, `${path} should remain the post-login destination`);
   }
 });
 
@@ -157,4 +163,10 @@ test('buyer return routes preserve system settings and notification destinations
     pathname: '/buyer-shipment/[id]',
     params: { id: '890' },
   });
+});
+
+test('buyer navigation uses Profile in both native and classic tab bars', () => {
+  const layout = readFileSync(new URL('../app/(buyer-tabs)/_layout.tsx', import.meta.url), 'utf8');
+  assert.match(layout, /\['buyer-profile', 'Profile'/);
+  assert.match(layout, /NativeTabs\.Trigger\.Label>\{t\('Profile'\)\}/);
 });
