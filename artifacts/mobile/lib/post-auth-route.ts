@@ -77,15 +77,32 @@ export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPos
 export function resolveAccountPostAuthHref(
   roles: unknown,
   returnTo?: string | string[],
-): PostAuthHref | BuyerPostAuthHref {
+): BuyerPostAuthHref {
+  return hasBuyerRole(roles) ? resolveBuyerPostAuthHref(returnTo) : '/(buyer-tabs)/buyer-home';
+}
+
+export function hasBuyerRole(roles: unknown): boolean {
   const roleList = Array.isArray(roles) ? roles : [];
-  const hasRole = (expected: string) => roleList.some(role => {
-    if (typeof role === 'string') return role === expected;
-    return String((role as { name?: unknown } | null)?.name ?? '') === expected;
+  return roleList.some(role => {
+    if (typeof role === 'string') return role === 'buyer';
+    return String((role as { name?: unknown } | null)?.name ?? '') === 'buyer';
   });
-  return hasRole('buyer') && !hasRole('investor')
-    ? resolveBuyerPostAuthHref(returnTo)
-    : resolvePostAuthHref(returnTo);
+}
+
+export function isBuyerAppRoute(firstSegment: string, pathname: string): boolean {
+  const buyerSegments = new Set([
+    '',
+    'index',
+    '(auth)',
+    '(buyer-tabs)',
+    'buyer-checkout',
+    'buyer-order',
+    'forgot-password',
+    'lock',
+  ]);
+  if (buyerSegments.has(firstSegment)) return true;
+  return firstSegment === 'account'
+    && ['/account/messages', '/account/notifications'].includes(pathname);
 }
 
 function decode(value: string) {

@@ -3,9 +3,9 @@ name: Buyer marketplace flow
 description: Product discovery and account navigation expectations for the OG Exports mobile app.
 ---
 
-The buyer experience belongs in the existing OG Exports mobile app. Guests should be able to browse the public product catalogue, while cart, account, and order actions ask them to sign in or register. Registration is buyer-only with no account-type choice or investor-signup link. Keep existing investor session routing unless the user asks to remove it. After authentication, return the user to the route they requested.
+The OG Exports mobile app is buyer-only. Guests can browse the public catalogue; cart, account, and order actions require buyer sign-in or registration. Registration has no account-type choice or investor-signup link, and investor-only sessions/routes must not enter the buyer app. Do not delete investor accounts or data. After buyer authentication, return users to the route they requested.
 
-**Why:** The user requested a buyer storefront in the same app and later specified that its registration UI is for buyers only.
+**Why:** The user specified that the complete mobile app—not just its registration form—is for buyers only.
 
 **How to apply:** Use the existing Laravel product, cart, quotation, and order APIs. Keep the catalogue public, enforce buyer-only actions with backend role protection, and do not replace real catalogue data with mock products.
 

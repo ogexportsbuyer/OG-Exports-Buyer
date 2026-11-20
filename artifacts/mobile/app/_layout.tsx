@@ -1,12 +1,12 @@
 import React, { useEffect, useRef } from 'react';
-import { AppState, Platform, Pressable, StatusBar as NativeStatusBar } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StatusBar as NativeStatusBar, View } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { Feather } from '@expo/vector-icons';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { router, Stack, useGlobalSearchParams, usePathname, useSegments, type Href } from 'expo-router';
+import { Redirect, router, Stack, useGlobalSearchParams, usePathname, useSegments, type Href } from 'expo-router';
 import { isRunningInExpoGo } from 'expo';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
@@ -27,7 +27,9 @@ import { record } from '@/lib/data';
 import { translateUi } from '@/lib/strings';
 import { MOTION, MotionProvider, useMotion } from '@/lib/motion';
 import { goBackOrReplace } from '@/lib/safe-navigation';
-import { homeRouteForAccount, isBuyerOnlyAccount } from '@/lib/account-role';
+import { homeRouteForAccount, hasBuyerAccount } from '@/lib/account-role';
+import { isBuyerAppRoute } from '@/lib/post-auth-route';
+import { BuyerAccountRequired } from '@/components/BuyerAccountRequired';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -42,8 +44,7 @@ function RootLayoutNav() {
   const colors = useColors();
   const t = (value: string) => translateUi(value, preferences.language);
   const segments = useSegments();
-  const isHomeRoute = (segments[0] === '(tabs)' && !segments[1])
-    || (segments[0] === '(buyer-tabs)' && segments[1] === 'buyer-home');
+  const isHomeRoute = segments[0] === '(buyer-tabs)' && segments[1] === 'buyer-home';
   const isDarkStatusBar = resolvedAppearance === 'dark';
   const useLightStatusBar = isHomeRoute || isDarkStatusBar;
   const statusBar = Platform.OS === 'android'
@@ -64,54 +65,21 @@ function RootLayoutNav() {
   const pathname = usePathname();
   const routeParams = useGlobalSearchParams();
   const returnTo = serializeRouteState(pathname, routeParams);
+  const firstSegment = String(segments[0] ?? '');
+  const publicSegments = new Set(['', 'index', '(auth)', 'forgot-password', '(buyer-tabs)']);
+  const routeAllowed = isBuyerAppRoute(firstSegment, pathname);
   const accountId = String(record(user).id ?? record(user).user_id ?? '');
   const sessionScope = token ? `${apiOrigin}|${accountId || 'authenticated'}` : 'signed-out';
   const previousSessionScope = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (!ready) return;
-    // Query keys are shared across accounts; never reuse another investor's cached balances.
+    // Query keys are shared across accounts; never reuse another user's cached data.
     if (previousSessionScope.current !== undefined && previousSessionScope.current !== sessionScope) {
       sessionQueryClient.clear();
     }
     previousSessionScope.current = sessionScope;
   }, [ready, sessionScope, sessionQueryClient]);
-
-  useEffect(() => {
-    if (!ready || !token) return;
-
-    const refreshInvestorRecords = (isForegroundRefresh = false) => {
-      // Keep the active withdrawal flow visually stable; its own guarded
-      // refresh button and explicit balance checks still refresh server data.
-      if (pathname === '/wallet/withdraw' && !isForegroundRefresh) return;
-      const prefixes = [
-        'investor-profile',
-        'investor-wallet',
-        'investor-deposits',
-        'investor-withdrawals',
-        'investor-position',
-        'investor-positions',
-        'investor-notifications',
-        'investor-dashboard',
-        'investor-reports',
-      ];
-      void sessionQueryClient.invalidateQueries({
-        predicate: query => {
-          const rootKey = String(query.queryKey[0] ?? '').toLowerCase();
-          return prefixes.some(prefix => rootKey.startsWith(prefix));
-        },
-      });
-    };
-
-    const interval = setInterval(() => refreshInvestorRecords(), 30_000);
-    const subscription = AppState.addEventListener('change', state => {
-      if (state === 'active') refreshInvestorRecords(true);
-    });
-    return () => {
-      clearInterval(interval);
-      subscription.remove();
-    };
-  }, [ready, token, pathname, sessionQueryClient]);
 
   useEffect(() => {
     if (Platform.OS === 'web' || (Platform.OS === 'android' && isRunningInExpoGo())) return;
@@ -140,8 +108,8 @@ function RootLayoutNav() {
         }),
       });
       if (Platform.OS === 'android') {
-        void notificationsApi.setNotificationChannelAsync('investor-updates', {
-          name: 'Investor updates',
+        void notificationsApi.setNotificationChannelAsync('og-exports-updates', {
+          name: 'OG Exports updates',
           importance: notificationsApi.AndroidImportance.HIGH,
           sound: 'default',
           vibrationPattern: [0, 250, 250, 250],
@@ -161,37 +129,29 @@ function RootLayoutNav() {
 
   useEffect(() => {
     if (!ready) return;
-    const firstSegment = String(segments[0] ?? '');
-    const publicSegments = new Set(['', 'index', 'onboarding', '(auth)', 'forgot-password', '(buyer-tabs)']);
-    const buyerOnly = isBuyerOnlyAccount(user);
-    const sharedBuyerRoutes = new Set(['/account/messages', '/account/notifications']);
-    if (token && buyerOnly && firstSegment === '(tabs)') {
-      router.replace('/(buyer-tabs)/buyer-home');
-      return;
-    }
-    if (token && !buyerOnly && firstSegment === '(buyer-tabs)') {
-      router.replace('/(tabs)');
-      return;
-    }
-    if (token && buyerOnly && (
-      ['wallet', 'project', 'position', 'tracking', 'search'].includes(firstSegment)
-      || (firstSegment === 'account' && !sharedBuyerRoutes.has(pathname))
-    )) {
-      router.replace(homeRouteForAccount(user));
-      return;
-    }
-    if (token && !buyerOnly && ['buyer-checkout', 'buyer-order'].includes(firstSegment)) {
-      router.replace('/(tabs)');
-      return;
-    }
+    if (token && !hasBuyerAccount(user)) return;
     if (token && !appUnlocked && firstSegment !== 'lock' && firstSegment !== '(auth)') {
       router.replace({ pathname: '/lock', params: { returnTo } });
-      return;
     }
-    if (!token && !publicSegments.has(firstSegment)) {
-      router.replace({ pathname: '/(auth)/login', params: { returnTo } });
-    }
-  }, [ready, token, user, appUnlocked, segments, pathname, returnTo]);
+  }, [ready, token, user, appUnlocked, firstSegment, returnTo]);
+
+  if (!ready && (!routeAllowed || !publicSegments.has(firstSegment))) {
+    return <>
+      {statusBar}
+      <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={colors.primary} />
+      </View>
+    </>;
+  }
+  if (ready && token && !hasBuyerAccount(user)) {
+    return <>{statusBar}<BuyerAccountRequired /></>;
+  }
+  if (ready && (!routeAllowed || (!token && !publicSegments.has(firstSegment)))) {
+    return <Redirect href={token
+      ? homeRouteForAccount(user)
+      : { pathname: '/(auth)/login', params: { returnTo } }
+    } />;
+  }
 
   if (token && !appUnlocked) {
     return <>
@@ -214,11 +174,10 @@ function RootLayoutNav() {
         headerTintColor: colors.primary,
         headerStyle: { backgroundColor: colors.background },
         headerTitleStyle: { color: colors.foreground },
-        headerLeft: safeBackButton('/(tabs)', 'stack-header-back'),
+        headerLeft: safeBackButton('/(buyer-tabs)/buyer-home', 'stack-header-back'),
         contentStyle: { backgroundColor: colors.background, direction: isRTL ? 'rtl' : 'ltr' },
       }}>
         <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="lock" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen name="forgot-password" options={{
@@ -232,31 +191,11 @@ function RootLayoutNav() {
           sheetElevation: 16,
           sheetExpandsWhenScrolledToEdge: true,
         }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
         <Stack.Screen name="(buyer-tabs)" options={{ headerShown: false, animation: 'none' }} />
         <Stack.Screen name="buyer-checkout" options={{ title: t('Checkout') }} />
         <Stack.Screen name="buyer-order/[id]" options={{ title: t('Order details') }} />
-        <Stack.Screen name="project/[id]" options={{
-          title: t('Opportunity'),
-          headerLeft: safeBackButton('/(tabs)/trade', 'project-header-back'),
-        }} />
-        <Stack.Screen name="position/[id]" options={{ title: t('Investment') }} />
-        <Stack.Screen name="tracking/[id]" options={{ title: t('Container tracking') }} />
-        <Stack.Screen name="account/profile" options={{ title: '' }} />
-        <Stack.Screen name="account/portfolio" options={{ title: t('Portfolio') }} />
-        <Stack.Screen name="account/transactions" options={{ title: t('Transactions') }} />
-        <Stack.Screen name="account/transaction/[id]" options={{ title: t('Transaction details') }} />
-        <Stack.Screen name="account/security" options={{ title: t('Security & devices') }} />
-        <Stack.Screen name="account/legal/[section]" options={{ title: t('Policies') }} />
-        <Stack.Screen name="account/data-preferences" options={{ title: t('Data preferences') }} />
-        <Stack.Screen name="wallet/deposit" options={{ title: t('Add funds') }} />
-        <Stack.Screen name="wallet/withdraw" options={{ title: t('Withdraw') }} />
-        <Stack.Screen name="account/kyc" options={{ title: t('Identity verification') }} />
-        <Stack.Screen name="account/reports" options={{ title: t('Reports') }} />
         <Stack.Screen name="account/notifications" options={{ title: t('Notifications') }} />
         <Stack.Screen name="account/messages" options={{ title: t('Support') }} />
-        <Stack.Screen name="account/settings" options={{ title: t('Settings') }} />
-        <Stack.Screen name="account/analytics" options={{ title: t('Trade Analytics') }} />
       </Stack>
     </>
   );

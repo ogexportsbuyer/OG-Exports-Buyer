@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Keyboard, Platform, Pressable, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { Action, Card, Field } from '@/components/InvestorUI';
@@ -19,6 +19,8 @@ import { RouteBrandBackdrop } from '@/components/GlassSurface';
 export default function ForgotPassword() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { returnTo: returnToParam } = useLocalSearchParams<{ returnTo?: string | string[] }>();
+  const returnTo = Array.isArray(returnToParam) ? returnToParam[0] : returnToParam;
   const request = useInvestorForgotPassword();
   const verify = useInvestorVerifyResetCode();
   const reset = useInvestorResetPassword();
@@ -394,7 +396,10 @@ export default function ForgotPassword() {
               <Action
                 title="Back to sign in"
                 icon="arrow-right"
-                onPress={() => router.replace('/(auth)/login')}
+                onPress={() => router.replace({
+                  pathname: '/(auth)/login',
+                  ...(returnTo ? { params: { returnTo } } : {}),
+                })}
               />
             </Card>
           </MotionReveal>

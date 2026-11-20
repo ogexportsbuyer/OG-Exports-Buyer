@@ -3,6 +3,8 @@ import test from 'node:test';
 import {
   resolveAccountPostAuthHref,
   resolveBuyerPostAuthHref,
+  hasBuyerRole,
+  isBuyerAppRoute,
   resolvePostAuthHref,
   serializeRouteState,
 } from './post-auth-route.ts';
@@ -91,7 +93,19 @@ test('pending buyer product is claimed only once and invalid IDs are rejected', 
   assert.equal(pendingProductAuthReturnTo(Number.MAX_SAFE_INTEGER + 1), null);
 });
 
-test('investor authentication still returns to investor tabs, not buyer cart', () => {
-  assert.equal(resolveAccountPostAuthHref(['investor'], '/buyer-cart'), '/(tabs)');
-  assert.equal(resolveAccountPostAuthHref(['buyer', 'investor'], '/buyer-cart'), '/(tabs)');
+test('investor-only roles cannot route into investor tabs in the buyer app', () => {
+  assert.equal(resolveAccountPostAuthHref(['investor'], '/buyer-cart'), '/(buyer-tabs)/buyer-home');
+  assert.equal(resolveAccountPostAuthHref(['buyer', 'investor'], '/buyer-cart'), '/(buyer-tabs)/buyer-cart');
+  assert.equal(hasBuyerRole(['investor']), false);
+  assert.equal(hasBuyerRole([{ name: 'buyer' }]), true);
+});
+
+test('buyer app route allowlist blocks investor screens and permits buyer support', () => {
+  assert.equal(isBuyerAppRoute('(buyer-tabs)', '/buyer-home'), true);
+  assert.equal(isBuyerAppRoute('(auth)', '/login'), true);
+  assert.equal(isBuyerAppRoute('buyer-checkout', '/buyer-checkout'), true);
+  assert.equal(isBuyerAppRoute('account', '/account/notifications'), true);
+  assert.equal(isBuyerAppRoute('(tabs)', '/'), false);
+  assert.equal(isBuyerAppRoute('wallet', '/wallet/deposit'), false);
+  assert.equal(isBuyerAppRoute('account', '/account/portfolio'), false);
 });

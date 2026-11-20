@@ -15,11 +15,12 @@ import { authenticateWithBiometrics, getBiometricInfo, type BiometricInfo } from
 import { MotionReveal, motionHaptic } from '@/lib/motion';
 import { normalizeAuthResponse, readEmailVerificationChallenge, readTwoFactorLoginChallenge } from '@/lib/auth-response';
 import { RouteBrandBackdrop } from "@/components/GlassSurface";
-import { postAuthRouteForAccount } from '@/lib/account-role';
+import { hasBuyerAccount, postAuthRouteForAccount } from '@/lib/account-role';
 
 export default function Login() {
   const { apiOrigin, token, user, biometricEnabled, acceptSession, setChallenge, unlockApp } = useAuth();
-  const { returnTo } = useLocalSearchParams<{ returnTo?: string | string[] }>();
+  const { returnTo, reason } = useLocalSearchParams<{ returnTo?: string | string[]; reason?: string | string[] }>();
+  const loginReason = Array.isArray(reason) ? reason[0] : reason;
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const login = useInvestorMobileLogin({ request: { timeoutMs: 20000, responseType: 'json' } });
@@ -75,7 +76,15 @@ export default function Login() {
         return;
       }
       const user = record(result.user);
+      if (Object.keys(user).length > 0 && !hasBuyerAccount(user)) {
+        setError('This app is for buyer accounts only. Sign in or register with a buyer account.');
+        return;
+      }
       if (openEmailVerification(response)) return;
+      if (!hasBuyerAccount(user)) {
+        setError('This app is for buyer accounts only. Sign in or register with a buyer account.');
+        return;
+      }
       if (typeof result.token !== 'string') throw new Error('The server response did not include a session token.');
       await acceptSession(result.token, user);
       router.replace(postAuthRouteForAccount(user, returnTo));
@@ -124,6 +133,13 @@ export default function Login() {
         <Text style={{ color: colors.mutedForeground, fontSize: 13, lineHeight: 19, marginTop: 12, textAlign: 'center' }}>Sign in to your OG Exports buyer account.</Text>
       </View>
       <Card>
+        {loginReason === 'buyer-only' ? (
+          <View style={{ backgroundColor: colors.secondary, borderRadius: 12, padding: 12, marginBottom: 14 }}>
+            <Text style={{ color: colors.foreground, fontSize: 12, lineHeight: 18 }}>
+              This app is for buyers. Sign in or create a buyer account to continue.
+            </Text>
+          </View>
+        ) : null}
         <Field label="Email address" value={email} onChangeText={value => { setEmail(value); setError(''); }} placeholder="name@example.com" keyboardType="email-address" autoCapitalize="none" />
         <Field label="Password" value={password} onChangeText={value => { setPassword(value); setError(''); }} placeholder="Enter your password" secureTextEntry autoCapitalize="none" />
         {error ? <Text accessibilityRole="alert" style={{ color: colors.destructive, marginBottom: 14, lineHeight: 20 }}>{error}</Text> : null}
@@ -158,7 +174,15 @@ export default function Login() {
                 color={biometricInfo?.available ? colors.primary : colors.mutedForeground}
               />}
         </Pressable> : null}
-        <Pressable onPress={() => router.push('/forgot-password')} style={{ alignSelf: 'center', padding: 14 }}><Text style={{ color: colors.primary, fontWeight: '600' }}>Forgot password?</Text></Pressable>
+        <Pressable
+          onPress={() => router.push({
+            pathname: '/forgot-password',
+            ...(typeof returnTo === 'string' ? { params: { returnTo } } : {}),
+          })}
+          style={{ alignSelf: 'center', padding: 14 }}
+        >
+          <Text style={{ color: colors.primary, fontWeight: '600' }}>Forgot password?</Text>
+        </Pressable>
       </Card>
       </MotionReveal>
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 5 }}>

@@ -6,7 +6,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Action, Card, Field } from '@/components/InvestorUI';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
-import { resolvePostAuthHref } from '@/lib/post-auth-route';
+import { postAuthRouteForAccount } from '@/lib/account-role';
 import { first, record } from '@/lib/data';
 import { verifyAppPin } from '@/lib/app-pin';
 import { authenticateWithBiometrics, getBiometricInfo } from '@/lib/biometrics';
@@ -24,7 +24,7 @@ export default function AppLock() {
   const [error, setError] = useState('');
   const autoPromptStarted = useRef(false);
   const userId = first(record(user), ['id'], '');
-  const nextRoute = resolvePostAuthHref(returnTo);
+  const nextRoute = postAuthRouteForAccount(user, returnTo);
   const canUseBiometrics = biometricEnabled && available;
 
   useEffect(() => {

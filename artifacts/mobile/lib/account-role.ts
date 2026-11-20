@@ -1,5 +1,5 @@
 import { list, record } from '@/lib/data';
-import { resolveAccountPostAuthHref, type BuyerPostAuthHref, type PostAuthHref } from '@/lib/post-auth-route';
+import { hasBuyerRole, resolveAccountPostAuthHref, type BuyerPostAuthHref } from '@/lib/post-auth-route';
 
 export function hasAccountRole(user: unknown, expectedRole: string): boolean {
   return list(record(user).roles).some(role => {
@@ -8,14 +8,14 @@ export function hasAccountRole(user: unknown, expectedRole: string): boolean {
   });
 }
 
-export function isBuyerOnlyAccount(user: unknown): boolean {
-  return hasAccountRole(user, 'buyer') && !hasAccountRole(user, 'investor');
+export function hasBuyerAccount(user: unknown): boolean {
+  return hasBuyerRole(list(record(user).roles));
 }
 
-export function homeRouteForAccount(user: unknown): '/(tabs)' | '/(buyer-tabs)/buyer-home' {
-  return isBuyerOnlyAccount(user) ? '/(buyer-tabs)/buyer-home' : '/(tabs)';
+export function homeRouteForAccount(_user: unknown): '/(buyer-tabs)/buyer-home' {
+  return '/(buyer-tabs)/buyer-home';
 }
 
-export function postAuthRouteForAccount(user: unknown, returnTo?: string | string[]): PostAuthHref | BuyerPostAuthHref {
+export function postAuthRouteForAccount(user: unknown, returnTo?: string | string[]): BuyerPostAuthHref {
   return resolveAccountPostAuthHref(list(record(user).roles), returnTo);
 }

@@ -16,10 +16,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotionReveal, motionHaptic } from '@/lib/motion';
 import { buildTwoFactorVerifyPayload, normalizeAuthResponse } from '@/lib/auth-response';
 import { RouteBrandBackdrop } from "@/components/GlassSurface";
-import { postAuthRouteForAccount } from '@/lib/account-role';
+import { hasBuyerAccount, postAuthRouteForAccount } from '@/lib/account-role';
 
 export default function Verify() {
-  const { challenge, acceptSession } = useAuth();
+  const { challenge, acceptSession, setChallenge } = useAuth();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const emailVerify = useInvestorVerifyEmail({ request: { timeoutMs: 20000, responseType: 'json' } });
@@ -51,6 +51,18 @@ export default function Verify() {
         throw new Error('The verification response did not include a session token.');
       }
       const user = record(response.user);
+      if (!hasBuyerAccount(user)) {
+        postAuthRedirect.current = true;
+        setChallenge(null);
+        router.replace({
+          pathname: '/(auth)/login',
+          params: {
+            reason: 'buyer-only',
+            ...(challenge.returnTo ? { returnTo: challenge.returnTo } : {}),
+          },
+        });
+        return;
+      }
       const destination = postAuthRouteForAccount(user, challenge.returnTo);
       postAuthRedirect.current = true;
       await acceptSession(response.token, user);

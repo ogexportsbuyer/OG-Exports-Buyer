@@ -9,7 +9,8 @@ test('forgot password opens as a native bottom sheet over sign in', () => {
   const login = source('../app/(auth)/login.tsx');
   const publicRoute = source('../app/forgot-password.tsx');
 
-  assert.match(login, /router\.push\('\/forgot-password'\)/);
+  assert.match(login, /pathname: '\/forgot-password'/);
+  assert.match(login, /typeof returnTo === 'string' \? \{ params: \{ returnTo \} \} : \{\}/);
   assert.match(rootLayout, /publicSegments = new Set\(\[[^\]]*'forgot-password'/);
   assert.match(rootLayout, /name="forgot-password" options=\{\{[\s\S]*?presentation: 'formSheet'[\s\S]*?sheetAllowedDetents: \[0\.82, 1\]/);
   assert.match(rootLayout, /sheetGrabberVisible: true/);
@@ -24,4 +25,6 @@ test('email and OTP inputs remain in the same secure recovery flow', () => {
   assert.match(recovery, /forgot-password-send-code/);
   assert.match(recovery, /forgot-password-verify-code/);
   assert.match(recovery, /forgot-password-close/);
+  assert.match(recovery, /useLocalSearchParams/);
+  assert.match(recovery, /pathname: '\/\(auth\)\/login'[\s\S]*?params: \{ returnTo \}/);
 });
