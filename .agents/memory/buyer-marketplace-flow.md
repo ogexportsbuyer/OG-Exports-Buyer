@@ -14,3 +14,9 @@ The Replit browser preview cannot read the production catalogue because the API 
 **Why:** Browser preview requests are subject to CORS; native iOS and Android requests are not.
 
 **How to apply:** Treat browser-preview CORS errors as a preview limitation, not proof that native requests fail. Verify the API endpoints directly and test the flow in Expo Go or an installed build.
+
+Use orange instead of gold only for buyer-app foreground accents such as text, icons and outlines. Keep the existing gold/teal page washes and tinted surfaces; do not add orange-filled surfaces. Preserve the dark-teal primary buttons.
+
+**Why:** the user requested orange accents, then clarified that the existing backgrounds must remain unchanged.
+
+**How to apply:** Use a contrast-safe orange on foreground elements while leaving background/surface tokens and the official logo unchanged.

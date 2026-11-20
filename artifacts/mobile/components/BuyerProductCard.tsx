@@ -19,12 +19,12 @@ type BuyerProductCardProps = {
   onAddToCart: () => void;
 };
 
-function Tag({ label, tone = 'neutral' }: { label: string; tone?: 'neutral' | 'gold' | 'green' }) {
+function Tag({ label, tone = 'neutral' }: { label: string; tone?: 'neutral' | 'accent' | 'green' }) {
   const colors = useColors();
   const palette = tone === 'green'
     ? { background: colors.statusSuccessBackground, foreground: colors.statusSuccess, border: colors.statusSuccessBackground }
-    : tone === 'gold'
-      ? { background: colors.glassTintGold, foreground: colors.accentForeground, border: colors.glassTintGold }
+    : tone === 'accent'
+      ? { background: colors.glassTintGold, foreground: colors.accent, border: colors.glassTintGold }
       : { background: colors.secondary, foreground: colors.foreground, border: colors.border };
 
   return (
@@ -117,7 +117,7 @@ export function BuyerProductCard({
           </View>
         )}
         <View style={{ position: 'absolute', top: 12, left: 12 }}>
-          <Tag label={category} tone="gold" />
+          <Tag label={category} tone="accent" />
         </View>
         {approved ? (
           <View style={{ position: 'absolute', top: 12, right: 12 }}>
@@ -162,7 +162,7 @@ export function BuyerProductCard({
 
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 9 }}>
           {paymentTerms.slice(0, 2).map((term, index) => <Tag key={`payment-${term}-${index}`} label={term} />)}
-          {deliveryTerms.slice(0, 2).map((term, index) => <Tag key={`delivery-${term}-${index}`} label={term} tone="gold" />)}
+          {deliveryTerms.slice(0, 2).map((term, index) => <Tag key={`delivery-${term}-${index}`} label={term} tone="accent" />)}
         </View>
 
         {(packaging.length || minimumOrder || first(product, ['lead_time'])) ? (
