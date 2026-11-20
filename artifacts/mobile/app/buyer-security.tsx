@@ -42,7 +42,8 @@ function activityLabel(action: string) {
     'session.revoked': 'Device session revoked',
     'session.revoked_others': 'Other device sessions revoked',
   };
-  return labels[action] ?? action.split(/[._]+/).filter(Boolean).map(part => part[0].toUpperCase() + part.slice(1)).join(' ') || 'Security activity';
+  const normalized = action.split(/[._]+/).filter(Boolean).map(part => part[0].toUpperCase() + part.slice(1)).join(' ');
+  return labels[action] ?? (normalized || 'Security activity');
 }
 
 export default function BuyerSecurity() {

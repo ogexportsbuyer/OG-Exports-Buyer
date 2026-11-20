@@ -70,7 +70,7 @@ export default function BuyerProfileDetails() {
           <Text style={{ color: colors.primary, fontSize: 14, fontWeight: '800' }}>{name.split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() || 'OG'}</Text>
         </View>
         <Field label="Full name" value={name} onChangeText={setName} />
-        <Field label="Email address" value={email} editable={false} />
+        <Field label="Email address" value={email} onChangeText={() => undefined} editable={false} />
         <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginTop: -5, marginBottom: 8 }}>Email is your sign-in identity. Contact support if it needs to be changed.</Text>
         <Field label="Phone number" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
         <Field label="Country" value={country} onChangeText={setCountry} placeholder="Select or enter your country" />

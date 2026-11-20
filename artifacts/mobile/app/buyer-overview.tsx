@@ -34,7 +34,7 @@ export default function BuyerOverview() {
   const dashboard = record(record(query.data).data);
   const kpis = record(dashboard.kpis);
   const summary = [
-    { label: 'Open orders', value: first(kpis, ['orders'], first(dashboard, ['orders_open'], '0')), icon: 'package' as const },
+    { label: 'Open orders', value: first(dashboard, ['orders_open'], first(kpis, ['orders'], '0')), icon: 'package' as const },
     { label: 'Open RFQs', value: first(kpis, ['rfqs_pending'], '0'), icon: 'file-text' as const },
     { label: 'Active shipments', value: first(kpis, ['shipments_active'], '0'), icon: 'truck' as const },
     { label: 'Total trade value', value: currency(amount(kpis, ['spend_total'])), icon: 'globe' as const },

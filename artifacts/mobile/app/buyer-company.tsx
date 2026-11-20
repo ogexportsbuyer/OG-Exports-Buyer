@@ -51,6 +51,14 @@ function csvValues(value: string) {
   return [...new Set(value.split(',').map(item => item.trim()).filter(Boolean))];
 }
 
+function joinNames(value: unknown) {
+  if (!Array.isArray(value)) return '';
+  return value
+    .map(item => typeof item === 'string' ? item : first(record(item), ['name']))
+    .filter(Boolean)
+    .join(', ');
+}
+
 export default function BuyerCompany() {
   const colors = useColors();
   const { token, apiOrigin } = useAuth();
@@ -101,8 +109,8 @@ export default function BuyerCompany() {
       payment_terms: first(prefs, ['payment_terms']),
       incoterm: first(prefs, ['incoterm']),
       shipping: first(prefs, ['shipping']),
-      ports: list(prefs.ports).map(port => typeof port === 'string' ? port : first(port, ['name'])).filter(Boolean).join(', '),
-      commodities: list(prefs.commodities).map(item => typeof item === 'string' ? item : first(item, ['name'])).filter(Boolean).join(', '),
+      ports: joinNames(prefs.ports),
+      commodities: joinNames(prefs.commodities),
     });
   }, [companyQuery.data, companyQuery.isSuccess]);
 
@@ -188,7 +196,7 @@ export default function BuyerCompany() {
       {
         text: 'Remove',
         style: 'destructive',
-        onPress: () => void deleteContact.mutateAsync({ id }).then(refreshCompany).catch(err => setError(messageOf(err))),
+        onPress: () => void deleteContact.mutateAsync({ id }).then(refreshCompany).catch((err: unknown) => setError(messageOf(err))),
       },
     ]);
   }
@@ -264,7 +272,7 @@ export default function BuyerCompany() {
               <Field label="Tax ID / VAT number" value={companyFields.tax_id} onChangeText={tax_id => setCompanyFields(value => ({ ...value, tax_id }))} />
               <Field label="Business type" value={companyFields.business_type} onChangeText={business_type => setCompanyFields(value => ({ ...value, business_type }))} placeholder="Importer, distributor, manufacturer…" />
               <Field label="Annual purchase volume" value={companyFields.annual_volume} onChangeText={annual_volume => setCompanyFields(value => ({ ...value, annual_volume }))} />
-              <Field label="Company website" value={companyFields.website} onChangeText={website => setCompanyFields(value => ({ ...value, website }))} keyboardType="url" />
+              <Field label="Company website" value={companyFields.website} onChangeText={website => setCompanyFields(value => ({ ...value, website }))} autoCapitalize="none" />
               <Field label="Country" value={companyFields.country} onChangeText={country => setCompanyFields(value => ({ ...value, country }))} />
               <Field label="City" value={companyFields.city} onChangeText={city => setCompanyFields(value => ({ ...value, city }))} />
               <Field label="Business address" value={companyFields.address} onChangeText={address => setCompanyFields(value => ({ ...value, address }))} multiline />
