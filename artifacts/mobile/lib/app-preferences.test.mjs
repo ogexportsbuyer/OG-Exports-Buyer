@@ -244,3 +244,14 @@ test('settings no longer reject selections using the stale readiness ref or bloc
   assert.match(settings, /title="Retry loading preferences"/);
   assert.doesNotMatch(settings, /disabled=\{appPreferences\.isSyncing/);
 });
+
+test('buyer appearance choices live in System settings, not Profile', () => {
+  const profile = readFileSync(new URL('../app/(buyer-tabs)/buyer-profile.tsx', import.meta.url), 'utf8');
+  const settings = readFileSync(new URL('../app/buyer-system-settings.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(profile, /buyer-profile-appearance|changeAppearance/);
+  assert.match(profile, /\['System settings', '\/buyer-system-settings'/);
+  assert.match(settings, /testID="buyer-settings-appearance"/);
+  assert.match(settings, /value: 'light'/);
+  assert.match(settings, /value: 'dark'/);
+  assert.match(settings, /value: 'system'/);
+});

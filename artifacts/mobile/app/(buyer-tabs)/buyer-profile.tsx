@@ -8,7 +8,6 @@ import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Action, Card, Screen } from '@/components/InvestorUI';
 import { BuyerAuthGate } from '@/components/BuyerAuthGate';
 import { useAuth } from '@/context/AuthContext';
-import { useAppPreferences, type AppearancePreference } from '@/context/AppPreferencesContext';
 import { useColors } from '@/hooks/useColors';
 import { useInvestorMobileLogout, useRevokeBuyerPushToken } from '@workspace/api-client-react';
 import { first, messageOf, record } from '@/lib/data';
@@ -56,7 +55,6 @@ const accountSections = [
 
 export default function BuyerProfile() {
   const colors = useColors();
-  const appPreferences = useAppPreferences();
   const { token, user, signOut } = useAuth();
   const logout = useInvestorMobileLogout();
   const revokePushToken = useRevokeBuyerPushToken();
@@ -93,15 +91,6 @@ export default function BuyerProfile() {
     }
   }
 
-  async function changeAppearance(appearance: AppearancePreference) {
-    setError('');
-    try {
-      await appPreferences.savePreferences({ appearance });
-    } catch (err) {
-      setError(messageOf(err));
-    }
-  }
-
   if (!token) {
     return <BuyerAuthGate
       title="Profile"
@@ -119,52 +108,6 @@ export default function BuyerProfile() {
         <Text style={{ color: colors.foreground, fontSize: 18, fontWeight: '700' }}>{displayName}</Text>
         {company ? <Text style={{ color: colors.mutedForeground, marginTop: 5 }}>{company}</Text> : null}
         {email ? <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 6 }}>{email}</Text> : null}
-      </Card>
-
-      <Card style={{ padding: 14, marginBottom: 18 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-          <View style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
-            <Feather name="monitor" size={16} color={colors.primary} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '700' }}>Appearance</Text>
-            <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 2 }}>Choose Light, Dark, or follow your device.</Text>
-          </View>
-        </View>
-        <View style={{ flexDirection: 'row', gap: 7 }}>
-          {([
-            ['light', 'Light', 'sun'],
-            ['dark', 'Dark', 'moon'],
-            ['system', 'System', 'smartphone'],
-          ] as const).map(([appearance, label, icon]) => {
-            const selected = appPreferences.preferences.appearance === appearance;
-            return (
-              <Pressable
-                key={appearance}
-                testID={`buyer-profile-appearance-${appearance}`}
-                accessibilityRole="radio"
-                accessibilityState={{ selected, disabled: appPreferences.isSaving || appPreferences.isSyncing }}
-                disabled={appPreferences.isSaving || appPreferences.isSyncing}
-                onPress={() => void changeAppearance(appearance)}
-                style={{
-                  flex: 1,
-                  minHeight: 40,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: selected ? colors.primary : colors.border,
-                  backgroundColor: selected ? colors.primary : colors.secondary,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexDirection: 'row',
-                  gap: 5,
-                }}
-              >
-                <Feather name={icon} size={13} color={selected ? colors.primaryForeground : colors.mutedForeground} />
-                <Text style={{ color: selected ? colors.primaryForeground : colors.foreground, fontSize: 11, fontWeight: selected ? '800' : '600' }}>{label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
       </Card>
 
       {accountSections.map(section => (

@@ -186,7 +186,7 @@ export default function BuyerSystemSettings() {
       {notificationError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, lineHeight: 18, marginBottom: 9 }}>{notificationError}</Text> : null}
       {notice ? <Text accessibilityRole="status" style={{ color: colors.primary, fontSize: 12, lineHeight: 18, marginBottom: 9 }}>{notice}</Text> : null}
 
-      <SectionTitle title="Appearance" detail="Choose how the app looks on this device." />
+      <SectionTitle title="Appearance" detail="Choose Light, Dark, or follow your device. Your choice is saved to your buyer account." />
       <Card style={{ paddingHorizontal: 14, marginBottom: 16 }}>
         <ChoiceRow
           title="App theme"
