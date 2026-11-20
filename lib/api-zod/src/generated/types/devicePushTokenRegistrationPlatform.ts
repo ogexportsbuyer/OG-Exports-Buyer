@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type InvestorPushTokenRegistrationPlatform = typeof InvestorPushTokenRegistrationPlatform[keyof typeof InvestorPushTokenRegistrationPlatform];
+export type DevicePushTokenRegistrationPlatform = typeof DevicePushTokenRegistrationPlatform[keyof typeof DevicePushTokenRegistrationPlatform];
 
 
-export const InvestorPushTokenRegistrationPlatform = {
+export const DevicePushTokenRegistrationPlatform = {
   ios: 'ios',
   android: 'android',
 } as const;

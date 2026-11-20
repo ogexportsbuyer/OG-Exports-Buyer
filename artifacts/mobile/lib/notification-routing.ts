@@ -11,7 +11,7 @@ type NotificationTarget =
       search?: string;
       selected?: string;
     }
-  | { kind: 'screen'; path: '/account/kyc' | '/wallet/deposit' | '/wallet/withdraw' | '/account/reports' | '/account/messages' | '/account/portfolio' | '/(tabs)/opportunities' | '/(tabs)/wallet' };
+  | { kind: 'screen'; path: '/account/kyc' | '/wallet/deposit' | '/wallet/withdraw' | '/account/reports' | '/account/messages' | '/account/portfolio' | '/buyer-notifications' | '/(tabs)/opportunities' | '/(tabs)/wallet' };
 
 function decode(value: string) {
   try {
@@ -28,7 +28,10 @@ function safeId(value: string) {
 
 export function notificationTarget(item: Record<string, unknown>): NotificationTarget | null {
   const payload = record(item.data ?? item.metadata ?? item.payload);
-  const route = first(payload, ['deep_link', 'action_url', 'route', 'url', 'link'], first(item, ['deep_link', 'action_url', 'route', 'url', 'link']));
+  const route = first(payload, ['href', 'deep_link', 'action_url', 'route', 'url', 'link'], first(item, ['href', 'deep_link', 'action_url', 'route', 'url', 'link']));
+  if (route.includes('/buyer-notifications') || /^\/buyer(?:\/|$)/.test(route)) {
+    return { kind: 'screen', path: '/buyer-notifications' };
+  }
   const reference = first(payload, ['reference', 'deposit_reference', 'withdrawal_reference', 'transaction_reference']);
   const depositId = safeId(first(payload, ['deposit_id']));
   if (depositId) {

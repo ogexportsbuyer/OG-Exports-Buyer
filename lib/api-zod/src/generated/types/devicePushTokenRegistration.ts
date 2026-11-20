@@ -5,14 +5,14 @@
  * OG Exports investor and administrator API, generated from the Laravel API contract
  * OpenAPI spec version: 1.0.0
  */
-import type { InvestorPushTokenRegistrationPlatform } from './investorPushTokenRegistrationPlatform';
+import type { DevicePushTokenRegistrationPlatform } from './devicePushTokenRegistrationPlatform';
 
-export interface InvestorPushTokenRegistration {
+export interface DevicePushTokenRegistration {
   /**
      * @minLength 20
      * @maxLength 256
      * @pattern ^Expo(nent)?PushToken\[[A-Za-z0-9._-]+\]$
      */
   expo_push_token: string;
-  platform: InvestorPushTokenRegistrationPlatform;
+  platform: DevicePushTokenRegistrationPlatform;
 }

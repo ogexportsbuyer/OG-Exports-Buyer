@@ -5,9 +5,15 @@
  * OG Exports investor and administrator API, generated from the Laravel API contract
  * OpenAPI spec version: 1.0.0
  */
+import type { InvestorProfileUpdatePreferencesAppearance } from './investorProfileUpdatePreferencesAppearance';
 import type { InvestorProfileUpdatePreferencesCurrency } from './investorProfileUpdatePreferencesCurrency';
+import type { InvestorProfileUpdatePreferencesLanguage } from './investorProfileUpdatePreferencesLanguage';
+import type { InvestorProfileUpdatePreferencesTheme } from './investorProfileUpdatePreferencesTheme';
 
 export type InvestorProfileUpdatePreferences = {
+  language?: InvestorProfileUpdatePreferencesLanguage;
+  appearance?: InvestorProfileUpdatePreferencesAppearance;
+  theme?: InvestorProfileUpdatePreferencesTheme;
   /** Selecting a currency converts the actual wallet balance and changes future wallet operations. */
   currency?: InvestorProfileUpdatePreferencesCurrency;
   [key: string]: unknown;

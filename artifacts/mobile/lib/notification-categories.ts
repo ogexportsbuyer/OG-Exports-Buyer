@@ -9,6 +9,7 @@ export const NOTIFICATION_CATEGORIES = [
   { key: 'security', label: 'Security', icon: 'lock', legacy: [], description: 'Sign-in and account security activity' },
   { key: 'account', label: 'Account', icon: 'user', legacy: ['adminAnnounce'], description: 'Announcements and account notices' },
 ] as const;
+export const BUYER_NOTIFICATION_CATEGORIES = NOTIFICATION_CATEGORIES.filter(category => category.key !== 'investment');
 
 export type NotificationCategoryKey = typeof NOTIFICATION_CATEGORIES[number]['key'];
 export type NotificationCategoryLabel = typeof NOTIFICATION_CATEGORIES[number]['label'];
@@ -23,6 +24,13 @@ const categoryByType: Record<string, NotificationCategoryKey> = {
   trade_update: 'trade',
   project_trade_update: 'trade',
   update: 'trade',
+  order_status: 'trade',
+  quotation: 'trade',
+  quotation_reply: 'trade',
+  trade_document: 'trade',
+  buyer_payment_approved: 'wallet',
+  buyer_payment_rejected: 'wallet',
+  buyer_payment_cancelled: 'wallet',
   investment: 'investment',
   investment_approved: 'investment',
   investment_rejected: 'investment',

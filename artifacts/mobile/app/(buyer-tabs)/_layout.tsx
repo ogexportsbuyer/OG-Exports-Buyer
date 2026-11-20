@@ -19,7 +19,7 @@ const buyerTabs = [
   ['buyer-products', 'Product', 'grid', 'square.grid.2x2', 'square.grid.2x2.fill'],
   ['buyer-messages', 'Messages', 'message-circle', 'bubble.left.and.bubble.right', 'bubble.left.and.bubble.right.fill'],
   ['buyer-cart', 'Cart', 'shopping-cart', 'cart', 'cart.fill'],
-  ['buyer-profile', 'My account', 'user', 'person.crop.circle', 'person.crop.circle.fill'],
+  ['buyer-profile', 'Profile', 'user', 'person.crop.circle', 'person.crop.circle.fill'],
 ] as const;
 
 function NativeLayout() {

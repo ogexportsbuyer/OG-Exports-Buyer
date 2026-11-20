@@ -5,6 +5,7 @@
  * OG Exports investor and administrator API, generated from the Laravel API contract
  * OpenAPI spec version: 1.0.0
  */
+import type { InvestorProfileUpdateMeta } from './investorProfileUpdateMeta';
 import type { InvestorProfileUpdatePreferences } from './investorProfileUpdatePreferences';
 
 export interface InvestorProfileUpdate {
@@ -24,4 +25,5 @@ export interface InvestorProfileUpdate {
      */
   country?: string;
   preferences?: InvestorProfileUpdatePreferences;
+  meta?: InvestorProfileUpdateMeta;
 }

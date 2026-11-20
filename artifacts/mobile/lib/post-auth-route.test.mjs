@@ -126,4 +126,35 @@ test('buyer app route allowlist blocks investor screens and permits buyer suppor
   assert.equal(isBuyerAppRoute('(tabs)', '/'), false);
   assert.equal(isBuyerAppRoute('wallet', '/wallet/deposit'), false);
   assert.equal(isBuyerAppRoute('account', '/account/portfolio'), false);
+  assert.equal(isBuyerAppRoute('buyer-system-settings', '/buyer-system-settings'), true);
+  assert.equal(isBuyerAppRoute('buyer-notifications', '/buyer-notifications'), true);
+  for (const route of [
+    'buyer-profile-details',
+    'buyer-company',
+    'buyer-security',
+    'buyer-overview',
+    'buyer-analytics',
+    'buyer-repeat-orders',
+    'buyer-rfq',
+    'buyer-shipments',
+    'buyer-documents',
+    'buyer-trade-finance',
+  ]) {
+    assert.equal(isBuyerAppRoute(route, `/${route}`), true, `${route} should stay inside the buyer app`);
+  }
+});
+
+test('buyer return routes preserve system settings and notification destinations', () => {
+  assert.equal(resolveBuyerPostAuthHref('/buyer-system-settings'), '/buyer-system-settings');
+  assert.equal(resolveBuyerPostAuthHref('/buyer-notifications'), '/buyer-notifications');
+  assert.equal(resolveBuyerPostAuthHref('/buyer-profile-details'), '/buyer-profile-details');
+  assert.equal(resolveBuyerPostAuthHref('/buyer-company'), '/buyer-company');
+  assert.deepEqual(resolveBuyerPostAuthHref('/buyer-rfq/421'), {
+    pathname: '/buyer-rfq/[id]',
+    params: { id: '421' },
+  });
+  assert.deepEqual(resolveBuyerPostAuthHref('/buyer-shipment/890'), {
+    pathname: '/buyer-shipment/[id]',
+    params: { id: '890' },
+  });
 });

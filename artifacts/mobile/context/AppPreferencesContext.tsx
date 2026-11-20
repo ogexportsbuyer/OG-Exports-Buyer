@@ -4,12 +4,17 @@ import { I18nManager, Platform, useColorScheme } from 'react-native';
 import { isRunningInExpoGo, reloadAppAsync } from 'expo';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  getInvestorProfile,
+  getInvestorMe,
+  getGetInvestorMeQueryKey,
+  useGetExchangeRates,
   useGetInvestorExchangeRates,
+  useGetInvestorMe,
   useGetInvestorProfile,
+  useUpdateInvestorMe,
   useUpdateInvestorProfile,
 } from '@workspace/api-client-react';
 import { useAuth } from '@/context/AuthContext';
+import { hasBuyerAccount } from '@/lib/account-role';
 import { configureMoneyDisplay, first, messageOf, record, unwrap } from '@/lib/data';
 import { configureUiLanguage, translateUi } from '@/lib/strings';
 import { createPreferenceHydrator, createPreferenceSyncQueue, defaultPreferences, parsePreferences,
@@ -53,6 +58,7 @@ export function AppPreferencesProvider({ children }: { children: React.ReactNode
   const { token, user } = useAuth();
   const queryClient = useQueryClient();
   const systemAppearance = useColorScheme();
+  const isBuyer = hasBuyerAccount(user);
   const authUserId = preferenceAccountId(user);
   const [recoveredOwner, setRecoveredOwner] = useState<{ token: string; id: string } | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -100,34 +106,57 @@ export function AppPreferencesProvider({ children }: { children: React.ReactNode
   useEffect(() => {
     if (!token || authUserId) return;
     let active = true;
-    void getInvestorProfile({ timeoutMs: 8000 }).then(response => {
+    void getInvestorMe({ timeoutMs: 8000 }).then(response => {
       if (!active || tokenRef.current !== token) return;
-      const id = preferenceAccountId(unwrap(response).user);
+      const identity = unwrap(response);
+      const id = preferenceAccountId(identity.user ?? identity);
       if (!id) throw new Error('The server did not return your account identity.');
-      queryClient.setQueryData(['investor-profile'], response);
+      queryClient.setQueryData(getGetInvestorMeQueryKey(), response);
       setRecoveredOwner({ token, id });
     }).catch(() => {
       if (active && tokenRef.current === token) setError('Account details could not be loaded. Retry loading preferences.');
     });
     return () => { active = false; };
   }, [token, authUserId, queryClient, loadAttempt]);
-  const profileQuery = useGetInvestorProfile({
+  const investorProfileQuery = useGetInvestorProfile({
     query: {
       queryKey: ['investor-profile'],
-      enabled: Boolean(token && userId),
+      enabled: Boolean(token && userId && !isBuyer),
       staleTime: 60_000,
     },
   });
-  const ratesQuery = useGetInvestorExchangeRates({
+  const buyerMeQuery = useGetInvestorMe({
+    query: {
+      queryKey: getGetInvestorMeQueryKey(),
+      enabled: Boolean(token && userId && isBuyer),
+      staleTime: 60_000,
+    },
+  });
+  const investorRatesQuery = useGetInvestorExchangeRates({
     query: {
       queryKey: ['investor-display-exchange-rates', userId],
-      enabled: Boolean(token && userId),
+      enabled: Boolean(token && userId && !isBuyer),
+      staleTime: 300_000,
+      retry: 1,
+    },
+  });
+  const buyerRatesQuery = useGetExchangeRates({
+    query: {
+      queryKey: ['buyer-display-exchange-rates', userId],
+      enabled: Boolean(token && userId && isBuyer),
       staleTime: 300_000,
       retry: 1,
     },
   });
   const { mutateAsync: updateProfile } = useUpdateInvestorProfile({ request: { timeoutMs: 10_000 } });
-  const profile = unwrap(profileQuery.data);
+  const { mutateAsync: updateMe } = useUpdateInvestorMe({ request: { timeoutMs: 10_000 } });
+  const buyerMeResponse = unwrap(buyerMeQuery.data);
+  const buyerUser = record(buyerMeResponse.user ?? buyerMeResponse);
+  const buyerMeta = record(record(buyerUser.profile).meta);
+  const profile = isBuyer
+    ? { user: buyerUser, preferences: record(buyerMeta.preferences) }
+    : unwrap(investorProfileQuery.data);
+  const ratesQuery = isBuyer ? buyerRatesQuery : investorRatesQuery;
   const rateResponse = unwrap(ratesQuery.data);
   const rates = normalizeRates(rateResponse.rates, first(rateResponse, ['base']).toUpperCase());
   const ratesAsOf = first(rateResponse, ['as_of', 'updated_at']);
@@ -158,7 +187,8 @@ export function AppPreferencesProvider({ children }: { children: React.ReactNode
   }, [userId, token, activeSession, apply, hydration, loadAttempt]);
 
   useEffect(() => {
-    if (!preferencesLoaded || !userId || !profileQuery.data) return;
+    const response = isBuyer ? buyerMeQuery.data : investorProfileQuery.data;
+    if (!preferencesLoaded || !userId || !response) return;
     if (first(record(profile.user), ['id']) !== userId) return;
     const parsed = parsePreferences(profile.preferences);
     const pending = pendingPreferences.current;
@@ -170,7 +200,7 @@ export function AppPreferencesProvider({ children }: { children: React.ReactNode
         if (sessionRef.current === ownerSession) setError('Account preferences loaded, but could not be cached on this device.');
       });
     }
-  }, [preferencesLoaded, profileQuery.data, userId, apply, store, activeSession]);
+  }, [preferencesLoaded, isBuyer, buyerMeQuery.data, investorProfileQuery.data, userId, apply, store, activeSession]);
 
   useEffect(() => {
     if (!preferencesLoaded) return;
@@ -216,13 +246,26 @@ export function AppPreferencesProvider({ children }: { children: React.ReactNode
         stored: () => { if (isCurrent()) setIsSaving(false); },
         store: (next, pending) => store(userId, next, pending),
         sync: preferences => queueSync(isCurrent, async () => {
-          await queryClient.cancelQueries({ queryKey: ['investor-profile'] });
+          const queryKey = isBuyer ? getGetInvestorMeQueryKey() : ['investor-profile'];
+          await queryClient.cancelQueries({ queryKey });
           if (!isCurrent()) throw new Error('The signed-in account changed.');
+          if (isBuyer) {
+            const response = await updateMe({ data: { meta: { preferences } } });
+            const saved = unwrap(response);
+            const savedUser = record(saved.user ?? saved);
+            const savedMeta = record(record(savedUser.profile).meta);
+            return {
+              data: { preferences: record(savedMeta.preferences) },
+              profileResponse: response,
+            };
+          }
           return updateProfile({ data: { preferences } });
         }),
         confirmed: async response => {
-          await queryClient.cancelQueries({ queryKey: ['investor-profile'] });
-          if (isCurrent()) queryClient.setQueryData(['investor-profile'], response);
+          const queryKey = isBuyer ? getGetInvestorMeQueryKey() : ['investor-profile'];
+          await queryClient.cancelQueries({ queryKey });
+          const cacheResponse = isBuyer ? record(response).profileResponse ?? response : response;
+          if (isCurrent()) queryClient.setQueryData(queryKey, cacheResponse);
         },
       });
     } catch (saveError) {
@@ -240,7 +283,7 @@ export function AppPreferencesProvider({ children }: { children: React.ReactNode
         setIsSyncing(false);
       }
     }
-  }, [activeSession, apply, hydration, queryClient, queueSync, store, token, updateProfile, userId]);
+  }, [activeSession, apply, hydration, isBuyer, queryClient, queueSync, store, token, updateMe, updateProfile, userId]);
 
   useEffect(() => {
     if (preferencesLoaded && token && userId && Object.keys(pendingPreferences.current).length) {

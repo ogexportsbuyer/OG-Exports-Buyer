@@ -19,6 +19,7 @@ export type PostAuthHref =
   | '/account/portfolio'
   | '/account/security'
   | '/account/settings'
+  | '/buyer-notifications'
   | '/(tabs)/opportunities'
   | '/(tabs)/portfolio'
   | '/(tabs)/wallet'
@@ -34,12 +35,26 @@ export type BuyerPostAuthHref =
   | '/(buyer-tabs)/buyer-orders'
   | '/(buyer-tabs)/buyer-messages'
   | '/(buyer-tabs)/buyer-profile'
+  | '/buyer-notifications'
+  | '/buyer-system-settings'
+  | '/buyer-profile-details'
+  | '/buyer-company'
+  | '/buyer-security'
+  | '/buyer-overview'
+  | '/buyer-analytics'
+  | '/buyer-repeat-orders'
+  | '/buyer-rfq'
+  | '/buyer-shipments'
+  | '/buyer-documents'
+  | '/buyer-trade-finance'
   | '/buyer-checkout'
   | '/account/messages'
   | '/account/notifications'
   | { pathname: '/(buyer-tabs)/buyer-products'; params: { pendingProduct: string } }
+  | { pathname: '/buyer-rfq/[id]'; params: { id: string } }
   | { pathname: '/buyer-order/[id]'; params: { id: string } }
-  | { pathname: '/buyer-quotation/[id]'; params: { id: string } };
+  | { pathname: '/buyer-quotation/[id]'; params: { id: string } }
+  | { pathname: '/buyer-shipment/[id]'; params: { id: string } };
 
 export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPostAuthHref {
   const value = Array.isArray(returnTo) ? returnTo[0] : returnTo;
@@ -48,9 +63,17 @@ export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPos
   if (orderId && Number(orderId) > 0) {
     return { pathname: '/buyer-order/[id]', params: { id: orderId } };
   }
+  const rfqId = validId(path.match(/^\/buyer-rfq\/([^/]+)\/?$/)?.[1] ?? '');
+  if (rfqId) {
+    return { pathname: '/buyer-rfq/[id]', params: { id: rfqId } };
+  }
   const quotationId = path.match(/^\/buyer-quotation\/(\d+)\/?$/)?.[1];
   if (quotationId && Number(quotationId) > 0) {
     return { pathname: '/buyer-quotation/[id]', params: { id: quotationId } };
+  }
+  const shipmentId = validId(path.match(/^\/buyer-shipment\/([^/]+)\/?$/)?.[1] ?? '');
+  if (shipmentId) {
+    return { pathname: '/buyer-shipment/[id]', params: { id: shipmentId } };
   }
   const query = value?.split('?', 2)[1] ?? '';
   const pendingProduct = queryValue(query, 'pendingProduct');
@@ -72,6 +95,18 @@ export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPos
     '/(buyer-tabs)/buyer-messages': '/(buyer-tabs)/buyer-messages',
     '/buyer-profile': '/(buyer-tabs)/buyer-profile',
     '/(buyer-tabs)/buyer-profile': '/(buyer-tabs)/buyer-profile',
+    '/buyer-notifications': '/buyer-notifications',
+    '/buyer-system-settings': '/buyer-system-settings',
+    '/buyer-profile-details': '/buyer-profile-details',
+    '/buyer-company': '/buyer-company',
+    '/buyer-security': '/buyer-security',
+    '/buyer-overview': '/buyer-overview',
+    '/buyer-analytics': '/buyer-analytics',
+    '/buyer-repeat-orders': '/buyer-repeat-orders',
+    '/buyer-rfq': '/buyer-rfq',
+    '/buyer-shipments': '/buyer-shipments',
+    '/buyer-documents': '/buyer-documents',
+    '/buyer-trade-finance': '/buyer-trade-finance',
     '/buyer-checkout': '/buyer-checkout',
     '/account/messages': '/(buyer-tabs)/buyer-messages',
     '/account/notifications': '/account/notifications',
@@ -119,6 +154,20 @@ export function isBuyerAppRoute(firstSegment: string, pathname: string): boolean
     '(buyer-tabs)',
     'buyer-checkout',
     'buyer-order',
+    'buyer-quotation',
+    'buyer-rfq',
+    'buyer-shipment',
+    'buyer-notifications',
+    'buyer-system-settings',
+    'buyer-profile-details',
+    'buyer-company',
+    'buyer-security',
+    'buyer-overview',
+    'buyer-analytics',
+    'buyer-repeat-orders',
+    'buyer-shipments',
+    'buyer-documents',
+    'buyer-trade-finance',
     'forgot-password',
     'lock',
   ]);

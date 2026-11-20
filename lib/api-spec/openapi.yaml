@@ -580,6 +580,35 @@ paths:
       responses:
         "200": { description: Updated buyer trade preferences, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
         "422": { description: Preferences validation error, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/push-tokens/register:
+    post:
+      operationId: registerBuyerPushToken
+      tags: [buyer]
+      summary: Register a buyer device for push notifications
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DevicePushTokenRegistration" }
+      responses:
+        "200": { description: Buyer device registered, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "401": { description: Authentication required, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "422": { description: Invalid push token, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/push-tokens/revoke:
+    post:
+      operationId: revokeBuyerPushToken
+      tags: [buyer]
+      summary: Disable push notifications for a buyer device
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DevicePushTokenRevocation" }
+      responses:
+        "200": { description: Buyer device push token revoked, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "401": { description: Authentication required, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
   /buyer/company/contacts:
     get:
       operationId: getBuyerCompanyContacts
@@ -1191,6 +1220,14 @@ paths:
       security: [{ BearerAuth: [] }]
       responses:
         "200": { description: Rates, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /exchange-rates:
+    get:
+      operationId: getExchangeRates
+      tags: [communication]
+      summary: Get shared display-currency exchange rates
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: Rates, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
   /investor/deposit-options:
     get:
       operationId: getInvestorDepositOptions
@@ -1441,7 +1478,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/InvestorPushTokenRegistration" }
+            schema: { $ref: "#/components/schemas/DevicePushTokenRegistration" }
       responses:
         "200": { description: Push token registered, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
         "401": { description: Authentication required, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
@@ -1456,7 +1493,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/InvestorPushTokenRevocation" }
+            schema: { $ref: "#/components/schemas/DevicePushTokenRevocation" }
       responses:
         "200": { description: Push token revoked, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
         "401": { description: Authentication required, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
@@ -2766,7 +2803,7 @@ components:
         total: { type: integer }
         links: { type: array, items: { type: object, additionalProperties: true } }
         meta: { type: object, additionalProperties: true }
-    InvestorPushTokenRegistration:
+    DevicePushTokenRegistration:
       type: object
       required: [expo_push_token, platform]
       properties:
@@ -2778,7 +2815,7 @@ components:
         platform:
           type: string
           enum: [ios, android]
-    InvestorPushTokenRevocation:
+    DevicePushTokenRevocation:
       type: object
       required: [expo_push_token]
       properties:
@@ -2828,10 +2865,22 @@ components:
           type: object
           additionalProperties: true
           properties:
+            language:
+              type: string
+              enum: [en, ur, ar]
+            appearance:
+              type: string
+              enum: [light, dark, system]
+            theme:
+              type: string
+              enum: [light, dark, system]
             currency:
               type: string
               enum: [USD, PKR, EUR, GBP]
               description: Selecting a currency converts the actual wallet balance and changes future wallet operations.
+        meta:
+          type: object
+          additionalProperties: true
     InvestorWithdrawalInput:
       type: object
       additionalProperties: true

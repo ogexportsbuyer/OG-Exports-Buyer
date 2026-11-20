@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Action, Card, Screen } from '@/components/InvestorUI';
 import { BuyerAuthGate } from '@/components/BuyerAuthGate';
 import { useAuth } from '@/context/AuthContext';
+import { useAppPreferences, type AppearancePreference } from '@/context/AppPreferencesContext';
 import { useColors } from '@/hooks/useColors';
-import { useInvestorMobileLogout } from '@workspace/api-client-react';
+import { useInvestorMobileLogout, useRevokeBuyerPushToken } from '@workspace/api-client-react';
 import { first, messageOf, record } from '@/lib/data';
+import { buyerPushEnabledStorageKey } from '@/lib/buyer-push-settings';
+import { buyerPushTokenSecureStoreKey } from '@/lib/push-token-key';
 
 const accountSections = [
   {
@@ -23,7 +28,8 @@ const accountSections = [
     links: [
       ['My profile', '/buyer-profile-details', 'user'],
       ['Company profile & verification', '/buyer-company', 'briefcase'],
-      ['Security & settings', '/buyer-security', 'shield'],
+      ['System settings', '/buyer-system-settings', 'settings'],
+      ['Security & devices', '/buyer-security', 'shield'],
       ['Notifications', '/buyer-notifications', 'bell'],
       ['Messages', '/(buyer-tabs)/buyer-messages', 'message-circle'],
     ],
@@ -50,9 +56,12 @@ const accountSections = [
 
 export default function BuyerProfile() {
   const colors = useColors();
+  const appPreferences = useAppPreferences();
   const { token, user, signOut } = useAuth();
   const logout = useInvestorMobileLogout();
+  const revokePushToken = useRevokeBuyerPushToken();
   const [error, setError] = useState('');
+  const userId = first(record(user), ['id']);
   const profile = record(record(user).profile);
   const displayName = first(record(user), ['name', 'fullName'], 'Buyer account');
   const company = first(profile, ['companyName', 'company_name']);
@@ -61,11 +70,35 @@ export default function BuyerProfile() {
   async function handleSignOut() {
     setError('');
     try {
+      if (userId) {
+        const secureKey = buyerPushTokenSecureStoreKey(userId);
+        const deviceToken = await SecureStore.getItemAsync(secureKey);
+        const pushWasEnabled = await AsyncStorage.getItem(buyerPushEnabledStorageKey(userId));
+        if (!deviceToken && pushWasEnabled === 'enabled') {
+          throw new Error('This device push token is missing from secure storage. Restore it in System settings before signing out.');
+        }
+        if (deviceToken) {
+          await revokePushToken.mutateAsync({ data: { expo_push_token: deviceToken } });
+          await Promise.all([
+            SecureStore.deleteItemAsync(secureKey),
+            AsyncStorage.removeItem(buyerPushEnabledStorageKey(userId)),
+          ]);
+        }
+      }
       await logout.mutateAsync(undefined);
       await signOut();
       router.replace('/(buyer-tabs)/buyer-home');
     } catch (err) {
-      setError(`${messageOf(err)} Your session is still active; try signing out again when you are online.`);
+      setError(`Could not safely finish sign out: ${messageOf(err)} Your session is still active; try again when you are online.`);
+    }
+  }
+
+  async function changeAppearance(appearance: AppearancePreference) {
+    setError('');
+    try {
+      await appPreferences.savePreferences({ appearance });
+    } catch (err) {
+      setError(messageOf(err));
     }
   }
 
@@ -78,7 +111,7 @@ export default function BuyerProfile() {
   }
 
   return (
-    <Screen title="My account" subtitle="Your OG Exports buyer account">
+    <Screen title="Profile" subtitle="Your OG Exports buyer account">
       <Card style={{ padding: 19, marginBottom: 18 }}>
         <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: colors.lightGreen, alignItems: 'center', justifyContent: 'center', marginBottom: 13 }}>
           <Feather name="user" size={24} color={colors.primary} />
@@ -86,6 +119,52 @@ export default function BuyerProfile() {
         <Text style={{ color: colors.foreground, fontSize: 18, fontWeight: '700' }}>{displayName}</Text>
         {company ? <Text style={{ color: colors.mutedForeground, marginTop: 5 }}>{company}</Text> : null}
         {email ? <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 6 }}>{email}</Text> : null}
+      </Card>
+
+      <Card style={{ padding: 14, marginBottom: 18 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <View style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
+            <Feather name="monitor" size={16} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '700' }}>Appearance</Text>
+            <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 2 }}>Choose Light, Dark, or follow your device.</Text>
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 7 }}>
+          {([
+            ['light', 'Light', 'sun'],
+            ['dark', 'Dark', 'moon'],
+            ['system', 'System', 'smartphone'],
+          ] as const).map(([appearance, label, icon]) => {
+            const selected = appPreferences.preferences.appearance === appearance;
+            return (
+              <Pressable
+                key={appearance}
+                testID={`buyer-profile-appearance-${appearance}`}
+                accessibilityRole="radio"
+                accessibilityState={{ selected, disabled: appPreferences.isSaving || appPreferences.isSyncing }}
+                disabled={appPreferences.isSaving || appPreferences.isSyncing}
+                onPress={() => void changeAppearance(appearance)}
+                style={{
+                  flex: 1,
+                  minHeight: 40,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: selected ? colors.primary : colors.border,
+                  backgroundColor: selected ? colors.primary : colors.secondary,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexDirection: 'row',
+                  gap: 5,
+                }}
+              >
+                <Feather name={icon} size={13} color={selected ? colors.primaryForeground : colors.mutedForeground} />
+                <Text style={{ color: selected ? colors.primaryForeground : colors.foreground, fontSize: 11, fontWeight: selected ? '800' : '600' }}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </Card>
 
       {accountSections.map(section => (

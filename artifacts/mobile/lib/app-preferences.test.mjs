@@ -236,7 +236,10 @@ test('settings no longer reject selections using the stale readiness ref or bloc
   assert.match(provider, /await hydration\.load\(userId, activeSession\)/);
   assert.match(provider, /queueSync\(isCurrent/);
   assert.match(provider, /stored:.*setIsSaving\(false\)/);
-  assert.match(provider, /getInvestorProfile\(\{ timeoutMs: 8000 \}\)/);
+  assert.match(provider, /getInvestorMe\(\{ timeoutMs: 8000 \}\)/);
+  assert.match(provider, /meta: \{ preferences \}/);
+  assert.match(provider, /profileResponse: response/);
+  assert.match(provider, /record\(response\)\.profileResponse \?\? response/);
   assert.match(settings, /testID="app-preferences-syncing"/);
   assert.match(settings, /title="Retry loading preferences"/);
   assert.doesNotMatch(settings, /disabled=\{appPreferences\.isSyncing/);

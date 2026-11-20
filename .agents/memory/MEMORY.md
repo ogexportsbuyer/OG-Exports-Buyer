@@ -44,3 +44,4 @@
 - [Expo pnpm injected peers](expo-pnpm-injected-peers.md) — after an SDK bumps React, refresh pnpm injected workspaces before changing shared catalog versions or overrides.
 - [Expo store versioning](expo-store-versioning.md) — EAS reads the user-facing release version from shared `expo.version`; changing it affects both platforms.
 - [Buyer marketplace flow](buyer-marketplace-flow.md) — keep buyer browsing public in the same app, gate cart/account actions with sign-in, and preserve role-based investor tabs.
+- [Buyer push and preferences](buyer-push-delivery.md) — keep buyer settings and device notifications separate from investor-only identity and push callbacks.

@@ -1034,25 +1034,25 @@ export interface InvestorNotificationsResponse {
   [key: string]: unknown;
  }
 
-export type InvestorPushTokenRegistrationPlatform = typeof InvestorPushTokenRegistrationPlatform[keyof typeof InvestorPushTokenRegistrationPlatform];
+export type DevicePushTokenRegistrationPlatform = typeof DevicePushTokenRegistrationPlatform[keyof typeof DevicePushTokenRegistrationPlatform];
 
 
-export const InvestorPushTokenRegistrationPlatform = {
+export const DevicePushTokenRegistrationPlatform = {
   ios: 'ios',
   android: 'android',
 } as const;
 
-export interface InvestorPushTokenRegistration {
+export interface DevicePushTokenRegistration {
   /**
      * @minLength 20
      * @maxLength 256
      * @pattern ^Expo(nent)?PushToken\[[A-Za-z0-9._-]+\]$
      */
   expo_push_token: string;
-  platform: InvestorPushTokenRegistrationPlatform;
+  platform: DevicePushTokenRegistrationPlatform;
 }
 
-export interface InvestorPushTokenRevocation {
+export interface DevicePushTokenRevocation {
   /**
      * @minLength 20
      * @maxLength 256
@@ -1120,6 +1120,33 @@ export interface InvestorNotificationPushEvent {
   href: string;
 }
 
+export type InvestorProfileUpdatePreferencesLanguage = typeof InvestorProfileUpdatePreferencesLanguage[keyof typeof InvestorProfileUpdatePreferencesLanguage];
+
+
+export const InvestorProfileUpdatePreferencesLanguage = {
+  en: 'en',
+  ur: 'ur',
+  ar: 'ar',
+} as const;
+
+export type InvestorProfileUpdatePreferencesAppearance = typeof InvestorProfileUpdatePreferencesAppearance[keyof typeof InvestorProfileUpdatePreferencesAppearance];
+
+
+export const InvestorProfileUpdatePreferencesAppearance = {
+  light: 'light',
+  dark: 'dark',
+  system: 'system',
+} as const;
+
+export type InvestorProfileUpdatePreferencesTheme = typeof InvestorProfileUpdatePreferencesTheme[keyof typeof InvestorProfileUpdatePreferencesTheme];
+
+
+export const InvestorProfileUpdatePreferencesTheme = {
+  light: 'light',
+  dark: 'dark',
+  system: 'system',
+} as const;
+
 /**
  * Selecting a currency converts the actual wallet balance and changes future wallet operations.
  */
@@ -1134,10 +1161,15 @@ export const InvestorProfileUpdatePreferencesCurrency = {
 } as const;
 
 export type InvestorProfileUpdatePreferences = {
+  language?: InvestorProfileUpdatePreferencesLanguage;
+  appearance?: InvestorProfileUpdatePreferencesAppearance;
+  theme?: InvestorProfileUpdatePreferencesTheme;
   /** Selecting a currency converts the actual wallet balance and changes future wallet operations. */
   currency?: InvestorProfileUpdatePreferencesCurrency;
   [key: string]: unknown;
  };
+
+export type InvestorProfileUpdateMeta = { [key: string]: unknown };
 
 export interface InvestorProfileUpdate {
   /**
@@ -1156,6 +1188,7 @@ export interface InvestorProfileUpdate {
      */
   country?: string;
   preferences?: InvestorProfileUpdatePreferences;
+  meta?: InvestorProfileUpdateMeta;
 }
 
 /**

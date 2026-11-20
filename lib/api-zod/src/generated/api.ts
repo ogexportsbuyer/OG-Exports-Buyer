@@ -381,6 +381,41 @@ export const UpdateBuyerCompanyPreferencesResponse = zod.record(zod.string(), zo
 
 
 /**
+ * @summary Register a buyer device for push notifications
+ */
+export const registerBuyerPushTokenBodyExpoPushTokenMin = 20;
+export const registerBuyerPushTokenBodyExpoPushTokenMax = 256;
+
+
+export const registerBuyerPushTokenBodyExpoPushTokenRegExp = new RegExp('^Expo(nent)?PushToken\\[[A-Za-z0-9._-]+\\]$');
+
+
+export const RegisterBuyerPushTokenBody = zod.object({
+  "expo_push_token": zod.string().min(registerBuyerPushTokenBodyExpoPushTokenMin).max(registerBuyerPushTokenBodyExpoPushTokenMax).regex(registerBuyerPushTokenBodyExpoPushTokenRegExp),
+  "platform": zod.enum(['ios', 'android'])
+})
+
+export const RegisterBuyerPushTokenResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Disable push notifications for a buyer device
+ */
+export const revokeBuyerPushTokenBodyExpoPushTokenMin = 20;
+export const revokeBuyerPushTokenBodyExpoPushTokenMax = 256;
+
+
+export const revokeBuyerPushTokenBodyExpoPushTokenRegExp = new RegExp('^Expo(nent)?PushToken\\[[A-Za-z0-9._-]+\\]$');
+
+
+export const RevokeBuyerPushTokenBody = zod.object({
+  "expo_push_token": zod.string().min(revokeBuyerPushTokenBodyExpoPushTokenMin).max(revokeBuyerPushTokenBodyExpoPushTokenMax).regex(revokeBuyerPushTokenBodyExpoPushTokenRegExp)
+})
+
+export const RevokeBuyerPushTokenResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
  * @summary List buyer company contacts
  */
 export const GetBuyerCompanyContactsResponse = zod.record(zod.string(), zod.unknown())
@@ -553,8 +588,12 @@ export const UpdateInvestorMeBody = zod.object({
   "mobile": zod.string().max(updateInvestorMeBodyMobileMax).optional().describe('Optional mobile number with country calling code. This number is not verified by SMS.'),
   "country": zod.string().max(updateInvestorMeBodyCountryMax).optional().describe('Optional country or region.'),
   "preferences": zod.object({
+  "language": zod.enum(['en', 'ur', 'ar']).optional(),
+  "appearance": zod.enum(['light', 'dark', 'system']).optional(),
+  "theme": zod.enum(['light', 'dark', 'system']).optional(),
   "currency": zod.enum(['USD', 'PKR', 'EUR', 'GBP']).optional().describe('Selecting a currency converts the actual wallet balance and changes future wallet operations.')
-}).optional()
+}).optional(),
+  "meta": zod.record(zod.string(), zod.unknown()).optional()
 })
 
 export const UpdateInvestorMeResponse = zod.record(zod.string(), zod.unknown())
@@ -1878,6 +1917,12 @@ export const GetInvestorWalletTransactionResponse = zod.object({
  * @summary Get supported currency exchange rates
  */
 export const GetInvestorExchangeRatesResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Get shared display-currency exchange rates
+ */
+export const GetExchangeRatesResponse = zod.record(zod.string(), zod.unknown())
 
 
 /**

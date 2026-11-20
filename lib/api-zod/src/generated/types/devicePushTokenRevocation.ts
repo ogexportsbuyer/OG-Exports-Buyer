@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface InvestorPushTokenRevocation {
+export interface DevicePushTokenRevocation {
   /**
      * @minLength 20
      * @maxLength 256

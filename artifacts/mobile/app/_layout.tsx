@@ -195,6 +195,20 @@ function RootLayoutNav() {
         <Stack.Screen name="buyer-checkout" options={{ title: t('Checkout') }} />
         <Stack.Screen name="buyer-order/[id]" options={{ title: t('Order details') }} />
         <Stack.Screen name="buyer-quotation/[id]" options={{ title: t('Quotation') }} />
+        <Stack.Screen name="buyer-overview" options={{ title: t('Executive dashboard') }} />
+        <Stack.Screen name="buyer-analytics" options={{ title: t('Analytics') }} />
+        <Stack.Screen name="buyer-profile-details" options={{ title: t('My profile') }} />
+        <Stack.Screen name="buyer-company" options={{ title: t('Company profile') }} />
+        <Stack.Screen name="buyer-security" options={{ title: t('Security & devices') }} />
+        <Stack.Screen name="buyer-notifications" options={{ title: t('Notifications') }} />
+        <Stack.Screen name="buyer-system-settings" options={{ title: t('System settings') }} />
+        <Stack.Screen name="buyer-repeat-orders" options={{ title: t('Repeat orders') }} />
+        <Stack.Screen name="buyer-rfq" options={{ title: t('Request a quotation') }} />
+        <Stack.Screen name="buyer-rfq/[id]" options={{ title: t('Quotation request') }} />
+        <Stack.Screen name="buyer-shipments" options={{ title: t('Shipment tracking') }} />
+        <Stack.Screen name="buyer-shipment/[id]" options={{ title: t('Shipment details') }} />
+        <Stack.Screen name="buyer-documents" options={{ title: t('Trade documents') }} />
+        <Stack.Screen name="buyer-trade-finance" options={{ title: t('Trade finance') }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
         <Stack.Screen name="project/[id]" options={{
