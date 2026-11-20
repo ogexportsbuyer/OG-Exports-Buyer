@@ -115,7 +115,7 @@ export default function BuyerHome() {
         categories={categories}
         selectedOrigin={selectedOrigin}
         onSelectOrigin={setSelectedOrigin}
-        onBrowse={() => browseProducts()}
+        onBrowse={browseProducts}
         onSelectCategory={category => router.push({ pathname: '/(buyer-tabs)/buyer-products', params: { category } })}
         productsLoading={productsQuery.isLoading}
         productsError={productsQuery.isError}

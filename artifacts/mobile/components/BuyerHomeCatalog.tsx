@@ -16,7 +16,7 @@ type Props = {
   categories: string[];
   selectedOrigin: string;
   onSelectOrigin: (origin: string) => void;
-  onBrowse: () => void;
+  onBrowse: (searchTerm?: string) => void;
   onSelectCategory: (category: string) => void;
   productsLoading: boolean;
   productsError: boolean;
@@ -200,7 +200,7 @@ export default function BuyerHomeCatalog({
         <Pressable
           testID="buyer-home-products-all"
           accessibilityRole="button"
-          onPress={onBrowse}
+          onPress={() => onBrowse()}
           style={styles.textAction}
         >
           <Text style={{ color: colors.foreground, fontSize: 10, fontWeight: '700' }}>Browse all</Text>
@@ -306,7 +306,7 @@ export default function BuyerHomeCatalog({
         <Pressable
           testID="buyer-home-categories-all"
           accessibilityRole="button"
-          onPress={onBrowse}
+          onPress={() => onBrowse()}
           style={styles.textAction}
         >
           <Text style={{ color: colors.foreground, fontSize: 10, fontWeight: '700' }}>See all</Text>

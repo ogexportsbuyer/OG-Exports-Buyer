@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Action, Card, EmptyState, ErrorState, Field, LoadingCard, Screen } from '@/components/InvestorUI';
+import { BuyerAuthGate } from '@/components/BuyerAuthGate';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import {
@@ -37,8 +38,8 @@ export default function BuyerCheckout() {
   const queryClient = useQueryClient();
   const { token } = useAuth();
   const cartQuery = useGetBuyerCart({ query: { queryKey: getGetBuyerCartQueryKey(), enabled: !!token, staleTime: 10_000 } });
-  const countriesQuery = useGetCountries({ query: { queryKey: getGetCountriesQueryKey(), staleTime: 300_000 } });
-  const incotermsQuery = useGetIncoterms({ query: { queryKey: getGetIncotermsQueryKey(), staleTime: 300_000 } });
+  const countriesQuery = useGetCountries({ query: { queryKey: getGetCountriesQueryKey(), enabled: !!token, staleTime: 300_000 } });
+  const incotermsQuery = useGetIncoterms({ query: { queryKey: getGetIncotermsQueryKey(), enabled: !!token, staleTime: 300_000 } });
   const countries = rowsFromResponse(countriesQuery.data).filter(country => (amount(country, ['ports_count']) ?? 0) > 0);
   const [countryId, setCountryId] = useState<number | null>(null);
   const [portId, setPortId] = useState<number | null>(null);
@@ -60,6 +61,16 @@ export default function BuyerCheckout() {
   const selectedCountry = countries.find(country => amount(country, ['id']) === countryId);
   const selectedPort = ports.find(port => amount(port, ['id']) === portId);
   const selectedTerm = terms.find(term => first(term, ['code', 'name']) === incoterm);
+
+  if (!token) {
+    return (
+      <BuyerAuthGate
+        title="Checkout"
+        body="Sign in to confirm your destination and submit an order or quotation request."
+        returnTo="/buyer-checkout"
+      />
+    );
+  }
 
   function selectCountry(country: ReturnType<typeof record>) {
     const id = amount(country, ['id']);
@@ -90,16 +101,21 @@ export default function BuyerCheckout() {
     try {
       if (incoterm.trim().toUpperCase() === 'FOB') {
         await placeOrder.mutateAsync({ data });
-        await queryClient.invalidateQueries({ queryKey: getGetBuyerOrdersQueryKey({ per_page: 50 }) });
-        await queryClient.invalidateQueries({ queryKey: getGetBuyerOrdersQueryKey() });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: getGetBuyerOrdersQueryKey({ per_page: 50 }) }),
+          queryClient.invalidateQueries({ queryKey: getGetBuyerOrdersQueryKey() }),
+          queryClient.invalidateQueries({ queryKey: getGetBuyerCartQueryKey() }),
+        ]);
         router.replace({ pathname: '/(buyer-tabs)/buyer-orders', params: { view: 'orders' } });
       } else {
         await requestQuote.mutateAsync({ data });
-        await queryClient.invalidateQueries({ queryKey: getGetBuyerRfqsQueryKey({ per_page: 50 }) });
-        await queryClient.invalidateQueries({ queryKey: getGetBuyerRfqsQueryKey() });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: getGetBuyerRfqsQueryKey({ per_page: 50 }) }),
+          queryClient.invalidateQueries({ queryKey: getGetBuyerRfqsQueryKey() }),
+          queryClient.invalidateQueries({ queryKey: getGetBuyerCartQueryKey() }),
+        ]);
         router.replace({ pathname: '/(buyer-tabs)/buyer-orders', params: { view: 'rfqs' } });
       }
-      await queryClient.invalidateQueries({ queryKey: getGetBuyerCartQueryKey() });
     } catch (err) {
       setError(messageOf(err));
     }

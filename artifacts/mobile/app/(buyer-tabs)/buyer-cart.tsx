@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
 import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
@@ -10,9 +10,32 @@ import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { useGetBuyerCart, useRemoveBuyerCartItem, useUpdateBuyerCartItem, getGetBuyerCartQueryKey } from '@workspace/api-client-react';
 import { amount, first, list, messageOf, record } from '@/lib/data';
+import { buyerCartItemMinimumQuantity, nextBuyerCartQuantity } from '@/lib/buyer-cart-flow';
 
-function money(value: number): string {
-  return `USD ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+function money(value: number, currency = 'USD'): string {
+  const code = /^[A-Z]{3}$/.test(currency) ? currency : 'USD';
+  return `${code} ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function CartThumbnail({ uri, label }: { uri: string; label: string }) {
+  const colors = useColors();
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <View style={{ width: 78, height: 78, borderRadius: 13, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }}>
+      {uri && !failed ? (
+        <Image
+          source={{ uri }}
+          accessibilityLabel={`${label} product image`}
+          resizeMode="cover"
+          onError={() => setFailed(true)}
+          style={{ width: '100%', height: '100%' }}
+        />
+      ) : (
+        <Feather name="package" size={25} color={colors.primary} />
+      )}
+    </View>
+  );
 }
 
 export default function BuyerCart() {
@@ -24,6 +47,7 @@ export default function BuyerCart() {
   const removeItem = useRemoveBuyerCartItem();
   const cart = record(record(cartQuery.data).data);
   const items = list(cart.items);
+  const cartCurrency = first(cart, ['currency', 'currency_code'], 'USD').toUpperCase();
   const [actionError, setActionError] = useState('');
   const total = items.reduce((sum, item) => {
     const quantity = amount(item, ['qty']) ?? 0;
@@ -34,9 +58,10 @@ export default function BuyerCart() {
 
   async function changeQuantity(item: ReturnType<typeof record>, delta: number) {
     const id = amount(item, ['id']);
-    const currentQuantity = amount(item, ['qty']) ?? 1;
+    const minimumQuantity = buyerCartItemMinimumQuantity(item);
+    const currentQuantity = amount(item, ['qty']) ?? minimumQuantity;
     if (!id) return;
-    const nextQuantity = Math.max(1, Math.floor(currentQuantity + delta));
+    const nextQuantity = nextBuyerCartQuantity(currentQuantity, delta, minimumQuantity);
     setActionError('');
     try {
       await updateItem.mutateAsync({ item: id, data: { qty: nextQuantity } });
@@ -67,7 +92,7 @@ export default function BuyerCart() {
   }
 
   return (
-    <Screen title="Cart" subtitle={`${items.length} ${items.length === 1 ? 'product' : 'products'} in your cart`} refreshable>
+    <Screen title="Your cart" subtitle={`${items.length} ${items.length === 1 ? 'product' : 'products'} in your cart`} refreshable>
       {actionError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, marginBottom: 12 }}>{actionError}</Text> : null}
       {cartQuery.isLoading ? <LoadingCard label="Loading your cart…" /> : null}
       {cartQuery.isError ? <ErrorState message="Your cart could not be loaded." error={cartQuery.error} onRetry={() => void cartQuery.refetch()} /> : null}
@@ -78,34 +103,39 @@ export default function BuyerCart() {
       {!cartQuery.isLoading && !cartQuery.isError && items.map((item, index) => {
         const product = record(item.product);
         const itemId = first(item, ['id'], `item-${index}`);
-        const quantity = amount(item, ['qty']) ?? 1;
+        const minimumQuantity = buyerCartItemMinimumQuantity(item);
+        const quantity = amount(item, ['qty']) ?? minimumQuantity;
         const unitPrice = amount(item, ['unit_price']) ?? 0;
         const name = first(product, ['name'], first(item, ['product_name'], 'Export product'));
+        const image = first(product, ['image_url', 'imageUrl']);
         const subtotal = quantity * unitPrice;
         return (
           <Card key={itemId} testID={`buyer-cart-item-${itemId}`} style={{ padding: 16, marginBottom: 12 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+              <CartThumbnail uri={image} label={name} />
               <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '700' }}>{name}</Text>
-                <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 5 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 5 }}>
+                  <Text style={{ flex: 1, color: colors.foreground, fontSize: 14, lineHeight: 19, fontWeight: '700' }}>{name}</Text>
+                  <Pressable
+                    testID={`buyer-cart-remove-${itemId}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${name} from cart`}
+                    disabled={mutationPending}
+                    onPress={() => void deleteItem(item)}
+                    hitSlop={8}
+                    style={{ width: 30, height: 30, alignItems: 'center', justifyContent: 'center', opacity: mutationPending ? 0.5 : 1 }}
+                  >
+                    <Feather name="trash-2" size={16} color={colors.destructive} />
+                  </Pressable>
+                </View>
+                <Text style={{ color: colors.mutedForeground, fontSize: 11, marginTop: 3 }}>
                   {first(product, ['origin'], 'Origin not specified')}
                   {first(product, ['sku']) ? ` · ${first(product, ['sku'])}` : ''}
                 </Text>
-                <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '700', marginTop: 8 }}>
-                  {unitPrice > 0 ? money(unitPrice) : 'Price confirmed by OG Exports'}
+                <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700', marginTop: 7 }}>
+                  {unitPrice > 0 ? `${money(unitPrice, cartCurrency)} per unit` : 'Price confirmed by OG Exports'}
                 </Text>
               </View>
-              <Pressable
-                testID={`buyer-cart-remove-${itemId}`}
-                accessibilityRole="button"
-                accessibilityLabel={`Remove ${name} from cart`}
-                disabled={mutationPending}
-                onPress={() => void deleteItem(item)}
-                hitSlop={8}
-                style={{ minWidth: 38, minHeight: 38, alignItems: 'center', justifyContent: 'center', opacity: mutationPending ? 0.5 : 1 }}
-              >
-                <Feather name="trash-2" size={17} color={colors.destructive} />
-              </Pressable>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -113,9 +143,9 @@ export default function BuyerCart() {
                   testID={`buyer-cart-decrease-${itemId}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Decrease ${name} quantity`}
-                  disabled={mutationPending || quantity <= 1}
+                  disabled={mutationPending || quantity <= minimumQuantity}
                   onPress={() => void changeQuantity(item, -1)}
-                  style={{ width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: quantity <= 1 ? 0.45 : 1 }}
+                  style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: quantity <= minimumQuantity ? 0.45 : 1 }}
                 >
                   <Feather name="minus" size={14} color={colors.foreground} />
                 </Pressable>
@@ -126,15 +156,16 @@ export default function BuyerCart() {
                   accessibilityLabel={`Increase ${name} quantity`}
                   disabled={mutationPending}
                   onPress={() => void changeQuantity(item, 1)}
-                  style={{ width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}
+                  style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: mutationPending ? 0.5 : 1 }}
                 >
                   <Feather name="plus" size={14} color={colors.foreground} />
                 </Pressable>
+                <Text style={{ color: colors.mutedForeground, fontSize: 9, marginLeft: 2 }}>MOQ {minimumQuantity}</Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={{ color: colors.mutedForeground, fontSize: 10, textTransform: 'uppercase' }}>Line total</Text>
                 <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '700', marginTop: 3 }}>
-                  {subtotal > 0 ? money(subtotal) : 'Quote required'}
+                  {subtotal > 0 ? money(subtotal, cartCurrency) : 'Quote required'}
                 </Text>
               </View>
             </View>
@@ -146,8 +177,13 @@ export default function BuyerCart() {
         <Card style={{ padding: 17, marginTop: 4 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14 }}>
             <Text style={{ color: colors.mutedForeground }}>Estimated subtotal</Text>
-            <Text style={{ color: colors.foreground, fontWeight: '700' }}>{total > 0 ? money(total) : 'Final price by quotation'}</Text>
+            <Text style={{ color: colors.foreground, fontWeight: '700' }}>{total > 0 ? money(total, cartCurrency) : 'Final price by quotation'}</Text>
           </View>
+          {items.some(item => (amount(item, ['unit_price']) ?? 0) <= 0) ? (
+            <Text style={{ color: colors.accent, fontSize: 11, fontWeight: '600', marginBottom: 10 }}>
+              Some items need a confirmed quotation.
+            </Text>
+          ) : null}
           <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginBottom: 14 }}>
             Final pricing, freight and payment instructions are confirmed by OG Exports. No payment is taken in this cart.
           </Text>

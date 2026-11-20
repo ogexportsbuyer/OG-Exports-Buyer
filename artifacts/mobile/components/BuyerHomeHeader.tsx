@@ -329,7 +329,7 @@ export default function BuyerHomeHeader({
       <View style={styles.sectionHeader}>
         <View>
           <Text style={[styles.eyebrow, { color: colors.accent }]}>The export edit</Text>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>A few to begin with</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{heroProducts.length ? 'A few to begin with' : 'Start your search'}</Text>
         </View>
         <Pressable
           testID="buyer-home-featured-all"
@@ -421,7 +421,38 @@ export default function BuyerHomeHeader({
             </View>
           ) : null}
         </>
-      ) : null}
+      ) : (
+        <Pressable
+          testID="buyer-home-featured-fallback"
+          accessibilityRole="button"
+          accessibilityLabel="Browse products published by OG Exports"
+          onPress={() => onBrowse()}
+          style={({ pressed }) => [styles.featureCard, {
+            width: heroCardWidth,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 15,
+            paddingHorizontal: 17,
+            backgroundColor: colors.buttonBackground,
+            opacity: pressed ? 0.88 : 1,
+          }]}
+        >
+          <View style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 22, borderWidth: 1, borderColor: colors.glassBorder, backgroundColor: colors.glassFill }}>
+            <Feather name="package" size={20} color={colors.accent} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.featureCategory, { color: colors.accent }]}>OG EXPORTS</Text>
+            <Text style={[styles.featureName, { color: colors.buttonForeground }]}>Explore the catalogue</Text>
+            <Text style={{ color: colors.buttonForeground, fontSize: 10, lineHeight: 15, marginTop: 4 }}>
+              Browse products currently published by OG Exports.
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 10 }}>
+              <Text style={{ color: colors.buttonForeground, fontSize: 10, fontWeight: '700' }}>Browse products</Text>
+              <Feather name="arrow-right" size={13} color={colors.accent} />
+            </View>
+          </View>
+        </Pressable>
+      )}
     </>
   );
 }
