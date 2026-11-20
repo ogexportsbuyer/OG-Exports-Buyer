@@ -20,3 +20,9 @@ Use orange instead of gold only for buyer-app foreground accents such as text, i
 **Why:** the user requested orange accents, then clarified that the existing backgrounds must remain unchanged.
 
 **How to apply:** Use a contrast-safe orange on foreground elements while leaving background/surface tokens and the official logo unchanged.
+
+The buyer home should follow the user's marketplace reference: a centered swipeable product slide with neighboring-card peeks and real catalog thumbnails, origin chips, recommendations, then a two-column image-led product grid. Do not invent offers, prices, or supplier metrics.
+
+**Why:** the user asked for the same top slider presentation and product cards below it.
+
+**How to apply:** Build the home from live catalog data and keep the reference's visual hierarchy without copying another marketplace's brand or fabricating content.

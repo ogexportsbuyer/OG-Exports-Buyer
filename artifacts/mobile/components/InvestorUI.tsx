@@ -40,13 +40,14 @@ function actionFeedback() {
   motionHaptic('action');
 }
 
-export function Screen({ title, subtitle, children, action, scrollable = true, refreshable = false }: {
+export function Screen({ title, subtitle, children, action, scrollable = true, refreshable = false, hideHeader = false }: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
   action?: React.ReactNode;
   scrollable?: boolean;
   refreshable?: boolean;
+  hideHeader?: boolean;
 }) {
   const colors = useColors();
   const tabBarBehavior = useTabBarBehavior();
@@ -96,7 +97,7 @@ export function Screen({ title, subtitle, children, action, scrollable = true, r
         paddingHorizontal: 20,
       }} onTouchStart={tabBarBehavior.reveal}>
         <BrandBackdrop active={screenFocused} />
-        {header}
+        {!hideHeader ? header : null}
         <MotionReveal delay={35} style={{ flex: 1 }} testID="screen-content-reveal">{children}</MotionReveal>
       </View>
     );
@@ -120,7 +121,7 @@ export function Screen({ title, subtitle, children, action, scrollable = true, r
         progressBackgroundColor={colors.card}
       /> : undefined}
       contentContainerStyle={{ paddingTop: topPadding, paddingBottom: Platform.OS === 'web' ? 110 : insets.bottom + 104, paddingHorizontal: 20 }}>
-      {header}
+      {!hideHeader ? header : null}
       <MotionReveal delay={35} testID="screen-content-reveal">{children}</MotionReveal>
     </KeyboardAwareScrollViewCompat>
     </View>

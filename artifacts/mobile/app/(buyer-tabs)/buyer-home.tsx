@@ -2,7 +2,6 @@ import React, { useMemo, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/components/LocalizedText';
 import { Card, EmptyState, ErrorState, LoadingCard, Screen, Section, Status } from '@/components/InvestorUI';
 import { useAuth } from '@/context/AuthContext';
@@ -10,29 +9,6 @@ import { useColors } from '@/hooks/useColors';
 import { useGetBuyerOrders, useGetProductCategories, useGetProducts, getGetBuyerOrdersQueryKey, getGetProductCategoriesQueryKey, getGetProductsQueryKey } from '@workspace/api-client-react';
 import { first, record } from '@/lib/data';
 import { categoryName, displayOrderNumber, displayPrice, rowsFromResponse } from '@/lib/buyer-data';
-
-type HomeIconName = keyof typeof Feather.glyphMap;
-
-function HomeIconButton({ icon, label, onPress, testID }: {
-  icon: HomeIconName;
-  label: string;
-  onPress: () => void;
-  testID: string;
-}) {
-  const colors = useColors();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      testID={testID}
-      onPress={onPress}
-      hitSlop={8}
-      style={({ pressed }) => ({ minWidth: 42, minHeight: 42, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.68 : 1 })}
-    >
-      <Feather name={icon} size={20} color={colors.foreground} />
-    </Pressable>
-  );
-}
 
 export default function BuyerHome() {
   const { ready, token, apiOrigin } = useAuth();
@@ -62,6 +38,7 @@ export default function BuyerHome() {
   const heroCardWidth = Math.min(328, Math.max(windowWidth * 0.74, 270));
   const heroCardGap = 12;
   const heroSideInset = Math.max((windowWidth - heroCardWidth) / 2, 20);
+  const productGridCardWidth = Math.min(224, (windowWidth - 50) / 2);
 
   function browseProducts(searchTerm = '') {
     const normalized = searchTerm.trim();
@@ -84,15 +61,9 @@ export default function BuyerHome() {
 
   return (
     <Screen
-      title="OG Exports"
-      subtitle="Pakistan export marketplace"
+      title=""
+      hideHeader
       refreshable
-      action={
-        <View style={{ flexDirection: 'row', marginTop: -7, marginRight: -8 }}>
-          <HomeIconButton icon="message-circle" label="Messages" testID="buyer-home-messages" onPress={() => router.push('/(buyer-tabs)/buyer-messages')} />
-          <HomeIconButton icon="shopping-cart" label="Cart" testID="buyer-home-cart" onPress={() => router.push('/(buyer-tabs)/buyer-cart')} />
-        </View>
-      }
     >
       <ScrollView
         horizontal
@@ -166,21 +137,13 @@ export default function BuyerHome() {
       >
         <Feather name="globe" size={16} color={colors.primary} />
         <Text style={{ flex: 1, color: colors.foreground, fontSize: 11, fontWeight: '600' }}>
-          Approved products from Pakistan
+          Explore export-ready products from Pakistan
         </Text>
         <Feather name="arrow-right" size={15} color={colors.primary} />
       </Pressable>
 
       {heroProducts.length > 0 ? (
         <View style={{ marginBottom: 5 }}>
-          <Section
-            title="Featured export picks"
-            right={
-              <Pressable accessibilityRole="button" onPress={() => browseProducts()}>
-                <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>See all</Text>
-              </Pressable>
-            }
-          />
           <ScrollView
             ref={featuredScrollRef}
             horizontal
@@ -197,83 +160,75 @@ export default function BuyerHome() {
             contentContainerStyle={{ gap: heroCardGap, paddingHorizontal: heroSideInset, paddingTop: 3, paddingBottom: 9 }}
           >
             {heroProducts.map((product, index) => {
-              const image = first(product, ['image_url', 'imageUrl']);
               const name = first(product, ['name'], 'Export product');
               const category = categoryName(product);
               const origin = first(product, ['origin']);
-              const minOrder = first(product, ['moq', 'min_order']);
-              const approved = first(product, ['status']).toLowerCase() === 'approved';
+              const galleryProducts = heroProducts.map((_, offset) => heroProducts[(index + offset) % heroProducts.length]);
               return (
-                <Pressable
+                <View
                   key={first(product, ['id'], String(index))}
                   testID={`buyer-home-featured-${first(product, ['id'], String(index))}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${name}, ${category}${origin ? `, origin ${origin}` : ''}, ${displayPrice(product)}`}
-                  onPress={() => browseProducts(name)}
-                  style={({ pressed }) => ({ width: heroCardWidth, opacity: pressed ? 0.9 : 1 })}
+                  style={{ width: heroCardWidth }}
                 >
-                  <Card style={{ width: heroCardWidth, padding: 0, marginBottom: 0, overflow: 'hidden', borderRadius: 20 }}>
-                    <View style={{ height: 184, backgroundColor: colors.primary }}>
-                      {image ? (
-                        <Image source={{ uri: image }} accessibilityLabel={`${name} product image`} resizeMode="cover" style={{ position: 'absolute', width: '100%', height: '100%' }} />
-                      ) : (
-                        <View style={{ ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary }}>
-                          <Feather name="package" size={38} color={colors.primaryForeground} />
-                        </View>
-                      )}
-                      <LinearGradient
-                        pointerEvents="none"
-                        colors={['rgba(6, 32, 32, 0.04)', 'rgba(6, 32, 32, 0.28)', 'rgba(6, 32, 32, 0.88)']}
-                        locations={[0, 0.48, 1]}
-                        style={StyleSheet.absoluteFill}
-                      />
-                      <View style={{ position: 'absolute', top: 12, left: 12, right: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                        <View style={{ paddingHorizontal: 9, paddingVertical: 5, borderRadius: 20, backgroundColor: 'rgba(8, 39, 39, 0.74)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.26)' }}>
-                          <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 9, lineHeight: 12, fontWeight: '700', letterSpacing: 0.5 }}>
+                  <Card style={{ width: heroCardWidth, padding: 13, marginBottom: 0, overflow: 'hidden', borderRadius: 18, backgroundColor: colors.primary, borderColor: colors.primary }}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Browse ${name}, ${category}${origin ? `, origin ${origin}` : ''}`}
+                      onPress={() => browseProducts(name)}
+                      style={({ pressed }) => ({ opacity: pressed ? 0.84 : 1 })}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <View style={{ flex: 1 }}>
+                          <Text numberOfLines={1} style={{ color: 'rgba(255,255,255,0.76)', fontSize: 9, fontWeight: '700', letterSpacing: 0.6 }}>
                             {category.toUpperCase()}
                           </Text>
-                        </View>
-                        {approved ? (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 20, backgroundColor: 'rgba(8, 39, 39, 0.74)' }}>
-                            <Feather name="check-circle" size={11} color={colors.statusSuccess} />
-                            <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '700' }}>OG approved</Text>
-                          </View>
-                        ) : null}
-                      </View>
-                      <View style={{ position: 'absolute', left: 15, right: 15, bottom: 14 }}>
-                        <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '800', letterSpacing: 1.1, marginBottom: 5 }}>
-                          FEATURED EXPORT
-                        </Text>
-                        <Text numberOfLines={2} style={{ color: '#FFFFFF', fontSize: 19, lineHeight: 24, fontWeight: '800' }}>
-                          {name}
-                        </Text>
-                        {origin ? (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 5 }}>
-                            <Feather name="map-pin" size={11} color="#FFFFFF" />
-                            <Text style={{ color: 'rgba(255,255,255,0.92)', fontSize: 10, fontWeight: '600' }}>Origin: {origin}</Text>
-                          </View>
-                        ) : null}
-                      </View>
-                    </View>
-                    <View style={{ minHeight: 62, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: colors.card }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '700', letterSpacing: 0.5 }}>FOB PRICE</Text>
-                        <Text numberOfLines={1} style={{ color: colors.primary, fontSize: 13, fontWeight: '800', marginTop: 3 }}>
-                          {displayPrice(product)}
-                        </Text>
-                      </View>
-                      {minOrder ? (
-                        <View style={{ flex: 1.1, alignItems: 'flex-end' }}>
-                          <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '700', letterSpacing: 0.5 }}>MINIMUM ORDER</Text>
-                          <Text numberOfLines={1} style={{ color: colors.foreground, fontSize: 10, fontWeight: '600', marginTop: 3 }}>
-                            {minOrder}
+                          <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 14, lineHeight: 19, fontWeight: '800', marginTop: 2 }}>
+                            {name}
                           </Text>
+                          {origin ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                              <Feather name="map-pin" size={10} color="rgba(255,255,255,0.82)" />
+                              <Text style={{ color: 'rgba(255,255,255,0.82)', fontSize: 9, fontWeight: '600' }}>{origin}</Text>
+                            </View>
+                          ) : null}
                         </View>
-                      ) : null}
-                      <Feather name="arrow-up-right" size={17} color={colors.accent} />
+                        <View style={{ width: 30, height: 30, alignItems: 'center', justifyContent: 'center', borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                          <Feather name="arrow-up-right" size={16} color="#FFFFFF" />
+                        </View>
+                      </View>
+                    </Pressable>
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 11 }}>
+                      {galleryProducts.map((galleryProduct, tileIndex) => {
+                        const tileName = first(galleryProduct, ['name'], 'Export product');
+                        const tileImage = first(galleryProduct, ['image_url', 'imageUrl']);
+                        return (
+                          <Pressable
+                            key={first(galleryProduct, ['id'], `tile-${tileIndex}`)}
+                            testID={`buyer-home-feature-tile-${index}-${tileIndex}`}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Browse ${tileName}`}
+                            onPress={() => browseProducts(tileName)}
+                            style={({ pressed }) => ({ flex: 1, height: 72, overflow: 'hidden', borderRadius: 9, borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)', backgroundColor: colors.lightGreen, opacity: pressed ? 0.78 : 1 })}
+                          >
+                            {tileImage ? (
+                              <Image source={{ uri: tileImage }} accessibilityLabel={`${tileName} product image`} resizeMode="cover" style={{ width: '100%', height: '100%' }} />
+                            ) : (
+                              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                                <Feather name="package" size={19} color={colors.primary} />
+                              </View>
+                            )}
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 9 }}>
+                      <Text numberOfLines={1} style={{ flex: 1, color: 'rgba(255,255,255,0.8)', fontSize: 9 }}>
+                        {displayPrice(product)} · Min. {first(product, ['moq', 'min_order'], 'order varies')}
+                      </Text>
+                        <Feather name="chevron-right" size={14} color={colors.primaryForeground} />
                     </View>
                   </Card>
-                </Pressable>
+                </View>
               );
             })}
           </ScrollView>
@@ -298,11 +253,6 @@ export default function BuyerHome() {
         </View>
       ) : null}
 
-      <Section title="Browse by origin" right={
-        <Pressable accessibilityRole="button" onPress={() => setSelectedOrigin('Global')}>
-          <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>All origins</Text>
-        </Pressable>
-      } />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 20, paddingBottom: 10 }}>
         {originOptions.map(origin => {
           const active = selectedOrigin === origin;
@@ -335,30 +285,66 @@ export default function BuyerHome() {
       {!productsQuery.isLoading && !productsQuery.isError && products.length > 0 && filteredProducts.length === 0 ? (
         <EmptyState title={`No products from ${selectedOrigin}`} body="Choose another origin to explore the current catalogue." icon="package" />
       ) : null}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ gap: 9, paddingHorizontal: 20, paddingBottom: 11 }}>
+      <Section title="Products" right={
+        <Pressable accessibilityRole="button" onPress={() => browseProducts()}>
+          <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>View all</Text>
+        </Pressable>
+      } />
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingBottom: 10 }}>
         {filteredProducts.slice(0, 8).map((product, index) => {
           const id = first(product, ['id'], `product-${index}`);
           const image = first(product, ['image_url', 'imageUrl']);
           const name = first(product, ['name'], 'Export product');
+          const origin = first(product, ['origin'], 'Origin not specified');
+          const minimumOrder = first(product, ['moq', 'min_order']);
+          const imageHeight = Math.min(190, Math.round(productGridCardWidth * 1.04));
           return (
-            <Pressable key={id} testID={`buyer-home-product-${id}`} accessibilityRole="button" accessibilityLabel={`Browse ${name}`} onPress={() => browseProducts(name)}>
-              <Card style={{ width: 144, padding: 0, overflow: 'hidden', borderRadius: 14, marginBottom: 0 }}>
-                {image
-                  ? <Image source={{ uri: image }} accessibilityLabel={`${name} product image`} resizeMode="cover" style={{ height: 91, width: '100%', backgroundColor: colors.secondary }} />
-                  : <View style={{ height: 91, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}><Feather name="package" size={22} color={colors.mutedForeground} /></View>}
-                <View style={{ paddingHorizontal: 9, paddingTop: 7, paddingBottom: 9 }}>
-                  {record(product).featured === true ? (
-                    <Text style={{ alignSelf: 'flex-start', color: colors.accent, backgroundColor: colors.glassTintGold, overflow: 'hidden', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 3, fontSize: 8, fontWeight: '700', marginBottom: 4 }}>Featured</Text>
+            <Pressable
+              key={id}
+              testID={`buyer-home-product-${id}`}
+              accessibilityRole="button"
+              accessibilityLabel={`View ${name}, ${displayPrice(product)}, origin ${origin}`}
+              onPress={() => browseProducts(name)}
+              style={({ pressed }) => ({ width: productGridCardWidth, opacity: pressed ? 0.88 : 1 })}
+            >
+              <Card style={{ width: productGridCardWidth, padding: 0, overflow: 'hidden', borderRadius: 15, marginBottom: 0 }}>
+                {image ? (
+                  <Image source={{ uri: image }} accessibilityLabel={`${name} product image`} resizeMode="cover" style={{ height: imageHeight, width: '100%', backgroundColor: colors.secondary }} />
+                ) : (
+                  <View style={{ height: imageHeight, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
+                    <Feather name="package" size={25} color={colors.mutedForeground} />
+                  </View>
+                )}
+                <View style={{ paddingHorizontal: 10, paddingTop: 9, paddingBottom: 11 }}>
+                  <View style={{ minHeight: 17, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 5, marginBottom: 3 }}>
+                    <Text numberOfLines={1} style={{ flex: 1, color: colors.mutedForeground, fontSize: 8, fontWeight: '700', letterSpacing: 0.35 }}>
+                      {categoryName(product).toUpperCase()}
+                    </Text>
+                    {record(product).featured === true ? (
+                      <Text style={{ color: colors.accent, fontSize: 8, fontWeight: '800' }}>FEATURED</Text>
+                    ) : null}
+                  </View>
+                  <Text numberOfLines={2} style={{ minHeight: 36, color: colors.foreground, fontWeight: '700', fontSize: 12, lineHeight: 17 }}>
+                    {name}
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 5 }}>
+                    <Feather name="map-pin" size={10} color={colors.mutedForeground} />
+                    <Text numberOfLines={1} style={{ flex: 1, color: colors.mutedForeground, fontSize: 9 }}>{origin}</Text>
+                  </View>
+                  <Text numberOfLines={1} style={{ color: colors.primary, fontSize: 13, fontWeight: '800', marginTop: 7 }}>
+                    {displayPrice(product)}
+                  </Text>
+                  {minimumOrder ? (
+                    <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 9, marginTop: 4 }}>
+                      MOQ: {minimumOrder}
+                    </Text>
                   ) : null}
-                  <Text numberOfLines={2} style={{ minHeight: 28, color: colors.foreground, fontWeight: '700', fontSize: 10, lineHeight: 14 }}>{name}</Text>
-                  <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 9, marginTop: 3 }}>{first(product, ['origin'], 'Origin not specified')}</Text>
-                  <Text style={{ color: colors.primary, fontSize: 10, fontWeight: '700', marginTop: 5 }}>{displayPrice(product)}</Text>
                 </View>
               </Card>
             </Pressable>
           );
         })}
-      </ScrollView>
+      </View>
 
       <Section title="Explore by category" right={
         <Pressable accessibilityRole="button" onPress={() => browseProducts()}>
