@@ -1,4 +1,5 @@
 import { amount, first, list, record, type Json } from '@/lib/data';
+export { productMinimumQuantity } from '@/lib/buyer-cart-flow';
 
 export function rowsFromResponse(response: unknown): Json[] {
   return list(record(response).data);
@@ -7,13 +8,6 @@ export function rowsFromResponse(response: unknown): Json[] {
 export function categoryName(product: Json): string {
   const value = product.category;
   return typeof value === 'string' ? value : first(record(value), ['name'], 'General');
-}
-
-export function productMinimumQuantity(product: Json): number {
-  const label = first(product, ['moq', 'min_order'], '1');
-  const match = label.replace(/,/g, '').match(/\d+(?:\.\d+)?/);
-  const parsed = match ? Number(match[0]) : 1;
-  return Number.isFinite(parsed) && parsed > 0 ? Math.max(1, Math.ceil(parsed)) : 1;
 }
 
 export function displayPrice(product: Json): string {
