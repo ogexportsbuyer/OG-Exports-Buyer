@@ -3,7 +3,7 @@ import { Image, Pressable, ScrollView, View, useWindowDimensions, type ScrollVie
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/components/LocalizedText';
-import { Action, Card, EmptyState, ErrorState, LoadingCard, Screen, Section, Status } from '@/components/InvestorUI';
+import { Card, EmptyState, ErrorState, LoadingCard, Screen, Section, Status } from '@/components/InvestorUI';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { useGetBuyerOrders, useGetProductCategories, useGetProducts, getGetBuyerOrdersQueryKey, getGetProductCategoriesQueryKey, getGetProductsQueryKey } from '@workspace/api-client-react';
@@ -97,7 +97,7 @@ export default function BuyerHome() {
         contentContainerStyle={{ gap: 22, paddingBottom: 13, paddingRight: 12 }}
         style={{ marginBottom: 2 }}
       >
-        {['For you', 'Products', 'Categories', 'Worldwide'].map((label, index) => {
+        {['For you', 'Products', 'Categories', 'Worldwide'].map(label => {
           const active = activeTopTab === label;
           return (
             <Pressable
@@ -138,30 +138,30 @@ export default function BuyerHome() {
           accessibilityRole="button"
           accessibilityLabel="Search catalogue"
           onPress={() => browseProducts(search)}
-          style={({ pressed }) => ({ width: 44, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: colors.primary, opacity: pressed ? 0.78 : 1 })}
+          style={({ pressed }) => ({ width: 44, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: colors.accent, opacity: pressed ? 0.78 : 1 })}
         >
-          <Feather name="arrow-right" size={19} color={colors.primaryForeground} />
+          <Feather name="arrow-right" size={19} color={colors.accentForeground} />
         </Pressable>
       </View>
 
-      <Card style={{ padding: 17, marginBottom: 15, backgroundColor: colors.balanceCardStart, borderRadius: 20 }}>
+      <Card style={{ padding: 14, marginBottom: 15, backgroundColor: colors.balanceCardStart, borderRadius: 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
           <View style={{ width: 34, height: 34, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.glassTintGold }}>
             <Feather name="globe" size={17} color={colors.accentForeground} />
           </View>
           <Text style={{ color: colors.accent, fontSize: 10, fontWeight: '700', letterSpacing: 1.1 }}>OG EXPORTS · GLOBAL SOURCING</Text>
         </View>
-        <Text style={{ color: colors.balanceCardText, fontSize: 21, lineHeight: 27, fontWeight: '700', marginTop: 12 }}>
+        <Text style={{ color: colors.balanceCardText, fontSize: 19, lineHeight: 24, fontWeight: '700', marginTop: 9 }}>
           Find products for your next order.
         </Text>
-        <Text style={{ color: colors.balanceCardText, opacity: 0.82, fontSize: 12, lineHeight: 18, marginTop: 5, marginBottom: 13 }}>
+        <Text style={{ color: colors.balanceCardText, opacity: 0.82, fontSize: 11, lineHeight: 16, marginTop: 4, marginBottom: 10 }}>
           Browse approved export products and request a quote directly from OG Exports.
         </Text>
         <Pressable
           testID="buyer-home-explore-products"
           accessibilityRole="button"
           onPress={() => browseProducts()}
-          style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 13, borderRadius: 20, backgroundColor: colors.glassTintGold, opacity: pressed ? 0.8 : 1 })}
+          style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 13, borderRadius: 20, backgroundColor: colors.glassTintGold, opacity: pressed ? 0.8 : 1 })}
         >
           <Text style={{ color: colors.accentForeground, fontSize: 12, fontWeight: '700' }}>Explore products</Text>
           <Feather name="arrow-right" size={14} color={colors.accentForeground} />
