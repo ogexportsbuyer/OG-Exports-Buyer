@@ -173,6 +173,67 @@ paths:
           schema: { type: integer }
       responses:
         "200": { description: Buyer quotation requests, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/quotations:
+    get:
+      operationId: getBuyerQuotations
+      tags: [buyer]
+      summary: List the signed-in buyer quotations
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: per_page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200": { description: Buyer quotations, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/quotations/{id}:
+    get:
+      operationId: getBuyerQuotation
+      tags: [buyer]
+      summary: Get a buyer quotation
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Buyer quotation detail, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "404": { description: Quotation not found, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/quotations/{id}/messages:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: getBuyerQuotationMessages
+      tags: [buyer]
+      summary: List messages for a buyer-owned quotation
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: Quotation messages, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "404": { description: Quotation not found, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "503": { description: Trade desk messaging is unavailable, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+    post:
+      operationId: sendBuyerQuotationMessage
+      tags: [buyer]
+      summary: Send a message about a buyer-owned quotation
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BuyerQuotationMessageInput" }
+      responses:
+        "201": { description: Quotation message created, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "404": { description: Quotation not found, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "422": { description: Message validation error, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "503": { description: Trade desk messaging is unavailable, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
   /buyer/orders:
     get:
       operationId: getBuyerOrders
@@ -2422,6 +2483,12 @@ components:
       type: object
       properties:
         notes: { type: ["string", "null"], maxLength: 2000 }
+    BuyerQuotationMessageInput:
+      type: object
+      additionalProperties: false
+      required: [body]
+      properties:
+        body: { type: string, minLength: 1, maxLength: 5000 }
     JsonObject:
       type: object
       additionalProperties: true

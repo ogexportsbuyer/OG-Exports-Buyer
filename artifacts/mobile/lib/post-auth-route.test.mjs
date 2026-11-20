@@ -64,6 +64,10 @@ test('returns buyer sign-in to the requested marketplace destination', () => {
     resolveBuyerPostAuthHref('/buyer-order/123'),
     { pathname: '/buyer-order/[id]', params: { id: '123' } },
   );
+  assert.deepEqual(
+    resolveBuyerPostAuthHref('/buyer-quotation/456'),
+    { pathname: '/buyer-quotation/[id]', params: { id: '456' } },
+  );
   assert.equal(resolveBuyerPostAuthHref('/account/messages'), '/account/messages');
 });
 
@@ -71,7 +75,6 @@ test('uses a safe buyer home fallback for unknown post-auth routes', () => {
   assert.equal(resolveBuyerPostAuthHref('//external.example'), '/(buyer-tabs)/buyer-home');
   assert.equal(resolveBuyerPostAuthHref('/admin'), '/(buyer-tabs)/buyer-home');
 });
-
 test('buyer login and email verification keep the selected product through cart', () => {
   const returnTo = pendingProductAuthReturnTo(42);
   assert.equal(returnTo, '/buyer-products?pendingProduct=42');

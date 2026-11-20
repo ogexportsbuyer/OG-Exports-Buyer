@@ -38,7 +38,8 @@ export type BuyerPostAuthHref =
   | '/account/messages'
   | '/account/notifications'
   | { pathname: '/(buyer-tabs)/buyer-products'; params: { pendingProduct: string } }
-  | { pathname: '/buyer-order/[id]'; params: { id: string } };
+  | { pathname: '/buyer-order/[id]'; params: { id: string } }
+  | { pathname: '/buyer-quotation/[id]'; params: { id: string } };
 
 export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPostAuthHref {
   const value = Array.isArray(returnTo) ? returnTo[0] : returnTo;
@@ -46,6 +47,10 @@ export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPos
   const orderId = path.match(/^\/buyer-order\/(\d+)\/?$/)?.[1];
   if (orderId && Number(orderId) > 0) {
     return { pathname: '/buyer-order/[id]', params: { id: orderId } };
+  }
+  const quotationId = path.match(/^\/buyer-quotation\/(\d+)\/?$/)?.[1];
+  if (quotationId && Number(quotationId) > 0) {
+    return { pathname: '/buyer-quotation/[id]', params: { id: quotationId } };
   }
   const query = value?.split('?', 2)[1] ?? '';
   const pendingProduct = queryValue(query, 'pendingProduct');

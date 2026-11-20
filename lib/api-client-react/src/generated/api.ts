@@ -31,12 +31,14 @@ import type {
   AdminTwoFactorChallenge,
   AdminTwoFactorResend,
   BankAccountReviewInput,
+  BuyerQuotationMessageInput,
   ContainerTracking,
   ContainerTrackingUpdate,
   GetAdminInvestmentPayoutProgressParams,
   GetAdminInvestmentProjectsParams,
   GetAdminInvestorBankAccountsParams,
   GetBuyerOrdersParams,
+  GetBuyerQuotationsParams,
   GetBuyerRfqsParams,
   GetInvestorDepositsParams,
   GetInvestorInvestmentsParams,
@@ -1085,6 +1087,333 @@ export function useGetBuyerRfqs<TData = Awaited<ReturnType<typeof getBuyerRfqs>>
 
 
 
+
+export const getGetBuyerQuotationsUrl = (params?: GetBuyerQuotationsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/buyer/quotations?${stringifiedParams}` : `/api/buyer/quotations`
+}
+
+/**
+ * @summary List the signed-in buyer quotations
+ */
+export const getBuyerQuotations = async (params?: GetBuyerQuotationsParams, options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
+
+  return customFetch<JsonObject>(getGetBuyerQuotationsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBuyerQuotationsQueryKey = (params?: GetBuyerQuotationsParams,) => {
+    return [
+    `/api/buyer/quotations`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetBuyerQuotationsQueryOptions = <TData = Awaited<ReturnType<typeof getBuyerQuotations>>, TError = ErrorType<unknown>>(params?: GetBuyerQuotationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBuyerQuotations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBuyerQuotationsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBuyerQuotations>>> = ({ signal }) => getBuyerQuotations(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBuyerQuotations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBuyerQuotationsQueryResult = NonNullable<Awaited<ReturnType<typeof getBuyerQuotations>>>
+export type GetBuyerQuotationsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List the signed-in buyer quotations
+ */
+
+export function useGetBuyerQuotations<TData = Awaited<ReturnType<typeof getBuyerQuotations>>, TError = ErrorType<unknown>>(
+ params?: GetBuyerQuotationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBuyerQuotations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBuyerQuotationsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetBuyerQuotationUrl = (id: number,) => {
+
+
+
+
+  return `/api/buyer/quotations/${id}`
+}
+
+/**
+ * @summary Get a buyer quotation
+ */
+export const getBuyerQuotation = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
+
+  return customFetch<JsonObject>(getGetBuyerQuotationUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBuyerQuotationQueryKey = (id: number,) => {
+    return [
+    `/api/buyer/quotations/${id}`
+    ] as const;
+    }
+
+
+export const getGetBuyerQuotationQueryOptions = <TData = Awaited<ReturnType<typeof getBuyerQuotation>>, TError = ErrorType<JsonObject>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBuyerQuotation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBuyerQuotationQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBuyerQuotation>>> = ({ signal }) => getBuyerQuotation(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBuyerQuotation>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBuyerQuotationQueryResult = NonNullable<Awaited<ReturnType<typeof getBuyerQuotation>>>
+export type GetBuyerQuotationQueryError = ErrorType<JsonObject>
+
+
+/**
+ * @summary Get a buyer quotation
+ */
+
+export function useGetBuyerQuotation<TData = Awaited<ReturnType<typeof getBuyerQuotation>>, TError = ErrorType<JsonObject>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBuyerQuotation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBuyerQuotationQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetBuyerQuotationMessagesUrl = (id: number,) => {
+
+
+
+
+  return `/api/buyer/quotations/${id}/messages`
+}
+
+/**
+ * @summary List messages for a buyer-owned quotation
+ */
+export const getBuyerQuotationMessages = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
+
+  return customFetch<JsonObject>(getGetBuyerQuotationMessagesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBuyerQuotationMessagesQueryKey = (id: number,) => {
+    return [
+    `/api/buyer/quotations/${id}/messages`
+    ] as const;
+    }
+
+
+export const getGetBuyerQuotationMessagesQueryOptions = <TData = Awaited<ReturnType<typeof getBuyerQuotationMessages>>, TError = ErrorType<JsonObject>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBuyerQuotationMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBuyerQuotationMessagesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBuyerQuotationMessages>>> = ({ signal }) => getBuyerQuotationMessages(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBuyerQuotationMessages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBuyerQuotationMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof getBuyerQuotationMessages>>>
+export type GetBuyerQuotationMessagesQueryError = ErrorType<JsonObject>
+
+
+/**
+ * @summary List messages for a buyer-owned quotation
+ */
+
+export function useGetBuyerQuotationMessages<TData = Awaited<ReturnType<typeof getBuyerQuotationMessages>>, TError = ErrorType<JsonObject>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBuyerQuotationMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBuyerQuotationMessagesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSendBuyerQuotationMessageUrl = (id: number,) => {
+
+
+
+
+  return `/api/buyer/quotations/${id}/messages`
+}
+
+/**
+ * @summary Send a message about a buyer-owned quotation
+ */
+export const sendBuyerQuotationMessage = async (id: number,
+    buyerQuotationMessageInput: BuyerQuotationMessageInput, options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<JsonObject>(getSendBuyerQuotationMessageUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(buyerQuotationMessageInput)
+  }
+);}
+
+
+
+
+
+export const getSendBuyerQuotationMessageMutationKey = () => ['sendBuyerQuotationMessage'] as const;
+
+export const getSendBuyerQuotationMessageMutationOptions = <TError = ErrorType<JsonObject>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendBuyerQuotationMessage>>, TError,SendBuyerQuotationMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendBuyerQuotationMessage>>, TError,SendBuyerQuotationMessageMutationVariables, TContext> => {
+
+const mutationKey = getSendBuyerQuotationMessageMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendBuyerQuotationMessage>>, SendBuyerQuotationMessageMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  sendBuyerQuotationMessage(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendBuyerQuotationMessageMutationResult = NonNullable<Awaited<ReturnType<typeof sendBuyerQuotationMessage>>>
+    export type SendBuyerQuotationMessageMutationBody = BodyType<BuyerQuotationMessageInput>
+    export type SendBuyerQuotationMessageMutationError = ErrorType<JsonObject>
+    export type SendBuyerQuotationMessageMutationVariables = {id: number;data: BodyType<BuyerQuotationMessageInput>}
+
+    /**
+ * @summary Send a message about a buyer-owned quotation
+ */
+export const useSendBuyerQuotationMessage = <TError = ErrorType<JsonObject>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendBuyerQuotationMessage>>, TError,SendBuyerQuotationMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sendBuyerQuotationMessage>>,
+        TError,
+        SendBuyerQuotationMessageMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSendBuyerQuotationMessageMutationOptions(options));
+    }
 
 export const getGetBuyerOrdersUrl = (params?: GetBuyerOrdersParams,) => {
   const normalizedParams = new URLSearchParams();

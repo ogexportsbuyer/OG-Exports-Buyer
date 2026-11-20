@@ -6,7 +6,14 @@ import { Card, EmptyState, ErrorState, LoadingCard, Screen, Status } from '@/com
 import { BuyerAuthGate } from '@/components/BuyerAuthGate';
 import { useColors } from '@/hooks/useColors';
 import { useAuth } from '@/context/AuthContext';
-import { useGetBuyerOrders, useGetBuyerRfqs, getGetBuyerOrdersQueryKey, getGetBuyerRfqsQueryKey } from '@workspace/api-client-react';
+import {
+  useGetBuyerOrders,
+  useGetBuyerRfqs,
+  useGetBuyerQuotations,
+  getGetBuyerOrdersQueryKey,
+  getGetBuyerRfqsQueryKey,
+  getGetBuyerQuotationsQueryKey,
+} from '@workspace/api-client-react';
 import { amount, first, record } from '@/lib/data';
 import { displayOrderNumber, rowsFromResponse } from '@/lib/buyer-data';
 
@@ -18,13 +25,16 @@ export default function BuyerOrders() {
   const colors = useColors();
   const { token } = useAuth();
   const { view } = useLocalSearchParams<{ view?: string | string[] }>();
-  const activeView = (Array.isArray(view) ? view[0] : view) === 'rfqs' ? 'rfqs' : 'orders';
+  const requestedView = Array.isArray(view) ? view[0] : view;
+  const activeView = requestedView === 'rfqs' || requestedView === 'quotations' ? requestedView : 'orders';
   const ordersQuery = useGetBuyerOrders({ per_page: 50 }, { query: { queryKey: getGetBuyerOrdersQueryKey({ per_page: 50 }), enabled: !!token, staleTime: 20_000 } });
   const rfqsQuery = useGetBuyerRfqs({ per_page: 50 }, { query: { queryKey: getGetBuyerRfqsQueryKey({ per_page: 50 }), enabled: !!token, staleTime: 20_000 } });
+  const quotationsQuery = useGetBuyerQuotations({ per_page: 50 }, { query: { queryKey: getGetBuyerQuotationsQueryKey({ per_page: 50 }), enabled: !!token && activeView === 'quotations', staleTime: 20_000 } });
   const orders = rowsFromResponse(ordersQuery.data);
   const rfqs = rowsFromResponse(rfqsQuery.data);
-  const query = activeView === 'orders' ? ordersQuery : rfqsQuery;
-  const rows = activeView === 'orders' ? orders : rfqs;
+  const quotations = rowsFromResponse(quotationsQuery.data);
+  const query = activeView === 'orders' ? ordersQuery : activeView === 'rfqs' ? rfqsQuery : quotationsQuery;
+  const rows = activeView === 'orders' ? orders : activeView === 'rfqs' ? rfqs : quotations;
 
   if (!token) {
     return <BuyerAuthGate
@@ -40,6 +50,7 @@ export default function BuyerOrders() {
         {([
           ['orders', 'Orders'],
           ['rfqs', 'Quote requests'],
+          ['quotations', 'Quotations'],
         ] as const).map(([value, label]) => {
           const selected = activeView === value;
           return (
@@ -57,24 +68,53 @@ export default function BuyerOrders() {
         })}
       </View>
 
-      {query.isLoading ? <LoadingCard label={activeView === 'orders' ? 'Loading orders…' : 'Loading quote requests…'} /> : null}
+      {query.isLoading ? <LoadingCard label={activeView === 'orders' ? 'Loading orders…' : activeView === 'rfqs' ? 'Loading quote requests…' : 'Loading quotations…'} /> : null}
       {query.isError ? (
         <ErrorState
-          message={activeView === 'orders' ? 'Your orders could not be loaded.' : 'Your quote requests could not be loaded.'}
+          message={activeView === 'orders' ? 'Your orders could not be loaded.' : activeView === 'rfqs' ? 'Your quote requests could not be loaded.' : 'Your quotations could not be loaded.'}
           error={query.error}
           onRetry={() => void query.refetch()}
         />
       ) : null}
       {!query.isLoading && !query.isError && rows.length === 0 ? (
         <EmptyState
-          title={activeView === 'orders' ? 'No orders yet' : 'No quote requests yet'}
-          body={activeView === 'orders' ? 'Orders placed from your cart will appear here.' : 'Requests for non-FOB terms will appear here.'}
+          title={activeView === 'orders' ? 'No orders yet' : activeView === 'rfqs' ? 'No quote requests yet' : 'No quotations yet'}
+          body={activeView === 'orders' ? 'Orders placed from your cart will appear here.' : activeView === 'rfqs' ? 'Requests for non-FOB terms will appear here.' : 'Quotations from OG Exports will appear here.'}
           icon={activeView === 'orders' ? 'package' : 'file-text'}
         />
       ) : null}
 
       {!query.isLoading && !query.isError && rows.map((row, index) => {
         const id = first(row, ['id'], `${activeView}-${index}`);
+        if (activeView === 'quotations') {
+          const reference = `QT-${id.padStart(6, '0')}`;
+          const product = first(row, ['product_name'], first(record(row.rfq), ['product_name'], 'Export product'));
+          return (
+            <Pressable
+              key={id}
+              testID={`buyer-quotation-${id}`}
+              accessibilityRole="button"
+              accessibilityLabel={`Open quotation ${reference} for ${product}`}
+              onPress={() => /^\d+$/.test(id) && router.push({ pathname: '/buyer-quotation/[id]', params: { id } })}
+            >
+              <Card style={{ padding: 16, marginBottom: 11 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '700' }}>{reference}</Text>
+                    <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 4 }}>{product}</Text>
+                  </View>
+                  <Status value={first(row, ['status'], 'Pending')} />
+                </View>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 9, marginTop: 12 }}>
+                  {first(row, ['qty_mt']) ? <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Quantity: {first(row, ['qty_mt'])} MT</Text> : null}
+                  {first(row, ['incoterm']) ? <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Term: {first(row, ['incoterm'])}</Text> : null}
+                  {first(row, ['destination']) ? <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Destination: {first(row, ['destination'])}</Text> : null}
+                </View>
+                <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700', marginTop: 12 }}>Open quotation and messages</Text>
+              </Card>
+            </Pressable>
+          );
+        }
         if (activeView === 'rfqs') {
           const reference = first(row, ['reference', 'rfq_number', 'id'], 'Quote request');
           const product = first(row, ['product_name'], first(record(row.product), ['name'], 'Product quotation'));

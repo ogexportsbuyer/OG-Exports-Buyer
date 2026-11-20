@@ -1303,6 +1303,14 @@ export interface BankAccountReviewInput {
   notes?: string | null;
 }
 
+export interface BuyerQuotationMessageInput {
+  /**
+     * @minLength 1
+     * @maxLength 5000
+     */
+  body: string;
+}
+
 export interface JsonObject { [key: string]: unknown }
 
 export type GetProductsParams = {
@@ -1314,6 +1322,11 @@ page?: number;
 };
 
 export type GetBuyerRfqsParams = {
+per_page?: number;
+page?: number;
+};
+
+export type GetBuyerQuotationsParams = {
 per_page?: number;
 page?: number;
 };

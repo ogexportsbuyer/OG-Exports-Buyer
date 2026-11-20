@@ -114,6 +114,55 @@ export const GetBuyerRfqsResponse = zod.record(zod.string(), zod.unknown())
 
 
 /**
+ * @summary List the signed-in buyer quotations
+ */
+export const GetBuyerQuotationsQueryParams = zod.object({
+  "per_page": zod.coerce.number().int().optional(),
+  "page": zod.coerce.number().int().optional()
+})
+
+export const GetBuyerQuotationsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Get a buyer quotation
+ */
+export const GetBuyerQuotationParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const GetBuyerQuotationResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary List messages for a buyer-owned quotation
+ */
+export const GetBuyerQuotationMessagesParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const GetBuyerQuotationMessagesResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Send a message about a buyer-owned quotation
+ */
+export const SendBuyerQuotationMessageParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const sendBuyerQuotationMessageBodyBodyMax = 5000;
+
+
+
+export const SendBuyerQuotationMessageBody = zod.object({
+  "body": zod.string().min(1).max(sendBuyerQuotationMessageBodyBodyMax)
+})
+
+export const SendBuyerQuotationMessageResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
  * @summary List the signed-in buyer orders
  */
 export const GetBuyerOrdersQueryParams = zod.object({

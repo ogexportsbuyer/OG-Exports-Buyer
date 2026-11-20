@@ -194,6 +194,26 @@ function RootLayoutNav() {
         <Stack.Screen name="(buyer-tabs)" options={{ headerShown: false, animation: 'none' }} />
         <Stack.Screen name="buyer-checkout" options={{ title: t('Checkout') }} />
         <Stack.Screen name="buyer-order/[id]" options={{ title: t('Order details') }} />
+        <Stack.Screen name="buyer-quotation/[id]" options={{ title: t('Quotation') }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
+        <Stack.Screen name="project/[id]" options={{
+          title: t('Opportunity'),
+          headerLeft: safeBackButton('/(tabs)/trade', 'project-header-back'),
+        }} />
+        <Stack.Screen name="position/[id]" options={{ title: t('Investment') }} />
+        <Stack.Screen name="tracking/[id]" options={{ title: t('Container tracking') }} />
+        <Stack.Screen name="account/profile" options={{ title: '' }} />
+        <Stack.Screen name="account/portfolio" options={{ title: t('Portfolio') }} />
+        <Stack.Screen name="account/transactions" options={{ title: t('Transactions') }} />
+        <Stack.Screen name="account/transaction/[id]" options={{ title: t('Transaction details') }} />
+        <Stack.Screen name="account/security" options={{ title: t('Security & devices') }} />
+        <Stack.Screen name="account/legal/[section]" options={{ title: t('Policies') }} />
+        <Stack.Screen name="account/data-preferences" options={{ title: t('Data preferences') }} />
+        <Stack.Screen name="wallet/deposit" options={{ title: t('Add funds') }} />
+        <Stack.Screen name="wallet/withdraw" options={{ title: t('Withdraw') }} />
+        <Stack.Screen name="account/kyc" options={{ title: t('Identity verification') }} />
+        <Stack.Screen name="account/reports" options={{ title: t('Reports') }} />
         <Stack.Screen name="account/notifications" options={{ title: t('Notifications') }} />
         <Stack.Screen name="account/messages" options={{ title: t('Support') }} />
       </Stack>
