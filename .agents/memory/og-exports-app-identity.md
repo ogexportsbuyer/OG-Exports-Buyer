@@ -8,3 +8,9 @@ Treat `com.ogexports.app` as a separate app listing; it does not replace or migr
 **Why:** The user explicitly chose a new package as a separate Play Store app after learning that package IDs cannot be changed for an existing Play listing.
 
 **How to apply:** Keep existing investor installs and listing on `com.ogexports.investor`; use `com.ogexports.app` only for the separately registered listing.
+
+The buyer marketplace app must use package ID `com.ogexports.buyer` and have its own Play Store listing.
+
+**Why:** The user explicitly specified the buyer app's package and separate listing.
+
+**How to apply:** Before changing the current Expo app identity, confirm whether to preserve the existing `com.ogexports.app` listing or repurpose this workspace; do not silently replace an existing store identity.
