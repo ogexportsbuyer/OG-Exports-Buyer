@@ -1,5 +1,5 @@
 import { list, record } from '@/lib/data';
-import { resolveBuyerPostAuthHref, resolvePostAuthHref, type BuyerPostAuthHref, type PostAuthHref } from '@/lib/post-auth-route';
+import { resolveAccountPostAuthHref, type BuyerPostAuthHref, type PostAuthHref } from '@/lib/post-auth-route';
 
 export function hasAccountRole(user: unknown, expectedRole: string): boolean {
   return list(record(user).roles).some(role => {
@@ -17,6 +17,5 @@ export function homeRouteForAccount(user: unknown): '/(tabs)' | '/(buyer-tabs)/b
 }
 
 export function postAuthRouteForAccount(user: unknown, returnTo?: string | string[]): PostAuthHref | BuyerPostAuthHref {
-  if (!isBuyerOnlyAccount(user)) return resolvePostAuthHref(returnTo);
-  return resolveBuyerPostAuthHref(returnTo);
+  return resolveAccountPostAuthHref(list(record(user).roles), returnTo);
 }

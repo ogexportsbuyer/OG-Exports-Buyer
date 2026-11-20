@@ -74,6 +74,20 @@ export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPos
   return buyerRoutes[path] ?? '/(buyer-tabs)/buyer-home';
 }
 
+export function resolveAccountPostAuthHref(
+  roles: unknown,
+  returnTo?: string | string[],
+): PostAuthHref | BuyerPostAuthHref {
+  const roleList = Array.isArray(roles) ? roles : [];
+  const hasRole = (expected: string) => roleList.some(role => {
+    if (typeof role === 'string') return role === expected;
+    return String((role as { name?: unknown } | null)?.name ?? '') === expected;
+  });
+  return hasRole('buyer') && !hasRole('investor')
+    ? resolveBuyerPostAuthHref(returnTo)
+    : resolvePostAuthHref(returnTo);
+}
+
 function decode(value: string) {
   try {
     return decodeURIComponent(value.replace(/\+/g, ' '));

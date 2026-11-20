@@ -8,6 +8,7 @@ import { useColors } from '@/hooks/useColors';
 import { useAddBuyerCartItem, useGetProductCategories, useGetProducts, getGetBuyerCartQueryKey, getGetProductCategoriesQueryKey, getGetProductsQueryKey } from '@workspace/api-client-react';
 import { amount, first, list, messageOf, record } from '@/lib/data';
 import { categoryName, displayPrice, productMinimumQuantity, rowsFromResponse } from '@/lib/buyer-data';
+import { buyerCartRouteAfterProductAdd, claimPendingBuyerProduct, pendingProductAuthReturnTo } from '@/lib/buyer-auth-flow';
 import { motionHaptic } from '@/lib/motion';
 import { useAuth } from '@/context/AuthContext';
 
@@ -78,9 +79,14 @@ export default function BuyerProducts() {
       return false;
     }
     if (!token) {
+      const returnTo = pendingProductAuthReturnTo(productId);
+      if (!returnTo) {
+        setActionError('This product ID cannot be saved while you sign in.');
+        return false;
+      }
       router.push({
         pathname: '/(auth)/login',
-        params: { returnTo: `/buyer-products?pendingProduct=${productId}` },
+        params: { returnTo },
       });
       return false;
     }
@@ -101,18 +107,18 @@ export default function BuyerProducts() {
   }, [token, addToCart, queryClient]);
 
   useEffect(() => {
-    const id = Number(pendingProduct);
-    if (!ready || !apiOrigin || !token || !pendingProduct || productsQuery.isLoading || productsQuery.isError || !Number.isInteger(id) || id < 1) return;
-    if (autoAddHandled.current === pendingProduct) return;
+    if (!ready || !apiOrigin || !token || productsQuery.isLoading || productsQuery.isError) return;
+    const pendingId = claimPendingBuyerProduct(pendingProduct, autoAddHandled);
+    if (!pendingId) return;
+    const id = Number(pendingId);
     const product = products.find(item => amount(item, ['id']) === id);
     if (!product) {
-      autoAddHandled.current = pendingProduct;
       setActionError('The selected product is no longer in the current catalogue. Choose it again to add it to your cart.');
       return;
     }
-    autoAddHandled.current = pendingProduct;
     void addProduct(product).then(added => {
-      if (added) router.replace('/(buyer-tabs)/buyer-cart');
+      const destination = buyerCartRouteAfterProductAdd(added);
+      if (destination) router.replace(destination);
     });
   }, [ready, apiOrigin, token, pendingProduct, productsQuery.isLoading, productsQuery.isError, products, addProduct]);
 
