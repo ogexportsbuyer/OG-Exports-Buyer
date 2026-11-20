@@ -142,7 +142,7 @@ export default function BuyerSecurity() {
 
   function removeSession(id: string, current: boolean) {
     if (current) {
-      setError('To end the current app session, sign out from My account.');
+      setError('To end the current app session, sign out from Profile.');
       return;
     }
     Alert.alert('Remove this device?', 'This device will need to sign in again before it can access the account.', [

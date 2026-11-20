@@ -104,7 +104,7 @@ export default function BuyerProfile() {
 
   if (!token) {
     return <BuyerAuthGate
-      title="My account"
+      title="Profile"
       body="Sign in to manage your buyer profile, orders, messages, and account notifications."
       returnTo="/buyer-profile"
     />;
