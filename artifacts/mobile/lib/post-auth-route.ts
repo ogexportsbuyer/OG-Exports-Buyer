@@ -73,7 +73,7 @@ export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPos
     '/buyer-profile': '/(buyer-tabs)/buyer-profile',
     '/(buyer-tabs)/buyer-profile': '/(buyer-tabs)/buyer-profile',
     '/buyer-checkout': '/buyer-checkout',
-    '/account/messages': '/account/messages',
+    '/account/messages': '/(buyer-tabs)/buyer-messages',
     '/account/notifications': '/account/notifications',
   };
   return buyerRoutes[path] ?? '/(buyer-tabs)/buyer-home';

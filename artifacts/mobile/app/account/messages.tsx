@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, FlatList, Linking, Platform, Pressable, View } from 'react-native';
 import { LocalizedText as Text } from '@/components/LocalizedText';
-import { router, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { MOTION, MotionReveal, motionHaptic, useMotion } from '@/lib/motion';
 import { GlassLayers } from '@/components/GlassSurface';
+import { hasBuyerAccount } from '@/lib/account-role';
 
 type SupportMode = 'help' | 'chat' | 'tickets';
 
@@ -51,6 +52,33 @@ const helpTopics = [
     description: 'Manage profile details, security, and account preferences.',
     icon: 'user',
     href: '/account/profile',
+  },
+] as const;
+
+const buyerHelpTopics = [
+  {
+    title: 'Products',
+    description: 'Browse the current OG Exports product catalogue.',
+    icon: 'package',
+    href: '/(buyer-tabs)/buyer-products',
+  },
+  {
+    title: 'Orders & quotes',
+    description: 'Review your order and quotation updates.',
+    icon: 'clipboard',
+    href: '/(buyer-tabs)/buyer-orders',
+  },
+  {
+    title: 'Cart',
+    description: 'Review products saved for your next order.',
+    icon: 'shopping-cart',
+    href: '/(buyer-tabs)/buyer-cart',
+  },
+  {
+    title: 'Buyer account',
+    description: 'View your buyer profile and account details.',
+    icon: 'user',
+    href: '/(buyer-tabs)/buyer-profile',
   },
 ] as const;
 
@@ -136,6 +164,14 @@ function TicketStatusProgress({ status }: { status: string }) {
 }
 
 export default function Messages() {
+  const { user } = useAuth();
+  if (hasBuyerAccount(user)) {
+    return <Redirect href="/(buyer-tabs)/buyer-messages" />;
+  }
+  return <SupportMessages />;
+}
+
+export function SupportMessages({ buyerMode = false }: { buyerMode?: boolean }) {
   const params = useLocalSearchParams<{ mode?: string; subject?: string; body?: string }>();
   const { token, user } = useAuth();
   const investorId = first(record(user), ['id'], '');
@@ -164,6 +200,7 @@ export default function Messages() {
   });
   const platformSettings = unwrap(settingsQuery.data);
   const supportEmail = first(platformSettings, ['support_email', 'supportEmail'], 'support@ogexports.co');
+  const visibleHelpTopics = buyerMode ? buyerHelpTopics : helpTopics;
 
   const conversationQuery = useGetInvestorAdminConversation({
     query: { queryKey: ['investor-admin-conversation'], enabled: !!token && mode === 'chat' },
@@ -252,7 +289,7 @@ export default function Messages() {
     }
   }
 
-  return <Screen title="Support" subtitle="Help Center, live chat, and support tickets" scrollable={mode !== 'chat'}>
+  return <Screen title={buyerMode ? 'Buyer support' : 'Support'} subtitle="Help Center, live chat, and support tickets" scrollable={mode !== 'chat'}>
     <View accessibilityRole="tablist" style={{ flexDirection: 'row', gap: 7, marginBottom: 14 }}>
       {([
         ['help', 'Help Center'],
@@ -279,10 +316,12 @@ export default function Messages() {
       <Card>
         <Text style={{ color: colors.foreground, fontWeight: '700', fontSize: 15 }}>How can we help?</Text>
         <Text style={{ color: colors.mutedForeground, fontSize: 12, lineHeight: 18, marginTop: 5 }}>
-          Choose a topic to open the related area in your investor account.
+          {buyerMode
+            ? 'Choose a topic to return to the right area of your buyer account.'
+            : 'Choose a topic to open the related area in your investor account.'}
         </Text>
       </Card>
-      {helpTopics.map(topic => (
+      {visibleHelpTopics.map(topic => (
         <Pressable
           key={topic.title}
           testID={`support-topic-${topic.title.toLowerCase().replace(/\s+/g, '-')}`}
@@ -340,7 +379,7 @@ export default function Messages() {
     {mode === 'chat' ? <>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={0}>
         <Card>
-          <Text style={{ color: colors.foreground, fontWeight: '700' }}>Investor support conversation</Text>
+          <Text style={{ color: colors.foreground, fontWeight: '700' }}>{buyerMode ? 'Buyer support conversation' : 'Investor support conversation'}</Text>
           <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 17, marginTop: 4 }}>
             Replies refresh automatically while this screen is open.
           </Text>
@@ -362,7 +401,7 @@ export default function Messages() {
               ? <Card><Text style={{ color: colors.mutedForeground }}>Loading messages…</Text></Card>
               : messagesQuery.isError
                 ? undefined
-                : <EmptyState title="Start a conversation" body="Send a message to investor support. Replies will appear here." />
+                : <EmptyState title="Start a conversation" body={`Send a message to ${buyerMode ? 'buyer' : 'investor'} support. Replies will appear here.`} />
           }
           renderItem={({ item, index }) => {
             const sender = record(item.sender);
@@ -390,7 +429,7 @@ export default function Messages() {
             </View>
           </MotionReveal> : null}
           <Card style={{ marginBottom: 0 }}>
-            <Field label="Message" value={message} onChangeText={setMessage} placeholder="Write to investor support…" multiline />
+            <Field label="Message" value={message} onChangeText={setMessage} placeholder={`Write to ${buyerMode ? 'buyer' : 'investor'} support…`} multiline />
             <Action title="Send message" icon="send" loading={send.isPending} disabled={!message.trim()} onPress={() => void sendMessage()} />
           </Card>
         </View> : null}

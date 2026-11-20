@@ -70,7 +70,7 @@ test('returns buyer sign-in to the requested marketplace destination', () => {
     resolveBuyerPostAuthHref('/buyer-quotation/456'),
     { pathname: '/buyer-quotation/[id]', params: { id: '456' } },
   );
-  assert.equal(resolveBuyerPostAuthHref('/account/messages'), '/account/messages');
+  assert.equal(resolveBuyerPostAuthHref('/account/messages'), '/(buyer-tabs)/buyer-messages');
 });
 
 test('uses a safe buyer home fallback for unknown post-auth routes', () => {

@@ -64,7 +64,7 @@ export default function BuyerProfile() {
         <Pressable
           testID="buyer-profile-support"
           accessibilityRole="button"
-          onPress={() => router.push('/account/messages')}
+          onPress={() => router.push('/(buyer-tabs)/buyer-messages')}
           style={{ minHeight: 52, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
         >
           <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '600' }}>Contact support</Text>

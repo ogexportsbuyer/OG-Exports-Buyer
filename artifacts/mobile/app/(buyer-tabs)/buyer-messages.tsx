@@ -1,14 +1,10 @@
-import React, { useEffect } from 'react';
-import { router } from 'expo-router';
+import React from 'react';
 import { BuyerAuthGate } from '@/components/BuyerAuthGate';
-import { LoadingCard, Screen } from '@/components/InvestorUI';
 import { useAuth } from '@/context/AuthContext';
+import { SupportMessages } from '../account/messages';
 
 export default function BuyerMessages() {
   const { token } = useAuth();
-  useEffect(() => {
-    if (token) router.replace('/account/messages');
-  }, [token]);
 
   if (!token) {
     return <BuyerAuthGate
@@ -18,5 +14,5 @@ export default function BuyerMessages() {
     />;
   }
 
-  return <Screen title="Messages" subtitle="Opening your OG Exports support inbox"><LoadingCard label="Loading messages…" /></Screen>;
+  return <SupportMessages buyerMode />;
 }
