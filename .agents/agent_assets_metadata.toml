@@ -168,3 +168,17 @@ mtime_ms = 1794766500826
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:f4e473f4-6ce4-483c-abb3-f8df0ba6670a/036f8a85-f63d-4a23-86be-f6242b27379d/a9330da8-47d6-4651-9cd0-dbfb151b8f55"
 storage_version_token = "1794766610777210"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "AyZescaO3P6jrqzl83JJT"
+uri = "file://generated-artifacts/OG%20Exports%20complete%20app%20investor.zip"
+type = "unspecified"
+title = "OG Exports complete app investor"
+description = "Complete mobile investor-app source ZIP for com.ogexports.app, version 2.1.6 (Android code 6) on Expo SDK 58. Source package only; no signing secrets, node_modules, or AAB/IPA binary."
+logical_id = "ebcd6af0-dd6c-46a4-a702-0197a7682d2f"
+content_hash = "sha256:18dd8e65baa9b04f011beda3b4495b19cbde11ceba1021c23e33db9f44ed496c"
+size = 1842561
+mtime_ms = 1795174390801
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:f4e473f4-6ce4-483c-abb3-f8df0ba6670a/ebcd6af0-dd6c-46a4-a702-0197a7682d2f/1a169d9d-e365-4803-958b-21798d8177d4"
+storage_version_token = "1795174408152083"
+content_type = "application/octet-stream"
