@@ -1673,7 +1673,7 @@ export const getInvestorRegisterUrl = () => {
 }
 
 /**
- * @summary Create an investor account and send email verification
+ * @summary Create an account and send email verification
  */
 export const investorRegister = async (jsonObject: JsonObject, options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
 
@@ -1739,7 +1739,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type InvestorRegisterMutationVariables = {data: BodyType<JsonObject>}
 
     /**
- * @summary Create an investor account and send email verification
+ * @summary Create an account and send email verification
  */
 export const useInvestorRegister = <TError = ErrorType<JsonObject>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof investorRegister>>, TError,InvestorRegisterMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1750,6 +1750,94 @@ export const useInvestorRegister = <TError = ErrorType<JsonObject>,
         TContext
       > => {
       return useMutation(getInvestorRegisterMutationOptions(options));
+    }
+
+export const getBuyerRegisterUrl = () => {
+
+
+
+
+  return `/api/auth/buyer/register`
+}
+
+/**
+ * @summary Create a buyer account and send email verification
+ */
+export const buyerRegister = async (jsonObject: JsonObject, options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<JsonObject>(getBuyerRegisterUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(jsonObject)
+  }
+);}
+
+
+
+
+
+export const getBuyerRegisterMutationKey = () => ['buyerRegister'] as const;
+
+export const getBuyerRegisterMutationOptions = <TError = ErrorType<JsonObject>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof buyerRegister>>, TError,BuyerRegisterMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof buyerRegister>>, TError,BuyerRegisterMutationVariables, TContext> => {
+
+const mutationKey = getBuyerRegisterMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof buyerRegister>>, BuyerRegisterMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  buyerRegister(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BuyerRegisterMutationResult = NonNullable<Awaited<ReturnType<typeof buyerRegister>>>
+    export type BuyerRegisterMutationBody = BodyType<JsonObject>
+    export type BuyerRegisterMutationError = ErrorType<JsonObject>
+    export type BuyerRegisterMutationVariables = {data: BodyType<JsonObject>}
+
+    /**
+ * @summary Create a buyer account and send email verification
+ */
+export const useBuyerRegister = <TError = ErrorType<JsonObject>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof buyerRegister>>, TError,BuyerRegisterMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof buyerRegister>>,
+        TError,
+        BuyerRegisterMutationVariables,
+        TContext
+      > => {
+      return useMutation(getBuyerRegisterMutationOptions(options));
     }
 
 export const getInvestorVerifyEmailUrl = () => {

@@ -71,6 +71,35 @@ it('issues a sanctum token via mobile v1 auth login alias', function () {
     expect($response->json('token'))->toBeString()->not->toBeEmpty();
 });
 
+it('signs a newly verified buyer into the mobile app with a buyer session', function () {
+    config([
+        'app.debug' => true,
+        'auth.otp_dev_code' => '123456',
+    ]);
+
+    $this->postJson('/api/auth/buyer/register', [
+        'name' => 'Verified Buyer',
+        'email' => 'verified-buyer-mobile@example.com',
+        'password' => 'Password@123',
+        'password_confirmation' => 'Password@123',
+        'account_type' => 'investor',
+    ])->assertCreated()
+        ->assertJsonPath('requires_verification', true)
+        ->assertJsonPath('dev_otp', '123456');
+
+    $response = $this->postJson('/api/auth/mobile/verify-email', [
+        'email' => 'verified-buyer-mobile@example.com',
+        'code' => '123456',
+        'device_name' => 'og_exports_buyer',
+    ])->assertOk()
+        ->assertJsonPath('token_type', 'Bearer')
+        ->assertJsonPath('user.account_type', 'buyer')
+        ->assertJsonPath('user.roles.0', 'buyer')
+        ->assertJsonStructure(['token', 'user', 'message']);
+
+    expect($response->json('token'))->toBeString()->not->toBeEmpty();
+});
+
 it('sends a branded HTML sign-in code with a plain-text fallback', function () {
     $this->investor->forceFill(['two_factor_enabled' => true])->save();
     $email = [];

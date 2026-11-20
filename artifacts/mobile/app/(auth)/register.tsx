@@ -8,12 +8,13 @@ import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollV
 import { Action, Card } from '@/components/InvestorUI';
 import { useAuth } from '@/context/AuthContext';
 import { messageOf, record } from '@/lib/data';
-import { useInvestorRegister } from '@workspace/api-client-react';
+import { useBuyerRegister } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MOTION, MotionReveal, motionHaptic } from '@/lib/motion';
 import { goBackOrReplace } from '@/lib/safe-navigation';
 import { normalizeAuthResponse, readEmailVerificationChallenge } from '@/lib/auth-response';
+import { hasBuyerAccount, postAuthRouteForAccount } from '@/lib/account-role';
 import { RouteBrandBackdrop } from "@/components/GlassSurface";
 import { buyerRegistrationPayload, validateBuyerRegistration } from '@/lib/buyer-registration';
 
@@ -87,12 +88,12 @@ function RegisterField({
 }
 
 export default function Register() {
-  const { apiOrigin, setChallenge } = useAuth();
+  const { apiOrigin, setChallenge, acceptSession } = useAuth();
   const { returnTo } = useLocalSearchParams<{ returnTo?: string | string[] }>();
   const postAuthPath = Array.isArray(returnTo) ? returnTo[0] : returnTo;
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const mutation = useInvestorRegister({ request: { timeoutMs: 45000, responseType: 'json' } });
+  const mutation = useBuyerRegister({ request: { timeoutMs: 45000, responseType: 'json' } });
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -126,13 +127,28 @@ export default function Register() {
       return;
     }
     try {
-      const result = normalizeAuthResponse(await mutation.mutateAsync({
+      const response = await mutation.mutateAsync({
         data: buyerRegistrationPayload({ fullName, email, password, confirmPassword }),
-      }));
+      });
+      const result = normalizeAuthResponse(response);
+      const sessionToken = typeof result.token === 'string' ? result.token.trim() : '';
+      const sessionUser = record(result.user);
+      if (sessionToken && Object.keys(sessionUser).length > 0) {
+        if (!hasBuyerAccount(sessionUser)) {
+          throw new Error('The server returned a non-buyer account. Your buyer account was not signed in; contact OG Exports support.');
+        }
+        await acceptSession(sessionToken, sessionUser);
+        router.replace(postAuthRouteForAccount(sessionUser, postAuthPath));
+        return;
+      }
+      const verification = readEmailVerificationChallenge(response);
+      if (!verification) {
+        throw new Error('The server did not confirm email verification or return a buyer sign-in session.');
+      }
       setChallenge({
-        email: typeof result.email === 'string' ? result.email : email.trim(),
+        email: verification.email || email.trim(),
         mode: 'email',
-        message: typeof result.message === 'string' ? result.message : '',
+        message: verification.message,
         ...(postAuthPath ? { returnTo: postAuthPath } : {}),
       });
       router.replace('/(auth)/verify');

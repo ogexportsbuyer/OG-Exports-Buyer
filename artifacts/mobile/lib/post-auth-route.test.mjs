@@ -3,9 +3,11 @@ import test from 'node:test';
 import {
   resolveAccountPostAuthHref,
   resolveBuyerPostAuthHref,
+  hasBuyerAccountIdentity,
   hasBuyerRole,
   isBuyerAppRoute,
   resolvePostAuthHref,
+  resolveUserPostAuthHref,
   serializeRouteState,
 } from './post-auth-route.ts';
 import {
@@ -101,6 +103,19 @@ test('investor-only roles cannot route into investor tabs in the buyer app', () 
   assert.equal(resolveAccountPostAuthHref(['buyer', 'investor'], '/buyer-cart'), '/(buyer-tabs)/buyer-cart');
   assert.equal(hasBuyerRole(['investor']), false);
   assert.equal(hasBuyerRole([{ name: 'buyer' }]), true);
+});
+
+test('recognizes buyer account type when the API omits the roles array', () => {
+  assert.equal(hasBuyerAccountIdentity({ account_type: 'buyer' }), true);
+  assert.equal(hasBuyerAccountIdentity({ accountType: 'buyer' }), true);
+  assert.equal(hasBuyerAccountIdentity({ account_type: 'investor' }), false);
+  assert.equal(resolveUserPostAuthHref({ account_type: 'buyer' }, '/buyer-cart'), '/(buyer-tabs)/buyer-cart');
+});
+
+test('a returned non-buyer role takes precedence over a conflicting account type', () => {
+  const user = { account_type: 'buyer', roles: ['investor'] };
+  assert.equal(hasBuyerAccountIdentity(user), false);
+  assert.equal(resolveUserPostAuthHref(user, '/buyer-cart'), '/(buyer-tabs)/buyer-home');
 });
 
 test('buyer app route allowlist blocks investor screens and permits buyer support', () => {

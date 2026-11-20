@@ -193,11 +193,19 @@ export const InvestorMobileLoginResponse = zod.record(zod.string(), zod.unknown(
 
 
 /**
- * @summary Create an investor account and send email verification
+ * @summary Create an account and send email verification
  */
 export const InvestorRegisterBody = zod.record(zod.string(), zod.unknown())
 
 export const InvestorRegisterResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Create a buyer account and send email verification
+ */
+export const BuyerRegisterBody = zod.record(zod.string(), zod.unknown())
+
+export const BuyerRegisterResponse = zod.record(zod.string(), zod.unknown())
 
 
 /**

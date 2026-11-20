@@ -28,6 +28,13 @@ class AuthController extends Controller
         private readonly AuthOtpService $otp,
     ) {}
 
+    public function registerBuyer(Request $request): JsonResponse
+    {
+        $request->merge(['account_type' => 'buyer']);
+
+        return $this->register($request);
+    }
+
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([

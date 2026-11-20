@@ -286,15 +286,29 @@ paths:
     post:
       operationId: investorRegister
       tags: [auth]
-      summary: Create an investor account and send email verification
+      summary: Create an account and send email verification
       requestBody:
         required: true
         content:
           application/json:
             schema: { $ref: "#/components/schemas/JsonObject" }
       responses:
-        "201": { description: Created investor account; email verification is required before sign-in, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "201": { description: Created account; email verification is required before sign-in, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
         "503": { description: Account created but verification email could not be delivered, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "422": { description: Validation error, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /auth/buyer/register:
+    post:
+      operationId: buyerRegister
+      tags: [auth]
+      summary: Create a buyer account and send email verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JsonObject" }
+      responses:
+        "201": { description: Created buyer account; email verification is required before sign-in, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "503": { description: Buyer account created but verification email could not be delivered, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
         "422": { description: Validation error, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
   /auth/mobile/verify-email:
     post:

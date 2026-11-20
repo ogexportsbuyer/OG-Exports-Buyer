@@ -86,6 +86,23 @@ export function resolveAccountPostAuthHref(
   return hasBuyerRole(roles) ? resolveBuyerPostAuthHref(returnTo) : '/(buyer-tabs)/buyer-home';
 }
 
+export function hasBuyerAccountIdentity(user: unknown): boolean {
+  if (user === null || typeof user !== 'object' || Array.isArray(user)) return false;
+  const value = user as Record<string, unknown>;
+  const roles = Array.isArray(value.roles) ? value.roles : [];
+  if (roles.length > 0) return hasBuyerRole(roles);
+
+  const accountType = String(value.account_type ?? value.accountType ?? '').trim().toLowerCase();
+  return accountType === 'buyer';
+}
+
+export function resolveUserPostAuthHref(
+  user: unknown,
+  returnTo?: string | string[],
+): BuyerPostAuthHref {
+  return hasBuyerAccountIdentity(user) ? resolveBuyerPostAuthHref(returnTo) : '/(buyer-tabs)/buyer-home';
+}
+
 export function hasBuyerRole(roles: unknown): boolean {
   const roleList = Array.isArray(roles) ? roles : [];
   return roleList.some(role => {

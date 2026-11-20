@@ -63,6 +63,23 @@ it('registers a buyer and requires email verification', function () {
     expect($buyer->profile?->country)->toBe('Pakistan');
 });
 
+it('always creates a buyer through the buyer-only registration endpoint', function () {
+    $this->postJson('/api/auth/buyer/register', [
+        'name' => 'Buyer App Account',
+        'email' => 'buyer-app@example.com',
+        'password' => 'Password@123',
+        'password_confirmation' => 'Password@123',
+        'account_type' => 'investor',
+    ])->assertCreated()
+        ->assertJsonPath('requires_verification', true)
+        ->assertJsonPath('email', 'buyer-app@example.com');
+
+    $buyer = User::where('email', 'buyer-app@example.com')->firstOrFail();
+    expect($buyer->hasRole('buyer'))->toBeTrue()
+        ->and($buyer->hasRole('investor'))->toBeFalse()
+        ->and(Wallet::where('user_id', $buyer->id)->exists())->toBeFalse();
+});
+
 it('registers Pakistan-based investors with USD as the initial Profile and wallet currency', function () {
     PlatformSetting::query()->create([
         'site_name' => 'OG Exports',
