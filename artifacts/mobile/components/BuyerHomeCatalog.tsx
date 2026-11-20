@@ -1,0 +1,392 @@
+import React, { useMemo } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { LocalizedText as Text } from '@/components/LocalizedText';
+import { Card, EmptyState, ErrorState, LoadingCard } from '@/components/InvestorUI';
+import { useColors } from '@/hooks/useColors';
+import { first, record } from '@/lib/data';
+import { categoryName, displayPrice, rowsFromResponse } from '@/lib/buyer-data';
+
+type Product = ReturnType<typeof rowsFromResponse>[number];
+
+type Props = {
+  products: Product[];
+  categories: string[];
+  selectedOrigin: string;
+  onSelectOrigin: (origin: string) => void;
+  onBrowse: () => void;
+  onSelectCategory: (category: string) => void;
+  productsLoading: boolean;
+  productsError: boolean;
+  productsErrorValue?: unknown;
+  onRetryProducts: () => void;
+  categoriesLoading: boolean;
+  categoriesError: boolean;
+  categoriesErrorValue?: unknown;
+  onRetryCategories: () => void;
+  connectionReady: boolean;
+  isCatalogConfigured: boolean;
+};
+
+const styles = StyleSheet.create({
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    gap: 10,
+    marginBottom: 10,
+  },
+  eyebrow: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.7,
+    textTransform: 'uppercase',
+  },
+  sectionTitle: {
+    marginTop: 4,
+    fontFamily: 'serif',
+    fontSize: 24,
+    lineHeight: 28,
+    fontWeight: '400',
+    letterSpacing: -0.4,
+  },
+  textAction: {
+    minHeight: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+  },
+  originRow: {
+    flexDirection: 'row',
+    gap: 7,
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  originChip: {
+    minHeight: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 11,
+    borderWidth: 1,
+    borderRadius: 18,
+  },
+  originLabel: {
+    fontSize: 10,
+  },
+  productGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    paddingBottom: 9,
+  },
+  productImage: {
+    width: '100%',
+    backgroundColor: 'transparent',
+  },
+  productBody: {
+    paddingHorizontal: 10,
+    paddingTop: 9,
+    paddingBottom: 11,
+  },
+  productCategory: {
+    minHeight: 12,
+    fontSize: 8,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  productName: {
+    minHeight: 32,
+    marginTop: 4,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
+  },
+  productOrigin: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 6,
+  },
+  productPrice: {
+    marginTop: 8,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  productMoq: {
+    marginTop: 3,
+    fontSize: 9,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    gap: 9,
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  categoryImage: {
+    height: 125,
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderRadius: 12,
+  },
+  categoryCaption: {
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingBottom: 9,
+  },
+  supportRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    padding: 14,
+  },
+  supportIcon: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+  },
+});
+
+export default function BuyerHomeCatalog({
+  products,
+  categories,
+  selectedOrigin,
+  onSelectOrigin,
+  onBrowse,
+  onSelectCategory,
+  productsLoading,
+  productsError,
+  productsErrorValue,
+  onRetryProducts,
+  categoriesLoading,
+  categoriesError,
+  categoriesErrorValue,
+  onRetryCategories,
+  connectionReady,
+  isCatalogConfigured,
+}: Props) {
+  const colors = useColors();
+  const { width: windowWidth } = useWindowDimensions();
+  const origins = useMemo(
+    () => ['Global', ...Array.from(new Set(products.map(product => first(product, ['origin'])).filter(Boolean)))],
+    [products],
+  );
+  const filteredProducts = selectedOrigin === 'Global'
+    ? products
+    : products.filter(product => first(product, ['origin']) === selectedOrigin);
+  const productGridCardWidth = Math.min(224, Math.max(130, (windowWidth - 50) / 2));
+
+  return (
+    <>
+      <View style={[styles.sectionHeader, { marginTop: 10, marginBottom: 0 }]}>
+        <View>
+          <Text style={[styles.eyebrow, { color: colors.accent }]}>Source with clarity</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Worldwide picks</Text>
+        </View>
+        <Pressable
+          testID="buyer-home-products-all"
+          accessibilityRole="button"
+          onPress={onBrowse}
+          style={styles.textAction}
+        >
+          <Text style={{ color: colors.foreground, fontSize: 10, fontWeight: '700' }}>Browse all</Text>
+          <Feather name="arrow-up-right" size={13} color={colors.accent} />
+        </Pressable>
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ marginHorizontal: -20 }}
+        contentContainerStyle={styles.originRow}
+      >
+        {origins.map(origin => {
+          const active = selectedOrigin === origin;
+          return (
+            <Pressable
+              key={origin}
+              testID={`buyer-home-origin-${origin.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              onPress={() => onSelectOrigin(origin)}
+              style={({ pressed }) => [styles.originChip, {
+                borderColor: active ? colors.primary : colors.border,
+                backgroundColor: active ? colors.lightGreen : colors.card,
+                opacity: pressed ? 0.8 : 1,
+              }]}
+            >
+              <Feather name={origin === 'Global' ? 'globe' : 'map-pin'} size={12} color={active ? colors.primary : colors.mutedForeground} />
+              <Text style={[styles.originLabel, { color: active ? colors.primary : colors.mutedForeground, fontWeight: active ? '700' : '500' }]}>{origin}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {productsLoading ? <LoadingCard label="Loading products…" /> : null}
+      {productsError ? (
+        <ErrorState message="Recommended products could not be loaded." error={productsErrorValue} onRetry={onRetryProducts} />
+      ) : null}
+      {!productsLoading && !productsError && products.length === 0 ? (
+        <EmptyState title="No products published" body="Approved products published by OG Exports will appear here." icon="package" />
+      ) : null}
+      {!productsLoading && !productsError && products.length > 0 && filteredProducts.length === 0 ? (
+        <EmptyState title={`No products from ${selectedOrigin}`} body="Choose another origin to explore the current catalogue." icon="package" />
+      ) : null}
+
+      <View style={styles.productGrid}>
+        {filteredProducts.slice(0, 8).map((product, index) => {
+          const id = first(product, ['id'], `product-${index}`);
+          const image = first(product, ['image_url', 'imageUrl']);
+          const name = first(product, ['name'], 'Export product');
+          const origin = first(product, ['origin'], 'Origin not specified');
+          const minimumOrder = first(product, ['moq', 'min_order']);
+          const imageHeight = Math.min(190, Math.round(productGridCardWidth * 1.02));
+          return (
+            <Pressable
+              key={id}
+              testID={`buyer-home-product-${id}`}
+              accessibilityRole="button"
+              accessibilityLabel={`View ${name}, ${displayPrice(product)}, origin ${origin}`}
+              onPress={() => onBrowse(name)}
+              style={({ pressed }) => ({ width: productGridCardWidth, opacity: pressed ? 0.88 : 1 })}
+            >
+              <Card style={{ width: productGridCardWidth, padding: 0, overflow: 'hidden', borderRadius: colors.radius + 2, marginBottom: 0 }}>
+                {image ? (
+                  <Image
+                    source={{ uri: image }}
+                    accessibilityLabel={`${name} product image`}
+                    resizeMode="cover"
+                    style={[styles.productImage, { height: imageHeight, backgroundColor: colors.secondary }]}
+                  />
+                ) : (
+                  <View style={{ height: imageHeight, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
+                    <Feather name="package" size={25} color={colors.mutedForeground} />
+                  </View>
+                )}
+                <View style={styles.productBody}>
+                  <View style={{ minHeight: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+                    <Text numberOfLines={1} style={[styles.productCategory, { flex: 1, color: colors.mutedForeground }]}>{categoryName(product)}</Text>
+                    {recordFeatured(product) ? <Text style={{ color: colors.accent, fontSize: 8, fontWeight: '800' }}>FEATURED</Text> : null}
+                  </View>
+                  <Text numberOfLines={2} style={[styles.productName, { color: colors.foreground }]}>{name}</Text>
+                  <View style={styles.productOrigin}>
+                    <Feather name="map-pin" size={10} color={colors.mutedForeground} />
+                    <Text numberOfLines={1} style={{ flex: 1, color: colors.mutedForeground, fontSize: 9 }}>{origin}</Text>
+                  </View>
+                  <Text numberOfLines={1} style={[styles.productPrice, { color: colors.primary }]}>{displayPrice(product)}</Text>
+                  {minimumOrder ? (
+                    <Text numberOfLines={1} style={[styles.productMoq, { color: colors.mutedForeground }]}>MOQ: {minimumOrder}</Text>
+                  ) : null}
+                </View>
+              </Card>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <View style={[styles.sectionHeader, { marginTop: 7 }]}>
+        <View>
+          <Text style={[styles.eyebrow, { color: colors.accent }]}>Browse by trade</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Explore categories</Text>
+        </View>
+        <Pressable
+          testID="buyer-home-categories-all"
+          accessibilityRole="button"
+          onPress={onBrowse}
+          style={styles.textAction}
+        >
+          <Text style={{ color: colors.foreground, fontSize: 10, fontWeight: '700' }}>See all</Text>
+          <Feather name="arrow-up-right" size={13} color={colors.accent} />
+        </Pressable>
+      </View>
+      {!connectionReady ? <LoadingCard label="Connecting to the OG Exports catalogue…" lines={2} /> : null}
+      {connectionReady && !isCatalogConfigured ? <ErrorState message="The product catalogue is not connected. Please try again later." /> : null}
+      {categoriesLoading ? <LoadingCard label="Loading categories…" lines={2} /> : null}
+      {categoriesError ? (
+        <ErrorState message="Product categories could not be loaded." error={categoriesErrorValue} onRetry={onRetryCategories} />
+      ) : null}
+      {!categoriesLoading && !categoriesError && categories.length === 0 ? (
+        <EmptyState title="No categories published" body="Categories will appear here when OG Exports publishes them." icon="grid" />
+      ) : null}
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={styles.categoryRow}>
+        {categories.map(category => {
+          const categoryProduct = products.find(product => categoryName(product) === category);
+          const image = categoryProduct ? first(categoryProduct, ['image_url', 'imageUrl']) : '';
+          return (
+            <Pressable
+              key={category}
+              testID={`buyer-home-category-${category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+              accessibilityRole="button"
+              accessibilityLabel={`Browse ${category}`}
+              onPress={() => onSelectCategory(category)}
+              style={({ pressed }) => ({ width: 137, opacity: pressed ? 0.84 : 1 })}
+            >
+              <View style={[styles.categoryImage, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
+                {image ? (
+                  <Image source={{ uri: image }} accessibilityLabel={`${category} product`} resizeMode="cover" style={StyleSheet.absoluteFill} />
+                ) : (
+                  <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }]}>
+                    <Feather name="grid" size={23} color={colors.primary} />
+                  </View>
+                )}
+                <LinearGradient
+                  colors={['transparent', colors.splashEnd] as const}
+                  start={{ x: 0, y: 0.15 }}
+                  end={{ x: 0, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={styles.categoryCaption}>
+                  <Text numberOfLines={2} style={{ flex: 1, color: colors.splashText, fontSize: 10, lineHeight: 13, fontWeight: '700' }}>{category}</Text>
+                  <Feather name="arrow-up-right" size={13} color={colors.accentForeground} />
+                </View>
+              </View>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      <Card style={{ marginTop: 8, marginBottom: 12, borderRadius: colors.radius + 2 }}>
+        <View style={styles.supportRow}>
+          <View style={[styles.supportIcon, { backgroundColor: colors.lightGreen }]}>
+            <Feather name="message-circle" size={18} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '700' }}>A sourcing question?</Text>
+            <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginTop: 4 }}>
+              Tell our team what you need. We’ll help you find a way forward.
+            </Text>
+          </View>
+          <Pressable
+            testID="buyer-home-contact"
+            accessibilityRole="button"
+            accessibilityLabel="Message OG Exports"
+            onPress={() => router.push('/(buyer-tabs)/buyer-messages')}
+            hitSlop={8}
+            style={({ pressed }) => ({ padding: 5, opacity: pressed ? 0.6 : 1 })}
+          >
+            <Feather name="arrow-up-right" size={18} color={colors.accent} />
+          </Pressable>
+        </View>
+      </Card>
+    </>
+  );
+}
+
+function recordFeatured(product: Product) {
+  return record(product).featured === true;
+}
