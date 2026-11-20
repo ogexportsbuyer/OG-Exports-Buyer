@@ -58,7 +58,7 @@ export default function BuyerHome() {
   );
   const featuredProducts = products.filter(product => record(product).featured === true);
   const heroProducts = (featuredProducts.length ? featuredProducts : products).slice(0, 3);
-  const heroCardWidth = Math.max(windowWidth - 40, 280);
+  const heroCardWidth = Math.min(178, Math.max(windowWidth * 0.43, 150));
 
   function browseProducts(searchTerm = '') {
     const normalized = searchTerm.trim();
@@ -82,7 +82,7 @@ export default function BuyerHome() {
   return (
     <Screen
       title="OG Exports"
-      subtitle="Global buyer marketplace"
+      subtitle="Pakistan export marketplace"
       refreshable
       action={
         <View style={{ flexDirection: 'row', marginTop: -7, marginRight: -8 }}>
@@ -144,63 +144,49 @@ export default function BuyerHome() {
         </Pressable>
       </View>
 
-      <Card style={{ padding: 14, marginBottom: 15, backgroundColor: colors.balanceCardStart, borderRadius: 20 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
-          <View style={{ width: 34, height: 34, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.glassTintGold }}>
-            <Feather name="globe" size={17} color={colors.accentForeground} />
-          </View>
-          <Text style={{ color: colors.accent, fontSize: 10, fontWeight: '700', letterSpacing: 1.1 }}>OG EXPORTS · GLOBAL SOURCING</Text>
-        </View>
-        <Text style={{ color: colors.balanceCardText, fontSize: 19, lineHeight: 24, fontWeight: '700', marginTop: 9 }}>
-          Find products for your next order.
+      <Pressable
+        testID="buyer-home-catalogue-guide"
+        accessibilityRole="button"
+        accessibilityLabel="Browse approved products from Pakistan"
+        onPress={() => browseProducts()}
+        style={({ pressed }) => ({
+          minHeight: 40,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 9,
+          marginBottom: 13,
+          paddingHorizontal: 12,
+          borderRadius: 13,
+          backgroundColor: colors.lightGreen,
+          opacity: pressed ? 0.82 : 1,
+        })}
+      >
+        <Feather name="globe" size={16} color={colors.primary} />
+        <Text style={{ flex: 1, color: colors.foreground, fontSize: 11, fontWeight: '600' }}>
+          Approved products from Pakistan
         </Text>
-        <Text style={{ color: colors.balanceCardText, opacity: 0.82, fontSize: 11, lineHeight: 16, marginTop: 4, marginBottom: 10 }}>
-          Browse approved export products and request a quote directly from OG Exports.
-        </Text>
-        <Pressable
-          testID="buyer-home-explore-products"
-          accessibilityRole="button"
-          onPress={() => browseProducts()}
-          style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 13, borderRadius: 20, backgroundColor: colors.glassTintGold, opacity: pressed ? 0.8 : 1 })}
-        >
-          <Text style={{ color: colors.accentForeground, fontSize: 12, fontWeight: '700' }}>Explore products</Text>
-          <Feather name="arrow-right" size={14} color={colors.accentForeground} />
-        </Pressable>
-      </Card>
+        <Feather name="arrow-right" size={15} color={colors.primary} />
+      </Pressable>
 
       {heroProducts.length > 0 ? (
-        <View style={{ marginBottom: 20 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <View>
-              <Text style={{ color: colors.foreground, fontSize: 17, fontWeight: '700' }}>Featured picks</Text>
-              <Text style={{ color: colors.mutedForeground, fontSize: 11, marginTop: 3 }}>From the OG Exports catalogue</Text>
-            </View>
-            <View style={{ flexDirection: 'row', gap: 5 }}>
-              {heroProducts.map((product, index) => (
-                <Pressable
-                  key={first(product, ['id'], String(index))}
-                  testID={`buyer-home-feature-dot-${index}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Show featured product ${index + 1}`}
-                  accessibilityState={{ selected: featuredIndex === index }}
-                  onPress={() => {
-                    setFeaturedIndex(index);
-                    featuredScrollRef.current?.scrollTo({ x: index * heroCardWidth, animated: true });
-                  }}
-                  style={{ width: featuredIndex === index ? 18 : 7, height: 7, borderRadius: 6, backgroundColor: featuredIndex === index ? colors.primary : colors.border }}
-                />
-              ))}
-            </View>
-          </View>
+        <View style={{ marginBottom: 5 }}>
+          <Section
+            title="Featured picks"
+            right={
+              <Pressable accessibilityRole="button" onPress={() => browseProducts()}>
+                <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>See all</Text>
+              </Pressable>
+            }
+          />
           <ScrollView
             ref={featuredScrollRef}
             horizontal
-            pagingEnabled
-            snapToInterval={heroCardWidth}
+            snapToInterval={heroCardWidth + 9}
             decelerationRate="fast"
             showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={event => setFeaturedIndex(Math.round(event.nativeEvent.contentOffset.x / heroCardWidth))}
-            contentContainerStyle={{ gap: 10 }}
+            onMomentumScrollEnd={event => setFeaturedIndex(Math.round(event.nativeEvent.contentOffset.x / (heroCardWidth + 9)))}
+            style={{ marginHorizontal: -20 }}
+            contentContainerStyle={{ gap: 9, paddingHorizontal: 20, paddingBottom: 9 }}
           >
             {heroProducts.map((product, index) => {
               const image = first(product, ['image_url', 'imageUrl']);
@@ -214,88 +200,55 @@ export default function BuyerHome() {
                   onPress={() => browseProducts(name)}
                   style={{ width: heroCardWidth }}
                 >
-                  <Card style={{ padding: 0, marginBottom: 0, overflow: 'hidden', borderRadius: 20 }}>
+                  <Card style={{ width: heroCardWidth, padding: 0, marginBottom: 0, overflow: 'hidden', borderRadius: 14 }}>
                     {image ? (
-                      <Image source={{ uri: image }} accessibilityLabel={`${name} product image`} resizeMode="cover" style={{ width: '100%', height: 156, backgroundColor: colors.secondary }} />
+                      <Image source={{ uri: image }} accessibilityLabel={`${name} product image`} resizeMode="cover" style={{ width: '100%', height: 88, backgroundColor: colors.secondary }} />
                     ) : (
-                      <View style={{ width: '100%', height: 156, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
-                        <Feather name="package" size={28} color={colors.mutedForeground} />
+                      <View style={{ width: '100%', height: 88, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
+                        <Feather name="package" size={22} color={colors.mutedForeground} />
                       </View>
                     )}
-                    <View style={{ paddingHorizontal: 14, paddingTop: 12, paddingBottom: 13 }}>
+                    <View style={{ paddingHorizontal: 9, paddingTop: 7, paddingBottom: 8 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                        <Text numberOfLines={1} style={{ flex: 1, color: colors.foreground, fontSize: 15, fontWeight: '700' }}>{name}</Text>
-                        <Feather name="arrow-up-right" size={17} color={colors.primary} />
+                        <Text numberOfLines={1} style={{ flex: 1, color: colors.foreground, fontSize: 11, fontWeight: '700' }}>{name}</Text>
+                        <Feather name="arrow-up-right" size={14} color={colors.primary} />
                       </View>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 5 }}>
-                        <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 11 }}>{categoryName(product)}</Text>
-                        <View style={{ width: 3, height: 3, borderRadius: 2, backgroundColor: colors.accent }} />
-                        <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 11 }}>{first(product, ['origin'], 'Origin not specified')}</Text>
-                      </View>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 10 }}>
-                        <View style={{ flex: 1, paddingRight: 12 }}>
-                          <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '700', letterSpacing: 0.8 }}>FOB PRICE</Text>
-                          <Text style={{ color: colors.primary, fontSize: 14, fontWeight: '700', marginTop: 3 }}>{displayPrice(product)}</Text>
-                        </View>
-                        <Text numberOfLines={1} style={{ maxWidth: '53%', color: colors.mutedForeground, fontSize: 9, textAlign: 'right' }}>
-                          MOQ · {first(product, ['moq', 'min_order'], 'Contact OG Exports')}
+                      <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 9, marginTop: 3 }}>
+                        {categoryName(product)} · {first(product, ['origin'], 'Origin not specified')}
                         </Text>
-                      </View>
                     </View>
                   </Card>
                 </Pressable>
               );
             })}
           </ScrollView>
+          {heroProducts.length > 1 ? (
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 5, paddingBottom: 7 }}>
+              {heroProducts.map((product, index) => (
+                <Pressable
+                  key={first(product, ['id'], String(index))}
+                  testID={`buyer-home-feature-dot-${index}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Show featured product ${index + 1}`}
+                  accessibilityState={{ selected: featuredIndex === index }}
+                  onPress={() => {
+                    setFeaturedIndex(index);
+                    featuredScrollRef.current?.scrollTo({ x: index * (heroCardWidth + 9), animated: true });
+                  }}
+                  style={{ width: featuredIndex === index ? 16 : 6, height: 6, borderRadius: 5, backgroundColor: featuredIndex === index ? colors.primary : colors.border }}
+                />
+              ))}
+            </View>
+          ) : null}
         </View>
       ) : null}
 
-      <Section title="Explore by category" right={
-        <Pressable accessibilityRole="button" onPress={() => browseProducts()}>
-          <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>See all</Text>
+      <Section title="Browse by origin" right={
+        <Pressable accessibilityRole="button" onPress={() => setSelectedOrigin('Global')}>
+          <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>All origins</Text>
         </Pressable>
       } />
-      {!ready ? <LoadingCard label="Connecting to the OG Exports catalogue…" lines={2} /> : null}
-      {ready && !apiOrigin ? <ErrorState message="The product catalogue is not connected. Please try again later." /> : null}
-      {categoriesQuery.isLoading ? <LoadingCard label="Loading categories…" lines={2} /> : null}
-      {categoriesQuery.isError ? <ErrorState message="Product categories could not be loaded." error={categoriesQuery.error} onRetry={() => void categoriesQuery.refetch()} /> : null}
-      {ready && !!apiOrigin && !categoriesQuery.isLoading && !categoriesQuery.isError && categories.length === 0 ? (
-        <EmptyState title="No categories published" body="Categories will appear here when OG Exports publishes them." icon="grid" />
-      ) : null}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 11, paddingRight: 12, paddingBottom: 13 }}>
-        {categories.map(category => (
-          <Pressable
-            key={category}
-            testID={`buyer-home-category-${category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-            accessibilityRole="button"
-            onPress={() => router.push({ pathname: '/(buyer-tabs)/buyer-products', params: { category } })}
-            style={({ pressed }) => ({ width: 144, minHeight: 154, borderRadius: 18, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, overflow: 'hidden', opacity: pressed ? 0.82 : 1 })}
-          >
-            {(() => {
-              const categoryProduct = products.find(product => categoryName(product) === category);
-              const image = categoryProduct ? first(categoryProduct, ['image_url', 'imageUrl']) : '';
-              return image ? (
-                <Image source={{ uri: image }} accessibilityLabel={`${category} product`} resizeMode="cover" style={{ height: 98, width: '100%', backgroundColor: colors.secondary }} />
-              ) : (
-                <View style={{ height: 98, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }}>
-                  <Feather name="grid" size={25} color={colors.primary} />
-                </View>
-              );
-            })()}
-            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 5, paddingHorizontal: 11 }}>
-              <Text numberOfLines={2} style={{ flex: 1, color: colors.foreground, fontSize: 11, lineHeight: 15, fontWeight: '700' }}>{category}</Text>
-              <Feather name="arrow-up-right" size={14} color={colors.primary} />
-            </View>
-          </Pressable>
-        ))}
-      </ScrollView>
-
-      <Section title="Worldwide picks for you" right={
-        <Pressable accessibilityRole="button" onPress={() => browseProducts()}>
-          <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>Browse all</Text>
-        </Pressable>
-      } />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 13 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 20, paddingBottom: 10 }}>
         {originOptions.map(origin => {
           const active = selectedOrigin === origin;
           return (
@@ -313,34 +266,83 @@ export default function BuyerHome() {
           );
         })}
       </ScrollView>
+
+      <Section title="Worldwide picks for you" right={
+        <Pressable accessibilityRole="button" onPress={() => browseProducts()}>
+          <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>Browse all</Text>
+        </Pressable>
+      } />
       {productsQuery.isLoading ? <LoadingCard label="Loading products…" /> : null}
       {productsQuery.isError ? <ErrorState message="Recommended products could not be loaded." error={productsQuery.error} onRetry={() => void productsQuery.refetch()} /> : null}
       {ready && !!apiOrigin && !productsQuery.isLoading && !productsQuery.isError && products.length === 0 ? (
         <EmptyState title="No products published" body="Approved products published by OG Exports will appear here." icon="package" />
       ) : null}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 12 }}>
+      {!productsQuery.isLoading && !productsQuery.isError && products.length > 0 && filteredProducts.length === 0 ? (
+        <EmptyState title={`No products from ${selectedOrigin}`} body="Choose another origin to explore the current catalogue." icon="package" />
+      ) : null}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ gap: 9, paddingHorizontal: 20, paddingBottom: 11 }}>
         {filteredProducts.slice(0, 8).map((product, index) => {
           const id = first(product, ['id'], `product-${index}`);
           const image = first(product, ['image_url', 'imageUrl']);
           const name = first(product, ['name'], 'Export product');
           return (
             <Pressable key={id} testID={`buyer-home-product-${id}`} accessibilityRole="button" accessibilityLabel={`Browse ${name}`} onPress={() => browseProducts(name)}>
-              <Card style={{ width: 145, padding: 0, overflow: 'hidden', borderRadius: 17, marginBottom: 0 }}>
+              <Card style={{ width: 144, padding: 0, overflow: 'hidden', borderRadius: 14, marginBottom: 0 }}>
                 {image
-                  ? <Image source={{ uri: image }} accessibilityLabel={`${name} product image`} resizeMode="cover" style={{ height: 112, width: '100%', backgroundColor: colors.secondary }} />
-                  : <View style={{ height: 112, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}><Feather name="package" size={22} color={colors.mutedForeground} /></View>}
-                <View style={{ padding: 11 }}>
+                  ? <Image source={{ uri: image }} accessibilityLabel={`${name} product image`} resizeMode="cover" style={{ height: 91, width: '100%', backgroundColor: colors.secondary }} />
+                  : <View style={{ height: 91, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}><Feather name="package" size={22} color={colors.mutedForeground} /></View>}
+                <View style={{ paddingHorizontal: 9, paddingTop: 7, paddingBottom: 9 }}>
                   {record(product).featured === true ? (
-                    <Text style={{ alignSelf: 'flex-start', color: colors.accentForeground, backgroundColor: colors.glassTintGold, overflow: 'hidden', borderRadius: 10, paddingHorizontal: 7, paddingVertical: 3, fontSize: 9, fontWeight: '700', marginBottom: 6 }}>Featured</Text>
+                    <Text style={{ alignSelf: 'flex-start', color: colors.accentForeground, backgroundColor: colors.glassTintGold, overflow: 'hidden', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 3, fontSize: 8, fontWeight: '700', marginBottom: 4 }}>Featured</Text>
                   ) : null}
-                  <Text numberOfLines={2} style={{ minHeight: 32, color: colors.foreground, fontWeight: '700', fontSize: 11, lineHeight: 16 }}>{name}</Text>
-                  <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 3 }}>{first(product, ['origin'], 'Origin not specified')}</Text>
-                  <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700', marginTop: 7 }}>{displayPrice(product)}</Text>
+                  <Text numberOfLines={2} style={{ minHeight: 28, color: colors.foreground, fontWeight: '700', fontSize: 10, lineHeight: 14 }}>{name}</Text>
+                  <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 9, marginTop: 3 }}>{first(product, ['origin'], 'Origin not specified')}</Text>
+                  <Text style={{ color: colors.primary, fontSize: 10, fontWeight: '700', marginTop: 5 }}>{displayPrice(product)}</Text>
                 </View>
               </Card>
             </Pressable>
           );
         })}
+      </ScrollView>
+
+      <Section title="Explore by category" right={
+        <Pressable accessibilityRole="button" onPress={() => browseProducts()}>
+          <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>See all</Text>
+        </Pressable>
+      } />
+      {!ready ? <LoadingCard label="Connecting to the OG Exports catalogue…" lines={2} /> : null}
+      {ready && !apiOrigin ? <ErrorState message="The product catalogue is not connected. Please try again later." /> : null}
+      {categoriesQuery.isLoading ? <LoadingCard label="Loading categories…" lines={2} /> : null}
+      {categoriesQuery.isError ? <ErrorState message="Product categories could not be loaded." error={categoriesQuery.error} onRetry={() => void categoriesQuery.refetch()} /> : null}
+      {ready && !!apiOrigin && !categoriesQuery.isLoading && !categoriesQuery.isError && categories.length === 0 ? (
+        <EmptyState title="No categories published" body="Categories will appear here when OG Exports publishes them." icon="grid" />
+      ) : null}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ gap: 9, paddingHorizontal: 20, paddingBottom: 13 }}>
+        {categories.map(category => (
+          <Pressable
+            key={category}
+            testID={`buyer-home-category-${category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+            accessibilityRole="button"
+            onPress={() => router.push({ pathname: '/(buyer-tabs)/buyer-products', params: { category } })}
+            style={({ pressed }) => ({ width: 137, minHeight: 145, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, overflow: 'hidden', opacity: pressed ? 0.82 : 1 })}
+          >
+            {(() => {
+              const categoryProduct = products.find(product => categoryName(product) === category);
+              const image = categoryProduct ? first(categoryProduct, ['image_url', 'imageUrl']) : '';
+              return image ? (
+                <Image source={{ uri: image }} accessibilityLabel={`${category} product`} resizeMode="cover" style={{ height: 93, width: '100%', backgroundColor: colors.secondary }} />
+              ) : (
+                <View style={{ height: 93, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }}>
+                  <Feather name="grid" size={23} color={colors.primary} />
+                </View>
+              );
+            })()}
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 5, paddingHorizontal: 9 }}>
+              <Text numberOfLines={2} style={{ flex: 1, color: colors.foreground, fontSize: 10, lineHeight: 14, fontWeight: '700' }}>{category}</Text>
+              <Feather name="arrow-up-right" size={13} color={colors.primary} />
+            </View>
+          </Pressable>
+        ))}
       </ScrollView>
 
       {token ? (
