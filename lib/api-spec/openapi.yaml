@@ -82,6 +82,29 @@ paths:
       summary: List available delivery terms
       responses:
         "200": { description: Delivery terms, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/dashboard:
+    get:
+      operationId: getBuyerDashboard
+      tags: [buyer]
+      summary: Get the signed-in buyer executive dashboard
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: Buyer dashboard totals and activity, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/analytics:
+    get:
+      operationId: getBuyerAnalytics
+      tags: [buyer]
+      summary: Get signed-in buyer order and spending analytics
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: Buyer analytics, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /payment-methods:
+    get:
+      operationId: getPaymentMethods
+      tags: [catalog]
+      summary: List active payment methods
+      responses:
+        "200": { description: Active payment methods, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
   /buyer/cart:
     get:
       operationId: getBuyerCart
@@ -173,6 +196,33 @@ paths:
           schema: { type: integer }
       responses:
         "200": { description: Buyer quotation requests, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+    post:
+      operationId: createBuyerRfq
+      tags: [buyer]
+      summary: Create a buyer quotation request
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JsonObject" }
+      responses:
+        "201": { description: Buyer quotation request created, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "422": { description: Quotation request validation error, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/rfqs/{id}:
+    get:
+      operationId: getBuyerRfq
+      tags: [buyer]
+      summary: Get a buyer-owned quotation request
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Buyer RFQ details, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "404": { description: RFQ not found, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
   /buyer/quotations:
     get:
       operationId: getBuyerQuotations
@@ -204,6 +254,34 @@ paths:
       responses:
         "200": { description: Buyer quotation detail, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
         "404": { description: Quotation not found, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/quotations/{id}/accept:
+    post:
+      operationId: acceptBuyerQuotation
+      tags: [buyer]
+      summary: Accept a buyer-owned quotation and create its order
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Accepted quotation and created order, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "422": { description: Quotation cannot be accepted, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/quotations/{id}/reject:
+    post:
+      operationId: rejectBuyerQuotation
+      tags: [buyer]
+      summary: Reject a buyer-owned quotation
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Rejected quotation, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "422": { description: Quotation cannot be rejected, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
   /buyer/quotations/{id}/messages:
     parameters:
       - name: id
@@ -253,6 +331,10 @@ paths:
           in: query
           required: false
           schema: { type: string }
+        - name: search
+          in: query
+          required: false
+          schema: { type: string }
       responses:
         "200": { description: Buyer orders, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
   /buyer/orders/{id}:
@@ -269,6 +351,334 @@ paths:
       responses:
         "200": { description: Buyer order detail, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
         "404": { description: Order not found, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/orders/{id}/pdf:
+    get:
+      operationId: downloadBuyerOrderPdf
+      tags: [buyer]
+      summary: Download a buyer-owned order PDF
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Order PDF
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "404": { description: Order not found, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/orders/{id}/repeat:
+    post:
+      operationId: repeatBuyerOrder
+      tags: [buyer]
+      summary: Create quotation requests from a previous buyer order
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JsonObject" }
+      responses:
+        "201": { description: RFQ created from the previous order, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "422": { description: Order cannot be repeated, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/shipments:
+    get:
+      operationId: getBuyerShipments
+      tags: [buyer]
+      summary: List a buyer's shipment records
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: per_page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200": { description: Buyer shipments, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/shipments/{id}:
+    get:
+      operationId: getBuyerShipment
+      tags: [buyer]
+      summary: Get a buyer-owned shipment and milestones
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Buyer shipment details, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "404": { description: Shipment not found, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/documents:
+    get:
+      operationId: getBuyerDocuments
+      tags: [buyer]
+      summary: List trade documents available to the signed-in buyer
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: per_page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: type
+          in: query
+          required: false
+          schema: { type: string }
+        - name: shipment_id
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: order_id
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200": { description: Buyer trade documents, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/documents/{id}:
+    get:
+      operationId: getBuyerDocument
+      tags: [buyer]
+      summary: Get a buyer-owned trade document
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Buyer trade document details, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "404": { description: Document not found, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/documents/{id}/download:
+    get:
+      operationId: downloadBuyerDocument
+      tags: [buyer]
+      summary: Download a buyer-owned trade document
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Trade document file
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "404": { description: Document not found, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/documents/{id}/view:
+    get:
+      operationId: viewBuyerDocument
+      tags: [buyer]
+      summary: View a buyer-owned trade document
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Trade document file
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "404": { description: Document not found, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/payments/bank-accounts:
+    get:
+      operationId: getBuyerBankAccounts
+      tags: [buyer]
+      summary: List active OG Exports bank accounts for buyers
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: Buyer payment bank accounts, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/payments/history:
+    get:
+      operationId: getBuyerPaymentHistory
+      tags: [buyer]
+      summary: List buyer order payment submissions
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: per_page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200": { description: Buyer payment history, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/payments/orders/{order}/mark-paid:
+    post:
+      operationId: markBuyerOrderPaid
+      tags: [buyer]
+      summary: Submit buyer payment details for admin verification
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: order
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JsonObject" }
+      responses:
+        "200": { description: Payment submitted for verification, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "422": { description: Payment submission validation error, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/company:
+    get:
+      operationId: getBuyerCompany
+      tags: [buyer]
+      summary: Get buyer company, contacts and verification details
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: Buyer company profile, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+    put:
+      operationId: updateBuyerCompany
+      tags: [buyer]
+      summary: Update buyer company information
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JsonObject" }
+      responses:
+        "200": { description: Updated buyer company, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "422": { description: Company validation error, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/company/preferences:
+    put:
+      operationId: updateBuyerCompanyPreferences
+      tags: [buyer]
+      summary: Update buyer trade preferences
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JsonObject" }
+      responses:
+        "200": { description: Updated buyer trade preferences, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "422": { description: Preferences validation error, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/company/contacts:
+    get:
+      operationId: getBuyerCompanyContacts
+      tags: [buyer]
+      summary: List buyer company contacts
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: Buyer contacts, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+    post:
+      operationId: createBuyerCompanyContact
+      tags: [buyer]
+      summary: Add a buyer company contact
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JsonObject" }
+      responses:
+        "201": { description: Buyer contact created, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "422": { description: Contact validation error, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/company/contacts/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    put:
+      operationId: updateBuyerCompanyContact
+      tags: [buyer]
+      summary: Update a buyer company contact
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JsonObject" }
+      responses:
+        "200": { description: Buyer contact updated, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "404": { description: Contact not found, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+    delete:
+      operationId: deleteBuyerCompanyContact
+      tags: [buyer]
+      summary: Delete a buyer company contact
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: Buyer contact deleted, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "404": { description: Contact not found, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/company/kyc/upload:
+    post:
+      operationId: uploadBuyerCompanyKycDocument
+      tags: [buyer]
+      summary: Submit an uploaded file for a buyer company verification step
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JsonObject" }
+      responses:
+        "200": { description: Buyer company verification document submitted, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "422": { description: Verification document validation error, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /notifications:
+    get:
+      operationId: getSharedNotifications
+      tags: [auth]
+      summary: List notifications for the signed-in account
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: Signed-in account notifications, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /notifications/unread-count:
+    get:
+      operationId: getSharedUnreadNotificationCount
+      tags: [auth]
+      summary: Get the signed-in account unread notification count
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: Unread notification count, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /notifications/read-all:
+    post:
+      operationId: markAllSharedNotificationsRead
+      tags: [auth]
+      summary: Mark all signed-in account notifications as read
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: Notifications marked read, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /notifications/{id}/read:
+    post:
+      operationId: markSharedNotificationRead
+      tags: [auth]
+      summary: Mark one signed-in account notification as read
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Notification marked read, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
   /auth/mobile/login:
     post:
       operationId: investorMobileLogin

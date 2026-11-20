@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
-import { FlatList, View } from 'react-native';
+import { Alert, FlatList, Pressable, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import {
   useGetBuyerQuotation,
   useGetBuyerQuotationMessages,
   useSendBuyerQuotationMessage,
+  useAcceptBuyerQuotation,
+  useRejectBuyerQuotation,
   getGetBuyerQuotationQueryKey,
   getGetBuyerQuotationMessagesQueryKey,
+  getGetBuyerOrdersQueryKey,
+  getGetBuyerQuotationsQueryKey,
+  getGetBuyerRfqsQueryKey,
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { BuyerAuthGate } from '@/components/BuyerAuthGate';
@@ -62,8 +67,11 @@ export default function BuyerQuotationDetail() {
     },
   });
   const sendMessage = useSendBuyerQuotationMessage();
+  const acceptQuotation = useAcceptBuyerQuotation();
+  const rejectQuotation = useRejectBuyerQuotation();
   const [message, setMessage] = useState('');
   const [sendError, setSendError] = useState('');
+  const [decisionError, setDecisionError] = useState('');
   const messages = list(record(messagesQuery.data).data);
   const orderedMessages = [...messages].sort((left, right) => {
     const leftTime = Date.parse(first(left, ['created_at'], ''));
@@ -73,6 +81,8 @@ export default function BuyerQuotationDetail() {
   const buyerId = first(record(user), ['id'], '');
   const product = first(quotation, ['product_name'], first(record(quotation.rfq), ['product_name'], 'Export product'));
   const productUnitPrice = amount(quotation, ['fob_unit_price']);
+  const status = first(quotation, ['status']).toLowerCase();
+  const canDecide = status === 'sent' || status === 'pending';
 
   async function submitMessage() {
     const body = message.trim();
@@ -85,6 +95,36 @@ export default function BuyerQuotationDetail() {
     } catch (error) {
       setSendError(messageOf(error));
     }
+  }
+
+  function decide(action: 'accept' | 'reject') {
+    setDecisionError('');
+    const accepting = action === 'accept';
+    Alert.alert(
+      accepting ? 'Accept this quotation?' : 'Decline this quotation?',
+      accepting
+        ? 'Accepting creates an order and shipment record. Payment is not taken in the app; the trade desk will confirm the next steps.'
+        : 'This will mark the quotation as declined. You can still send a message to the trade desk.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: accepting ? 'Accept quotation' : 'Decline quotation',
+          style: accepting ? 'default' : 'destructive',
+          onPress: () => {
+            const mutation = accepting ? acceptQuotation : rejectQuotation;
+            void mutation.mutateAsync({ id }).then(async () => {
+              await Promise.all([
+                queryClient.invalidateQueries({ queryKey: getGetBuyerQuotationQueryKey(id) }),
+                queryClient.invalidateQueries({ queryKey: getGetBuyerQuotationsQueryKey() }),
+                queryClient.invalidateQueries({ queryKey: getGetBuyerOrdersQueryKey() }),
+                queryClient.invalidateQueries({ queryKey: getGetBuyerRfqsQueryKey() }),
+              ]);
+              if (accepting) router.replace('/(buyer-tabs)/buyer-orders');
+            }).catch(error => setDecisionError(messageOf(error)));
+          },
+        },
+      ],
+    );
   }
 
   if (!token) {
@@ -136,7 +176,18 @@ export default function BuyerQuotationDetail() {
                 Valid until: {first(quotation, ['valid_until'])}
               </Text>
             ) : null}
+            {canDecide ? (
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+                <Pressable accessibilityRole="button" disabled={acceptQuotation.isPending || rejectQuotation.isPending} onPress={() => decide('accept')} style={{ flex: 1, minHeight: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary }}>
+                  <Text style={{ color: colors.primaryForeground, fontSize: 10, fontWeight: '800' }}>{acceptQuotation.isPending ? 'Accepting…' : 'Accept & create order'}</Text>
+                </Pressable>
+                <Pressable accessibilityRole="button" disabled={acceptQuotation.isPending || rejectQuotation.isPending} onPress={() => decide('reject')} style={{ minWidth: 92, minHeight: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, backgroundColor: colors.secondary }}>
+                  <Text style={{ color: colors.foreground, fontSize: 10, fontWeight: '800' }}>{rejectQuotation.isPending ? 'Declining…' : 'Decline'}</Text>
+                </Pressable>
+              </View>
+            ) : null}
           </Card>
+          {decisionError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, marginBottom: 8 }}>{decisionError}</Text> : null}
 
           {messagesQuery.isError ? (
             <ErrorState

@@ -10,4 +10,5 @@ export type GetBuyerOrdersParams = {
 per_page?: number;
 page?: number;
 status?: string;
+search?: string;
 };

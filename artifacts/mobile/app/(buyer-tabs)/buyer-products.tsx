@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { LocalizedText as Text } from '@/components/LocalizedText';
@@ -25,7 +27,9 @@ function categoryOptions(response: unknown): string[] {
 export default function BuyerProducts() {
   const colors = useColors();
   const queryClient = useQueryClient();
-  const { ready, token, apiOrigin } = useAuth();
+  const { ready, token, apiOrigin, user } = useAuth();
+  const userId = first(record(user), ['id'], 'guest');
+  const favoritesKey = `buyer-product-favourites:${userId}`;
   const { category: routeCategory, search: routeSearch, pendingProduct: routePendingProduct } = useLocalSearchParams<{
     category?: string | string[];
     search?: string | string[];
@@ -45,7 +49,23 @@ export default function BuyerProducts() {
   const [expandedId, setExpandedId] = useState('');
   const [addedId, setAddedId] = useState('');
   const [actionError, setActionError] = useState('');
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const autoAddHandled = useRef('');
+
+  useEffect(() => {
+    let active = true;
+    setFavoriteIds([]);
+    AsyncStorage.getItem(favoritesKey).then(value => {
+      if (!active || !value) return;
+      try {
+        const saved: unknown = JSON.parse(value);
+        if (Array.isArray(saved)) setFavoriteIds(saved.filter((id): id is string => typeof id === 'string'));
+      } catch {
+        setFavoriteIds([]);
+      }
+    }).catch(() => setFavoriteIds([]));
+    return () => { active = false; };
+  }, [favoritesKey]);
 
   useEffect(() => {
     if (initialCategory) setCategory(initialCategory);
@@ -107,6 +127,23 @@ export default function BuyerProducts() {
     }
   }, [token, addToCart, queryClient]);
 
+  const toggleFavorite = useCallback(async (productId: string) => {
+    if (!token) {
+      router.push({ pathname: '/(auth)/login', params: { returnTo: '/(buyer-tabs)/buyer-products' } });
+      return;
+    }
+    const next = favoriteIds.includes(productId)
+      ? favoriteIds.filter(id => id !== productId)
+      : [...favoriteIds, productId];
+    setFavoriteIds(next);
+    try {
+      await AsyncStorage.setItem(favoritesKey, JSON.stringify(next));
+      setActionError('');
+    } catch {
+      setActionError('This product could not be saved to your device favourites.');
+    }
+  }, [favoriteIds, favoritesKey, token]);
+
   useEffect(() => {
     if (!ready || !apiOrigin || !token || productsQuery.isLoading || productsQuery.isError) return;
     const pendingId = claimPendingBuyerProduct(pendingProduct, autoAddHandled);
@@ -126,6 +163,12 @@ export default function BuyerProducts() {
   return (
     <Screen title="Products" subtitle="Approved export products from OG Exports" refreshable>
       <Field label="Search products" value={search} onChangeText={setSearch} placeholder="Product, category, origin or SKU" />
+      {token ? (
+        <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/buyer-repeat-orders', params: { view: 'favorites' } })} style={{ minHeight: 39, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 11, borderRadius: 12, backgroundColor: colors.secondary, marginBottom: 10 }}>
+          <Feather name="heart" size={14} color={colors.accent} />
+          <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>Saved products · {favoriteIds.length}</Text>
+        </Pressable>
+      ) : null}
 
       {!ready ? <LoadingCard label="Connecting to the OG Exports catalogue…" lines={2} /> : null}
       {ready && !apiOrigin ? <ErrorState message="The product catalogue is not connected. Please try again later." /> : null}
@@ -192,8 +235,10 @@ export default function BuyerProducts() {
             added={isAdded}
             adding={addToCart.isPending}
             signedIn={!!token}
+            favorite={favoriteIds.includes(id)}
             onToggleDetails={() => setExpandedId(isExpanded ? '' : id)}
             onAddToCart={() => void addProduct(product)}
+            onToggleFavorite={() => void toggleFavorite(id)}
           />
         );
       })}

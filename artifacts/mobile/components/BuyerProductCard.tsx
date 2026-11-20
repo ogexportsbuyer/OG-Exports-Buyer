@@ -15,8 +15,10 @@ type BuyerProductCardProps = {
   added: boolean;
   adding: boolean;
   signedIn: boolean;
+  favorite: boolean;
   onToggleDetails: () => void;
   onAddToCart: () => void;
+  onToggleFavorite: () => void;
 };
 
 function Tag({ label, tone = 'neutral' }: { label: string; tone?: 'neutral' | 'accent' | 'green' }) {
@@ -76,8 +78,10 @@ export function BuyerProductCard({
   added,
   adding,
   signedIn,
+  favorite,
   onToggleDetails,
   onAddToCart,
+  onToggleFavorite,
 }: BuyerProductCardProps) {
   const colors = useColors();
   const [imageFailed, setImageFailed] = useState(false);
@@ -124,6 +128,16 @@ export function BuyerProductCard({
             <Tag label="OG approved" tone="green" />
           </View>
         ) : null}
+        <Pressable
+          testID={`buyer-product-favorite-${id}`}
+          accessibilityRole="button"
+          accessibilityLabel={favorite ? `Remove ${name} from saved products` : `Save ${name}`}
+          accessibilityState={{ selected: favorite }}
+          onPress={onToggleFavorite}
+          style={{ position: 'absolute', top: 49, right: 12, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }}
+        >
+          <Feather name="heart" size={17} color={favorite ? colors.accent : colors.mutedForeground} />
+        </Pressable>
       </View>
 
       <View style={{ padding: 15 }}>

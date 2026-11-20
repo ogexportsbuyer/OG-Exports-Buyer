@@ -10,6 +10,44 @@ import { useColors } from '@/hooks/useColors';
 import { useInvestorMobileLogout } from '@workspace/api-client-react';
 import { first, messageOf, record } from '@/lib/data';
 
+const accountSections = [
+  {
+    title: 'Overview',
+    links: [
+      ['Executive dashboard', '/buyer-overview', 'pie-chart'],
+      ['Analytics', '/buyer-analytics', 'bar-chart-2'],
+    ],
+  },
+  {
+    title: 'Account',
+    links: [
+      ['My profile', '/buyer-profile-details', 'user'],
+      ['Company profile & verification', '/buyer-company', 'briefcase'],
+      ['Security & settings', '/buyer-security', 'shield'],
+      ['Notifications', '/buyer-notifications', 'bell'],
+      ['Messages', '/(buyer-tabs)/buyer-messages', 'message-circle'],
+    ],
+  },
+  {
+    title: 'Trade operations',
+    links: [
+      ['Product catalogue', '/(buyer-tabs)/buyer-products', 'grid'],
+      ['My cart', '/(buyer-tabs)/buyer-cart', 'shopping-cart'],
+      ['Request a quotation', '/buyer-rfq', 'file-plus'],
+      ['Orders & quotations', '/(buyer-tabs)/buyer-orders', 'package'],
+      ['Repeat orders', '/buyer-repeat-orders', 'rotate-ccw'],
+    ],
+  },
+  {
+    title: 'Logistics & finance',
+    links: [
+      ['Shipment tracking', '/buyer-shipments', 'truck'],
+      ['Trade documents', '/buyer-documents', 'file-text'],
+      ['Trade finance', '/buyer-trade-finance', 'credit-card'],
+    ],
+  },
+] as const;
+
 export default function BuyerProfile() {
   const colors = useColors();
   const { token, user, signOut } = useAuth();
@@ -50,37 +88,31 @@ export default function BuyerProfile() {
         {email ? <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 6 }}>{email}</Text> : null}
       </Card>
 
-      <Card style={{ padding: 5, marginBottom: 18 }}>
-        <Pressable
-          testID="buyer-profile-orders"
-          accessibilityRole="button"
-          onPress={() => router.push('/(buyer-tabs)/buyer-orders')}
-          style={{ minHeight: 52, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '600' }}>My orders and quote requests</Text>
-          <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
-        </Pressable>
-        <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: 13 }} />
-        <Pressable
-          testID="buyer-profile-support"
-          accessibilityRole="button"
-          onPress={() => router.push('/(buyer-tabs)/buyer-messages')}
-          style={{ minHeight: 52, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '600' }}>Contact support</Text>
-          <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
-        </Pressable>
-        <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: 13 }} />
-        <Pressable
-          testID="buyer-profile-notifications"
-          accessibilityRole="button"
-          onPress={() => router.push('/account/notifications')}
-          style={{ minHeight: 52, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '600' }}>Notifications</Text>
-          <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
-        </Pressable>
-      </Card>
+      {accountSections.map(section => (
+        <View key={section.title} style={{ marginBottom: 16 }}>
+          <Text style={{ color: colors.mutedForeground, fontSize: 10, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8, marginLeft: 3 }}>
+            {section.title}
+          </Text>
+          <Card style={{ padding: 4 }}>
+            {section.links.map(([title, href, icon], index) => (
+              <React.Fragment key={title}>
+                {index > 0 ? <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: 11 }} /> : null}
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.push(href)}
+                  style={{ minHeight: 54, paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+                >
+                  <View style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
+                    <Feather name={icon} size={16} color={colors.primary} />
+                  </View>
+                  <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '600', flex: 1 }}>{title}</Text>
+                  <Feather name="chevron-right" size={17} color={colors.mutedForeground} />
+                </Pressable>
+              </React.Fragment>
+            ))}
+          </Card>
+        </View>
+      ))}
 
       {error ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, lineHeight: 18, marginBottom: 12 }}>{error}</Text> : null}
       <Action

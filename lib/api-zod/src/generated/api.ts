@@ -51,6 +51,24 @@ export const GetIncotermsResponse = zod.record(zod.string(), zod.unknown())
 
 
 /**
+ * @summary Get the signed-in buyer executive dashboard
+ */
+export const GetBuyerDashboardResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Get signed-in buyer order and spending analytics
+ */
+export const GetBuyerAnalyticsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary List active payment methods
+ */
+export const GetPaymentMethodsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
  * @summary Get the signed-in buyer cart
  */
 export const GetBuyerCartResponse = zod.record(zod.string(), zod.unknown())
@@ -114,6 +132,24 @@ export const GetBuyerRfqsResponse = zod.record(zod.string(), zod.unknown())
 
 
 /**
+ * @summary Create a buyer quotation request
+ */
+export const CreateBuyerRfqBody = zod.record(zod.string(), zod.unknown())
+
+export const CreateBuyerRfqResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Get a buyer-owned quotation request
+ */
+export const GetBuyerRfqParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const GetBuyerRfqResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
  * @summary List the signed-in buyer quotations
  */
 export const GetBuyerQuotationsQueryParams = zod.object({
@@ -132,6 +168,26 @@ export const GetBuyerQuotationParams = zod.object({
 })
 
 export const GetBuyerQuotationResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Accept a buyer-owned quotation and create its order
+ */
+export const AcceptBuyerQuotationParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const AcceptBuyerQuotationResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Reject a buyer-owned quotation
+ */
+export const RejectBuyerQuotationParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const RejectBuyerQuotationResponse = zod.record(zod.string(), zod.unknown())
 
 
 /**
@@ -168,7 +224,8 @@ export const SendBuyerQuotationMessageResponse = zod.record(zod.string(), zod.un
 export const GetBuyerOrdersQueryParams = zod.object({
   "per_page": zod.coerce.number().int().optional(),
   "page": zod.coerce.number().int().optional(),
-  "status": zod.coerce.string().optional()
+  "status": zod.coerce.string().optional(),
+  "search": zod.coerce.string().optional()
 })
 
 export const GetBuyerOrdersResponse = zod.record(zod.string(), zod.unknown())
@@ -182,6 +239,217 @@ export const GetBuyerOrderParams = zod.object({
 })
 
 export const GetBuyerOrderResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Download a buyer-owned order PDF
+ */
+export const DownloadBuyerOrderPdfParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DownloadBuyerOrderPdfResponse = zod.unknown()
+
+
+/**
+ * @summary Create quotation requests from a previous buyer order
+ */
+export const RepeatBuyerOrderParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const RepeatBuyerOrderBody = zod.record(zod.string(), zod.unknown())
+
+export const RepeatBuyerOrderResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary List a buyer's shipment records
+ */
+export const GetBuyerShipmentsQueryParams = zod.object({
+  "per_page": zod.coerce.number().int().optional(),
+  "page": zod.coerce.number().int().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const GetBuyerShipmentsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Get a buyer-owned shipment and milestones
+ */
+export const GetBuyerShipmentParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const GetBuyerShipmentResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary List trade documents available to the signed-in buyer
+ */
+export const GetBuyerDocumentsQueryParams = zod.object({
+  "per_page": zod.coerce.number().int().optional(),
+  "page": zod.coerce.number().int().optional(),
+  "type": zod.coerce.string().optional(),
+  "shipment_id": zod.coerce.number().int().optional(),
+  "order_id": zod.coerce.number().int().optional()
+})
+
+export const GetBuyerDocumentsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Get a buyer-owned trade document
+ */
+export const GetBuyerDocumentParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const GetBuyerDocumentResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Download a buyer-owned trade document
+ */
+export const DownloadBuyerDocumentParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DownloadBuyerDocumentResponse = zod.unknown()
+
+
+/**
+ * @summary View a buyer-owned trade document
+ */
+export const ViewBuyerDocumentParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const ViewBuyerDocumentResponse = zod.unknown()
+
+
+/**
+ * @summary List active OG Exports bank accounts for buyers
+ */
+export const GetBuyerBankAccountsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary List buyer order payment submissions
+ */
+export const GetBuyerPaymentHistoryQueryParams = zod.object({
+  "per_page": zod.coerce.number().int().optional(),
+  "page": zod.coerce.number().int().optional()
+})
+
+export const GetBuyerPaymentHistoryResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Submit buyer payment details for admin verification
+ */
+export const MarkBuyerOrderPaidParams = zod.object({
+  "order": zod.coerce.number().int()
+})
+
+export const MarkBuyerOrderPaidBody = zod.record(zod.string(), zod.unknown())
+
+export const MarkBuyerOrderPaidResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Get buyer company, contacts and verification details
+ */
+export const GetBuyerCompanyResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Update buyer company information
+ */
+export const UpdateBuyerCompanyBody = zod.record(zod.string(), zod.unknown())
+
+export const UpdateBuyerCompanyResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Update buyer trade preferences
+ */
+export const UpdateBuyerCompanyPreferencesBody = zod.record(zod.string(), zod.unknown())
+
+export const UpdateBuyerCompanyPreferencesResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary List buyer company contacts
+ */
+export const GetBuyerCompanyContactsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Add a buyer company contact
+ */
+export const CreateBuyerCompanyContactBody = zod.record(zod.string(), zod.unknown())
+
+export const CreateBuyerCompanyContactResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Update a buyer company contact
+ */
+export const UpdateBuyerCompanyContactParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const UpdateBuyerCompanyContactBody = zod.record(zod.string(), zod.unknown())
+
+export const UpdateBuyerCompanyContactResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Delete a buyer company contact
+ */
+export const DeleteBuyerCompanyContactParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteBuyerCompanyContactResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Submit an uploaded file for a buyer company verification step
+ */
+export const UploadBuyerCompanyKycDocumentBody = zod.record(zod.string(), zod.unknown())
+
+export const UploadBuyerCompanyKycDocumentResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary List notifications for the signed-in account
+ */
+export const GetSharedNotificationsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Get the signed-in account unread notification count
+ */
+export const GetSharedUnreadNotificationCountResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Mark all signed-in account notifications as read
+ */
+export const MarkAllSharedNotificationsReadResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Mark one signed-in account notification as read
+ */
+export const MarkSharedNotificationReadParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const MarkSharedNotificationReadResponse = zod.record(zod.string(), zod.unknown())
 
 
 /**

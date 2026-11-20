@@ -1,12 +1,20 @@
-import React from 'react';
-import { View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import React, { useState } from 'react';
+import { Alert, Pressable, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { LocalizedText as Text } from '@/components/LocalizedText';
-import { Card, ErrorState, LoadingCard, Screen, Status } from '@/components/InvestorUI';
+import { Action, Card, ErrorState, LoadingCard, Screen, Status } from '@/components/InvestorUI';
 import { useColors } from '@/hooks/useColors';
-import { useGetBuyerOrder, getGetBuyerOrderQueryKey } from '@workspace/api-client-react';
-import { amount, first, list, record } from '@/lib/data';
+import {
+  getGetBuyerOrderQueryKey,
+  getGetBuyerRfqsQueryKey,
+  useGetBuyerOrder,
+  useRepeatBuyerOrder,
+} from '@workspace/api-client-react';
+import { amount, first, list, messageOf, record } from '@/lib/data';
 import { displayOrderNumber } from '@/lib/buyer-data';
+import { useAuth } from '@/context/AuthContext';
+import { shareInvestorFile } from '@/lib/file-download';
 
 function money(value: number): string {
   return `USD ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -14,15 +22,52 @@ function money(value: number): string {
 
 export default function BuyerOrderDetail() {
   const colors = useColors();
+  const { apiOrigin } = useAuth();
+  const client = useQueryClient();
   const { id: rawId } = useLocalSearchParams<{ id: string | string[] }>();
   const id = Number(Array.isArray(rawId) ? rawId[0] : rawId);
   const validId = Number.isInteger(id) && id > 0;
+  const [actionError, setActionError] = useState('');
+  const [downloading, setDownloading] = useState(false);
+  const repeatOrder = useRepeatBuyerOrder();
   const query = useGetBuyerOrder(validId ? id : 0, { query: { queryKey: getGetBuyerOrderQueryKey(validId ? id : 0), enabled: validId } });
   const order = record(record(query.data).data);
   const items = list(order.items);
   const shipments = list(order.shipments);
   const documents = list(order.trade_documents ?? order.tradeDocuments);
   const statusTimeline = list(order.status_timeline ?? order.statusTimeline);
+
+  async function downloadOrderPdf() {
+    setActionError('');
+    setDownloading(true);
+    try {
+      await shareInvestorFile(`/api/buyer/orders/${id}/pdf`, `${displayOrderNumber(order)} order summary`, apiOrigin, 'application/pdf', 'pdf', true);
+    } catch (error) {
+      setActionError(messageOf(error));
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  function confirmRepeatOrder() {
+    Alert.alert(
+      'Request this order again?',
+      'This creates new quotation requests using the previous products and destination. It does not place or pay for a new order.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Create quote request',
+          onPress: () => void repeatOrder.mutateAsync({ id }).then(async () => {
+            await Promise.all([
+              client.invalidateQueries({ queryKey: getGetBuyerRfqsQueryKey() }),
+              client.invalidateQueries({ queryKey: getGetBuyerRfqsQueryKey({ per_page: 50 }) }),
+            ]);
+            router.replace({ pathname: '/(buyer-tabs)/buyer-orders', params: { view: 'rfqs' } });
+          }).catch(error => setActionError(messageOf(error))),
+        },
+      ],
+    );
+  }
 
   return (
     <Screen title="Order details" subtitle={displayOrderNumber(order)}>
@@ -31,6 +76,12 @@ export default function BuyerOrderDetail() {
       {query.isError ? <ErrorState message="Order details could not be loaded." error={query.error} onRetry={() => void query.refetch()} /> : null}
       {!query.isLoading && !query.isError && validId ? (
         <>
+          {actionError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, lineHeight: 18, marginBottom: 10 }}>{actionError}</Text> : null}
+          <Card style={{ padding: 11, marginBottom: 12 }}>
+            <Action title="Download order PDF" icon="download" secondary loading={downloading} disabled={downloading} onPress={() => void downloadOrderPdf()} testID="buyer-order-download-pdf" />
+            <Action title="Submit payment details" icon="credit-card" secondary onPress={() => router.push({ pathname: '/buyer-trade-finance', params: { orderId: String(id) } })} testID="buyer-order-payment" />
+            <Action title={repeatOrder.isPending ? 'Creating quote request…' : 'Request repeat quotation'} icon="rotate-ccw" secondary loading={repeatOrder.isPending} disabled={repeatOrder.isPending} onPress={confirmRepeatOrder} testID="buyer-order-repeat" />
+          </Card>
           <Card style={{ padding: 16, marginBottom: 14 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
               <View style={{ flex: 1 }}>
@@ -69,7 +120,8 @@ export default function BuyerOrderDetail() {
             <>
               <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '700', marginTop: 12, marginBottom: 9 }}>Shipments</Text>
               {shipments.map((shipment, index) => (
-                <Card key={first(shipment, ['id'], String(index))} style={{ padding: 14, marginBottom: 9 }}>
+                <Pressable key={first(shipment, ['id'], String(index))} accessibilityRole="button" onPress={() => first(shipment, ['id']) && router.push(`/buyer-shipment/${first(shipment, ['id'])}`)}>
+                <Card style={{ padding: 14, marginBottom: 9 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                     <Text style={{ color: colors.foreground, fontWeight: '700', flex: 1 }}>
                       {first(shipment, ['container_number', 'reference'], `Shipment ${index + 1}`)}
@@ -87,6 +139,7 @@ export default function BuyerOrderDetail() {
                     </Text>
                   ) : null}
                 </Card>
+                </Pressable>
               ))}
             </>
           ) : null}
@@ -94,11 +147,16 @@ export default function BuyerOrderDetail() {
           {documents.length ? (
             <Card style={{ padding: 14, marginTop: 7 }}>
               <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '700' }}>Trade documents</Text>
-              {documents.map((document, index) => (
-                <Text key={first(document, ['id'], String(index))} style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 7 }}>
-                  {first(document, ['title', 'name', 'document_type'], 'Order document')}
-                </Text>
-              ))}
+              {documents.map((document, index) => {
+                const documentId = first(document, ['id']);
+                return (
+                  <Pressable key={documentId || String(index)} accessibilityRole="button" disabled={!documentId} onPress={() => documentId && router.push({ pathname: '/buyer-documents', params: { orderId: String(id) } })}>
+                    <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '600', marginTop: 8 }}>
+                      {first(document, ['title', 'name', 'document_type'], 'Order document')} · View trade documents
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </Card>
           ) : null}
 

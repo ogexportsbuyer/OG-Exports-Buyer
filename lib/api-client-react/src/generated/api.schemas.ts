@@ -1335,6 +1335,26 @@ export type GetBuyerOrdersParams = {
 per_page?: number;
 page?: number;
 status?: string;
+search?: string;
+};
+
+export type GetBuyerShipmentsParams = {
+per_page?: number;
+page?: number;
+status?: string;
+};
+
+export type GetBuyerDocumentsParams = {
+per_page?: number;
+page?: number;
+type?: string;
+shipment_id?: number;
+order_id?: number;
+};
+
+export type GetBuyerPaymentHistoryParams = {
+per_page?: number;
+page?: number;
 };
 
 export type GetInvestorProjectsParams = {
