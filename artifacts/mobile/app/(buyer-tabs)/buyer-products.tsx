@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { LocalizedText as Text } from '@/components/LocalizedText';
-import { Action, Card, EmptyState, ErrorState, Field, LoadingCard, Screen } from '@/components/InvestorUI';
+import { EmptyState, ErrorState, Field, LoadingCard, Screen } from '@/components/InvestorUI';
+import { BuyerProductCard } from '@/components/BuyerProductCard';
 import { useColors } from '@/hooks/useColors';
 import { useAddBuyerCartItem, useGetProductCategories, useGetProducts, getGetBuyerCartQueryKey, getGetProductCategoriesQueryKey, getGetProductsQueryKey } from '@workspace/api-client-react';
 import { amount, first, list, messageOf, record } from '@/lib/data';
@@ -123,7 +124,7 @@ export default function BuyerProducts() {
   }, [ready, apiOrigin, token, pendingProduct, productsQuery.isLoading, productsQuery.isError, products, addProduct]);
 
   return (
-    <Screen title="Categories" subtitle="Approved export products from OG Exports" refreshable>
+    <Screen title="Products" subtitle="Approved export products from OG Exports" refreshable>
       <Field label="Search products" value={search} onChangeText={setSearch} placeholder="Product, category, origin or SKU" />
 
       {!ready ? <LoadingCard label="Connecting to the OG Exports catalogue…" lines={2} /> : null}
@@ -180,77 +181,20 @@ export default function BuyerProducts() {
 
       {filteredProducts.map((product, index) => {
         const id = first(product, ['id'], `product-${index}`);
-        const name = first(product, ['name'], 'Export product');
-        const categoryLabel = categoryName(product);
-        const imageUrl = first(product, ['image_url', 'imageUrl']);
-        const minOrder = first(product, ['moq', 'min_order'], 'Contact OG Exports');
-        const stock = amount(product, ['stock']);
-        const description = first(product, ['short_description', 'shortDescription', 'description']);
-        const certifications = list(product.certifications).map(value => String(value)).filter(Boolean);
         const isExpanded = expandedId === id;
         const isAdded = addedId === id;
 
         return (
-          <Card key={id} testID={`buyer-product-card-${id}`} style={{ padding: 0, marginBottom: 14 }}>
-            {imageUrl ? (
-              <Image source={{ uri: imageUrl }} accessibilityLabel={`${name} product image`} resizeMode="cover" style={{ height: 168, width: '100%', backgroundColor: colors.secondary }} />
-            ) : (
-              <View style={{ height: 112, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
-                <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>OG Exports product</Text>
-              </View>
-            )}
-            <View style={{ padding: 16 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-                <Text style={{ color: colors.accentForeground, backgroundColor: colors.glassTintGold, overflow: 'hidden', borderRadius: 12, paddingVertical: 5, paddingHorizontal: 9, fontSize: 10, fontWeight: '700' }}>
-                  {categoryLabel}
-                </Text>
-                {product.featured === true ? <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>Featured</Text> : null}
-              </View>
-              <Text style={{ color: colors.foreground, fontSize: 18, lineHeight: 23, fontWeight: '700', marginTop: 10 }}>{name}</Text>
-              <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 4 }}>
-                {first(product, ['origin'], 'Origin not specified')}
-                {first(product, ['sku']) ? ` · ${first(product, ['sku'])}` : ''}
-              </Text>
-              {description ? <Text numberOfLines={isExpanded ? undefined : 3} style={{ color: colors.mutedForeground, fontSize: 13, lineHeight: 19, marginTop: 10 }}>{description}</Text> : null}
-              {isExpanded ? (
-                <View style={{ borderTopWidth: 1, borderTopColor: colors.border, marginTop: 13, paddingTop: 12, gap: 7 }}>
-                  <Text style={{ color: colors.foreground, fontSize: 12 }}>MOQ: {minOrder}</Text>
-                  {first(product, ['lead_time']) ? <Text style={{ color: colors.foreground, fontSize: 12 }}>Lead time: {first(product, ['lead_time'])}</Text> : null}
-                  {first(product, ['incoterms']) ? <Text style={{ color: colors.foreground, fontSize: 12 }}>Incoterms: {first(product, ['incoterms'])}</Text> : null}
-                  {certifications.length ? <Text style={{ color: colors.foreground, fontSize: 12 }}>Certifications: {certifications.join(', ')}</Text> : null}
-                  {first(product, ['shelf_life']) ? <Text style={{ color: colors.foreground, fontSize: 12 }}>Shelf life: {first(product, ['shelf_life'])}</Text> : null}
-                  {stock !== null ? <Text style={{ color: colors.foreground, fontSize: 12 }}>{stock > 0 ? 'Available stock' : 'Stock'}: {stock}</Text> : null}
-                </View>
-              ) : null}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginTop: 14, marginBottom: 14 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.mutedForeground, fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.7 }}>FOB price</Text>
-                  <Text style={{ color: colors.primary, fontSize: 14, fontWeight: '700', marginTop: 3 }}>{displayPrice(product)}</Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ color: colors.mutedForeground, fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.7 }}>Minimum order</Text>
-                  <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '600', marginTop: 3 }}>{minOrder}</Text>
-                </View>
-              </View>
-              <Pressable
-                testID={`buyer-product-details-${id}`}
-                accessibilityRole="button"
-                accessibilityState={{ expanded: isExpanded }}
-                onPress={() => setExpandedId(isExpanded ? '' : id)}
-                style={{ alignSelf: 'flex-start', paddingVertical: 8, paddingRight: 8, marginBottom: 8 }}
-              >
-                <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>{isExpanded ? 'Hide details' : 'View details'}</Text>
-              </Pressable>
-              <Action
-                title={!token ? 'Sign in to add' : isAdded ? 'Added to cart' : addToCart.isPending ? 'Adding…' : 'Add to cart'}
-                icon={!token ? 'log-in' : isAdded ? 'check' : 'shopping-cart'}
-                disabled={addToCart.isPending}
-                loading={addToCart.isPending}
-                onPress={() => void addProduct(product)}
-                testID={`buyer-product-add-${id}`}
-              />
-            </View>
-          </Card>
+          <BuyerProductCard
+            key={id}
+            product={product}
+            expanded={isExpanded}
+            added={isAdded}
+            adding={addToCart.isPending}
+            signedIn={!!token}
+            onToggleDetails={() => setExpandedId(isExpanded ? '' : id)}
+            onAddToCart={() => void addProduct(product)}
+          />
         );
       })}
     </Screen>

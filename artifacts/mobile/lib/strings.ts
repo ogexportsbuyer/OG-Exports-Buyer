@@ -1154,6 +1154,8 @@ const phrases: ReadonlyArray<readonly [string, string, string]> = [
   ["View investment","سرمایہ کاری دیکھیں","عرض الاستثمار"],
   ["Configure Auto-invest","خودکار سرمایہ کاری ترتیب دیں","إعداد الاستثمار التلقائي"],
   ["Categories","زمرہ جات","الفئات"],
+  ["Product","مصنوعہ","المنتج"],
+  ["Products","مصنوعات","المنتجات"],
   ["Messages","پیغامات","الرسائل"],
   ["My account","میرا اکاؤنٹ","حسابي"],
   ["Cart","کارٹ","السلة"],

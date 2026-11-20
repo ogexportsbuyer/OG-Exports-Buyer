@@ -97,7 +97,7 @@ export default function BuyerHome() {
         contentContainerStyle={{ gap: 22, paddingBottom: 13, paddingRight: 12 }}
         style={{ marginBottom: 2 }}
       >
-        {['For you', 'Products', 'Categories', 'Worldwide'].map(label => {
+        {['For you', 'Products', 'Worldwide'].map(label => {
           const active = activeTopTab === label;
           return (
             <Pressable
@@ -107,7 +107,7 @@ export default function BuyerHome() {
               accessibilityState={{ selected: active }}
               onPress={() => {
                 setActiveTopTab(label);
-                if (label === 'Products' || label === 'Categories') browseProducts();
+                if (label === 'Products') browseProducts();
                 if (label === 'Worldwide') setSelectedOrigin('Global');
                 if (label === 'For you') setSelectedOrigin('Global');
               }}

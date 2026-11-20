@@ -16,7 +16,7 @@ import { GlassLayers } from '@/components/GlassSurface';
 
 const buyerTabs = [
   ['buyer-home', 'Home', 'home', 'house', 'house.fill'],
-  ['buyer-products', 'Categories', 'grid', 'square.grid.2x2', 'square.grid.2x2.fill'],
+  ['buyer-products', 'Product', 'grid', 'square.grid.2x2', 'square.grid.2x2.fill'],
   ['buyer-messages', 'Messages', 'message-circle', 'bubble.left.and.bubble.right', 'bubble.left.and.bubble.right.fill'],
   ['buyer-cart', 'Cart', 'shopping-cart', 'cart', 'cart.fill'],
   ['buyer-profile', 'My account', 'user', 'person.crop.circle', 'person.crop.circle.fill'],
@@ -37,7 +37,7 @@ function NativeLayout() {
       minimizeBehavior="never"
     >
       <NativeTabs.Trigger name="buyer-home"><NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} /><NativeTabs.Trigger.Label>{t('Home')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
-      <NativeTabs.Trigger name="buyer-products"><NativeTabs.Trigger.Icon sf={{ default: 'square.grid.2x2', selected: 'square.grid.2x2.fill' }} /><NativeTabs.Trigger.Label>{t('Categories')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="buyer-products"><NativeTabs.Trigger.Icon sf={{ default: 'square.grid.2x2', selected: 'square.grid.2x2.fill' }} /><NativeTabs.Trigger.Label>{t('Product')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="buyer-messages"><NativeTabs.Trigger.Icon sf={{ default: 'bubble.left.and.bubble.right', selected: 'bubble.left.and.bubble.right.fill' }} /><NativeTabs.Trigger.Label>{t('Messages')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="buyer-cart"><NativeTabs.Trigger.Icon sf={{ default: 'cart', selected: 'cart.fill' }} /><NativeTabs.Trigger.Label>{t('Cart')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="buyer-profile"><NativeTabs.Trigger.Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} /><NativeTabs.Trigger.Label>{t('My account')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
