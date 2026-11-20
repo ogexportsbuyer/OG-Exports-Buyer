@@ -19,9 +19,9 @@ function contrastRatio(foreground, background) {
     / (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
 }
 
-test('buyer foreground accents are orange while original backgrounds remain unchanged', () => {
-  assert.equal(palette.light.accent, '#B84B0F');
-  assert.equal(palette.dark.accent, '#FF9B5E');
+test('buyer foreground accents use premium gold while original backgrounds remain unchanged', () => {
+  assert.equal(palette.light.accent, '#8A672A');
+  assert.equal(palette.dark.accent, '#D0B47A');
   assert.equal(palette.light.glassTintGold, 'rgba(247, 235, 210, 0.72)');
   assert.equal(palette.dark.glassTintGold, 'rgba(56, 52, 42, 0.42)');
   assert.equal(palette.light.canvasWashGold, 'rgba(214, 184, 124, 0.28)');
@@ -30,11 +30,11 @@ test('buyer foreground accents are orange while original backgrounds remain unch
   assert.equal(palette.dark.statusPendingBackground, '#38342A');
 });
 
-test('orange accent labels maintain readable contrast in both appearances', () => {
+test('gold accent labels maintain readable contrast in both appearances', () => {
   for (const appearance of ['light', 'dark']) {
     assert.ok(
       contrastRatio(palette[appearance].accentForeground, palette[appearance].accent) >= 4.5,
-      `${appearance} orange accent should meet WCAG AA for normal text`,
+      `${appearance} gold accent should meet WCAG AA for normal text`,
     );
   }
 });

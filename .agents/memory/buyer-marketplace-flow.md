@@ -15,11 +15,11 @@ The Replit browser preview cannot read the production catalogue because the API 
 
 **How to apply:** Treat browser-preview CORS errors as a preview limitation, not proof that native requests fail. Verify the API endpoints directly and test the flow in Expo Go or an installed build.
 
-Use orange instead of gold only for buyer-app foreground accents such as text, icons and outlines. Keep the existing gold/teal page washes and tinted surfaces; do not add orange-filled surfaces. Preserve the dark-teal primary buttons.
+Use premium gold for buyer-app foreground accents such as text, icons and outlines. Keep the existing gold/teal page washes and tinted surfaces unchanged. Preserve the dark-teal primary buttons and distinct financial/status colors.
 
-**Why:** the user requested orange accents, then clarified that the existing backgrounds must remain unchanged.
+**Why:** the user changed the buyer foreground accent request from orange back to premium gold.
 
-**How to apply:** Use a contrast-safe orange on foreground elements while leaving background/surface tokens and the official logo unchanged.
+**How to apply:** Use a contrast-safe gold on foreground elements while leaving background/surface tokens, the official logo, and semantic status colors unchanged.
 
 The buyer home should follow the user's marketplace reference: a centered swipeable product slide with neighboring-card peeks and real catalog thumbnails, origin chips, recommendations, then a two-column image-led product grid. Do not invent offers, prices, or supplier metrics.
 
