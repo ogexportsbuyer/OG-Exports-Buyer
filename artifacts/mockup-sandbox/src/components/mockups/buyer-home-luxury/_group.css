@@ -1,0 +1,33 @@
+.buyer-home-design {
+  --og-background: #F8F7F3;
+  --og-foreground: #283833;
+  --og-card: #FDFDFB;
+  --og-primary: #0A3335;
+  --og-primary-foreground: #F9F8F6;
+  --og-secondary: #EFEDE6;
+  --og-muted: #40534C;
+  --og-border: #DFDDD7;
+  --og-accent: #B84B0F;
+  --og-accent-foreground: #FFFFFF;
+  --og-glass-tint-gold: rgba(247, 235, 210, 0.72);
+  --og-shadow: rgba(10, 51, 53, 0.1);
+}
+
+.buyer-home-design.dark {
+  --og-background: #0F151A;
+  --og-foreground: #F0F0EB;
+  --og-card: #151D23;
+  --og-primary: #4FA6A1;
+  --og-primary-foreground: #0F151A;
+  --og-secondary: #202A32;
+  --og-muted: #BECDD7;
+  --og-border: #252F37;
+  --og-accent: #FF9B5E;
+  --og-accent-foreground: #0F151A;
+  --og-shadow: rgba(0, 0, 0, 0.22);
+}
+
+.buyer-home-design,
+.buyer-home-design * {
+  box-sizing: border-box;
+}
