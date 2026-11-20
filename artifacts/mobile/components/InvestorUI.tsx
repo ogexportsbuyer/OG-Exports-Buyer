@@ -52,7 +52,7 @@ export function Screen({ title, subtitle, children, action, scrollable = true, r
   const tabBarBehavior = useTabBarBehavior();
   const insets = useSafeAreaInsets();
   const segments = useSegments();
-  const isHeaderlessTabRoute = segments[0] === '(tabs)';
+  const isHeaderlessTabRoute = segments[0] === '(tabs)' || segments[0] === '(buyer-tabs)';
   const [screenFocused, setScreenFocused] = React.useState(false);
   useFocusEffect(React.useCallback(() => {
     setScreenFocused(true);

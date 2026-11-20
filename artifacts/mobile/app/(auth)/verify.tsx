@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotionReveal, motionHaptic } from '@/lib/motion';
 import { buildTwoFactorVerifyPayload, normalizeAuthResponse } from '@/lib/auth-response';
 import { RouteBrandBackdrop } from "@/components/GlassSurface";
+import { isBuyerOnlyAccount } from '@/lib/account-role';
 
 export default function Verify() {
   const { challenge, acceptSession } = useAuth();
@@ -50,9 +51,12 @@ export default function Verify() {
       if (typeof response.token !== 'string') {
         throw new Error('The verification response did not include a session token.');
       }
-      const destination = resolvePostAuthHref(challenge.returnTo);
+      const user = record(response.user);
+      const destination = isBuyerOnlyAccount(user)
+        ? '/(buyer-tabs)/buyer-home'
+        : resolvePostAuthHref(challenge.returnTo);
       postAuthRedirect.current = true;
-      await acceptSession(response.token, record(response.user));
+      await acceptSession(response.token, user);
       router.replace(destination);
     } catch (err) {
       postAuthRedirect.current = false;

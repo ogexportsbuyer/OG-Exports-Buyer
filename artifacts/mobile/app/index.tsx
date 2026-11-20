@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
+import { homeRouteForAccount } from '@/lib/account-role';
 import { useColors } from '@/hooks/useColors';
 import { MOTION, useMotion } from '@/lib/motion';
 import * as SplashScreen from 'expo-splash-screen';
@@ -12,7 +13,7 @@ const INTRO_MIN_DURATION = 5000;
 const MARK_ASPECT = 490 / 560;
 
 export default function Entry() {
-  const { ready, token, onboardingComplete, appUnlocked } = useAuth();
+  const { ready, token, user, onboardingComplete, appUnlocked } = useAuth();
   const colors = useColors();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -67,10 +68,10 @@ export default function Entry() {
     if (!ready || !motionSettingsReady) return;
     if (!introDurationElapsed) return;
     const destination = token
-      ? appUnlocked ? '/(tabs)' : '/lock'
+      ? appUnlocked ? homeRouteForAccount(user) : '/lock'
       : onboardingComplete ? '/(auth)/login' : '/onboarding';
     router.replace(destination);
-  }, [ready, motionSettingsReady, introDurationElapsed, token, onboardingComplete, appUnlocked]);
+  }, [ready, motionSettingsReady, introDurationElapsed, token, user, onboardingComplete, appUnlocked]);
 
   const animate = motionSettingsReady && !reduceMotion;
   const staticShown = !motionSettingsReady || reduceMotion;

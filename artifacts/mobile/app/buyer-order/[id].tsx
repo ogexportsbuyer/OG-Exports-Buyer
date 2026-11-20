@@ -1,0 +1,119 @@
+import React from 'react';
+import { View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { LocalizedText as Text } from '@/components/LocalizedText';
+import { Card, ErrorState, LoadingCard, Screen, Status } from '@/components/InvestorUI';
+import { useColors } from '@/hooks/useColors';
+import { useGetBuyerOrder } from '@workspace/api-client-react';
+import { amount, first, list, record } from '@/lib/data';
+import { displayOrderNumber } from '@/lib/buyer-data';
+
+function money(value: number): string {
+  return `USD ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+export default function BuyerOrderDetail() {
+  const colors = useColors();
+  const { id: rawId } = useLocalSearchParams<{ id: string | string[] }>();
+  const id = Number(Array.isArray(rawId) ? rawId[0] : rawId);
+  const validId = Number.isInteger(id) && id > 0;
+  const query = useGetBuyerOrder(validId ? id : 0, { query: { enabled: validId } });
+  const order = record(record(query.data).data);
+  const items = list(order.items);
+  const shipments = list(order.shipments);
+  const documents = list(order.trade_documents ?? order.tradeDocuments);
+  const statusTimeline = list(order.status_timeline ?? order.statusTimeline);
+
+  return (
+    <Screen title="Order details" subtitle={displayOrderNumber(order)}>
+      {!validId ? <Text style={{ color: colors.destructive }}>This order link is invalid.</Text> : null}
+      {query.isLoading ? <LoadingCard label="Loading order details…" /> : null}
+      {query.isError ? <ErrorState message="Order details could not be loaded." error={query.error} onRetry={() => void query.refetch()} /> : null}
+      {!query.isLoading && !query.isError && validId ? (
+        <>
+          <Card style={{ padding: 16, marginBottom: 14 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Order reference</Text>
+                <Text style={{ color: colors.foreground, fontSize: 16, fontWeight: '700', marginTop: 4 }}>{displayOrderNumber(order)}</Text>
+              </View>
+              <Status value={first(order, ['status'], 'Pending')} />
+            </View>
+            <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 12 }}>
+              Destination: {first(order, ['destination_port', 'destination'], 'Not set')}
+            </Text>
+            <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 6 }}>
+              Delivery term: {first(order, ['incoterm'], 'Not set')}
+            </Text>
+            <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 6 }}>
+              Required delivery: {first(order, ['required_delivery_date'], 'Not set')}
+            </Text>
+          </Card>
+
+          <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '700', marginBottom: 9 }}>Products</Text>
+          {items.map((item, index) => {
+            const qty = amount(item, ['qty']) ?? 0;
+            const lineTotal = amount(item, ['line_total']);
+            return (
+              <Card key={first(item, ['id'], String(index))} style={{ padding: 14, marginBottom: 9 }}>
+                <Text style={{ color: colors.foreground, fontWeight: '700' }}>{first(item, ['product_name'], first(record(item.product), ['name'], 'Export product'))}</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+                  <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Quantity: {qty}</Text>
+                  <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>{lineTotal === null ? 'Price pending' : money(lineTotal)}</Text>
+                </View>
+              </Card>
+            );
+          })}
+
+          {shipments.length ? (
+            <>
+              <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '700', marginTop: 12, marginBottom: 9 }}>Shipments</Text>
+              {shipments.map((shipment, index) => (
+                <Card key={first(shipment, ['id'], String(index))} style={{ padding: 14, marginBottom: 9 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <Text style={{ color: colors.foreground, fontWeight: '700', flex: 1 }}>
+                      {first(shipment, ['container_number', 'reference'], `Shipment ${index + 1}`)}
+                    </Text>
+                    <Status value={first(shipment, ['status'], 'Pending')} />
+                  </View>
+                  {first(shipment, ['tracking_number', 'tracking_code']) ? (
+                    <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 8 }}>
+                      Tracking: {first(shipment, ['tracking_number', 'tracking_code'])}
+                    </Text>
+                  ) : null}
+                  {first(shipment, ['estimated_delivery', 'estimated_delivery_date']) ? (
+                    <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 5 }}>
+                      Estimated delivery: {first(shipment, ['estimated_delivery', 'estimated_delivery_date'])}
+                    </Text>
+                  ) : null}
+                </Card>
+              ))}
+            </>
+          ) : null}
+
+          {documents.length ? (
+            <Card style={{ padding: 14, marginTop: 7 }}>
+              <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '700' }}>Trade documents</Text>
+              {documents.map((document, index) => (
+                <Text key={first(document, ['id'], String(index))} style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 7 }}>
+                  {first(document, ['title', 'name', 'document_type'], 'Order document')}
+                </Text>
+              ))}
+            </Card>
+          ) : null}
+
+          {statusTimeline.length ? (
+            <Card style={{ padding: 14, marginTop: 12 }}>
+              <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '700' }}>Status history</Text>
+              {statusTimeline.map((event, index) => (
+                <Text key={`${first(event, ['status'], 'status')}-${index}`} style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 8 }}>
+                  {first(event, ['date', 'created_at'], '')} {first(event, ['label', 'status'], '')}
+                </Text>
+              ))}
+            </Card>
+          ) : null}
+        </>
+      ) : null}
+    </Screen>
+  );
+}

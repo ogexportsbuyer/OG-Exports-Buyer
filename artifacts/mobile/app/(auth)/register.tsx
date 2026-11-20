@@ -101,6 +101,7 @@ export default function Register() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const mutation = useInvestorRegister({ request: { timeoutMs: 45000, responseType: 'json' } });
+  const [accountType, setAccountType] = useState<'buyer' | 'investor'>('buyer');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -120,7 +121,7 @@ export default function Register() {
     if (!email.trim()) { setError('Enter your email address.'); return; }
     if (!isStrongPassword(password)) { setError(PASSWORD_POLICY_MESSAGE); return; }
     if (!apiOrigin) {
-      setError('The investor service is not configured for this app. Contact OG Exports support.');
+      setError('The OG Exports service is not configured for this app. Contact support.');
       return;
     }
     try {
@@ -130,7 +131,7 @@ export default function Register() {
           email: email.trim(),
           password,
           password_confirmation: password,
-          account_type: 'investor',
+          account_type: accountType,
         },
       }));
       setChallenge({
@@ -181,7 +182,7 @@ export default function Register() {
         <View style={s.intro}>
           <Text style={[s.title, { color: colors.foreground }]}>Create Account</Text>
           <Text style={[s.subtitle, { color: colors.mutedForeground }]}>
-            Create your OG Exports investor account.
+            Create your OG Exports buyer or investor account.
           </Text>
         </View>
       </MotionReveal>
@@ -189,6 +190,34 @@ export default function Register() {
       <MotionReveal delay={MOTION.revealStagger * 2}>
       <View style={s.form}>
         <Card style={s.registerCard}>
+        <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700', letterSpacing: 0.8, marginBottom: 9 }}>ACCOUNT TYPE</Text>
+        <View style={{ flexDirection: 'row', gap: 9, marginBottom: 18 }}>
+          {([
+            ['buyer', 'Buyer'],
+            ['investor', 'Investor'],
+          ] as const).map(([value, label]) => {
+            const selected = accountType === value;
+            return <Pressable
+              key={value}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              testID={`register-account-type-${value}`}
+              onPress={() => { setAccountType(value); setError(''); }}
+              style={{
+                flex: 1,
+                minHeight: 44,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: selected ? colors.primary : colors.border,
+                backgroundColor: selected ? colors.lightGreen : colors.card,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ color: selected ? colors.primary : colors.mutedForeground, fontWeight: '700' }}>{label}</Text>
+            </Pressable>;
+          })}
+        </View>
         <RegisterField
           label="FULL NAME"
           value={fullName}

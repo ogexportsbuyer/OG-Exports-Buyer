@@ -16,9 +16,10 @@ import { authenticateWithBiometrics, getBiometricInfo, type BiometricInfo } from
 import { MotionReveal, motionHaptic } from '@/lib/motion';
 import { normalizeAuthResponse, readEmailVerificationChallenge, readTwoFactorLoginChallenge } from '@/lib/auth-response';
 import { RouteBrandBackdrop } from "@/components/GlassSurface";
+import { isBuyerOnlyAccount } from '@/lib/account-role';
 
 export default function Login() {
-  const { apiOrigin, token, biometricEnabled, acceptSession, setChallenge, unlockApp } = useAuth();
+  const { apiOrigin, token, user, biometricEnabled, acceptSession, setChallenge, unlockApp } = useAuth();
   const { returnTo } = useLocalSearchParams<{ returnTo?: string | string[] }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -54,7 +55,7 @@ export default function Login() {
   async function submit() {
     setError('');
     if (!apiOrigin) {
-      setError('The investor service is not configured for this app. Contact OG Exports support.');
+      setError('The OG Exports service is not configured for this app. Contact support.');
       return;
     }
     try {
@@ -78,7 +79,7 @@ export default function Login() {
       if (openEmailVerification(response)) return;
       if (typeof result.token !== 'string') throw new Error('The server response did not include a session token.');
       await acceptSession(result.token, user);
-      router.replace(resolvePostAuthHref(returnTo));
+      router.replace(isBuyerOnlyAccount(user) ? '/(buyer-tabs)/buyer-home' : resolvePostAuthHref(returnTo));
     } catch (err) {
       if (openEmailVerification(record(err).data)) return;
       motionHaptic('error');
@@ -103,7 +104,7 @@ export default function Login() {
       const result = await authenticateWithBiometrics('Verify your identity to sign in to OG Exports');
       if (result.success) {
         unlockApp();
-        router.replace(resolvePostAuthHref(returnTo));
+        router.replace(isBuyerOnlyAccount(user) ? '/(buyer-tabs)/buyer-home' : resolvePostAuthHref(returnTo));
       } else if (!['user_cancel', 'app_cancel', 'system_cancel'].includes(result.error)) {
         setError(result.error === 'lockout'
           ? `${info.name} is temporarily locked. Sign in with your account password.`
@@ -121,7 +122,7 @@ export default function Login() {
       <MotionReveal>
       <View style={{ alignItems: 'center', marginBottom: 22 }}>
         <AuthBrandHeader />
-        <Text style={{ color: colors.mutedForeground, fontSize: 13, lineHeight: 19, marginTop: 12, textAlign: 'center' }}>Sign in to your investor account.</Text>
+        <Text style={{ color: colors.mutedForeground, fontSize: 13, lineHeight: 19, marginTop: 12, textAlign: 'center' }}>Sign in to your OG Exports account.</Text>
       </View>
       <Card>
         <Field label="Email address" value={email} onChangeText={value => { setEmail(value); setError(''); }} placeholder="name@example.com" keyboardType="email-address" autoCapitalize="none" />
@@ -167,7 +168,7 @@ export default function Login() {
       </View>
       <View style={{ alignItems: 'center', marginTop: 22 }}>
         <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>
-          {apiOrigin ? 'Protected by secure, token-based sign-in' : 'The app connection is not ready. Contact OG Exports support.'}
+          {apiOrigin ? 'Protected by secure, token-based sign-in' : 'The OG Exports service is not configured. Contact support.'}
         </Text>
       </View>
     </KeyboardAwareScrollViewCompat></View>

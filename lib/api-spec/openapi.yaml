@@ -12,11 +12,202 @@ tags:
     description: Mobile authentication
   - name: investor
     description: Investor portfolio, opportunities, wallet, KYC and account
+  - name: catalog
+    description: Public product catalogue and destination information
+  - name: buyer
+    description: Buyer cart, quotations and order management
   - name: communication
     description: Notifications, conversations and support
   - name: admin
     description: OG Exports staff management operations
 paths:
+  /products:
+    get:
+      operationId: getProducts
+      tags: [catalog]
+      summary: List website-approved products
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema: { type: string }
+        - name: category
+          in: query
+          required: false
+          schema: { type: string }
+        - name: featured
+          in: query
+          required: false
+          schema: { type: boolean }
+        - name: per_page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200": { description: Approved product page, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /categories:
+    get:
+      operationId: getProductCategories
+      tags: [catalog]
+      summary: List public product categories
+      responses:
+        "200": { description: Product categories, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /countries:
+    get:
+      operationId: getCountries
+      tags: [catalog]
+      summary: List destination countries
+      responses:
+        "200": { description: Destination countries, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /countries/{country}/ports:
+    get:
+      operationId: getCountryPorts
+      tags: [catalog]
+      summary: List ports for a destination country
+      parameters:
+        - name: country
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Destination ports, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /incoterms:
+    get:
+      operationId: getIncoterms
+      tags: [catalog]
+      summary: List available delivery terms
+      responses:
+        "200": { description: Delivery terms, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/cart:
+    get:
+      operationId: getBuyerCart
+      tags: [buyer]
+      summary: Get the signed-in buyer cart
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: Buyer cart, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+    post:
+      operationId: addBuyerCartItem
+      tags: [buyer]
+      summary: Add an approved product to the buyer cart
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JsonObject" }
+      responses:
+        "200": { description: Updated buyer cart, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "422": { description: Cart validation error, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/cart/{item}:
+    parameters:
+      - name: item
+        in: path
+        required: true
+        schema: { type: integer }
+    put:
+      operationId: updateBuyerCartItem
+      tags: [buyer]
+      summary: Update a buyer cart item quantity
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JsonObject" }
+      responses:
+        "200": { description: Updated buyer cart, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+    delete:
+      operationId: removeBuyerCartItem
+      tags: [buyer]
+      summary: Remove an item from the buyer cart
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: Updated buyer cart, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/cart/checkout:
+    post:
+      operationId: checkoutBuyerCart
+      tags: [buyer]
+      summary: Place an FOB order from the buyer cart
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JsonObject" }
+      responses:
+        "201": { description: Order placed, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "422": { description: Checkout validation error, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/cart/request-quotation:
+    post:
+      operationId: requestBuyerCartQuotation
+      tags: [buyer]
+      summary: Request a quotation for cart products
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JsonObject" }
+      responses:
+        "201": { description: Quotation request submitted, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "422": { description: Quotation request validation error, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/rfqs:
+    get:
+      operationId: getBuyerRfqs
+      tags: [buyer]
+      summary: List the signed-in buyer quotation requests
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: per_page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200": { description: Buyer quotation requests, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/orders:
+    get:
+      operationId: getBuyerOrders
+      tags: [buyer]
+      summary: List the signed-in buyer orders
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: per_page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200": { description: Buyer orders, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /buyer/orders/{id}:
+    get:
+      operationId: getBuyerOrder
+      tags: [buyer]
+      summary: Get a buyer order and its shipment details
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Buyer order detail, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "404": { description: Order not found, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
   /auth/mobile/login:
     post:
       operationId: investorMobileLogin

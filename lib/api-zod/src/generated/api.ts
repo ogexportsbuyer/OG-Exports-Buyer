@@ -9,6 +9,133 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary List website-approved products
+ */
+export const GetProductsQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "category": zod.coerce.string().optional(),
+  "featured": zod.coerce.boolean().optional(),
+  "per_page": zod.coerce.number().int().optional(),
+  "page": zod.coerce.number().int().optional()
+})
+
+export const GetProductsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary List public product categories
+ */
+export const GetProductCategoriesResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary List destination countries
+ */
+export const GetCountriesResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary List ports for a destination country
+ */
+export const GetCountryPortsParams = zod.object({
+  "country": zod.coerce.number().int()
+})
+
+export const GetCountryPortsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary List available delivery terms
+ */
+export const GetIncotermsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Get the signed-in buyer cart
+ */
+export const GetBuyerCartResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Add an approved product to the buyer cart
+ */
+export const AddBuyerCartItemBody = zod.record(zod.string(), zod.unknown())
+
+export const AddBuyerCartItemResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Update a buyer cart item quantity
+ */
+export const UpdateBuyerCartItemParams = zod.object({
+  "item": zod.coerce.number().int()
+})
+
+export const UpdateBuyerCartItemBody = zod.record(zod.string(), zod.unknown())
+
+export const UpdateBuyerCartItemResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Remove an item from the buyer cart
+ */
+export const RemoveBuyerCartItemParams = zod.object({
+  "item": zod.coerce.number().int()
+})
+
+export const RemoveBuyerCartItemResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Place an FOB order from the buyer cart
+ */
+export const CheckoutBuyerCartBody = zod.record(zod.string(), zod.unknown())
+
+export const CheckoutBuyerCartResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Request a quotation for cart products
+ */
+export const RequestBuyerCartQuotationBody = zod.record(zod.string(), zod.unknown())
+
+export const RequestBuyerCartQuotationResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary List the signed-in buyer quotation requests
+ */
+export const GetBuyerRfqsQueryParams = zod.object({
+  "per_page": zod.coerce.number().int().optional(),
+  "page": zod.coerce.number().int().optional()
+})
+
+export const GetBuyerRfqsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary List the signed-in buyer orders
+ */
+export const GetBuyerOrdersQueryParams = zod.object({
+  "per_page": zod.coerce.number().int().optional(),
+  "page": zod.coerce.number().int().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const GetBuyerOrdersResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Get a buyer order and its shipment details
+ */
+export const GetBuyerOrderParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const GetBuyerOrderResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
  * @summary Sign in with an email address and password
  */
 export const InvestorMobileLoginBody = zod.record(zod.string(), zod.unknown())

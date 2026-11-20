@@ -27,6 +27,7 @@ import { record } from '@/lib/data';
 import { translateUi } from '@/lib/strings';
 import { MOTION, MotionProvider, useMotion } from '@/lib/motion';
 import { goBackOrReplace } from '@/lib/safe-navigation';
+import { homeRouteForAccount, isBuyerOnlyAccount } from '@/lib/account-role';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -41,7 +42,7 @@ function RootLayoutNav() {
   const colors = useColors();
   const t = (value: string) => translateUi(value, preferences.language);
   const segments = useSegments();
-  const isHomeRoute = segments[0] === '(tabs)' && !segments[1];
+  const isHomeRoute = (segments[0] === '(tabs)' || segments[0] === '(buyer-tabs)') && !segments[1];
   const isDarkStatusBar = resolvedAppearance === 'dark';
   const useLightStatusBar = isHomeRoute || isDarkStatusBar;
   const statusBar = Platform.OS === 'android'
@@ -161,6 +162,27 @@ function RootLayoutNav() {
     if (!ready) return;
     const firstSegment = String(segments[0] ?? '');
     const publicSegments = new Set(['', 'index', 'onboarding', '(auth)', 'forgot-password']);
+    const buyerOnly = isBuyerOnlyAccount(user);
+    const sharedBuyerRoutes = new Set(['/account/messages', '/account/notifications']);
+    if (token && buyerOnly && firstSegment === '(tabs)') {
+      router.replace('/(buyer-tabs)/buyer-home');
+      return;
+    }
+    if (token && !buyerOnly && firstSegment === '(buyer-tabs)') {
+      router.replace('/(tabs)');
+      return;
+    }
+    if (token && buyerOnly && (
+      ['wallet', 'project', 'position', 'tracking', 'search'].includes(firstSegment)
+      || (firstSegment === 'account' && !sharedBuyerRoutes.has(pathname))
+    )) {
+      router.replace(homeRouteForAccount(user));
+      return;
+    }
+    if (token && !buyerOnly && ['buyer-checkout', 'buyer-order'].includes(firstSegment)) {
+      router.replace('/(tabs)');
+      return;
+    }
     if (token && !appUnlocked && firstSegment !== 'lock' && firstSegment !== '(auth)') {
       router.replace({ pathname: '/lock', params: { returnTo } });
       return;
@@ -168,7 +190,7 @@ function RootLayoutNav() {
     if (!token && !publicSegments.has(firstSegment)) {
       router.replace({ pathname: '/(auth)/login', params: { returnTo } });
     }
-  }, [ready, token, appUnlocked, segments, returnTo]);
+  }, [ready, token, user, appUnlocked, segments, pathname, returnTo]);
 
   if (token && !appUnlocked) {
     return <>
@@ -210,6 +232,9 @@ function RootLayoutNav() {
           sheetExpandsWhenScrolledToEdge: true,
         }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
+        <Stack.Screen name="(buyer-tabs)" options={{ headerShown: false, animation: 'none' }} />
+        <Stack.Screen name="buyer-checkout" options={{ title: t('Checkout') }} />
+        <Stack.Screen name="buyer-order/[id]" options={{ title: t('Order details') }} />
         <Stack.Screen name="project/[id]" options={{
           title: t('Opportunity'),
           headerLeft: safeBackButton('/(tabs)/trade', 'project-header-back'),

@@ -14,8 +14,8 @@ import { RouteBrandBackdrop } from "@/components/GlassSurface";
 const slides = [
   {
     illustration: 'container' as const,
-    title: 'Invest in Real-World Trade',
-    body: 'Participate in selected import and export trade opportunities connected to real cargo.',
+    title: 'Trade With Confidence',
+    body: 'Explore export products, verified trade opportunities, and shipment information from OG Exports.',
   },
   {
     illustration: 'shipment' as const,
@@ -24,8 +24,8 @@ const slides = [
   },
   {
     illustration: 'portfolio' as const,
-    title: 'Manage Your Portfolio',
-    body: 'Review investments, wallet balance, returns and distributions, and trade performance in one place.',
+    title: 'Stay on Top of Trade',
+    body: 'Follow your products, orders, account activity, and shipment updates in one place.',
   },
 ];
 

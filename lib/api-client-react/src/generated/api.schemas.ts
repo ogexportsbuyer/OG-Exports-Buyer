@@ -1305,6 +1305,25 @@ export interface BankAccountReviewInput {
 
 export interface JsonObject { [key: string]: unknown }
 
+export type GetProductsParams = {
+search?: string;
+category?: string;
+featured?: boolean;
+per_page?: number;
+page?: number;
+};
+
+export type GetBuyerRfqsParams = {
+per_page?: number;
+page?: number;
+};
+
+export type GetBuyerOrdersParams = {
+per_page?: number;
+page?: number;
+status?: string;
+};
+
 export type GetInvestorProjectsParams = {
 status?: string;
 type?: string;

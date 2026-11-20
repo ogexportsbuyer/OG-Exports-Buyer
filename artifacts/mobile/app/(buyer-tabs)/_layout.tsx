@@ -1,0 +1,136 @@
+import React from 'react';
+import { Animated, Platform, StyleSheet, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { isLiquidGlassAvailable } from 'expo-glass-effect';
+import { Tabs } from 'expo-router';
+import { NativeTabs } from 'expo-router/native-tabs';
+import { SymbolView } from 'expo-symbols';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useColors } from '@/hooks/useColors';
+import { useAppPreferences } from '@/context/AppPreferencesContext';
+import { translateUi } from '@/lib/strings';
+import { MOTION, useMotion } from '@/lib/motion';
+import { TabBarBehaviorProvider, useTabBarBehavior } from '@/context/TabBarBehaviorContext';
+import { GlassLayers } from '@/components/GlassSurface';
+
+const buyerTabs = [
+  ['buyer-home', 'Dashboard', 'home', 'house', 'house.fill'],
+  ['buyer-products', 'Products', 'package', 'shippingbox', 'shippingbox.fill'],
+  ['buyer-cart', 'Cart', 'shopping-cart', 'cart', 'cart.fill'],
+  ['buyer-orders', 'Orders', 'clipboard', 'list.bullet.rectangle', 'list.bullet.rectangle.fill'],
+  ['buyer-profile', 'Profile', 'user', 'person.crop.circle', 'person.crop.circle.fill'],
+] as const;
+
+function NativeLayout() {
+  const colors = useColors();
+  const { visible } = useTabBarBehavior();
+  const { preferences } = useAppPreferences();
+  const t = (value: string) => translateUi(value, preferences.language);
+  return (
+    <NativeTabs
+      tintColor={colors.primary}
+      iconColor={{ default: colors.mutedForeground, selected: colors.primary }}
+      labelStyle={{ default: { color: colors.mutedForeground }, selected: { color: colors.primary, fontWeight: '600' } }}
+      backgroundColor={colors.card}
+      hidden={!visible}
+      minimizeBehavior="never"
+    >
+      <NativeTabs.Trigger name="buyer-home"><NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} /><NativeTabs.Trigger.Label>{t('Dashboard')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="buyer-products"><NativeTabs.Trigger.Icon sf={{ default: 'shippingbox', selected: 'shippingbox.fill' }} /><NativeTabs.Trigger.Label>{t('Products')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="buyer-cart"><NativeTabs.Trigger.Icon sf={{ default: 'cart', selected: 'cart.fill' }} /><NativeTabs.Trigger.Label>{t('Cart')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="buyer-orders"><NativeTabs.Trigger.Icon sf={{ default: 'list.bullet.rectangle', selected: 'list.bullet.rectangle.fill' }} /><NativeTabs.Trigger.Label>{t('Orders')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="buyer-profile"><NativeTabs.Trigger.Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} /><NativeTabs.Trigger.Label>{t('Profile')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+    </NativeTabs>
+  );
+}
+
+function ClassicLayout() {
+  const colors = useColors();
+  const { preferences, resolvedAppearance } = useAppPreferences();
+  const insets = useSafeAreaInsets();
+  const { visible } = useTabBarBehavior();
+  const { reduceMotion } = useMotion();
+  const isWeb = Platform.OS === 'web';
+  const isAndroid = Platform.OS === 'android';
+  const translateY = React.useRef(new Animated.Value(0)).current;
+  const opacity = React.useRef(new Animated.Value(1)).current;
+
+  React.useEffect(() => {
+    if (reduceMotion) {
+      translateY.setValue(visible ? 0 : 112);
+      opacity.setValue(visible ? 1 : 0);
+      return;
+    }
+    Animated.parallel([
+      Animated.timing(translateY, { toValue: visible ? 0 : 112, duration: visible ? 240 : 190, useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: visible ? 1 : 0, duration: visible ? 200 : 150, useNativeDriver: true }),
+    ]).start();
+  }, [opacity, reduceMotion, translateY, visible]);
+
+  return (
+    <Tabs screenOptions={{
+      headerShown: false,
+      tabBarActiveTintColor: colors.primary,
+      tabBarInactiveTintColor: colors.mutedForeground,
+      tabBarStyle: {
+        position: 'absolute', left: 14, right: 14,
+        bottom: isWeb ? 0 : isAndroid ? Math.max(insets.bottom - 4, 8) : Math.max(insets.bottom, 10),
+        height: isWeb ? 84 : 70,
+        paddingTop: isWeb ? 2 : 4,
+        paddingBottom: isWeb ? 34 : 0,
+        borderRadius: isAndroid ? 35 : 0,
+        backgroundColor: 'transparent',
+        borderWidth: isAndroid ? StyleSheet.hairlineWidth : 0,
+        borderColor: colors.border,
+        elevation: isAndroid ? 9 : 0,
+        shadowColor: colors.shadowColor,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: isAndroid ? 0.16 : 0.08,
+        shadowRadius: isAndroid ? 16 : 12,
+        opacity,
+        transform: [{ translateY }],
+      },
+      tabBarLabelStyle: { fontSize: 10, fontWeight: '600', marginTop: 1 },
+      tabBarBackground: () => isAndroid
+        ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: 35, overflow: 'hidden' }]}>
+            <BlurView intensity={36} tint={resolvedAppearance} experimentalBlurMethod="dimezisBlurView" style={StyleSheet.absoluteFill} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.card, opacity: 0.8 }]} />
+            <GlassLayers />
+            <View style={[StyleSheet.absoluteFill, { borderRadius: 35, borderWidth: 1, borderColor: colors.border }]} />
+          </View>
+        : <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+            {Platform.OS === 'ios' ? <BlurView intensity={85} tint={resolvedAppearance} style={[StyleSheet.absoluteFill, { bottom: isWeb ? 34 : 0 }]} /> : null}
+            <View style={[StyleSheet.absoluteFill, {
+              bottom: isWeb ? 34 : 0,
+              backgroundColor: colors.card,
+              opacity: isWeb ? 1 : 0.84,
+              borderWidth: 1,
+              borderColor: colors.glassBorder,
+              borderRadius: 30,
+              overflow: 'hidden',
+              ...(isWeb ? { boxShadow: `0 -6px 20px ${colors.shadow}` } : {}),
+            }]}>
+              <GlassLayers />
+            </View>
+          </View>,
+    }}>
+      {buyerTabs.map(([name, title, icon, ios, iosSelected]) => (
+        <Tabs.Screen key={name} name={name} options={{
+          title: translateUi(title, preferences.language),
+          tabBarIcon: ({ color, focused }) => Platform.OS === 'ios'
+            ? <SymbolView name={focused ? iosSelected : ios} tintColor={color} size={22} />
+            : <Feather name={icon} size={21} color={color} />,
+        }} />
+      ))}
+    </Tabs>
+  );
+}
+
+export default function BuyerTabLayout() {
+  return (
+    <TabBarBehaviorProvider>
+      {isLiquidGlassAvailable() ? <NativeLayout /> : <ClassicLayout />}
+    </TabBarBehaviorProvider>
+  );
+}
