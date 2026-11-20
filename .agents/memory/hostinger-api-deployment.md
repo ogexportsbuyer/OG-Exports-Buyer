@@ -32,3 +32,9 @@ Do not trust a newly scanned SSH host key until its fingerprint has been confirm
 **Why:** Copying a multiline private key through the secret form did not preserve a usable key; a verified one-line Base64 value did.
 
 **How to apply:** Store the encoded key only as the `HOSTINGER_SSH_PRIVATE_KEY_B64` Replit Secret, decode it to a mode-600 temporary file for SSH, and never print or commit either representation.
+
+Production Laravel files can differ from the local checkout even when their relevant method still matches.
+
+**Why:** Replacing a whole production controller or route file can erase production-only changes.
+
+**How to apply:** Compare the remote code first, then use guarded, single-occurrence edits with remote backups. Run Artisan cache commands separately over SSH; redirect `route:clear` output before parsing `route:list --json`.
