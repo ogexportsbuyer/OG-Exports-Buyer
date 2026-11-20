@@ -9,14 +9,14 @@
     "scheme": "mobile",
     "userInterfaceStyle": "light",
     "ios": {
-      "bundleIdentifier": "com.ogexports.app",
+      "bundleIdentifier": "com.ogexports.buyer",
       "version": "2.1.6",
       "buildNumber": "4",
       "supportsTablet": false,
       "icon": "./assets/images/og-app-icon.png"
     },
     "android": {
-      "package": "com.ogexports.app",
+      "package": "com.ogexports.buyer",
       "googleServicesFile": "./google-services.json",
       "versionCode": 6,
       "icon": "./assets/images/og-app-icon.png",
