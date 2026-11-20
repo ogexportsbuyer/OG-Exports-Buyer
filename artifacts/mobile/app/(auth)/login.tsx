@@ -121,7 +121,7 @@ export default function Login() {
       <MotionReveal>
       <View style={{ alignItems: 'center', marginBottom: 22 }}>
         <AuthBrandHeader />
-        <Text style={{ color: colors.mutedForeground, fontSize: 13, lineHeight: 19, marginTop: 12, textAlign: 'center' }}>Sign in to your OG Exports account.</Text>
+        <Text style={{ color: colors.mutedForeground, fontSize: 13, lineHeight: 19, marginTop: 12, textAlign: 'center' }}>Sign in to your OG Exports buyer account.</Text>
       </View>
       <Card>
         <Field label="Email address" value={email} onChangeText={value => { setEmail(value); setError(''); }} placeholder="name@example.com" keyboardType="email-address" autoCapitalize="none" />
@@ -166,7 +166,7 @@ export default function Login() {
         <Pressable onPress={() => router.push(postAuthPath
           ? { pathname: '/(auth)/register', params: { returnTo: postAuthPath } }
           : '/(auth)/register'
-        )}><Text style={{ color: colors.primary, fontWeight: '700' }}>Create account</Text></Pressable>
+        )}><Text style={{ color: colors.primary, fontWeight: '700' }}>Create buyer account</Text></Pressable>
       </View>
       <View style={{ alignItems: 'center', marginTop: 22 }}>
         <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>

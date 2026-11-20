@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text } from '@/components/LocalizedText';
@@ -10,12 +10,10 @@ export function BuyerAuthGate({
   title,
   body,
   returnTo,
-  showInvestorSignup = false,
 }: {
   title: string;
   body: string;
   returnTo: string;
-  showInvestorSignup?: boolean;
 }) {
   const colors = useColors();
   return (
@@ -40,16 +38,6 @@ export function BuyerAuthGate({
           onPress={() => router.push({ pathname: '/(auth)/register', params: { returnTo } })}
           testID="buyer-auth-register"
         />
-        {showInvestorSignup ? (
-          <Pressable
-            accessibilityRole="link"
-            testID="investor-auth-register"
-            onPress={() => router.push({ pathname: '/(auth)/register', params: { returnTo, accountType: 'investor' } })}
-            style={{ alignSelf: 'center', paddingVertical: 16, paddingHorizontal: 10 }}
-          >
-            <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '700' }}>Create investor account</Text>
-          </Pressable>
-        ) : null}
       </Card>
     </Screen>
   );

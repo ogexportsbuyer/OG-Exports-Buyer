@@ -11,7 +11,7 @@ export function AuthBrandHeader() {
     <View testID="auth-brand-header" pointerEvents="box-none" style={styles.container}>
       <BrandMark width={120} />
       <Text accessibilityRole="header" style={[styles.name, { color: colors.primary }]}>OG Exports</Text>
-      <Text style={[styles.tagline, { color: colors.mutedForeground }]}>Global Trade. Digital Investment.</Text>
+      <Text style={[styles.tagline, { color: colors.mutedForeground }]}>Trusted sourcing. Global trade.</Text>
     </View>
   );
 }

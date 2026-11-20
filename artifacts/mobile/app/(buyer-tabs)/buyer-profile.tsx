@@ -36,7 +36,6 @@ export default function BuyerProfile() {
       title="My account"
       body="Sign in to manage your buyer profile, orders, messages, and account notifications."
       returnTo="/buyer-profile"
-      showInvestorSignup
     />;
   }
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -15,17 +15,7 @@ import { MOTION, MotionReveal, motionHaptic } from '@/lib/motion';
 import { goBackOrReplace } from '@/lib/safe-navigation';
 import { normalizeAuthResponse, readEmailVerificationChallenge } from '@/lib/auth-response';
 import { RouteBrandBackdrop } from "@/components/GlassSurface";
-
-const PASSWORD_POLICY_MESSAGE = 'Use 8–128 characters with uppercase and lowercase letters, a number, and a symbol.';
-
-function isStrongPassword(value: string) {
-  return value.length >= 8
-    && value.length <= 128
-    && /[A-Z]/.test(value)
-    && /[a-z]/.test(value)
-    && /\d/.test(value)
-    && /[^A-Za-z0-9\s]/.test(value);
-}
+import { buyerRegistrationPayload, validateBuyerRegistration } from '@/lib/buyer-registration';
 
 type RegisterFieldProps = {
   label: string;
@@ -98,18 +88,18 @@ function RegisterField({
 
 export default function Register() {
   const { apiOrigin, setChallenge } = useAuth();
-  const { returnTo, accountType: accountTypeParam } = useLocalSearchParams<{ returnTo?: string | string[]; accountType?: string | string[] }>();
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string | string[] }>();
   const postAuthPath = Array.isArray(returnTo) ? returnTo[0] : returnTo;
-  const initialAccountType = Array.isArray(accountTypeParam) ? accountTypeParam[0] : accountTypeParam;
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const mutation = useInvestorRegister({ request: { timeoutMs: 45000, responseType: 'json' } });
-  const [accountType, setAccountType] = useState<'buyer' | 'investor'>(initialAccountType === 'investor' ? 'investor' : 'buyer');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [focusedField, setFocusedField] = useState<'fullName' | 'email' | 'password' | null>(null);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [focusedField, setFocusedField] = useState<'fullName' | 'email' | 'password' | 'confirmPassword' | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const passwordRequirements = [
     { label: '8–128 characters', met: password.length >= 8 && password.length <= 128 },
@@ -118,28 +108,26 @@ export default function Register() {
     { label: 'At least one symbol', met: /[^A-Za-z0-9\s]/.test(password) },
   ];
 
-  useEffect(() => {
-    setAccountType(initialAccountType === 'investor' ? 'investor' : 'buyer');
-  }, [initialAccountType]);
-
   async function submit() {
     setError('');
-    if (!fullName.trim()) { setError('Enter your full name.'); return; }
-    if (!email.trim()) { setError('Enter your email address.'); return; }
-    if (!isStrongPassword(password)) { setError(PASSWORD_POLICY_MESSAGE); return; }
+    const validation = validateBuyerRegistration({ fullName, email, password, confirmPassword });
+    if (validation) {
+      setError({
+        name_required: 'Enter your full name.',
+        email_required: 'Enter your email address.',
+        email_invalid: 'Enter a valid email address.',
+        password_weak: 'Use 8–128 characters with uppercase and lowercase letters, a number, and a symbol.',
+        password_mismatch: 'Passwords do not match.',
+      }[validation]);
+      return;
+    }
     if (!apiOrigin) {
       setError('The OG Exports service is not configured for this app. Contact support.');
       return;
     }
     try {
       const result = normalizeAuthResponse(await mutation.mutateAsync({
-        data: {
-          name: fullName.trim(),
-          email: email.trim(),
-          password,
-          password_confirmation: password,
-          account_type: accountType,
-        },
+        data: buyerRegistrationPayload({ fullName, email, password, confirmPassword }),
       }));
       setChallenge({
         email: typeof result.email === 'string' ? result.email : email.trim(),
@@ -189,9 +177,9 @@ export default function Register() {
 
       <MotionReveal delay={MOTION.revealStagger}>
         <View style={s.intro}>
-          <Text style={[s.title, { color: colors.foreground }]}>Create Account</Text>
+          <Text style={[s.title, { color: colors.foreground }]}>Create buyer account</Text>
           <Text style={[s.subtitle, { color: colors.mutedForeground }]}>
-            Create your OG Exports buyer or investor account.
+            Join OG Exports to request quotes and manage your orders.
           </Text>
         </View>
       </MotionReveal>
@@ -199,34 +187,6 @@ export default function Register() {
       <MotionReveal delay={MOTION.revealStagger * 2}>
       <View style={s.form}>
         <Card style={s.registerCard}>
-        <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700', letterSpacing: 0.8, marginBottom: 9 }}>ACCOUNT TYPE</Text>
-        <View style={{ flexDirection: 'row', gap: 9, marginBottom: 18 }}>
-          {([
-            ['buyer', 'Buyer'],
-            ['investor', 'Investor'],
-          ] as const).map(([value, label]) => {
-            const selected = accountType === value;
-            return <Pressable
-              key={value}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              testID={`register-account-type-${value}`}
-              onPress={() => { setAccountType(value); setError(''); }}
-              style={{
-                flex: 1,
-                minHeight: 44,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: selected ? colors.primary : colors.border,
-                backgroundColor: selected ? colors.lightGreen : colors.card,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Text style={{ color: selected ? colors.primary : colors.mutedForeground, fontWeight: '700' }}>{label}</Text>
-            </Pressable>;
-          })}
-        </View>
         <RegisterField
           label="FULL NAME"
           value={fullName}
@@ -264,6 +224,7 @@ export default function Register() {
           focused={focusedField === 'password'}
           onFocus={() => setFocusedField('password')}
           onBlur={() => setFocusedField(null)}
+          required
           trailing={
             <Pressable
               accessibilityRole="button"
@@ -273,6 +234,30 @@ export default function Register() {
               style={s.visibilityButton}
             >
               <Feather name={showPassword ? 'eye-off' : 'eye'} size={18} color={colors.mutedForeground} />
+            </Pressable>
+          }
+        />
+        <RegisterField
+          label="CONFIRM PASSWORD"
+          value={confirmPassword}
+          onChangeText={value => { setConfirmPassword(value); setError(''); }}
+          placeholder="Re-enter your password"
+          autoComplete="new-password"
+          textContentType="newPassword"
+          secureTextEntry={!showConfirmPassword}
+          focused={focusedField === 'confirmPassword'}
+          onFocus={() => setFocusedField('confirmPassword')}
+          onBlur={() => setFocusedField(null)}
+          required
+          trailing={
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={showConfirmPassword ? 'Hide password confirmation' : 'Show password confirmation'}
+              hitSlop={8}
+              onPress={() => setShowConfirmPassword(value => !value)}
+              style={s.visibilityButton}
+            >
+              <Feather name={showConfirmPassword ? 'eye-off' : 'eye'} size={18} color={colors.mutedForeground} />
             </Pressable>
           }
         />
@@ -290,6 +275,9 @@ export default function Register() {
             </View>
           ))}
         </View>
+        <Text style={[s.verificationHint, { color: colors.mutedForeground }]}>
+          We’ll email you a verification code to finish creating your account.
+        </Text>
         {error ? (
           <View style={s.errorRow}>
             <Feather name="alert-circle" size={16} color={colors.destructive} />
@@ -297,10 +285,11 @@ export default function Register() {
           </View>
         ) : null}
         <Action
-          title="Create Account"
+          title="Create buyer account"
           loading={mutation.isPending}
-          disabled={!fullName.trim() || !email.trim() || !password}
+          disabled={!fullName.trim() || !email.trim() || !password || !confirmPassword}
           onPress={() => void submit()}
+          testID="buyer-register-submit"
         />
         </Card>
       </View>
@@ -337,6 +326,7 @@ const s = StyleSheet.create({
   passwordRequirements: { gap: 5, marginTop: -7, marginBottom: 12, marginLeft: 2 },
   passwordRequirement: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   passwordRequirementText: { fontSize: 11, lineHeight: 15 },
+  verificationHint: { fontSize: 12, lineHeight: 17, marginTop: 2, marginBottom: 14 },
   errorRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 14 },
   errorText: { flex: 1, fontSize: 12, lineHeight: 18 },
   footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5, marginTop: 16 },
