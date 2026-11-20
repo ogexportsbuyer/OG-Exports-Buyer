@@ -19,6 +19,12 @@ In this workspace, HTTPS access to `GIT_URL` only provides repository access; th
 
 **How to apply:** Normalize the port to digits and remove a leading `Username: ` before connecting. Validate the private key without printing it; keep temporary key files outside the workspace and delete them afterward.
 
+Do not trust a newly scanned SSH host key until its fingerprint has been confirmed against Hostinger's authoritative host-key information.
+
+**Why:** A private-key login does not by itself prove that the remote SSH server is the intended Hostinger host.
+
+**How to apply:** If no trusted `known_hosts` entry exists, obtain the SSH fingerprint without uploading files, have it confirmed first, then pin the verified key for the deployment connection.
+
 **Why:** Hostinger's browser-terminal instructions apply to its newer File Manager; older File Manager layouts may have no terminal control.
 
 **How to apply:** If the toolbar lacks both a Terminal control and the newer Deploy control, stop searching the file list and use SSH Access or another confirmed deployment method instead.
