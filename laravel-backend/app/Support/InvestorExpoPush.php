@@ -35,7 +35,7 @@ final class InvestorExpoPush
                 'data' => $data,
                 'sound' => 'default',
                 'priority' => 'high',
-                'channelId' => 'investor-updates',
+                'channelId' => $investor->hasRole('buyer') ? 'buyer-updates' : 'investor-updates',
             ])->values()->all();
 
             try {

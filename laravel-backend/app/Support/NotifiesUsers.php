@@ -23,7 +23,8 @@ class NotifiesUsers
             ])
             : null;
 
-        if ($user->hasRole('investor') && $type !== InvestorNotificationTypes::PAYOUT_PROGRESS) {
+        if (($user->hasRole('investor') || $user->hasRole('buyer'))
+            && $type !== InvestorNotificationTypes::PAYOUT_PROGRESS) {
             DB::afterCommit(static function () use ($user, $notification, $type, $title, $body, $data): void {
                 if ($notification) {
                     InvestorPushBridge::sendNotification($user, $notification);
@@ -89,7 +90,7 @@ class NotifiesUsers
 
     private static function shouldDeliverInApp(User $user, string $type): bool
     {
-        if (! $user->hasRole('investor')) {
+        if (! $user->hasRole('investor') && ! $user->hasRole('buyer')) {
             return true;
         }
 

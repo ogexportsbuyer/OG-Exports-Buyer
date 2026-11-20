@@ -63,13 +63,15 @@ final class InvestorPushBridge
         string $inAppTitle,
         ?string $inAppBody,
     ): void {
-        if (blank($investor->email) || ! $investor->hasRole('investor')) {
+        $isBuyer = $investor->hasRole('buyer');
+        if (blank($investor->email) || (! $isBuyer && ! $investor->hasRole('investor'))) {
             return;
         }
 
-        $href = $notificationData['href'] ?? '/account/notifications';
+        $defaultHref = $isBuyer ? '/buyer-notifications' : '/account/notifications';
+        $href = $notificationData['href'] ?? $defaultHref;
         if (! is_string($href) || ! str_starts_with($href, '/')) {
-            $href = '/account/notifications';
+            $href = $defaultHref;
         }
         [$pushTitle, $pushBody] = self::lockScreenContent($type, $notificationData, $inAppTitle, $inAppBody);
         $pushData = [
@@ -90,6 +92,12 @@ final class InvestorPushBridge
             $pushBody,
             $pushData,
         );
+
+        // Buyer alerts are delivered directly through Expo. The signed callback below
+        // is an investor-only service and must not receive buyer account identifiers.
+        if ($isBuyer) {
+            return;
+        }
 
         $url = self::notificationEndpointUrl();
         $secret = (string) config('services.investor_push.session_secret');

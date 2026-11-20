@@ -248,6 +248,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/company/contacts/{id}', [BuyerCompanyController::class, 'contactsUpdate']);
         Route::delete('/company/contacts/{id}', [BuyerCompanyController::class, 'contactsDestroy']);
         Route::post('/company/kyc/upload', [BuyerCompanyController::class, 'kycUpload']);
+        Route::post('/push-tokens/register', [InvestorPushTokenController::class, 'register'])->middleware('throttle:20,1');
+        Route::post('/push-tokens/revoke', [InvestorPushTokenController::class, 'revoke'])->middleware('throttle:20,1');
     });
 
     // Supplier
