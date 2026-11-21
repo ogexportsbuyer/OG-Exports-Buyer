@@ -36,3 +36,35 @@ export function nextBuyerCartQuantity(currentQuantity: number, delta: number, mi
   const step = Number.isFinite(delta) ? Math.trunc(delta) : 0;
   return Math.max(minimum, current + step);
 }
+
+export function formatBuyerDeliveryDateInput(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
+}
+
+export function isFutureBuyerDeliveryDate(value: string, now = new Date()): boolean {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const selected = new Date(year, month - 1, day);
+  if (
+    selected.getFullYear() !== year
+    || selected.getMonth() !== month - 1
+    || selected.getDate() !== day
+  ) return false;
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return selected.getTime() > today.getTime();
+}
+
+export function buildBuyerOrderNotes(
+  notes: string,
+  bankDetails: string,
+  paymentDetails: string[],
+): string {
+  const paymentLines = [bankDetails.trim(), ...paymentDetails.map(value => value.trim())].filter(Boolean);
+  return [notes.trim(), paymentLines.join('\n')].filter(Boolean).join('\n\n');
+}

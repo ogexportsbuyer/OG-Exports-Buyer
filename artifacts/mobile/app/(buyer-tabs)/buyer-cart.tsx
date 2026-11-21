@@ -49,12 +49,14 @@ export default function BuyerCart() {
   const items = list(cart.items);
   const cartCurrency = first(cart, ['currency', 'currency_code'], 'USD').toUpperCase();
   const [actionError, setActionError] = useState('');
+  const [clearAllConfirm, setClearAllConfirm] = useState(false);
+  const [clearingAll, setClearingAll] = useState(false);
   const total = items.reduce((sum, item) => {
     const quantity = amount(item, ['qty']) ?? 0;
     const unitPrice = amount(item, ['unit_price']) ?? 0;
     return sum + quantity * unitPrice;
   }, 0);
-  const mutationPending = updateItem.isPending || removeItem.isPending;
+  const mutationPending = updateItem.isPending || removeItem.isPending || clearingAll;
 
   async function changeQuantity(item: ReturnType<typeof record>, delta: number) {
     const id = amount(item, ['id']);
@@ -83,6 +85,25 @@ export default function BuyerCart() {
     }
   }
 
+  async function clearCart() {
+    if (!items.length) return;
+    setActionError('');
+    setClearingAll(true);
+    try {
+      for (const item of items) {
+        const id = amount(item, ['id']);
+        if (id === null) throw new Error('A cart item is missing its server ID. Refresh the cart and try again.');
+        await removeItem.mutateAsync({ item: id });
+      }
+      await queryClient.invalidateQueries({ queryKey: getGetBuyerCartQueryKey() });
+      setClearAllConfirm(false);
+    } catch (error) {
+      setActionError(messageOf(error));
+    } finally {
+      setClearingAll(false);
+    }
+  }
+
   if (!token) {
     return <BuyerAuthGate
       title="Your cart"
@@ -97,7 +118,10 @@ export default function BuyerCart() {
       {cartQuery.isLoading ? <LoadingCard label="Loading your cart…" /> : null}
       {cartQuery.isError ? <ErrorState message="Your cart could not be loaded." error={cartQuery.error} onRetry={() => void cartQuery.refetch()} /> : null}
       {!cartQuery.isLoading && !cartQuery.isError && items.length === 0 ? (
-        <EmptyState title="Your cart is empty" body="Browse the approved product catalogue and add products to start an order." icon="shopping-cart" />
+        <>
+          <EmptyState title="Your cart is empty" body="Browse the approved product catalogue and add products to start an order." icon="shopping-cart" />
+          <Action title="Browse products" icon="grid" secondary onPress={() => router.push('/(buyer-tabs)/buyer-products')} testID="buyer-cart-browse-empty" />
+        </>
       ) : null}
 
       {!cartQuery.isLoading && !cartQuery.isError && items.map((item, index) => {
@@ -174,6 +198,47 @@ export default function BuyerCart() {
       })}
 
       {items.length > 0 ? (
+        <>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 3, marginBottom: 8 }}>
+          <Text style={{ color: colors.mutedForeground, fontSize: 11, fontWeight: '700' }}>{items.length} {items.length === 1 ? 'product' : 'products'} selected</Text>
+          <Pressable
+            testID="buyer-cart-clear-all"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: mutationPending }}
+            disabled={mutationPending}
+            onPress={() => { setActionError(''); setClearAllConfirm(true); }}
+            style={{ minHeight: 36, paddingHorizontal: 10, justifyContent: 'center', opacity: mutationPending ? 0.5 : 1 }}
+          >
+            <Text style={{ color: colors.destructive, fontSize: 11, fontWeight: '700' }}>Clear all</Text>
+          </Pressable>
+        </View>
+        {clearAllConfirm ? (
+          <Card style={{ padding: 14, marginBottom: 10 }}>
+            <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '700' }}>Remove every item?</Text>
+            <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginTop: 4 }}>This will clear all {items.length} {items.length === 1 ? 'product' : 'products'} from your saved cart.</Text>
+            <View style={{ flexDirection: 'row', gap: 9, marginTop: 12 }}>
+              <Pressable
+                testID="buyer-cart-clear-cancel"
+                accessibilityRole="button"
+                onPress={() => setClearAllConfirm(false)}
+                disabled={clearingAll}
+                style={{ minHeight: 40, flex: 1, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '700' }}>Keep cart</Text>
+              </Pressable>
+              <Pressable
+                testID="buyer-cart-clear-confirm"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: clearingAll, busy: clearingAll }}
+                onPress={() => void clearCart()}
+                disabled={clearingAll}
+                style={{ minHeight: 40, flex: 1, borderRadius: 12, backgroundColor: colors.destructive, alignItems: 'center', justifyContent: 'center', opacity: clearingAll ? 0.6 : 1 }}
+              >
+                <Text style={{ color: colors.destructiveForeground, fontSize: 12, fontWeight: '700' }}>{clearingAll ? 'Clearing…' : 'Remove all'}</Text>
+              </Pressable>
+            </View>
+          </Card>
+        ) : null}
         <Card style={{ padding: 17, marginTop: 4 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14 }}>
             <Text style={{ color: colors.mutedForeground }}>Estimated subtotal</Text>
@@ -195,6 +260,7 @@ export default function BuyerCart() {
             testID="buyer-cart-checkout"
           />
         </Card>
+        </>
       ) : null}
       {!cartQuery.isError ? (
         <Pressable accessibilityRole="button" onPress={() => router.push('/(buyer-tabs)/buyer-products')} style={{ alignSelf: 'center', padding: 14 }}>

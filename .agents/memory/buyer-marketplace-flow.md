@@ -26,3 +26,9 @@ The buyer home should follow the user's marketplace reference: a centered swipea
 **Why:** the user asked for the same top slider presentation and product cards below it.
 
 **How to apply:** Build the home from live catalog data and keep the reference's visual hierarchy without copying another marketplace's brand or fabricating content.
+
+An FOB order must not be placed when any cart item has no positive, confirmed price; guide the buyer to request a quotation instead.
+
+**Why:** The backend treats a missing product price as zero, which could otherwise create a confirmed zero-value order.
+
+**How to apply:** Keep the FOB order path blocked until every line has a price, while leaving non-FOB quotation requests available.
