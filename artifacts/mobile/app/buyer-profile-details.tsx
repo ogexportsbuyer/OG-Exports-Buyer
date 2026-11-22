@@ -64,7 +64,7 @@ export default function BuyerProfileDetails() {
       {profileQuery.isLoading ? <LoadingCard label="Loading your profile…" lines={2} /> : null}
       {profileQuery.isError ? <ErrorState message="Your profile could not be loaded." error={profileQuery.error} onRetry={() => void profileQuery.refetch()} /> : null}
       {error ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, lineHeight: 18, marginBottom: 9 }}>{error}</Text> : null}
-      {notice ? <Text accessibilityRole="status" style={{ color: colors.primary, fontSize: 12, marginBottom: 9 }}>{notice}</Text> : null}
+      {notice ? <Text accessibilityLiveRegion="polite" style={{ color: colors.primary, fontSize: 12, marginBottom: 9 }}>{notice}</Text> : null}
       <Card style={{ padding: 15 }}>
         <View style={{ width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary, marginBottom: 11 }}>
           <Text style={{ color: colors.primary, fontSize: 14, fontWeight: '800' }}>{name.split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() || 'OG'}</Text>

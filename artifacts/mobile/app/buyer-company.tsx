@@ -261,7 +261,7 @@ export default function BuyerCompany() {
           </View>
 
           {error ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, lineHeight: 18, marginBottom: 9 }}>{error}</Text> : null}
-          {notice ? <Text accessibilityRole="status" style={{ color: colors.primary, fontSize: 12, marginBottom: 9 }}>{notice}</Text> : null}
+          {notice ? <Text accessibilityLiveRegion="polite" style={{ color: colors.primary, fontSize: 12, marginBottom: 9 }}>{notice}</Text> : null}
 
           {tab === 'company' ? (
             <Card style={{ padding: 15 }}>

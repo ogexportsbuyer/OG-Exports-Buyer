@@ -219,7 +219,7 @@ function BuyerOverviewContent() {
               </View>
             </View>
             {avatarError ? <Text accessibilityRole="alert" style={{ color: '#FFE1DC', fontSize: 11, lineHeight: 16, marginTop: 10 }}>{avatarError}</Text> : null}
-            {avatarMessage ? <Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 11, marginTop: 9 }}>{avatarMessage}</Text> : null}
+            {avatarMessage ? <Text accessibilityLiveRegion="polite" style={{ color: '#FFFFFF', fontSize: 11, marginTop: 9 }}>{avatarMessage}</Text> : null}
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 15 }}>
               {heroActions.map(action => (
                 <Pressable key={action.label} accessibilityRole="button" onPress={() => navigateTo(action.route)} style={{ flex: 1, minHeight: 44, borderRadius: 12, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: action.label === 'New RFQ' ? colors.accent : 'rgba(255,255,255,0.14)' }}>

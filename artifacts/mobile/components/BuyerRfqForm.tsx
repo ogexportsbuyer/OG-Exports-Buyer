@@ -437,7 +437,7 @@ export function BuyerRfqForm({
       </Card>
 
       {error ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, lineHeight: 18, marginBottom: 9 }}>{error}</Text> : null}
-      {uploadProgress ? <Text accessibilityRole="status" style={{ color: colors.primary, fontSize: 11, marginBottom: 9 }}>{uploadProgress}</Text> : null}
+      {uploadProgress ? <Text accessibilityLiveRegion="polite" style={{ color: colors.primary, fontSize: 11, marginBottom: 9 }}>{uploadProgress}</Text> : null}
       <Action title="Cancel" icon="arrow-left" secondary disabled={busy} onPress={onCancel} testID="buyer-rfq-cancel" />
       <View style={{ height: 9 }} />
       <Action title="Submit RFQ" icon="send" loading={busy} disabled={busy} onPress={() => void submit()} testID="buyer-rfq-submit" />
