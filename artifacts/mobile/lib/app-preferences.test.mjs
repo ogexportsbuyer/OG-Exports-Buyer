@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   createPreferenceHydrator, createPreferenceSyncQueue, defaultPreferences, parsePreferences,
-  persistPreferences, preferenceAccountId, readPreferenceSnapshot,
+  nextNativeDirectionKey, persistPreferences, preferenceAccountId, readPreferenceSnapshot,
 } from './app-preferences.ts';
 
 function harness(overrides = {}) {
@@ -32,6 +32,15 @@ test('preferences accept all supported options and migrate legacy theme/device s
   assert.deepEqual(parsePreferences({ language: 'invalid', currency: 'bad', theme: 'dark' }), { appearance: 'dark' });
   assert.equal(readPreferenceSnapshot({ language: 'ur', currency: 'PKR' }).preferences.language, 'ur');
   assert.deepEqual(readPreferenceSnapshot({ pendingSync: { currency: 'GBP' } }).pending, { currency: 'GBP' });
+});
+
+test('appearance saves do not reapply an already handled native layout direction', () => {
+  const applied = nextNativeDirectionKey(null, '42', true);
+  assert.equal(applied, '42:rtl');
+  assert.equal(nextNativeDirectionKey(applied, '42', true), null);
+  assert.equal(nextNativeDirectionKey(applied, '42', false), '42:ltr');
+  assert.equal(nextNativeDirectionKey(applied, '43', true), '43:rtl');
+  assert.equal(nextNativeDirectionKey(applied, '', true), null);
 });
 
 test('selection applies immediately, then stores before network, and clears pending only after confirmation', async () => {

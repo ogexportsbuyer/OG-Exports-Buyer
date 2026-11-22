@@ -23,6 +23,17 @@ export function parsePreferences(value: unknown): PreferencePatch {
   return next;
 }
 
+export function nextNativeDirectionKey(
+  appliedKey: string | null,
+  owner: string,
+  isRTL: boolean,
+): string | null {
+  const normalizedOwner = owner.trim();
+  if (!normalizedOwner) return null;
+  const nextKey = `${normalizedOwner}:${isRTL ? 'rtl' : 'ltr'}`;
+  return nextKey === appliedKey ? null : nextKey;
+}
+
 export function readPreferenceSnapshot(value: unknown) {
   const source = object(value);
   return {

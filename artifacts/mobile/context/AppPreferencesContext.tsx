@@ -17,7 +17,7 @@ import { useAuth } from '@/context/AuthContext';
 import { hasBuyerAccount } from '@/lib/account-role';
 import { configureMoneyDisplay, first, messageOf, record, unwrap } from '@/lib/data';
 import { configureUiLanguage, translateUi } from '@/lib/strings';
-import { createPreferenceHydrator, createPreferenceSyncQueue, defaultPreferences, parsePreferences,
+import { createPreferenceHydrator, createPreferenceSyncQueue, defaultPreferences, nextNativeDirectionKey, parsePreferences,
   persistPreferences, PreferenceSaveError, preferenceAccountId,
   type AppPreferences, type PreferencePatch } from '@/lib/app-preferences';
 export type { AppearancePreference, DisplayCurrency, AppPreferences } from '@/lib/app-preferences';
@@ -71,6 +71,7 @@ export function AppPreferencesProvider({ children }: { children: React.ReactNode
   const currentPreferences = useRef<AppPreferences>(defaultPreferences);
   const pendingPreferences = useRef<PreferencePatch>({});
   const savingSession = useRef<string | null>(null);
+  const directionAppliedFor = useRef<string | null>(null);
   const saveRevision = useRef(0);
   const activeSession = `${userId}:${token ?? ''}`;
   const sessionRef = useRef(activeSession);
@@ -211,8 +212,14 @@ export function AppPreferencesProvider({ children }: { children: React.ReactNode
       }
       return;
     }
+    if (!preferencesLoaded || !userId) return;
     // Do not restart an installed app before the new language is stored durably.
     if (isSaving || isSyncing) return;
+    // Appearance/currency/notification saves also change isSaving. Do not
+    // re-apply the same native direction and accidentally restart Expo Go.
+    const directionKey = nextNativeDirectionKey(directionAppliedFor.current, userId, isRTL);
+    if (!directionKey) return;
+    directionAppliedFor.current = directionKey;
     if (I18nManager.isRTL !== isRTL) {
       I18nManager.allowRTL(true);
       I18nManager.forceRTL(isRTL);
@@ -221,7 +228,7 @@ export function AppPreferencesProvider({ children }: { children: React.ReactNode
       // manually reloaded; installed builds can still reload immediately.
       if (!isRunningInExpoGo()) void reloadAppAsync().catch(() => undefined);
     }
-  }, [preferencesLoaded, preferences.language, isRTL, isSaving, isSyncing]);
+  }, [preferencesLoaded, userId, preferences.language, isRTL, isSaving, isSyncing]);
 
   const savePreferences = useCallback(async (patch: Partial<AppPreferences>) => {
     if (!userId || !token) {
