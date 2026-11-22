@@ -15,4 +15,4 @@ If `create-launch login` still reports an unexpected response after the user ref
 
 **Why:** A buyer app already on SDK 58 continued to show the managed sign-in prompt and iOS timeouts after refresh, but `--tunnel ngrok` connected and served both iOS and Android manifests and bundles.
 
-**How to apply:** Keep the guarded `create-launch` login step, but when the Expo-account tunnel fails, use `--tunnel ngrok` with `@expo/ngrok` and remove the Expo proxy/hostname overrides that take precedence over the tunnel URL. Keep the Replit API-domain variables and verify the browser route separately.
+**How to apply:** Keep the guarded `create-launch` login step, but when the Expo-account tunnel fails, use `--tunnel ngrok` with `@expo/ngrok` and remove the Expo proxy/hostname overrides that take precedence over the tunnel URL. Make Expo CLI stdout non-TTY to skip its login prompt anonymously without setting `CI=1`; CI mode disables Metro reloads. Keep the Replit API-domain variables and verify the browser route separately.
