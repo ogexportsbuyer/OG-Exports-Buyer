@@ -34,8 +34,8 @@ const brandSlides = [
     title: 'A clearer way to discover products.',
     body: 'Review specifications, packaging and order details before you enquire.',
     icon: 'search' as const,
-    backgroundColors: ['#112744', '#2B5D82'] as const,
-    iconColors: ['#477A9A', '#132D49'] as const,
+    backgroundColors: ['#0C412E', '#1F774D'] as const,
+    iconColors: ['#32835A', '#0C392B'] as const,
     accent: '#E7CD8A',
   },
   {
@@ -44,8 +44,8 @@ const brandSlides = [
     title: 'Product details. Trade support.',
     body: 'Browse the catalogue, then contact our team when you are ready.',
     icon: 'message-circle' as const,
-    backgroundColors: ['#123C2D', '#2C7956'] as const,
-    iconColors: ['#438C68', '#174832'] as const,
+    backgroundColors: ['#29362A', '#50603A'] as const,
+    iconColors: ['#68764A', '#2A382A'] as const,
     accent: '#E4C27A',
   },
 ] as const;

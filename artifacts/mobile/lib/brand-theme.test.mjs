@@ -146,6 +146,11 @@ test('screen and PDF branding share the transparent approved SVG mark', () => {
   const bannerPalettes = [...buyerHeader.matchAll(/backgroundColors: \['(#[A-F0-9]{6})', '(#[A-F0-9]{6})'\] as const/gi)];
   assert.equal(bannerPalettes.length, 3, 'each brand banner defines its own premium palette');
   assert.equal(new Set(bannerPalettes.map(([, firstColor]) => firstColor.toUpperCase())).size, 3);
+  assert.deepEqual(
+    bannerPalettes.map(([, start, end]) => [start.toUpperCase(), end.toUpperCase()]),
+    [['#07363A', '#0F6260'], ['#0C412E', '#1F774D'], ['#29362A', '#50603A']],
+    'banner backgrounds stay within the branded teal and green palette',
+  );
   assert.match(buyerHeader, /promoArtworkHighlight/);
   assert.match(buyerHeader, /promoIconDisc/);
   assert.match(splash, /<BrandMark width=\{markWidth\} onBackground="dark"/);
