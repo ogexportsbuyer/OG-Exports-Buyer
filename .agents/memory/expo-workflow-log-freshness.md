@@ -13,6 +13,6 @@ An Expo QR code can appear even while Expo CLI is waiting at an account prompt. 
 
 If `create-launch login` still reports an unexpected response after the user refreshes the workspace and the Expo workflow restarts, repeated restarts do not repair the managed session. For real-device network timeouts, Expo CLI's ngrok tunnel fallback can still provide a reachable Expo Go URL without the Expo-account tunnel.
 
-**Why:** A buyer app already on SDK 58 continued to show the managed sign-in prompt and iOS timeouts after refresh, but `--tunnel ngrok` connected and served both iOS and Android manifests and bundles.
+**Why:** A buyer app already on SDK 58 continued to show the managed sign-in prompt and iOS timeouts after refresh; ngrok served both platform bundles, and the user confirmed both real devices opened after the interactive prompt was bypassed without CI mode.
 
 **How to apply:** Keep the guarded `create-launch` login step, but when the Expo-account tunnel fails, use `--tunnel ngrok` with `@expo/ngrok` and remove the Expo proxy/hostname overrides that take precedence over the tunnel URL. Make Expo CLI stdout non-TTY to skip its login prompt anonymously without setting `CI=1`; CI mode disables Metro reloads. Keep the Replit API-domain variables and verify the browser route separately.
