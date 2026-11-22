@@ -19,9 +19,13 @@ function contrastRatio(foreground, background) {
     / (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
 }
 
-test('buyer foreground accents use premium gold while original backgrounds remain unchanged', () => {
-  assert.equal(palette.light.accent, '#8A672A');
-  assert.equal(palette.dark.accent, '#D0B47A');
+test('buyer foreground accents use orange-gold while original backgrounds remain unchanged', () => {
+  assert.equal(palette.light.accent, '#F4A62A');
+  assert.equal(palette.dark.accent, '#F4A62A');
+  assert.equal(palette.light.stageFunding, '#F4A62A');
+  assert.equal(palette.dark.stageFunding, '#F4A62A');
+  assert.equal(palette.light.allocationProfits, '#F4A62A');
+  assert.equal(palette.dark.allocationProfits, '#F4A62A');
   assert.equal(palette.light.glassTintGold, 'rgba(247, 235, 210, 0.72)');
   assert.equal(palette.dark.glassTintGold, 'rgba(56, 52, 42, 0.42)');
   assert.equal(palette.light.canvasWashGold, 'rgba(214, 184, 124, 0.28)');

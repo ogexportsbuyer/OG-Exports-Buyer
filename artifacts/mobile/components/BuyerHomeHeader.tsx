@@ -26,7 +26,7 @@ const brandSlides = [
     icon: 'globe' as const,
     backgroundColors: ['#07363A', '#0F6260'] as const,
     iconColors: ['#2A716C', '#0A3335'] as const,
-    accent: '#E6C77D',
+    accent: '#F4A62A',
   },
   {
     id: 'catalogue',
@@ -36,7 +36,7 @@ const brandSlides = [
     icon: 'award' as const,
     backgroundColors: ['#0C4A35', '#1E8354'] as const,
     iconColors: ['#3C8A5C', '#0A3928'] as const,
-    accent: '#E7CD8A',
+    accent: '#F4A62A',
   },
   {
     id: 'supply',
@@ -46,7 +46,7 @@ const brandSlides = [
     icon: 'truck' as const,
     backgroundColors: ['#193F33', '#47735B'] as const,
     iconColors: ['#568B66', '#143C30'] as const,
-    accent: '#E4C27A',
+    accent: '#F4A62A',
   },
   {
     id: 'trust',
@@ -56,7 +56,7 @@ const brandSlides = [
     icon: 'shield' as const,
     backgroundColors: ['#1D4033', '#4F7653'] as const,
     iconColors: ['#6A8962', '#1E3A32'] as const,
-    accent: '#E6C982',
+    accent: '#F4A62A',
   },
   {
     id: 'partnerships',
@@ -66,7 +66,7 @@ const brandSlides = [
     icon: 'users' as const,
     backgroundColors: ['#3B4025', '#6A7137'] as const,
     iconColors: ['#7C8150', '#343B25'] as const,
-    accent: '#E4C27A',
+    accent: '#F4A62A',
   },
 ] as const;
 
