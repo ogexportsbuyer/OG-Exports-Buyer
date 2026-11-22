@@ -143,6 +143,11 @@ test('screen and PDF branding share the transparent approved SVG mark', () => {
   assert.match(buyerHeader, /}, 7000\);/, 'brand slides auto-advance every seven seconds');
   assert.match(buyerHeader, /!isFocused \|\| reduceMotion \|\| carouselInteracting/, 'autoplay pauses when hidden, reduced-motion is enabled, or the user is swiping');
   assert.match(buyerHeader, /Animated\.timing\(progress/);
+  const bannerPalettes = [...buyerHeader.matchAll(/backgroundColors: \['(#[A-F0-9]{6})', '(#[A-F0-9]{6})'\] as const/gi)];
+  assert.equal(bannerPalettes.length, 3, 'each brand banner defines its own premium palette');
+  assert.equal(new Set(bannerPalettes.map(([, firstColor]) => firstColor.toUpperCase())).size, 3);
+  assert.match(buyerHeader, /promoArtworkHighlight/);
+  assert.match(buyerHeader, /promoIconDisc/);
   assert.match(splash, /<BrandMark width=\{markWidth\} onBackground="dark"/);
   assert.equal(splash.includes('og-splash-mark.png'), false);
   assert.match(splashAsset, /href="\.\/og-official-mark\.svg"/);

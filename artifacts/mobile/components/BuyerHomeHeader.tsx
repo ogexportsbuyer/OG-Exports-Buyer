@@ -24,6 +24,9 @@ const brandSlides = [
     title: 'Pakistan’s exports, clearly presented.',
     body: 'Explore current products, origin and trade information in one place.',
     icon: 'globe' as const,
+    backgroundColors: ['#08383B', '#155B5A'] as const,
+    iconColors: ['#2A6663', '#0B393A'] as const,
+    accent: '#E2C47A',
   },
   {
     id: 'catalogue',
@@ -31,6 +34,9 @@ const brandSlides = [
     title: 'A clearer way to discover products.',
     body: 'Review specifications, packaging and order details before you enquire.',
     icon: 'search' as const,
+    backgroundColors: ['#142840', '#2B4E69'] as const,
+    iconColors: ['#456A83', '#172B42'] as const,
+    accent: '#E8CB83',
   },
   {
     id: 'support',
@@ -38,6 +44,9 @@ const brandSlides = [
     title: 'Product details. Trade support.',
     body: 'Browse the catalogue, then contact our team when you are ready.',
     icon: 'message-circle' as const,
+    backgroundColors: ['#123D34', '#28715B'] as const,
+    iconColors: ['#43806C', '#15463A'] as const,
+    accent: '#E4C47A',
   },
 ] as const;
 
@@ -232,6 +241,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderRadius: 40,
+    overflow: 'hidden',
+  },
+  promoArtworkShadow: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
   },
   promoArtworkInner: {
     width: 58,
@@ -240,6 +259,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderRadius: 29,
+    shadowOpacity: 0.24,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  promoIconDisc: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRadius: 21,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  promoArtworkHighlight: {
+    position: 'absolute',
+    top: 11,
+    left: 14,
+    width: 19,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#FFFFFF',
+    opacity: 0.28,
+    transform: [{ rotate: '-35deg' }],
   },
   promoFooter: {
     flexDirection: 'row',
@@ -538,13 +584,13 @@ export default function BuyerHomeHeader({
                 onPress={() => onBrowse()}
                 style={({ pressed }) => [styles.promoCard, {
                   width: heroCardWidth,
-                  backgroundColor: colors.balanceCardStart,
-                  borderColor: isActive ? colors.accent : colors.glassBorder,
+                  backgroundColor: slide.backgroundColors[0],
+                  borderColor: isActive ? slide.accent : `${slide.accent}66`,
                   opacity: pressed ? 0.95 : 1,
                 }]}
               >
                 <LinearGradient
-                  colors={[colors.balanceCardStart, colors.balanceCardEnd] as const}
+                  colors={slide.backgroundColors}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={StyleSheet.absoluteFill}
@@ -564,13 +610,29 @@ export default function BuyerHomeHeader({
 
                 <View style={styles.promoBody}>
                   <View style={styles.promoCopy}>
-                    <Text style={[styles.promoEyebrow, { color: colors.accent }]}>{slide.eyebrow}</Text>
+                    <Text style={[styles.promoEyebrow, { color: slide.accent }]}>{slide.eyebrow}</Text>
                     <Text numberOfLines={2} style={[styles.promoTitle, { color: colors.splashText }]}>{slide.title}</Text>
                     <Text numberOfLines={2} style={[styles.promoDescription, { color: colors.splashMuted }]}>{slide.body}</Text>
                   </View>
-                  <View style={[styles.promoArtwork, { borderColor: colors.glassBorder, backgroundColor: colors.glassFill }]}>
-                    <View style={[styles.promoArtworkInner, { borderColor: colors.glassBorder, backgroundColor: colors.glassTintTeal }]}>
-                      <Feather name={slide.icon} size={24} color={colors.accent} />
+                  <View style={[styles.promoArtworkShadow, { shadowColor: slide.backgroundColors[0] }]}>
+                    <View style={[styles.promoArtwork, {
+                      borderColor: `${slide.accent}A8`,
+                      backgroundColor: slide.iconColors[0],
+                    }]}>
+                      <View style={[styles.promoArtworkInner, {
+                        borderColor: `${slide.accent}99`,
+                        backgroundColor: slide.iconColors[1],
+                        shadowColor: slide.backgroundColors[0],
+                      }]}>
+                        <View style={[styles.promoIconDisc, {
+                          borderColor: `${slide.accent}99`,
+                          backgroundColor: slide.iconColors[0],
+                          shadowColor: slide.backgroundColors[0],
+                        }]}>
+                          <Feather name={slide.icon} size={30} color="#FFF0B8" />
+                        </View>
+                      </View>
+                      <View pointerEvents="none" style={styles.promoArtworkHighlight} />
                     </View>
                   </View>
                 </View>
