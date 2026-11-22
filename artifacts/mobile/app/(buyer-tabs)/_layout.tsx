@@ -22,6 +22,75 @@ const buyerTabs = [
   ['buyer-profile', 'Profile', 'user', 'person.crop.circle', 'person.crop.circle.fill'],
 ] as const;
 
+type BuyerTab = typeof buyerTabs[number];
+
+function BuyerTabIcon({
+  focused,
+  featherName,
+  iosName,
+  iosSelectedName,
+  isDashboard,
+}: {
+  focused: boolean;
+  featherName: BuyerTab[2];
+  iosName: BuyerTab[3];
+  iosSelectedName: BuyerTab[4];
+  isDashboard: boolean;
+}) {
+  const colors = useColors();
+  const { reduceMotion } = useMotion();
+  const progress = React.useRef(new Animated.Value(focused ? 1 : 0)).current;
+
+  React.useEffect(() => {
+    if (reduceMotion) {
+      progress.setValue(focused ? 1 : 0);
+      return;
+    }
+    Animated.timing(progress, {
+      toValue: focused ? 1 : 0,
+      duration: MOTION.micro,
+      useNativeDriver: true,
+    }).start();
+  }, [focused, progress, reduceMotion]);
+
+  const iconColor = focused ? colors.primary : colors.mutedForeground;
+  const icon = Platform.OS === 'ios' && !isDashboard
+    ? <SymbolView name={focused ? iosSelectedName : iosName} tintColor={iconColor} size={22} />
+    : <Feather name={featherName as React.ComponentProps<typeof Feather>['name']} size={21} color={iconColor} />;
+
+  return (
+    <View style={styles.tabIconFrame}>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.selectedTabIconBackdrop,
+          {
+            backgroundColor: colors.lightGreen,
+            borderColor: colors.primary,
+            opacity: progress,
+            transform: [{ scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.84, 1] }) }],
+          },
+        ]}
+      />
+      {icon}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  tabIconFrame: {
+    width: 44,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedTabIconBackdrop: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+});
+
 function NativeLayout() {
   const colors = useColors();
   const { visible } = useTabBarBehavior();
@@ -118,9 +187,15 @@ function ClassicLayout() {
       {buyerTabs.map(([name, title, icon, ios, iosSelected]) => (
         <Tabs.Screen key={name} name={name} options={{
           title: translateUi(title, preferences.language),
-          tabBarIcon: ({ color, focused }) => Platform.OS === 'ios' && name !== 'dashboard'
-            ? <SymbolView name={focused ? iosSelected : ios} tintColor={color} size={22} />
-            : <Feather name={icon} size={21} color={focused ? colors.primary : colors.mutedForeground} />,
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
+            <BuyerTabIcon
+              focused={focused}
+              featherName={icon}
+              iosName={ios}
+              iosSelectedName={iosSelected}
+              isDashboard={name === 'dashboard'}
+            />
+          ),
         }} />
       ))}
       <Tabs.Screen name="buyer-orders" options={{ href: null }} />

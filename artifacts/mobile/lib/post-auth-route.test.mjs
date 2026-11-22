@@ -177,6 +177,14 @@ test('buyer navigation uses Profile in both native and classic tab bars', () => 
   assert.match(layout, /NativeTabs\.Trigger\.Label>\{t\('Profile'\)\}/);
 });
 
+test('buyer selected tab icon has a visible branded backdrop', () => {
+  const layout = readFileSync(new URL('../app/(buyer-tabs)/_layout.tsx', import.meta.url), 'utf8');
+  assert.match(layout, /function BuyerTabIcon/);
+  assert.match(layout, /backgroundColor: colors\.lightGreen/);
+  assert.match(layout, /borderColor: colors\.primary/);
+  assert.match(layout, /focused \? colors\.primary : colors\.mutedForeground/);
+});
+
 test('buyer bottom navigation places Dashboard before Messages and keeps home cart shortcut', () => {
   const layout = readFileSync(new URL('../app/(buyer-tabs)/_layout.tsx', import.meta.url), 'utf8');
   const home = readFileSync(new URL('../app/(buyer-tabs)/buyer-home.tsx', import.meta.url), 'utf8');
@@ -186,7 +194,7 @@ test('buyer bottom navigation places Dashboard before Messages and keeps home ca
   assert.match(layout, /\['dashboard', 'Dashboard', 'bar-chart-2', 'chart\.bar', 'chart\.bar\.fill'\]/);
   assert.match(layout, /NativeTabs\.Trigger name="dashboard"/);
   assert.match(layout, /md=\{\{ default: 'bar_chart', selected: 'bar_chart' \}\}/);
-  assert.match(layout, /Platform\.OS === 'ios' && name !== 'dashboard'/);
+  assert.match(layout, /Platform\.OS === 'ios' && !isDashboard/);
   assert.ok(layout.indexOf("['dashboard', 'Dashboard'") < layout.indexOf("['buyer-messages', 'Messages'"));
   assert.ok(layout.indexOf('NativeTabs.Trigger name="dashboard"') < layout.indexOf('NativeTabs.Trigger name="buyer-messages"'));
   assert.doesNotMatch(layout, /\['buyer-cart', 'Cart'/);
