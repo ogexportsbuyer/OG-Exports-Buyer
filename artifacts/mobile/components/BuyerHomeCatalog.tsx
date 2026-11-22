@@ -79,6 +79,42 @@ const styles = StyleSheet.create({
   originLabel: {
     fontSize: 10,
   },
+  recommendationRow: {
+    flexDirection: 'row',
+    gap: 9,
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  recommendationImage: {
+    height: 86,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  recommendationBody: {
+    paddingHorizontal: 8,
+    paddingTop: 7,
+    paddingBottom: 9,
+  },
+  recommendationCategory: {
+    fontSize: 8,
+    fontWeight: '700',
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
+  },
+  recommendationName: {
+    minHeight: 27,
+    marginTop: 3,
+    fontSize: 10,
+    lineHeight: 13,
+    fontWeight: '700',
+  },
+  recommendationPrice: {
+    marginTop: 4,
+    fontSize: 9,
+    fontWeight: '800',
+  },
   productGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -192,22 +228,6 @@ export default function BuyerHomeCatalog({
 
   return (
     <>
-      <View style={[styles.sectionHeader, { marginTop: 10, marginBottom: 0 }]}>
-        <View>
-          <Text style={[styles.eyebrow, { color: colors.accent }]}>Source with clarity</Text>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Worldwide picks</Text>
-        </View>
-        <Pressable
-          testID="buyer-home-products-all"
-          accessibilityRole="button"
-          onPress={() => onBrowse()}
-          style={styles.textAction}
-        >
-          <Text style={{ color: colors.foreground, fontSize: 10, fontWeight: '700' }}>Browse all</Text>
-          <Feather name="arrow-up-right" size={13} color={colors.accent} />
-        </Pressable>
-      </View>
-
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -235,6 +255,70 @@ export default function BuyerHomeCatalog({
           );
         })}
       </ScrollView>
+
+      {!productsLoading && !productsError && filteredProducts.length > 0 ? (
+        <>
+          <View style={[styles.sectionHeader, { marginTop: 2, marginBottom: 4 }]}>
+            <View>
+              <Text style={[styles.eyebrow, { color: colors.accent }]}>Curated for your next order</Text>
+              <Text style={[styles.sectionTitle, { color: colors.foreground, fontSize: 20, lineHeight: 24 }]}>Worldwide picks for you</Text>
+            </View>
+            <Pressable
+              testID="buyer-home-products-all"
+              accessibilityRole="button"
+              onPress={() => onBrowse()}
+              style={styles.textAction}
+            >
+              <Text style={{ color: colors.foreground, fontSize: 10, fontWeight: '700' }}>Browse all</Text>
+              <Feather name="arrow-up-right" size={13} color={colors.accent} />
+            </Pressable>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginHorizontal: -20 }}
+            contentContainerStyle={styles.recommendationRow}
+          >
+            {filteredProducts.slice(0, 6).map((product, index) => {
+              const id = first(product, ['id'], `recommendation-${index}`);
+              const image = first(product, ['image_url', 'imageUrl']);
+              const name = first(product, ['name'], 'Export product');
+              return (
+                <Pressable
+                  key={id}
+                  testID={`buyer-home-recommendation-${id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`View ${name}, ${displayPrice(product)}`}
+                  onPress={() => onBrowse(name)}
+                  style={({ pressed }) => ({ width: 112, opacity: pressed ? 0.86 : 1 })}
+                >
+                  <Card style={{ width: 112, padding: 0, overflow: 'hidden', borderRadius: colors.radius + 2, marginBottom: 0 }}>
+                    <View style={[styles.recommendationImage, { backgroundColor: colors.secondary }]}>
+                      {image ? (
+                        <Image
+                          source={{ uri: image }}
+                          accessibilityLabel={`${name} product`}
+                          resizeMode="cover"
+                          style={StyleSheet.absoluteFill}
+                        />
+                      ) : (
+                        <Feather name="package" size={22} color={colors.primary} />
+                      )}
+                    </View>
+                    <View style={styles.recommendationBody}>
+                      <Text numberOfLines={1} style={[styles.recommendationCategory, { color: colors.accent }]}>
+                        {categoryName(product)}
+                      </Text>
+                      <Text numberOfLines={2} style={[styles.recommendationName, { color: colors.foreground }]}>{name}</Text>
+                      <Text numberOfLines={1} style={[styles.recommendationPrice, { color: colors.primary }]}>{displayPrice(product)}</Text>
+                    </View>
+                  </Card>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </>
+      ) : null}
 
       {productsLoading ? <LoadingCard label="Loading products…" /> : null}
       {productsError ? (

@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
+import { BrandMark } from '@/components/BrandMark';
 import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/components/LocalizedText';
 import { useColors } from '@/hooks/useColors';
 import { first, record } from '@/lib/data';
@@ -21,21 +22,27 @@ type Props = {
 
 const styles = StyleSheet.create({
   masthead: {
-    minHeight: 48,
+    minHeight: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 11,
+    marginBottom: 7,
+  },
+  brandLockup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   wordmark: {
-    fontSize: 10,
+    fontSize: 14,
     fontWeight: '800',
-    letterSpacing: 2.4,
+    letterSpacing: 0.1,
   },
   mastheadSubtitle: {
-    marginTop: 4,
+    marginTop: 2,
     fontSize: 8,
-    letterSpacing: 1.8,
+    fontWeight: '600',
+    letterSpacing: 1.1,
   },
   iconActions: {
     flexDirection: 'row',
@@ -143,49 +150,62 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   featureCard: {
-    height: 188,
+    height: 184,
     overflow: 'hidden',
-    borderRadius: 14,
+    borderRadius: 17,
+    padding: 12,
   },
-  featureCopy: {
-    position: 'absolute',
-    right: 14,
-    bottom: 13,
-    left: 15,
+  featureTop: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: 9,
   },
   featureCategory: {
     fontSize: 8,
-    fontWeight: '700',
-    letterSpacing: 1.4,
+    fontWeight: '800',
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
   featureName: {
-    marginTop: 3,
-    fontFamily: 'serif',
-    fontSize: 24,
-    lineHeight: 28,
-    fontWeight: '400',
+    marginTop: 4,
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '800',
   },
   featureMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 7,
-    marginTop: 4,
+    marginTop: 3,
     fontSize: 9,
+    lineHeight: 13,
   },
   featureOpen: {
-    width: 32,
-    height: 32,
+    width: 27,
+    height: 27,
     flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: 14,
+  },
+  featureThumbnails: {
+    flexDirection: 'row',
+    gap: 7,
+    marginTop: 10,
+  },
+  featureThumbnail: {
+    height: 70,
+    flex: 1,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRadius: 10,
+  },
+  featureFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
   },
   dots: {
     minHeight: 21,
@@ -211,14 +231,14 @@ export default function BuyerHomeHeader({
 }: Props) {
   const colors = useColors();
   const { width: windowWidth } = useWindowDimensions();
-  const [activeTopTab, setActiveTopTab] = useState('For you');
+  const [activeTopTab, setActiveTopTab] = useState('Worldwide');
   const [featuredIndex, setFeaturedIndex] = useState(0);
   const featuredScrollRef = useRef<ScrollViewInstance | null>(null);
   const featuredProducts = products.filter(product => record(product).featured === true);
-  const heroProducts = (featuredProducts.length ? featuredProducts : products).slice(0, 3);
-  const heroCardWidth = Math.max(280, Math.min(windowWidth - 40, 520));
+  const heroProducts = (featuredProducts.length ? featuredProducts : products).slice(0, 6);
+  const heroCardWidth = Math.max(260, Math.min(windowWidth * 0.72, 360));
   const heroCardGap = 12;
-  const heroSideInset = Math.max((windowWidth - heroCardWidth) / 2, 20);
+  const heroSideInset = Math.max((windowWidth + 40 - heroCardWidth) / 2, 28);
 
   function selectTab(label: string) {
     setActiveTopTab(label);
@@ -228,9 +248,12 @@ export default function BuyerHomeHeader({
   return (
     <>
       <View style={styles.masthead}>
-        <View>
-          <Text style={[styles.wordmark, { color: colors.foreground }]}>OG EXPORTS</Text>
-          <Text style={[styles.mastheadSubtitle, { color: colors.mutedForeground }]}>BUYER’S DESK</Text>
+        <View style={styles.brandLockup}>
+          <BrandMark width={46} />
+          <View>
+            <Text style={[styles.wordmark, { color: colors.foreground }]}>OG Exports</Text>
+            <Text style={[styles.mastheadSubtitle, { color: colors.mutedForeground }]}>BUYER MARKETPLACE</Text>
+          </View>
         </View>
         <View style={styles.iconActions}>
           <Pressable
@@ -281,14 +304,8 @@ export default function BuyerHomeHeader({
         })}
       </ScrollView>
 
-      <View style={{ paddingTop: 19 }}>
-        <Text style={[styles.eyebrow, { color: colors.accent }]}>Sourcing, with confidence</Text>
-        <Text style={[styles.headline, { color: colors.foreground }]}>A considered route{'\n'}to Pakistani exports.</Text>
-        <Text style={[styles.intro, { color: colors.mutedForeground }]}>
-          Find the right products. Start a conversation directly with our export team.
-        </Text>
-
-        <View style={[styles.searchRow, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: colors.radius + 1 }]}>
+      <View style={{ paddingTop: 5 }}>
+        <View style={[styles.searchRow, { backgroundColor: colors.card, borderColor: colors.accent, borderRadius: colors.radius + 5 }]}>
           <Feather name="search" size={17} color={colors.mutedForeground} />
           <TextInput
             testID="buyer-home-search-input"
@@ -298,7 +315,7 @@ export default function BuyerHomeHeader({
             onSubmitEditing={() => onBrowse(search)}
             returnKeyType="search"
             autoCapitalize="none"
-            placeholder="Search export products"
+            placeholder="Search products, categories or origin"
             placeholderTextColor={colors.mutedForeground}
             style={[styles.searchInput, { color: colors.foreground }]}
           />
@@ -307,9 +324,9 @@ export default function BuyerHomeHeader({
             accessibilityRole="button"
             accessibilityLabel="Search catalogue"
             onPress={() => onBrowse(search)}
-            style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.buttonBackground, opacity: pressed ? 0.82 : 1 }]}
+            style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.accent, opacity: pressed ? 0.82 : 1 }]}
           >
-            <Feather name="arrow-right" size={17} color={colors.buttonForeground} />
+            <Feather name="search" size={19} color={colors.buttonForeground} />
           </Pressable>
         </View>
       </View>
@@ -317,30 +334,14 @@ export default function BuyerHomeHeader({
       <Pressable
         testID="buyer-home-catalogue-guide"
         accessibilityRole="button"
-        accessibilityLabel="Browse export-ready products from Pakistan"
+        accessibilityLabel="Explore export-ready products from Pakistan"
         onPress={() => onBrowse()}
-        style={({ pressed }) => [styles.guide, { backgroundColor: colors.lightGreen, opacity: pressed ? 0.82 : 1 }]}
+        style={({ pressed }) => [styles.guide, { backgroundColor: colors.glassTintGold, opacity: pressed ? 0.82 : 1 }]}
       >
-        <Feather name="globe" size={15} color={colors.primary} />
-        <Text style={[styles.guideText, { color: colors.foreground }]}>Explore export-ready products from Pakistan</Text>
+        <Feather name="map" size={15} color={colors.primary} />
+        <Text style={[styles.guideText, { color: colors.foreground }]}>Your guide to export products from Pakistan</Text>
         <Feather name="arrow-right" size={14} color={colors.accent} />
       </Pressable>
-
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={[styles.eyebrow, { color: colors.accent }]}>The export edit</Text>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{heroProducts.length ? 'A few to begin with' : 'Start your search'}</Text>
-        </View>
-        <Pressable
-          testID="buyer-home-featured-all"
-          accessibilityRole="button"
-          onPress={() => onBrowse()}
-          style={styles.textAction}
-        >
-          <Text style={{ color: colors.foreground, fontSize: 10, fontWeight: '700' }}>All products</Text>
-          <Feather name="arrow-up-right" size={13} color={colors.accent} />
-        </Pressable>
-      </View>
 
       {heroProducts.length > 0 ? (
         <>
@@ -361,9 +362,11 @@ export default function BuyerHomeHeader({
           >
             {heroProducts.map((product, index) => {
               const name = first(product, ['name'], 'Export product');
-              const image = first(product, ['image_url', 'imageUrl']);
               const origin = first(product, ['origin']);
               const minimumOrder = first(product, ['moq', 'min_order']);
+              const thumbnailProducts = heroProducts.length > 1
+                ? [0, 1, 2].map(offset => heroProducts[(index + offset) % heroProducts.length])
+                : [product];
               return (
                 <Pressable
                   key={first(product, ['id'], String(index))}
@@ -371,32 +374,54 @@ export default function BuyerHomeHeader({
                   accessibilityRole="button"
                   accessibilityLabel={`Browse ${name}, ${origin ? `origin ${origin}` : ''}, ${displayPrice(product)}`}
                   onPress={() => onBrowse(name)}
-                  style={({ pressed }) => [styles.featureCard, { width: heroCardWidth, backgroundColor: colors.secondary, opacity: pressed ? 0.9 : 1 }]}
+                  style={({ pressed }) => [styles.featureCard, { width: heroCardWidth, backgroundColor: colors.balanceCardStart, opacity: pressed ? 0.92 : 1 }]}
                 >
-                  {image ? (
-                    <Image source={{ uri: image }} accessibilityLabel={`${name} product image`} resizeMode="cover" style={StyleSheet.absoluteFill} />
-                  ) : (
-                    <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }]}>
-                      <Feather name="package" size={30} color={colors.mutedForeground} />
-                    </View>
-                  )}
                   <LinearGradient
-                    colors={['transparent', colors.splashEnd] as const}
-                    start={{ x: 0, y: 0.1 }}
-                    end={{ x: 0, y: 1 }}
+                    colors={[colors.balanceCardStart, colors.balanceCardEnd] as const}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
                     style={StyleSheet.absoluteFill}
                   />
-                  <View style={styles.featureCopy}>
+                  <View style={styles.featureTop}>
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.featureCategory, { color: colors.splashText }]}>{categoryName(product)}</Text>
+                      <Text style={[styles.featureCategory, { color: colors.splashMuted }]}>{categoryName(product)}</Text>
                       <Text numberOfLines={1} style={[styles.featureName, { color: colors.splashText }]}>{name}</Text>
-                      <Text numberOfLines={1} style={[styles.featureMeta, { color: colors.splashText }]}>
-                        {origin}{origin ? '  ·  ' : ''}{displayPrice(product)}{minimumOrder ? `  ·  MOQ ${minimumOrder}` : ''}
+                      <Text numberOfLines={1} style={[styles.featureMeta, { color: colors.splashMuted }]}>
+                        {origin || 'OG Exports catalogue'}{origin ? `  ·  ${displayPrice(product)}` : ''}
                       </Text>
                     </View>
                     <View style={[styles.featureOpen, { borderColor: colors.glassBorder, backgroundColor: colors.glassFill }]}>
-                      <Feather name="arrow-up-right" size={16} color={colors.splashText} />
+                      <Feather name="chevron-right" size={17} color={colors.primary} />
                     </View>
+                  </View>
+                  <View style={styles.featureThumbnails}>
+                    {thumbnailProducts.map((thumbnail, thumbnailIndex) => {
+                      const thumbnailName = first(thumbnail, ['name'], 'Export product');
+                      const thumbnailImage = first(thumbnail, ['image_url', 'imageUrl']);
+                      return (
+                        <View
+                          key={`${first(thumbnail, ['id'], String(index))}-${thumbnailIndex}`}
+                          style={[styles.featureThumbnail, { borderColor: colors.glassBorder, backgroundColor: colors.card }]}
+                        >
+                          {thumbnailImage ? (
+                            <Image
+                              source={{ uri: thumbnailImage }}
+                              accessibilityLabel={`${thumbnailName} product`}
+                              resizeMode="cover"
+                              style={StyleSheet.absoluteFill}
+                            />
+                          ) : (
+                            <Feather name="package" size={21} color={colors.primary} />
+                          )}
+                        </View>
+                      );
+                    })}
+                  </View>
+                  <View style={styles.featureFooter}>
+                    <Text numberOfLines={1} style={{ flex: 1, color: colors.splashText, fontSize: 9, fontWeight: '700' }}>
+                      {minimumOrder ? `MOQ ${minimumOrder}` : 'OG Exports selection'}
+                    </Text>
+                    <Text style={{ color: colors.splashMuted, fontSize: 9 }}>Explore  ›</Text>
                   </View>
                 </Pressable>
               );
@@ -437,9 +462,7 @@ export default function BuyerHomeHeader({
             opacity: pressed ? 0.88 : 1,
           }]}
         >
-          <View style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 22, borderWidth: 1, borderColor: colors.glassBorder, backgroundColor: colors.glassFill }}>
-            <Feather name="package" size={20} color={colors.accent} />
-          </View>
+          <BrandMark width={56} />
           <View style={{ flex: 1 }}>
             <Text style={[styles.featureCategory, { color: colors.accent }]}>OG EXPORTS</Text>
             <Text style={[styles.featureName, { color: colors.buttonForeground }]}>Explore the catalogue</Text>
