@@ -136,7 +136,9 @@ test('screen and PDF branding share the transparent approved SVG mark', () => {
   assert.match(svgSource, /viewBox="100 230 820 570"/);
   assert.match(svgSource, /surface === 'dark'/);
   assert.match(buyerHeader, /<BrandMark width=\{46\}/);
-  assert.match(buyerHeader, /<BrandMark width=\{56\} onBackground="dark"/);
+  assert.match(buyerHeader, /<BrandMark width=\{37\} onBackground="dark"/);
+  assert.match(buyerHeader, /const brandSlides = \[/);
+  assert.doesNotMatch(buyerHeader, /<Image\b/, 'brand banners do not use product imagery');
   assert.match(splash, /<BrandMark width=\{markWidth\} onBackground="dark"/);
   assert.equal(splash.includes('og-splash-mark.png'), false);
   assert.match(splashAsset, /href="\.\/og-official-mark\.svg"/);

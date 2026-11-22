@@ -1,27 +1,46 @@
 import React, { useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { BrandMark } from '@/components/BrandMark';
 import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/components/LocalizedText';
 import { useColors } from '@/hooks/useColors';
-import { first, record } from '@/lib/data';
-import { categoryName, displayPrice, rowsFromResponse } from '@/lib/buyer-data';
-
-type Product = ReturnType<typeof rowsFromResponse>[number];
 
 type Props = {
-  products: Product[];
-  productsLoading: boolean;
-  productsError: boolean;
   search: string;
   onSearchChange: (value: string) => void;
   onBrowse: (searchTerm?: string) => void;
-  onSelectProduct: (productId: string) => void;
   onOpenCart: () => void;
   onOpenAccount: () => void;
   onSelectTab: (label: string) => void;
 };
+
+const brandSlides = [
+  {
+    id: 'origin',
+    eyebrow: 'PAKISTAN ORIGIN',
+    title: 'Pakistan’s exports, clearly presented.',
+    body: 'Explore current products, origin and trade information in one place.',
+    action: 'Explore products',
+    icon: 'globe' as const,
+  },
+  {
+    id: 'catalogue',
+    eyebrow: 'THE OG EXPORTS CATALOGUE',
+    title: 'A clearer way to discover products.',
+    body: 'Review specifications, packaging and order details before you enquire.',
+    action: 'Browse catalogue',
+    icon: 'search' as const,
+  },
+  {
+    id: 'support',
+    eyebrow: 'TRADE SUPPORT',
+    title: 'Product details. Trade support.',
+    body: 'Browse the catalogue, then contact our team when you are ready.',
+    action: 'Start exploring',
+    icon: 'message-circle' as const,
+  },
+] as const;
 
 const styles = StyleSheet.create({
   masthead: {
@@ -109,66 +128,105 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
   },
-  featureCard: {
-    height: 196,
+  promoCard: {
+    height: 210,
     overflow: 'hidden',
-    borderRadius: 17,
-    padding: 12,
+    borderRadius: 22,
+    padding: 15,
+    borderWidth: 1,
   },
-  featureTop: {
+  promoHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 9,
+    gap: 8,
   },
-  featureCategory: {
+  promoBrandLockup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  promoWordmark: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.1,
+  },
+  promoSubmark: {
+    marginTop: 2,
+    fontSize: 7,
+    fontWeight: '600',
+    letterSpacing: 0.8,
+  },
+  promoIndex: {
+    fontSize: 8,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  promoBody: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 10,
+  },
+  promoCopy: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  promoEyebrow: {
     fontSize: 8,
     fontWeight: '800',
-    letterSpacing: 1.2,
+    letterSpacing: 1.4,
     textTransform: 'uppercase',
   },
-  featureName: {
-    marginTop: 4,
-    fontSize: 14,
-    lineHeight: 18,
+  promoTitle: {
+    marginTop: 6,
+    fontSize: 17,
+    lineHeight: 21,
     fontWeight: '800',
+    letterSpacing: -0.2,
   },
-  featureMeta: {
-    marginTop: 3,
+  promoDescription: {
+    marginTop: 6,
     fontSize: 9,
-    lineHeight: 13,
+    lineHeight: 14,
   },
-  featureOpen: {
-    width: 27,
-    height: 27,
+  promoArtwork: {
+    width: 80,
+    height: 80,
     flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 40,
   },
-  featureThumbnails: {
-    flexDirection: 'row',
-    gap: 7,
-    marginTop: 10,
-  },
-  featureThumbnail: {
-    height: 82,
-    flex: 1,
-    overflow: 'hidden',
+  promoArtworkInner: {
+    width: 58,
+    height: 58,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 29,
   },
-  featureFooter: {
+  promoFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 8,
+    gap: 10,
+    marginTop: 10,
+  },
+  promoAction: {
+    minHeight: 33,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    paddingHorizontal: 13,
+    borderWidth: 1,
+    borderRadius: 17,
   },
   dots: {
-    minHeight: 21,
+    minHeight: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -181,13 +239,9 @@ const styles = StyleSheet.create({
 });
 
 export default function BuyerHomeHeader({
-  products,
-  productsLoading,
-  productsError,
   search,
   onSearchChange,
   onBrowse,
-  onSelectProduct,
   onOpenCart,
   onOpenAccount,
   onSelectTab,
@@ -195,13 +249,41 @@ export default function BuyerHomeHeader({
   const colors = useColors();
   const { width: windowWidth } = useWindowDimensions();
   const [activeTopTab, setActiveTopTab] = useState('Worldwide');
-  const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [carouselPosition, setCarouselPosition] = useState(1);
   const featuredScrollRef = useRef<ScrollViewInstance | null>(null);
-  const featuredProducts = products.filter(product => record(product).featured === true);
-  const heroProducts = (featuredProducts.length ? featuredProducts : products).slice(0, 6);
-  const heroCardWidth = Math.max(260, Math.min(windowWidth * 0.77, 368));
+  const hasCenteredCarousel = useRef(false);
+  const carouselItems = [brandSlides[brandSlides.length - 1], ...brandSlides, brandSlides[0]];
+  const heroCardWidth = Math.min(windowWidth * 0.76, 360);
   const heroCardGap = 12;
-  const heroSideInset = Math.max((windowWidth - heroCardWidth) / 2, 24);
+  const heroStep = heroCardWidth + heroCardGap;
+  const heroSideInset = Math.max((windowWidth - heroCardWidth) / 2, 0);
+
+  function centerInitialSlide() {
+    if (hasCenteredCarousel.current) return;
+    hasCenteredCarousel.current = true;
+    requestAnimationFrame(() => featuredScrollRef.current?.scrollTo({ x: heroStep, animated: false }));
+  }
+
+  function settleCarousel(offsetX: number) {
+    const rawIndex = Math.round(offsetX / heroStep);
+    if (rawIndex <= 0) {
+      featuredScrollRef.current?.scrollTo({ x: brandSlides.length * heroStep, animated: false });
+      setCarouselPosition(brandSlides.length);
+      return;
+    }
+    if (rawIndex >= brandSlides.length + 1) {
+      featuredScrollRef.current?.scrollTo({ x: heroStep, animated: false });
+      setCarouselPosition(1);
+      return;
+    }
+    setCarouselPosition(rawIndex);
+  }
+
+  function showSlide(index: number) {
+    const nextPosition = index + 1;
+    setCarouselPosition(nextPosition);
+    featuredScrollRef.current?.scrollTo({ x: nextPosition * heroStep, animated: true });
+  }
 
   function selectTab(label: string) {
     setActiveTopTab(label);
@@ -306,163 +388,101 @@ export default function BuyerHomeHeader({
         <Feather name="arrow-right" size={14} color={colors.accent} />
       </Pressable>
 
-      {heroProducts.length > 0 ? (
-        <>
-          <ScrollView
-            ref={featuredScrollRef}
-            horizontal
-            snapToInterval={heroCardWidth + heroCardGap}
-            snapToAlignment="start"
-            disableIntervalMomentum
-            decelerationRate="fast"
-            showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={event => setFeaturedIndex(Math.max(0, Math.min(
-              heroProducts.length - 1,
-              Math.round(event.nativeEvent.contentOffset.x / (heroCardWidth + heroCardGap)),
-            )))}
-            style={{ marginHorizontal: -20 }}
-            contentContainerStyle={{ gap: heroCardGap, paddingHorizontal: heroSideInset, paddingBottom: 3 }}
-          >
-            {heroProducts.map((product, index) => {
-              const name = first(product, ['name'], 'Export product');
-              const origin = first(product, ['origin']);
-              const minimumOrder = first(product, ['moq', 'min_order']);
-              const thumbnailProducts = heroProducts.length > 1
-                ? [0, 1, 2].map(offset => heroProducts[(index + offset) % heroProducts.length])
-                : [product];
-              return (
-                <Pressable
-                  key={first(product, ['id'], String(index))}
-                  testID={`buyer-home-featured-${first(product, ['id'], String(index))}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`View ${name}${origin ? `, origin ${origin}` : ''}, ${displayPrice(product)}`}
-                  onPress={() => {
-                    const productId = first(product, ['id']);
-                    if (productId) onSelectProduct(productId);
-                    else onBrowse(name);
-                  }}
-                  style={({ pressed }) => [styles.featureCard, { width: heroCardWidth, backgroundColor: colors.balanceCardStart, opacity: pressed ? 0.92 : 1 }]}
-                >
-                  <LinearGradient
-                    colors={[colors.balanceCardStart, colors.balanceCardEnd] as const}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={StyleSheet.absoluteFill}
-                  />
-                  <View style={styles.featureTop}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.featureCategory, { color: colors.splashMuted }]}>{categoryName(product)}</Text>
-                      <Text numberOfLines={1} style={[styles.featureName, { color: colors.splashText }]}>{name}</Text>
-                      <Text numberOfLines={1} style={[styles.featureMeta, { color: colors.splashMuted }]}>
-                        {[origin, displayPrice(product)].filter(Boolean).join('  ·  ')}
-                      </Text>
-                    </View>
-                    <View style={[styles.featureOpen, { borderColor: colors.glassBorder, backgroundColor: colors.glassFill }]}>
-                      <Feather name="chevron-right" size={17} color={colors.primary} />
-                    </View>
+      <ScrollView
+        ref={featuredScrollRef}
+        horizontal
+        snapToInterval={heroStep}
+        snapToAlignment="start"
+        disableIntervalMomentum
+        decelerationRate="fast"
+        showsHorizontalScrollIndicator={false}
+        onLayout={centerInitialSlide}
+        onMomentumScrollEnd={event => settleCarousel(event.nativeEvent.contentOffset.x)}
+        style={{ marginHorizontal: -20 }}
+        contentContainerStyle={{ gap: heroCardGap, paddingHorizontal: heroSideInset, paddingBottom: 3 }}
+      >
+        {carouselItems.map((slide, index) => {
+          const isActive = carouselPosition === index;
+          const realIndex = index === 0
+            ? brandSlides.length - 1
+            : index === brandSlides.length + 1
+              ? 0
+              : index - 1;
+          return (
+            <Pressable
+              key={`${slide.id}-${index}`}
+              testID={`buyer-home-brand-slide-${slide.id}-${index}`}
+              accessibilityRole="button"
+              accessibilityLabel={`${slide.title} ${slide.body}`}
+              accessibilityState={{ selected: isActive }}
+              onPress={() => onBrowse()}
+              style={({ pressed }) => [styles.promoCard, {
+                width: heroCardWidth,
+                backgroundColor: colors.balanceCardStart,
+                borderColor: isActive ? colors.accent : colors.glassBorder,
+                opacity: pressed ? 0.95 : isActive ? 1 : 0.66,
+                transform: [{ scale: isActive ? 1 : 0.92 }],
+              }]}
+            >
+              <LinearGradient
+                colors={[colors.balanceCardStart, colors.balanceCardEnd] as const}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.promoHeader}>
+                <View style={styles.promoBrandLockup}>
+                  <BrandMark width={37} onBackground="dark" />
+                  <View>
+                    <Text style={[styles.promoWordmark, { color: colors.splashText }]}>OG EXPORTS</Text>
+                    <Text style={[styles.promoSubmark, { color: colors.splashMuted }]}>PAKISTAN · GLOBAL TRADE</Text>
                   </View>
-                  <View style={styles.featureThumbnails}>
-                    {thumbnailProducts.map((thumbnail, thumbnailIndex) => {
-                      const thumbnailName = first(thumbnail, ['name'], 'Export product');
-                      const thumbnailImage = first(thumbnail, ['image_url', 'imageUrl']);
-                      return (
-                        <View
-                          key={`${first(thumbnail, ['id'], String(index))}-${thumbnailIndex}`}
-                          style={[styles.featureThumbnail, { borderColor: colors.glassBorder, backgroundColor: colors.card }]}
-                        >
-                          {thumbnailImage ? (
-                            <Image
-                              source={{ uri: thumbnailImage }}
-                              accessibilityLabel={`${thumbnailName} product`}
-                              resizeMode="cover"
-                              style={StyleSheet.absoluteFill}
-                            />
-                          ) : (
-                            <Feather name="package" size={21} color={colors.primary} />
-                          )}
-                        </View>
-                      );
-                    })}
+                </View>
+                <Text style={[styles.promoIndex, { color: colors.splashMuted }]}>
+                  {String(realIndex + 1).padStart(2, '0')} / {String(brandSlides.length).padStart(2, '0')}
+                </Text>
+              </View>
+
+              <View style={styles.promoBody}>
+                <View style={styles.promoCopy}>
+                  <Text style={[styles.promoEyebrow, { color: colors.accent }]}>{slide.eyebrow}</Text>
+                  <Text numberOfLines={2} style={[styles.promoTitle, { color: colors.splashText }]}>{slide.title}</Text>
+                  <Text numberOfLines={2} style={[styles.promoDescription, { color: colors.splashMuted }]}>{slide.body}</Text>
+                </View>
+                <View style={[styles.promoArtwork, { borderColor: colors.glassBorder, backgroundColor: colors.glassFill }]}>
+                  <View style={[styles.promoArtworkInner, { borderColor: colors.glassBorder, backgroundColor: colors.glassTintTeal }]}>
+                    <Feather name={slide.icon} size={24} color={colors.accent} />
                   </View>
-                  <View style={styles.featureFooter}>
-                    <Text numberOfLines={1} style={{ flex: 1, color: colors.splashText, fontSize: 9, fontWeight: '700' }}>
-                      {minimumOrder ? `Minimum order ${minimumOrder}` : 'Published by OG Exports'}
-                    </Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <Text style={{ color: colors.splashText, fontSize: 9, fontWeight: '700' }}>View product</Text>
-                      <Feather name="arrow-right" size={12} color={colors.accent} />
-                    </View>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-          {heroProducts.length > 1 ? (
-            <View style={styles.dots}>
-              {heroProducts.map((product, index) => (
-                <Pressable
-                  key={first(product, ['id'], String(index))}
-                  testID={`buyer-home-feature-dot-${index}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Show featured product ${index + 1}`}
-                  accessibilityState={{ selected: featuredIndex === index }}
-                  onPress={() => {
-                    setFeaturedIndex(index);
-                    featuredScrollRef.current?.scrollTo({ x: index * (heroCardWidth + heroCardGap), animated: true });
-                  }}
-                  style={[styles.dot, { width: featuredIndex === index ? 18 : 6, backgroundColor: featuredIndex === index ? colors.accent : colors.border }]}
-                />
-              ))}
-            </View>
-          ) : null}
-        </>
-      ) : productsLoading ? (
-        <View
-          testID="buyer-home-featured-loading"
-          accessibilityLabel="Loading featured products"
-          style={[styles.featureCard, { width: heroCardWidth, alignSelf: 'center', backgroundColor: colors.glassTintTeal, borderWidth: 1, borderColor: colors.glassBorder }]}
-        >
-          <View style={{ width: 94, height: 9, borderRadius: 6, backgroundColor: colors.glassTintGold }} />
-          <View style={{ width: '76%', height: 15, borderRadius: 7, marginTop: 11, backgroundColor: colors.glassTintTeal }} />
-          <View style={{ width: '54%', height: 9, borderRadius: 6, marginTop: 7, backgroundColor: colors.glassTintTeal }} />
-          <View style={{ flexDirection: 'row', gap: 7, marginTop: 16 }}>
-            {[0, 1, 2].map(item => (
-              <View key={item} style={{ height: 82, flex: 1, borderRadius: 10, backgroundColor: colors.glassFill }} />
-            ))}
-          </View>
-          <View style={{ width: '45%', height: 9, borderRadius: 6, marginTop: 10, backgroundColor: colors.glassTintGold }} />
-        </View>
-      ) : (
-        <Pressable
-          testID="buyer-home-featured-fallback"
-          accessibilityRole="button"
-          accessibilityLabel="Browse products published by OG Exports"
-          onPress={() => onBrowse()}
-          style={({ pressed }) => [styles.featureCard, {
-            width: heroCardWidth,
-            alignSelf: 'center',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 15,
-            paddingHorizontal: 17,
-            backgroundColor: colors.buttonBackground,
-            opacity: pressed ? 0.88 : 1,
-          }]}
-        >
-          <BrandMark width={56} onBackground="dark" />
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.featureCategory, { color: colors.accent }]}>OG EXPORTS</Text>
-            <Text style={[styles.featureName, { color: colors.buttonForeground }]}>Explore the catalogue</Text>
-            <Text style={{ color: colors.buttonForeground, fontSize: 10, lineHeight: 15, marginTop: 4 }}>
-              {productsError ? 'The live catalogue is temporarily unavailable.' : 'Browse products currently published by OG Exports.'}
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 10 }}>
-              <Text style={{ color: colors.buttonForeground, fontSize: 10, fontWeight: '700' }}>Browse products</Text>
-              <Feather name="arrow-right" size={13} color={colors.accent} />
-            </View>
-          </View>
-        </Pressable>
-      )}
+                </View>
+              </View>
+
+              <View style={styles.promoFooter}>
+                <View style={[styles.promoAction, { borderColor: colors.glassBorder, backgroundColor: colors.glassFill }]}>
+                  <Text style={{ color: colors.splashText, fontSize: 9, fontWeight: '700' }}>{slide.action}</Text>
+                  <Feather name="arrow-right" size={12} color={colors.accent} />
+                </View>
+                <Text style={{ color: colors.splashMuted, fontSize: 7, fontWeight: '700', letterSpacing: 0.8 }}>OG EXPORTS</Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+      <View style={styles.dots}>
+        {brandSlides.map((slide, index) => (
+          <Pressable
+            key={slide.id}
+            testID={`buyer-home-brand-slide-dot-${slide.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Show brand slide ${index + 1}`}
+            accessibilityState={{ selected: carouselPosition === index + 1 }}
+            onPress={() => showSlide(index)}
+            style={[styles.dot, {
+              width: carouselPosition === index + 1 ? 20 : 6,
+              backgroundColor: carouselPosition === index + 1 ? colors.accent : colors.border,
+            }]}
+          />
+        ))}
+      </View>
     </>
   );
 }

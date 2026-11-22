@@ -106,13 +106,9 @@ export default function BuyerHome() {
   return (
     <Screen title="" hideHeader refreshable>
       <BuyerHomeHeader
-        products={products}
-        productsLoading={productsQuery.isLoading}
-        productsError={productsQuery.isError}
         search={search}
         onSearchChange={setSearch}
         onBrowse={browseProducts}
-        onSelectProduct={openProduct}
         onOpenCart={() => router.push('/(buyer-tabs)/buyer-cart')}
         onOpenAccount={() => router.push('/(buyer-tabs)/buyer-profile')}
         onSelectTab={selectTopTab}
