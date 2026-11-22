@@ -55,6 +55,15 @@ const accountSections = [
 ] as const;
 
 const profileCardStyles = StyleSheet.create({
+  surfaceGlow: {
+    position: 'absolute',
+    top: -78,
+    right: -58,
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    opacity: 0.22,
+  },
   accent: {
     height: 3,
     width: '100%',
@@ -178,36 +187,37 @@ export default function BuyerProfile() {
 
   return (
     <Screen title="Profile" subtitle="Your OG Exports buyer account">
-      <Card testID="buyer-profile-identity-card" style={{ padding: 0, marginBottom: 18 }}>
+      <Card testID="buyer-profile-identity-card" style={{ padding: 0, marginBottom: 18, backgroundColor: colors.balanceCardStart }}>
+        <View pointerEvents="none" style={[profileCardStyles.surfaceGlow, { backgroundColor: colors.balanceCardEnd }]} />
         <View style={[profileCardStyles.accent, { backgroundColor: colors.accent }]} />
         <View style={profileCardStyles.content}>
           <View style={profileCardStyles.brandLockup}>
-            <BrandMark width={42} />
+            <BrandMark width={42} onBackground="dark" />
             <View>
-              <Text style={[profileCardStyles.brandName, { color: colors.foreground }]}>OG EXPORTS</Text>
-              <Text style={[profileCardStyles.brandCaption, { color: colors.accent }]}>BUYER ACCOUNT</Text>
+              <Text style={[profileCardStyles.brandName, { color: colors.balanceCardText }]}>OG EXPORTS</Text>
+              <Text style={[profileCardStyles.brandCaption, { color: colors.splashMuted }]}>BUYER ACCOUNT</Text>
             </View>
           </View>
-          <View style={[profileCardStyles.divider, { backgroundColor: colors.glassEdge }]} />
+          <View style={[profileCardStyles.divider, { backgroundColor: colors.splashTrack }]} />
           <View style={profileCardStyles.identity}>
             <View style={[profileCardStyles.avatarFrame, { backgroundColor: colors.glassTintTeal, borderColor: colors.glassBorder }]}>
-              <View style={[profileCardStyles.avatar, { backgroundColor: colors.lightGreen }]}>
-                <Feather name="user" size={25} color={colors.primary} />
+              <View style={[profileCardStyles.avatar, { backgroundColor: colors.balanceCardEnd }]}>
+                <Feather name="user" size={25} color={colors.balanceCardText} />
               </View>
             </View>
             <View style={profileCardStyles.details}>
-              <Text style={[profileCardStyles.overline, { color: colors.accent }]}>ACCOUNT HOLDER</Text>
-              <Text numberOfLines={2} style={[profileCardStyles.name, { color: colors.foreground }]}>{displayName}</Text>
+              <Text style={[profileCardStyles.overline, { color: colors.splashMuted }]}>ACCOUNT HOLDER</Text>
+              <Text numberOfLines={2} style={[profileCardStyles.name, { color: colors.balanceCardText }]}>{displayName}</Text>
               {company ? (
                 <View style={profileCardStyles.metaRow}>
-                  <Feather name="briefcase" size={13} color={colors.mutedForeground} />
-                  <Text numberOfLines={1} style={[profileCardStyles.metaText, { color: colors.mutedForeground }]}>{company}</Text>
+                  <Feather name="briefcase" size={13} color={colors.splashMuted} />
+                  <Text numberOfLines={1} style={[profileCardStyles.metaText, { color: colors.splashMuted }]}>{company}</Text>
                 </View>
               ) : null}
               {email ? (
                 <View style={profileCardStyles.metaRow}>
-                  <Feather name="mail" size={13} color={colors.mutedForeground} />
-                  <Text numberOfLines={1} style={[profileCardStyles.metaText, { color: colors.mutedForeground }]}>{email}</Text>
+                  <Feather name="mail" size={13} color={colors.splashMuted} />
+                  <Text numberOfLines={1} style={[profileCardStyles.metaText, { color: colors.splashMuted }]}>{email}</Text>
                 </View>
               ) : null}
             </View>

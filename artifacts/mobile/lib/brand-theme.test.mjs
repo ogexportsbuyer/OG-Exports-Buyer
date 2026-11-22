@@ -202,6 +202,10 @@ test('buyer profile identity card uses the official mark and branded account hie
   const profile = readFileSync(new URL('../app/(buyer-tabs)/buyer-profile.tsx', import.meta.url), 'utf8');
   assert.match(profile, /testID="buyer-profile-identity-card"/);
   assert.match(profile, /<BrandMark width=\{42\}/);
+  assert.match(profile, /backgroundColor: colors\.balanceCardStart/);
+  assert.match(profile, /backgroundColor: colors\.balanceCardEnd/);
+  assert.match(profile, /surfaceGlow/);
+  assert.match(profile, /<BrandMark width=\{42\} onBackground="dark"/);
   assert.match(profile, /BUYER ACCOUNT/);
   assert.match(profile, /ACCOUNT HOLDER/);
   assert.match(profile, /name="mail"/);
