@@ -143,12 +143,27 @@ test('screen and PDF branding share the transparent approved SVG mark', () => {
   assert.match(buyerHeader, /}, 7000\);/, 'brand slides auto-advance every seven seconds');
   assert.match(buyerHeader, /!isFocused \|\| reduceMotion \|\| carouselInteracting/, 'autoplay pauses when hidden, reduced-motion is enabled, or the user is swiping');
   assert.match(buyerHeader, /Animated\.timing\(progress/);
+  for (const message of [
+    'Connecting Markets. Delivering Excellence.',
+    'Exceptional Quality. Uncompromising Standards.',
+    'Powering Global Trade Through Reliable Supply.',
+    'Quality Assured. Relationships Built on Trust.',
+    'Beyond Business. Building Lasting Partnerships.',
+  ]) {
+    assert.ok(buyerHeader.includes(message), `homepage banner copy includes ${message}`);
+  }
   const bannerPalettes = [...buyerHeader.matchAll(/backgroundColors: \['(#[A-F0-9]{6})', '(#[A-F0-9]{6})'\] as const/gi)];
-  assert.equal(bannerPalettes.length, 3, 'each brand banner defines its own premium palette');
-  assert.equal(new Set(bannerPalettes.map(([, firstColor]) => firstColor.toUpperCase())).size, 3);
+  assert.equal(bannerPalettes.length, 5, 'each brand banner defines its own premium palette');
+  assert.equal(new Set(bannerPalettes.map(([, firstColor]) => firstColor.toUpperCase())).size, 5);
   assert.deepEqual(
     bannerPalettes.map(([, start, end]) => [start.toUpperCase(), end.toUpperCase()]),
-    [['#07363A', '#0F6260'], ['#0C412E', '#1F774D'], ['#29362A', '#50603A']],
+    [
+      ['#07363A', '#0F6260'],
+      ['#0C4A35', '#1E8354'],
+      ['#193F33', '#47735B'],
+      ['#1D4033', '#4F7653'],
+      ['#3B4025', '#6A7137'],
+    ],
     'banner backgrounds stay within the branded teal and green palette',
   );
   assert.match(buyerHeader, /promoArtworkHighlight/);

@@ -20,9 +20,9 @@ type Props = {
 const brandSlides = [
   {
     id: 'origin',
-    eyebrow: 'PAKISTAN ORIGIN',
-    title: 'Pakistan’s exports, clearly presented.',
-    body: 'Explore current products, origin and trade information in one place.',
+    eyebrow: 'GLOBAL PRESENCE',
+    title: 'Connecting Markets. Delivering Excellence.',
+    body: 'Your Gateway to Premium Products and Global Trade Opportunities.',
     icon: 'globe' as const,
     backgroundColors: ['#07363A', '#0F6260'] as const,
     iconColors: ['#2A716C', '#0A3335'] as const,
@@ -30,22 +30,42 @@ const brandSlides = [
   },
   {
     id: 'catalogue',
-    eyebrow: 'THE OG EXPORTS CATALOGUE',
-    title: 'A clearer way to discover products.',
-    body: 'Review specifications, packaging and order details before you enquire.',
-    icon: 'search' as const,
-    backgroundColors: ['#0C412E', '#1F774D'] as const,
-    iconColors: ['#32835A', '#0C392B'] as const,
+    eyebrow: 'PRODUCT EXCELLENCE',
+    title: 'Exceptional Quality. Uncompromising Standards.',
+    body: 'Discover a Premium Selection of Agricultural Commodities and Natural Products.',
+    icon: 'award' as const,
+    backgroundColors: ['#0C4A35', '#1E8354'] as const,
+    iconColors: ['#3C8A5C', '#0A3928'] as const,
     accent: '#E7CD8A',
   },
   {
-    id: 'support',
-    eyebrow: 'TRADE SUPPORT',
-    title: 'Product details. Trade support.',
-    body: 'Browse the catalogue, then contact our team when you are ready.',
-    icon: 'message-circle' as const,
-    backgroundColors: ['#29362A', '#50603A'] as const,
-    iconColors: ['#68764A', '#2A382A'] as const,
+    id: 'supply',
+    eyebrow: 'GLOBAL SUPPLY',
+    title: 'Powering Global Trade Through Reliable Supply.',
+    body: 'Consistent Supply. Competitive Export Solutions. Worldwide Reach.',
+    icon: 'truck' as const,
+    backgroundColors: ['#193F33', '#47735B'] as const,
+    iconColors: ['#568B66', '#143C30'] as const,
+    accent: '#E4C27A',
+  },
+  {
+    id: 'trust',
+    eyebrow: 'TRUST & COMMITMENT',
+    title: 'Quality Assured. Relationships Built on Trust.',
+    body: 'Professional Standards, Careful Selection and Commitment in Every Shipment.',
+    icon: 'shield' as const,
+    backgroundColors: ['#1D4033', '#4F7653'] as const,
+    iconColors: ['#6A8962', '#1E3A32'] as const,
+    accent: '#E6C982',
+  },
+  {
+    id: 'partnerships',
+    eyebrow: 'BUSINESS PARTNERSHIPS',
+    title: 'Beyond Business. Building Lasting Partnerships.',
+    body: 'Your Trusted Partner for Sustainable Growth and Global Business Opportunities.',
+    icon: 'users' as const,
+    backgroundColors: ['#3B4025', '#6A7137'] as const,
+    iconColors: ['#7C8150', '#343B25'] as const,
     accent: '#E4C27A',
   },
 ] as const;
@@ -171,7 +191,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   promoCard: {
-    height: 216,
+    height: 236,
     overflow: 'hidden',
     borderRadius: 24,
     padding: 16,
@@ -272,8 +292,8 @@ const styles = StyleSheet.create({
   },
   promoTitle: {
     marginTop: 6,
-    fontSize: 17,
-    lineHeight: 21,
+    fontSize: 16,
+    lineHeight: 20,
     fontWeight: '800',
     letterSpacing: -0.2,
   },
@@ -674,8 +694,8 @@ export default function BuyerHomeHeader({
                       <View style={[styles.promoEyebrowDot, { backgroundColor: slide.accent }]} />
                       <Text style={[styles.promoEyebrow, { color: slide.accent }]}>{slide.eyebrow}</Text>
                     </View>
-                    <Text numberOfLines={2} style={[styles.promoTitle, { color: colors.splashText }]}>{slide.title}</Text>
-                    <Text numberOfLines={2} style={[styles.promoDescription, { color: colors.splashMuted }]}>{slide.body}</Text>
+                    <Text numberOfLines={3} style={[styles.promoTitle, { color: colors.splashText }]}>{slide.title}</Text>
+                    <Text numberOfLines={3} style={[styles.promoDescription, { color: colors.splashMuted }]}>{slide.body}</Text>
                   </View>
                   <View style={[styles.promoArtworkShadow, { shadowColor: slide.backgroundColors[0] }]}>
                     <View style={[styles.promoArtwork, {
