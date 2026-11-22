@@ -10,3 +10,9 @@ An Expo QR code can appear even while Expo CLI is waiting at an account prompt. 
 **Why:** A previous workflow log showed a JSX mismatch while iOS and Android exports succeeded; a fresh restart started Metro without that parser error.
 
 **How to apply:** After source changes, export the app as appropriate. If workflow output disagrees with those results, use the artifact-managed workflow restart and fresh logs to distinguish stale output from a live failure. For QR preview issues, also verify managed Expo sign-in completed in the new logs.
+
+If `create-launch login` still reports an unexpected response after the user refreshes the workspace and the Expo workflow restarts, repeated restarts do not repair the managed session. Direct them to Replit's **Preview on your phone** sign-in flow; do not change SDK dependencies or ask them to use manual Expo credentials.
+
+**Why:** A buyer app already on SDK 58 continued to show the managed sign-in prompt and iOS request timeouts after a workspace refresh and a fresh workflow start.
+
+**How to apply:** Treat the remaining blocker as Replit-managed Expo authentication, verify the browser route separately, and ask whether the right-side phone-preview panel offers sign-in steps.
