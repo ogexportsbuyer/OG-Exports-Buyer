@@ -21,7 +21,6 @@ const brandSlides = [
     eyebrow: 'PAKISTAN ORIGIN',
     title: 'Pakistan’s exports, clearly presented.',
     body: 'Explore current products, origin and trade information in one place.',
-    action: 'Explore products',
     icon: 'globe' as const,
   },
   {
@@ -29,7 +28,6 @@ const brandSlides = [
     eyebrow: 'THE OG EXPORTS CATALOGUE',
     title: 'A clearer way to discover products.',
     body: 'Review specifications, packaging and order details before you enquire.',
-    action: 'Browse catalogue',
     icon: 'search' as const,
   },
   {
@@ -37,7 +35,6 @@ const brandSlides = [
     eyebrow: 'TRADE SUPPORT',
     title: 'Product details. Trade support.',
     body: 'Browse the catalogue, then contact our team when you are ready.',
-    action: 'Start exploring',
     icon: 'message-circle' as const,
   },
 ] as const;
@@ -214,16 +211,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 10,
     marginTop: 10,
-  },
-  promoAction: {
-    minHeight: 33,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    paddingHorizontal: 13,
-    borderWidth: 1,
-    borderRadius: 17,
   },
   dots: {
     minHeight: 24,
@@ -482,10 +469,7 @@ export default function BuyerHomeHeader({
                 </View>
 
                 <View style={styles.promoFooter}>
-                  <View style={[styles.promoAction, { borderColor: colors.glassBorder, backgroundColor: colors.glassFill }]}>
-                    <Text style={{ color: colors.splashText, fontSize: 9, fontWeight: '700' }}>{slide.action}</Text>
-                    <Feather name="arrow-right" size={12} color={colors.accent} />
-                  </View>
+                  <View style={{ flex: 1, height: 1, backgroundColor: colors.glassBorder, opacity: 0.3 }} />
                   <Text style={{ color: colors.splashMuted, fontSize: 7, fontWeight: '700', letterSpacing: 0.8 }}>OG EXPORTS</Text>
                 </View>
               </Pressable>
