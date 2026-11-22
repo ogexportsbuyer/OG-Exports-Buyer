@@ -12,9 +12,12 @@ type Product = ReturnType<typeof rowsFromResponse>[number];
 
 type Props = {
   products: Product[];
+  productsLoading: boolean;
+  productsError: boolean;
   search: string;
   onSearchChange: (value: string) => void;
   onBrowse: (searchTerm?: string) => void;
+  onSelectProduct: (productId: string) => void;
   onOpenCart: () => void;
   onOpenAccount: () => void;
   onSelectTab: (label: string) => void;
@@ -107,7 +110,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   featureCard: {
-    height: 184,
+    height: 196,
     overflow: 'hidden',
     borderRadius: 17,
     padding: 12,
@@ -150,7 +153,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   featureThumbnail: {
-    height: 70,
+    height: 82,
     flex: 1,
     overflow: 'hidden',
     alignItems: 'center',
@@ -179,9 +182,12 @@ const styles = StyleSheet.create({
 
 export default function BuyerHomeHeader({
   products,
+  productsLoading,
+  productsError,
   search,
   onSearchChange,
   onBrowse,
+  onSelectProduct,
   onOpenCart,
   onOpenAccount,
   onSelectTab,
@@ -193,9 +199,9 @@ export default function BuyerHomeHeader({
   const featuredScrollRef = useRef<ScrollViewInstance | null>(null);
   const featuredProducts = products.filter(product => record(product).featured === true);
   const heroProducts = (featuredProducts.length ? featuredProducts : products).slice(0, 6);
-  const heroCardWidth = Math.max(260, Math.min(windowWidth * 0.72, 360));
+  const heroCardWidth = Math.max(260, Math.min(windowWidth * 0.77, 368));
   const heroCardGap = 12;
-  const heroSideInset = Math.max((windowWidth + 40 - heroCardWidth) / 2, 28);
+  const heroSideInset = Math.max((windowWidth - heroCardWidth) / 2, 24);
 
   function selectTab(label: string) {
     setActiveTopTab(label);
@@ -329,8 +335,12 @@ export default function BuyerHomeHeader({
                   key={first(product, ['id'], String(index))}
                   testID={`buyer-home-featured-${first(product, ['id'], String(index))}`}
                   accessibilityRole="button"
-                  accessibilityLabel={`Browse ${name}, ${origin ? `origin ${origin}` : ''}, ${displayPrice(product)}`}
-                  onPress={() => onBrowse(name)}
+                  accessibilityLabel={`View ${name}${origin ? `, origin ${origin}` : ''}, ${displayPrice(product)}`}
+                  onPress={() => {
+                    const productId = first(product, ['id']);
+                    if (productId) onSelectProduct(productId);
+                    else onBrowse(name);
+                  }}
                   style={({ pressed }) => [styles.featureCard, { width: heroCardWidth, backgroundColor: colors.balanceCardStart, opacity: pressed ? 0.92 : 1 }]}
                 >
                   <LinearGradient
@@ -344,7 +354,7 @@ export default function BuyerHomeHeader({
                       <Text style={[styles.featureCategory, { color: colors.splashMuted }]}>{categoryName(product)}</Text>
                       <Text numberOfLines={1} style={[styles.featureName, { color: colors.splashText }]}>{name}</Text>
                       <Text numberOfLines={1} style={[styles.featureMeta, { color: colors.splashMuted }]}>
-                        {origin || 'OG Exports catalogue'}{origin ? `  ·  ${displayPrice(product)}` : ''}
+                        {[origin, displayPrice(product)].filter(Boolean).join('  ·  ')}
                       </Text>
                     </View>
                     <View style={[styles.featureOpen, { borderColor: colors.glassBorder, backgroundColor: colors.glassFill }]}>
@@ -376,9 +386,12 @@ export default function BuyerHomeHeader({
                   </View>
                   <View style={styles.featureFooter}>
                     <Text numberOfLines={1} style={{ flex: 1, color: colors.splashText, fontSize: 9, fontWeight: '700' }}>
-                      {minimumOrder ? `MOQ ${minimumOrder}` : 'OG Exports selection'}
+                      {minimumOrder ? `Minimum order ${minimumOrder}` : 'Published by OG Exports'}
                     </Text>
-                    <Text style={{ color: colors.splashMuted, fontSize: 9 }}>Explore  ›</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Text style={{ color: colors.splashText, fontSize: 9, fontWeight: '700' }}>View product</Text>
+                      <Feather name="arrow-right" size={12} color={colors.accent} />
+                    </View>
                   </View>
                 </Pressable>
               );
@@ -403,6 +416,22 @@ export default function BuyerHomeHeader({
             </View>
           ) : null}
         </>
+      ) : productsLoading ? (
+        <View
+          testID="buyer-home-featured-loading"
+          accessibilityLabel="Loading featured products"
+          style={[styles.featureCard, { width: heroCardWidth, backgroundColor: colors.glassTintTeal, borderWidth: 1, borderColor: colors.glassBorder }]}
+        >
+          <View style={{ width: 94, height: 9, borderRadius: 6, backgroundColor: colors.glassTintGold }} />
+          <View style={{ width: '76%', height: 15, borderRadius: 7, marginTop: 11, backgroundColor: colors.glassTintTeal }} />
+          <View style={{ width: '54%', height: 9, borderRadius: 6, marginTop: 7, backgroundColor: colors.glassTintTeal }} />
+          <View style={{ flexDirection: 'row', gap: 7, marginTop: 16 }}>
+            {[0, 1, 2].map(item => (
+              <View key={item} style={{ height: 82, flex: 1, borderRadius: 10, backgroundColor: colors.glassFill }} />
+            ))}
+          </View>
+          <View style={{ width: '45%', height: 9, borderRadius: 6, marginTop: 10, backgroundColor: colors.glassTintGold }} />
+        </View>
       ) : (
         <Pressable
           testID="buyer-home-featured-fallback"
@@ -424,7 +453,7 @@ export default function BuyerHomeHeader({
             <Text style={[styles.featureCategory, { color: colors.accent }]}>OG EXPORTS</Text>
             <Text style={[styles.featureName, { color: colors.buttonForeground }]}>Explore the catalogue</Text>
             <Text style={{ color: colors.buttonForeground, fontSize: 10, lineHeight: 15, marginTop: 4 }}>
-              Browse products currently published by OG Exports.
+              {productsError ? 'The live catalogue is temporarily unavailable.' : 'Browse products currently published by OG Exports.'}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 10 }}>
               <Text style={{ color: colors.buttonForeground, fontSize: 10, fontWeight: '700' }}>Browse products</Text>

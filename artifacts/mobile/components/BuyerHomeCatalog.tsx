@@ -17,6 +17,7 @@ type Props = {
   selectedOrigin: string;
   onSelectOrigin: (origin: string) => void;
   onBrowse: (searchTerm?: string) => void;
+  onSelectProduct: (productId: string) => void;
   onSelectCategory: (category: string) => void;
   productsLoading: boolean;
   productsError: boolean;
@@ -84,10 +85,10 @@ const styles = StyleSheet.create({
     gap: 9,
     marginHorizontal: -20,
     paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingBottom: 14,
   },
   recommendationImage: {
-    height: 86,
+    height: 96,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -119,7 +120,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    paddingBottom: 9,
+    paddingBottom: 14,
   },
   productImage: {
     width: '100%',
@@ -203,6 +204,7 @@ export default function BuyerHomeCatalog({
   selectedOrigin,
   onSelectOrigin,
   onBrowse,
+  onSelectProduct,
   onSelectCategory,
   productsLoading,
   productsError,
@@ -260,8 +262,8 @@ export default function BuyerHomeCatalog({
         <>
           <View style={[styles.sectionHeader, { marginTop: 2, marginBottom: 4 }]}>
             <View>
-              <Text style={[styles.eyebrow, { color: colors.accent }]}>Curated for your next order</Text>
-              <Text style={[styles.sectionTitle, { color: colors.foreground, fontSize: 20, lineHeight: 24 }]}>Worldwide picks for you</Text>
+              <Text style={[styles.eyebrow, { color: colors.accent }]}>OG EXPORTS CATALOGUE</Text>
+              <Text style={[styles.sectionTitle, { color: colors.foreground, fontSize: 20, lineHeight: 24 }]}>Products to explore</Text>
             </View>
             <Pressable
               testID="buyer-home-products-all"
@@ -289,7 +291,7 @@ export default function BuyerHomeCatalog({
                   testID={`buyer-home-recommendation-${id}`}
                   accessibilityRole="button"
                   accessibilityLabel={`View ${name}, ${displayPrice(product)}`}
-                  onPress={() => onBrowse(name)}
+                  onPress={() => id.startsWith('recommendation-') ? onBrowse(name) : onSelectProduct(id)}
                   style={({ pressed }) => ({ width: 112, opacity: pressed ? 0.86 : 1 })}
                 >
                   <Card style={{ width: 112, padding: 0, overflow: 'hidden', borderRadius: colors.radius + 2, marginBottom: 0 }}>
@@ -345,7 +347,7 @@ export default function BuyerHomeCatalog({
               testID={`buyer-home-product-${id}`}
               accessibilityRole="button"
               accessibilityLabel={`View ${name}, ${displayPrice(product)}, origin ${origin}`}
-              onPress={() => onBrowse(name)}
+              onPress={() => id.startsWith('product-') ? onBrowse(name) : onSelectProduct(id)}
               style={({ pressed }) => ({ width: productGridCardWidth, opacity: pressed ? 0.88 : 1 })}
             >
               <Card style={{ width: productGridCardWidth, padding: 0, overflow: 'hidden', borderRadius: colors.radius + 2, marginBottom: 0 }}>

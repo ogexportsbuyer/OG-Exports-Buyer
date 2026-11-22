@@ -83,6 +83,10 @@ export default function BuyerHome() {
     });
   }
 
+  function openProduct(productId: string) {
+    router.push({ pathname: '/buyer-product/[id]', params: { id: productId } });
+  }
+
   function openOrders() {
     if (token) {
       router.push('/(buyer-tabs)/buyer-orders');
@@ -103,9 +107,12 @@ export default function BuyerHome() {
     <Screen title="" hideHeader refreshable>
       <BuyerHomeHeader
         products={products}
+        productsLoading={productsQuery.isLoading}
+        productsError={productsQuery.isError}
         search={search}
         onSearchChange={setSearch}
         onBrowse={browseProducts}
+        onSelectProduct={openProduct}
         onOpenCart={() => router.push('/(buyer-tabs)/buyer-cart')}
         onOpenAccount={() => router.push('/(buyer-tabs)/buyer-profile')}
         onSelectTab={selectTopTab}
@@ -116,6 +123,7 @@ export default function BuyerHome() {
         selectedOrigin={selectedOrigin}
         onSelectOrigin={setSelectedOrigin}
         onBrowse={browseProducts}
+        onSelectProduct={openProduct}
         onSelectCategory={category => router.push({ pathname: '/(buyer-tabs)/buyer-products', params: { category } })}
         productsLoading={productsQuery.isLoading}
         productsError={productsQuery.isError}
