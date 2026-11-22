@@ -142,7 +142,8 @@ test('screen and PDF branding share the transparent approved SVG mark', () => {
   assert.doesNotMatch(buyerHeader, /promoAction|slide\.action/, 'brand banners do not show a product-browse button');
   assert.match(buyerHeader, /}, 7000\);/, 'brand slides auto-advance every seven seconds');
   assert.match(buyerHeader, /!isFocused \|\| reduceMotion \|\| carouselInteracting/, 'autoplay pauses when hidden, reduced-motion is enabled, or the user is swiping');
-  assert.match(buyerHeader, /Animated\.timing\(progress/);
+  assert.match(buyerHeader, /Animated\.spring\(progress/);
+  assert.match(buyerHeader, /outputRange: \[0\.9, 1\.045\]/, 'the active slide expands horizontally while moving forward');
   for (const message of [
     'Connecting Markets. Delivering Excellence.',
     'Exceptional Quality. Uncompromising Standards.',

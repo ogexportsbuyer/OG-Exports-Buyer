@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type ScrollViewInstance, type ViewStyle } from 'react-native';
+import { Animated, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type ScrollViewInstance, type ViewStyle } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
@@ -84,21 +84,28 @@ function BrandSlideMotion({
   const progress = useRef(new Animated.Value(active ? 1 : 0)).current;
 
   useEffect(() => {
-    const animation = Animated.timing(progress, {
+    if (reduceMotion) {
+      progress.setValue(active ? 1 : 0);
+      return;
+    }
+    const animation = Animated.spring(progress, {
       toValue: active ? 1 : 0,
-      duration: reduceMotion ? 0 : 650,
-      easing: Easing.out(Easing.cubic),
+      damping: 14,
+      stiffness: 150,
+      mass: 0.85,
+      overshootClamping: false,
       useNativeDriver: Platform.OS !== 'web',
     });
     animation.start();
     return () => animation.stop();
   }, [active, progress, reduceMotion]);
 
-  const scale = progress.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] });
+  const scaleX = progress.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.045] });
+  const scaleY = progress.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.015] });
   const opacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0.72, 1] });
 
   return (
-    <Animated.View style={[style, { opacity, transform: [{ scale }] }]}>
+    <Animated.View style={[style, { opacity, transform: [{ scaleX }, { scaleY }] }]}>
       {children}
     </Animated.View>
   );
