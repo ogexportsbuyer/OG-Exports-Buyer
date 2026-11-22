@@ -171,11 +171,39 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   promoCard: {
-    height: 210,
+    height: 216,
     overflow: 'hidden',
-    borderRadius: 22,
-    padding: 15,
+    borderRadius: 24,
+    padding: 16,
     borderWidth: 1,
+  },
+  promoGlowOrb: {
+    position: 'absolute',
+    top: -70,
+    right: -52,
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    opacity: 0.055,
+  },
+  promoGlowOrbSecondary: {
+    position: 'absolute',
+    left: -78,
+    bottom: -132,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    opacity: 0.075,
+  },
+  promoTopAccent: {
+    position: 'absolute',
+    top: 0,
+    left: 22,
+    width: 54,
+    height: 2,
+    borderBottomLeftRadius: 2,
+    borderBottomRightRadius: 2,
+    opacity: 0.9,
   },
   promoHeader: {
     flexDirection: 'row',
@@ -204,6 +232,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
   },
+  promoIndexPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderRadius: 12,
+  },
   promoBody: {
     flex: 1,
     flexDirection: 'row',
@@ -218,8 +252,23 @@ const styles = StyleSheet.create({
   promoEyebrow: {
     fontSize: 8,
     fontWeight: '800',
-    letterSpacing: 1.4,
+    letterSpacing: 1.15,
     textTransform: 'uppercase',
+  },
+  promoEyebrowBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderRadius: 10,
+  },
+  promoEyebrowDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
   },
   promoTitle: {
     marginTop: 6,
@@ -595,6 +644,9 @@ export default function BuyerHomeHeader({
                   end={{ x: 1, y: 1 }}
                   style={StyleSheet.absoluteFill}
                 />
+                <View pointerEvents="none" style={[styles.promoGlowOrb, { backgroundColor: '#FFFFFF' }]} />
+                <View pointerEvents="none" style={[styles.promoGlowOrbSecondary, { backgroundColor: slide.accent }]} />
+                <View pointerEvents="none" style={[styles.promoTopAccent, { backgroundColor: slide.accent }]} />
                 <View style={styles.promoHeader}>
                   <View style={styles.promoBrandLockup}>
                     <BrandMark width={37} onBackground="dark" />
@@ -603,14 +655,25 @@ export default function BuyerHomeHeader({
                       <Text style={[styles.promoSubmark, { color: colors.splashMuted }]}>PAKISTAN · GLOBAL TRADE</Text>
                     </View>
                   </View>
-                  <Text style={[styles.promoIndex, { color: colors.splashMuted }]}>
-                    {String(realIndex + 1).padStart(2, '0')} / {String(brandSlides.length).padStart(2, '0')}
-                  </Text>
+                  <View style={[styles.promoIndexPill, {
+                    borderColor: `${slide.accent}55`,
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                  }]}>
+                    <Text style={[styles.promoIndex, { color: colors.splashMuted }]}>
+                      {String(realIndex + 1).padStart(2, '0')} / {String(brandSlides.length).padStart(2, '0')}
+                    </Text>
+                  </View>
                 </View>
 
                 <View style={styles.promoBody}>
                   <View style={styles.promoCopy}>
-                    <Text style={[styles.promoEyebrow, { color: slide.accent }]}>{slide.eyebrow}</Text>
+                    <View style={[styles.promoEyebrowBadge, {
+                      borderColor: `${slide.accent}55`,
+                      backgroundColor: `${slide.accent}18`,
+                    }]}>
+                      <View style={[styles.promoEyebrowDot, { backgroundColor: slide.accent }]} />
+                      <Text style={[styles.promoEyebrow, { color: slide.accent }]}>{slide.eyebrow}</Text>
+                    </View>
                     <Text numberOfLines={2} style={[styles.promoTitle, { color: colors.splashText }]}>{slide.title}</Text>
                     <Text numberOfLines={2} style={[styles.promoDescription, { color: colors.splashMuted }]}>{slide.body}</Text>
                   </View>
@@ -638,7 +701,7 @@ export default function BuyerHomeHeader({
                 </View>
 
                 <View style={styles.promoFooter}>
-                  <View style={{ flex: 1, height: 1, backgroundColor: colors.glassBorder, opacity: 0.3 }} />
+                  <View style={{ flex: 1, height: 1, backgroundColor: slide.accent, opacity: 0.32 }} />
                   <Text style={{ color: colors.splashMuted, fontSize: 7, fontWeight: '700', letterSpacing: 0.8 }}>OG EXPORTS</Text>
                 </View>
               </Pressable>
