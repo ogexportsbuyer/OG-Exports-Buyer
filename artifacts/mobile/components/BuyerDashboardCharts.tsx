@@ -4,6 +4,7 @@ import { Card } from '@/components/InvestorUI';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { useColors } from '@/hooks/useColors';
 import { amount, first, list, money } from '@/lib/data';
+import { mapBuyerDashboardOrderStatuses } from '@/lib/buyer-dashboard-data';
 
 export function BuyerSpendTrendCard({ points, currency, yearOverYear }: {
   points: unknown;
@@ -62,11 +63,9 @@ export function BuyerSpendTrendCard({ points, currency, yearOverYear }: {
 
 export function BuyerOrdersByStatusCard({ statuses }: { statuses: unknown }) {
   const colors = useColors();
-  const rows = list(statuses).map((item, index) => ({
-    name: first(item, ['name', 'status'], 'Order status'),
-    value: amount(item, ['value', 'count']) ?? 0,
-    suppliedColor: first(item, ['color']),
-    index,
+  const rows = mapBuyerDashboardOrderStatuses(statuses).map(row => ({
+    ...row,
+    suppliedColor: row.color,
   }));
   const total = rows.reduce((sum, row) => sum + row.value, 0);
   const fallbackColors = [colors.primary, colors.accent, colors.tint, colors.mutedForeground, colors.lightGreen];
@@ -86,7 +85,7 @@ export function BuyerOrdersByStatusCard({ statuses }: { statuses: unknown }) {
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, marginBottom: 5 }}>
         <Text style={{ color: colors.mutedForeground, fontSize: 10 }}>Order records</Text>
-        <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '800' }}>{total}</Text>
+        <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '800' }}>{rows.length ? total : '—'}</Text>
       </View>
       <View style={{ gap: 10, marginTop: 7 }}>
         {segments.map(row => {

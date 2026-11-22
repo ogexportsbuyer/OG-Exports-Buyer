@@ -20,15 +20,26 @@ import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { amount, first, list, messageOf, money, record, type Json } from '@/lib/data';
 import { uploadInvestorFile } from '@/lib/file-upload';
+import {
+  buyerDashboardAlertTime,
+  buyerDashboardErrorMessage,
+  buyerDashboardKycLabel,
+  recentBuyerApprovalNotifications,
+  unwrapBuyerDashboardResponse,
+} from '@/lib/buyer-dashboard-data';
 
 const quickActions = [
   { label: 'New RFQ', detail: 'Request a trade quote', route: '/buyer-rfq?mode=new', icon: 'file-plus' as const },
   { label: 'Track shipment', detail: 'Follow active cargo', route: '/buyer-shipments', icon: 'truck' as const },
   { label: 'View documents', detail: 'Review trade files', route: '/buyer-documents', icon: 'file-text' as const },
   { label: 'Request quote', detail: 'Browse export products', route: '/(buyer-tabs)/buyer-products', icon: 'search' as const },
+  { label: 'Orders', detail: 'Track order progress', route: '/buyer-orders', icon: 'shopping-bag' as const },
+  { label: 'Quotations', detail: 'Review supplier quotes', route: '/buyer-orders?view=quotations', icon: 'clipboard' as const },
 ] as const;
 const heroActions = [
   quickActions[0],
+  quickActions[1],
+  quickActions[2],
   { label: 'Pay invoice', detail: 'Review payment terms', route: '/buyer-trade-finance', icon: 'credit-card' as const },
 ] as const;
 
@@ -68,13 +79,27 @@ function BuyerOverviewContent() {
   const [avatarMessage, setAvatarMessage] = useState('');
   const [avatarError, setAvatarError] = useState('');
   const query = useGetBuyerDashboard({
-    query: { queryKey: getGetBuyerDashboardQueryKey(), enabled: !!token, staleTime: 30_000 },
+    query: {
+      queryKey: getGetBuyerDashboardQueryKey(),
+      enabled: !!token,
+      staleTime: 30_000,
+      retry: 1,
+      retryDelay: 1_000,
+      refetchOnReconnect: true,
+    },
   });
   const notificationsQuery = useGetSharedNotifications({
-    query: { queryKey: getGetSharedNotificationsQueryKey(), enabled: !!token, staleTime: 30_000 },
+    query: {
+      queryKey: getGetSharedNotificationsQueryKey(),
+      enabled: !!token,
+      staleTime: 30_000,
+      retry: 1,
+      retryDelay: 1_000,
+      refetchOnReconnect: true,
+    },
   });
   const updateProfile = useUpdateInvestorMe();
-  const dashboard = record(record(query.data).data);
+  const dashboard = record(unwrapBuyerDashboardResponse(query.data));
   const kpis = record(dashboard.kpis);
   const currencyCode = first(dashboard, ['display_currency'], 'USD');
   const displayName = first(record(user), ['name', 'display_name'], 'Valued Buyer');
@@ -92,8 +117,7 @@ function BuyerOverviewContent() {
   const checklist = list(dashboard.profile_checklist);
   const alerts = list(dashboard.alerts);
   const favourites = list(dashboard.favourites);
-  const notifications = list(record(notificationsQuery.data).data);
-  const unreadNotifications = notifications.filter(item => !item.read_at && !item.is_read && !item.read).slice(0, 3);
+  const unreadNotifications = recentBuyerApprovalNotifications(notificationsQuery.data);
   const completion = amount(dashboard, ['profile_completion']);
   const trustScore = amount(dashboard, ['trust_score']);
   const trustTier = first(dashboard, ['trust_tier']);
@@ -193,7 +217,7 @@ function BuyerOverviewContent() {
   return (
     <Screen title="Executive dashboard" subtitle="Your buyer account at a glance" refreshable>
       {query.isLoading ? <LoadingCard label="Loading your trade overview…" lines={3} /> : null}
-      {query.isError ? <ErrorState message="Your buyer overview could not be loaded." error={query.error} onRetry={() => void query.refetch()} /> : null}
+      {query.isError ? <ErrorState message={buyerDashboardErrorMessage(query.error)} error={query.error} onRetry={() => void query.refetch()} /> : null}
       {query.isSuccess ? (
         <>
           <Card style={{ padding: 16, marginBottom: 14, backgroundColor: colors.primary, borderColor: colors.primary }}>
@@ -211,7 +235,7 @@ function BuyerOverviewContent() {
                 <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '800', marginTop: 3 }}>{displayName}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 7, marginTop: 8 }}>
                   <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.14)' }}>
-                    <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '800' }}>{first(dashboard, ['kyc_status'], 'KYC unverified')}</Text>
+                    <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '800' }}>{buyerDashboardKycLabel(first(dashboard, ['kyc_status']))}</Text>
                   </View>
                   {trustTier ? <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '800' }}>{trustTier} buyer</Text> : null}
                   {memberSince ? <Text style={{ color: 'rgba(255,255,255,0.68)', fontSize: 9 }}>Member since {memberSince}</Text> : null}
@@ -220,9 +244,9 @@ function BuyerOverviewContent() {
             </View>
             {avatarError ? <Text accessibilityRole="alert" style={{ color: '#FFE1DC', fontSize: 11, lineHeight: 16, marginTop: 10 }}>{avatarError}</Text> : null}
             {avatarMessage ? <Text accessibilityLiveRegion="polite" style={{ color: '#FFFFFF', fontSize: 11, marginTop: 9 }}>{avatarMessage}</Text> : null}
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 15 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 15 }}>
               {heroActions.map(action => (
-                <Pressable key={action.label} accessibilityRole="button" onPress={() => navigateTo(action.route)} style={{ flex: 1, minHeight: 44, borderRadius: 12, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: action.label === 'New RFQ' ? colors.accent : 'rgba(255,255,255,0.14)' }}>
+                <Pressable key={action.label} testID={`buyer-dashboard-hero-${action.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} accessibilityRole="button" onPress={() => navigateTo(action.route)} style={{ width: '48%', minHeight: 44, borderRadius: 12, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: action.label === 'New RFQ' ? colors.accent : 'rgba(255,255,255,0.14)' }}>
                   <Feather name={action.icon} size={14} color={action.label === 'New RFQ' ? colors.primaryForeground : '#FFFFFF'} />
                   <Text numberOfLines={1} style={{ color: action.label === 'New RFQ' ? colors.primaryForeground : '#FFFFFF', fontSize: 10, fontWeight: '800' }}>{action.label}</Text>
                 </Pressable>
@@ -233,7 +257,7 @@ function BuyerOverviewContent() {
           <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800', marginBottom: 9 }}>Quick actions</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 15 }}>
             {quickActions.map(action => (
-              <Pressable key={action.label} accessibilityRole="button" onPress={() => navigateTo(action.route)} style={{ width: '48%', marginBottom: 9 }}>
+              <Pressable key={action.label} testID={`buyer-dashboard-action-${action.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} accessibilityRole="button" onPress={() => navigateTo(action.route)} style={{ width: '48%', marginBottom: 9 }}>
                 <Card style={{ minHeight: 86, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <View style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }}>
                     <Feather name={action.icon} size={15} color={colors.primary} />
@@ -267,28 +291,31 @@ function BuyerOverviewContent() {
             ))}
           </View>
 
-          {alerts.length ? (
-            <>
-              <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800', marginBottom: 9, marginTop: 5 }}>Trade alerts</Text>
-              {alerts.slice(0, 3).map((alert, index) => {
-                const type = first(alert, ['type'], 'order');
-                return (
-                  <Pressable key={`${type}-${index}`} accessibilityRole="button" onPress={() => navigateTo(alertRoutes[type] || '/buyer-notifications')}>
-                    <Card style={{ padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 10, borderColor: colors.accent }}>
-                      <View style={{ width: 33, height: 33, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
-                        <Feather name={type === 'shipment' ? 'truck' : type === 'rfq' ? 'file-plus' : 'bell'} size={15} color={colors.primary} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        {first(alert, ['badge']) ? <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '800', marginBottom: 2 }}>{first(alert, ['badge'])}</Text> : null}
-                        <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>{first(alert, ['title'], 'Trade update')}</Text>
-                      </View>
-                      <Feather name="chevron-right" size={15} color={colors.mutedForeground} />
-                    </Card>
-                  </Pressable>
-                );
-              })}
-            </>
-          ) : null}
+          <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800', marginBottom: 9, marginTop: 5 }}>Market alerts</Text>
+          {alerts.length ? alerts.slice(0, 3).map((alert, index) => {
+            const type = first(alert, ['type'], 'order');
+            return (
+              <Pressable key={`${type}-${index}`} accessibilityRole="button" onPress={() => navigateTo(alertRoutes[type] || '/buyer-notifications')}>
+                <Card style={{ padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 10, borderColor: colors.accent }}>
+                  <View style={{ width: 33, height: 33, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
+                    <Feather name={type === 'shipment' ? 'truck' : type === 'rfq' ? 'file-plus' : 'bell'} size={15} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    {first(alert, ['badge']) ? <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '800', marginBottom: 2 }}>{first(alert, ['badge'])}</Text> : null}
+                    <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>{first(alert, ['title'], 'Trade update')}</Text>
+                  </View>
+                  <Feather name="chevron-right" size={15} color={colors.mutedForeground} />
+                </Card>
+              </Pressable>
+            );
+          }) : (
+            <Card style={{ padding: 12, marginBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ width: 33, height: 33, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
+                <Feather name="bell" size={15} color={colors.mutedForeground} />
+              </View>
+              <Text style={{ flex: 1, color: colors.mutedForeground, fontSize: 11, lineHeight: 16 }}>No active alerts — your buyer account is up to date.</Text>
+            </Card>
+          )}
 
           <BuyerSpendTrendCard points={dashboard.spend_by_month} currency={currencyCode} yearOverYear={spendYearOverYear} />
           <BuyerOrdersByStatusCard statuses={orderStatuses} />
@@ -300,7 +327,7 @@ function BuyerOverviewContent() {
             </Pressable>
           </View>
           {upcoming.length ? upcoming.slice(0, 3).map((shipment, index) => {
-            const progress = Math.min(100, Math.max(0, amount(shipment, ['pct']) ?? 0));
+            const progress = amount(shipment, ['pct']);
             return (
               <Pressable key={first(shipment, ['ref'], String(index))} accessibilityRole="button" onPress={() => router.push('/buyer-shipments')}>
                 <Card style={{ padding: 13, marginBottom: 9 }}>
@@ -319,9 +346,13 @@ function BuyerOverviewContent() {
                     <Text style={{ color: colors.mutedForeground, fontSize: 10 }}>ETA: {first(shipment, ['eta'], '—')}</Text>
                     <Text style={{ color: colors.mutedForeground, fontSize: 10 }}>Vessel: {first(shipment, ['vessel'], '—')}</Text>
                   </View>
-                  <View style={{ height: 5, borderRadius: 4, overflow: 'hidden', backgroundColor: colors.secondary, marginTop: 10 }}>
-                    <View style={{ height: '100%', width: `${progress}%`, borderRadius: 4, backgroundColor: colors.primary }} />
-                  </View>
+                  {progress === null ? (
+                    <Text style={{ color: colors.mutedForeground, fontSize: 9, marginTop: 9 }}>Shipment progress unavailable.</Text>
+                  ) : (
+                    <View style={{ height: 5, borderRadius: 4, overflow: 'hidden', backgroundColor: colors.secondary, marginTop: 10 }}>
+                      <View style={{ height: '100%', width: `${Math.min(100, Math.max(0, progress))}%`, borderRadius: 4, backgroundColor: colors.primary }} />
+                    </View>
+                  )}
                 </Card>
               </Pressable>
             );
@@ -337,6 +368,9 @@ function BuyerOverviewContent() {
           {notificationsQuery.isError ? (
             <Card style={{ padding: 12, marginBottom: 10 }}>
               <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Recent alerts are unavailable right now.</Text>
+              <View style={{ marginTop: 10 }}>
+                <Action title="Retry recent alerts" icon="refresh-cw" secondary testID="buyer-dashboard-alerts-retry" onPress={() => void notificationsQuery.refetch()} />
+              </View>
             </Card>
           ) : null}
           {notificationsQuery.isSuccess && unreadNotifications.length === 0 ? (
@@ -353,6 +387,7 @@ function BuyerOverviewContent() {
                 <View style={{ flex: 1 }}>
                   <Text numberOfLines={1} style={{ color: colors.foreground, fontSize: 11, fontWeight: '800' }}>{first(item, ['title', 'subject'], 'Account update')}</Text>
                   <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 3 }}>{first(item, ['message', 'body', 'description'], 'Open notifications to review this update.')}</Text>
+                  <Text style={{ color: colors.mutedForeground, fontSize: 9, marginTop: 4 }}>{buyerDashboardAlertTime(first(item, ['created_at', 'sent_at']))}</Text>
                 </View>
                 <Feather name="chevron-right" size={14} color={colors.mutedForeground} />
               </Card>
@@ -368,9 +403,13 @@ function BuyerOverviewContent() {
               </View>
               <Text style={{ color: colors.primary, fontSize: 18, fontWeight: '900' }}>{completion === null ? '—' : `${completion}%`}</Text>
             </View>
-            <View style={{ height: 7, borderRadius: 5, overflow: 'hidden', backgroundColor: colors.secondary, marginTop: 12 }}>
-              <View style={{ height: '100%', width: `${Math.min(100, Math.max(0, completion ?? 0))}%`, backgroundColor: colors.primary }} />
-            </View>
+            {completion === null ? (
+              <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 12 }}>Profile completion is not available yet.</Text>
+            ) : (
+              <View style={{ height: 7, borderRadius: 5, overflow: 'hidden', backgroundColor: colors.secondary, marginTop: 12 }}>
+                <View style={{ height: '100%', width: `${Math.min(100, Math.max(0, completion))}%`, backgroundColor: colors.primary }} />
+              </View>
+            )}
             {checklist.map((item, index) => {
               const done = item.done === true;
               return (
@@ -400,10 +439,16 @@ function BuyerOverviewContent() {
               </View>
               <Text style={{ color: colors.foreground, fontSize: 19, fontWeight: '900' }}>{trustScore === null ? '—' : trustScore}<Text style={{ color: colors.mutedForeground, fontSize: 10, fontWeight: '600' }}> / 1000</Text></Text>
             </View>
-            <View style={{ height: 7, borderRadius: 5, overflow: 'hidden', backgroundColor: colors.secondary, marginTop: 13 }}>
-              <View style={{ height: '100%', width: `${Math.min(100, Math.max(0, trustScore ?? 0) / 10)}%`, backgroundColor: colors.accent }} />
-            </View>
-            {trustScore !== null ? <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 7 }}>Based on the trust score provided for your buyer account.</Text> : null}
+            {trustScore === null ? (
+              <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 12 }}>Trust score is not available yet.</Text>
+            ) : (
+              <>
+                <View style={{ height: 7, borderRadius: 5, overflow: 'hidden', backgroundColor: colors.secondary, marginTop: 13 }}>
+                  <View style={{ height: '100%', width: `${Math.min(100, Math.max(0, trustScore) / 10)}%`, backgroundColor: colors.accent }} />
+                </View>
+                <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 7 }}>Based on the trust score provided for your buyer account.</Text>
+              </>
+            )}
           </Card>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9, marginTop: 4 }}>
