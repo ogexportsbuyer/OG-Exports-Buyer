@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\KycApplication;
+use App\Models\Order;
 use App\Models\User;
 use App\Models\UserProfile;
 use Database\Seeders\RoleSeeder;
@@ -78,6 +79,26 @@ it('returns missing kyc_status when buyer has no application or meta', function 
         ->assertOk()
         ->assertJsonPath('data.kyc_status', 'missing')
         ->assertJsonPath('data.kyc_approved', false);
+});
+
+it('returns dashboard metrics and recent activity for a buyer with orders', function () {
+    Order::query()->create([
+        'order_number' => 'ORD-BUYER-DASHBOARD-1',
+        'buyer_id' => $this->buyer->id,
+        'status' => 'order_confirmed',
+        'payment_status' => 'unpaid',
+        'total_value' => 12500,
+        'currency' => 'USD',
+        'placed_at' => now(),
+    ]);
+
+    $this->actingAs($this->buyer)
+        ->withHeader('Origin', 'http://localhost:5000')
+        ->getJson('/api/buyer/dashboard')
+        ->assertOk()
+        ->assertJsonPath('data.kpis.orders', 1)
+        ->assertJsonPath('data.recent_activity.0.title', 'Order Confirmed')
+        ->assertJsonPath('data.recent_activity.0.desc', fn ($description) => str_contains($description, 'ORD-BUYER-DASHBOARD-1'));
 });
 
 it('marks company registration done on profile checklist when approved kyc has registration document', function () {

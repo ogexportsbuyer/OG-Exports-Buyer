@@ -9,6 +9,7 @@ use App\Models\Quotation;
 use App\Models\Rfq;
 use App\Models\Shipment;
 use App\Models\TradeDocument;
+use App\Models\User;
 use App\Support\BuyerProfileChecklist;
 use App\Support\KycGate;
 use App\Support\OrderStatuses;
@@ -124,7 +125,7 @@ class DashboardController extends Controller
         $spendByMonth = $this->buildSpendByMonth($userId, $now);
         $ordersByStatus = $this->buildOrdersByStatus($userId);
         $upcomingShipments = $this->buildUpcomingShipments($userId);
-        $recentActivity = $this->buildRecentActivity($userId);
+        $recentActivity = $this->buildRecentActivity($userId, $user);
         $alerts = $this->buildAlerts($userId, $upcomingShipments, $rfqsPending);
         $favourites = $this->buildFavourites($userId);
 
@@ -356,7 +357,7 @@ class DashboardController extends Controller
     /**
      * @return list<array{type: string, title: string, desc: string, time: string, at: string}>
      */
-    private function buildRecentActivity(int $userId): array
+    private function buildRecentActivity(int $userId, User $user): array
     {
         $events = collect();
 
