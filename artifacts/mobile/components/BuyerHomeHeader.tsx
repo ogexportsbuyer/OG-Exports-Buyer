@@ -1,10 +1,12 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { BrandMark } from '@/components/BrandMark';
 import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/components/LocalizedText';
 import { useColors } from '@/hooks/useColors';
+import { useMotion } from '@/lib/motion';
 
 type Props = {
   search: string;
@@ -234,17 +236,80 @@ export default function BuyerHomeHeader({
   onSelectTab,
 }: Props) {
   const colors = useColors();
+  const { reduceMotion } = useMotion();
+  const [isFocused, setIsFocused] = useState(false);
   const { width: windowWidth } = useWindowDimensions();
   const [activeTopTab, setActiveTopTab] = useState('Worldwide');
   const [carouselPosition, setCarouselPosition] = useState(1);
+  const [carouselInteracting, setCarouselInteracting] = useState(false);
   const [carouselViewportWidth, setCarouselViewportWidth] = useState(windowWidth);
   const featuredScrollRef = useRef<ScrollViewInstance | null>(null);
+  const carouselPositionRef = useRef(1);
+  const dragReleaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastViewportWidth = useRef(0);
   const carouselItems = [brandSlides[brandSlides.length - 1], ...brandSlides, brandSlides[0]];
   const heroCardWidth = Math.min(carouselViewportWidth * 0.76, 360);
   const heroCardOverlap = 24;
   const heroStep = heroCardWidth - heroCardOverlap;
   const heroSideInset = (carouselViewportWidth - heroCardWidth) / 2;
+  const activeDotIndex = carouselPosition >= brandSlides.length + 1
+    ? 0
+    : carouselPosition <= 0
+      ? brandSlides.length - 1
+      : carouselPosition - 1;
+
+  useFocusEffect(useCallback(() => {
+    setIsFocused(true);
+    return () => setIsFocused(false);
+  }, []));
+
+  const updateCarouselPosition = useCallback((position: number) => {
+    carouselPositionRef.current = position;
+    setCarouselPosition(position);
+  }, []);
+
+  useEffect(() => {
+    if (!isFocused || reduceMotion || carouselInteracting) return;
+    const timer = setTimeout(() => {
+      const currentPosition = carouselPositionRef.current;
+      const nextPosition = currentPosition === brandSlides.length + 1
+        ? 2
+        : currentPosition === brandSlides.length
+          ? brandSlides.length + 1
+          : currentPosition + 1;
+      updateCarouselPosition(nextPosition);
+      featuredScrollRef.current?.scrollTo({ x: nextPosition * heroStep, animated: true });
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [carouselInteracting, carouselPosition, heroStep, isFocused, reduceMotion, updateCarouselPosition]);
+
+  useEffect(() => {
+    if (!isFocused || carouselPosition !== brandSlides.length + 1 || carouselInteracting) return;
+    const timer = setTimeout(() => {
+      if (carouselPositionRef.current !== brandSlides.length + 1) return;
+      updateCarouselPosition(1);
+      featuredScrollRef.current?.scrollTo({ x: heroStep, animated: false });
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [carouselInteracting, carouselPosition, heroStep, isFocused, updateCarouselPosition]);
+
+  function clearDragReleaseTimer() {
+    if (dragReleaseTimer.current) clearTimeout(dragReleaseTimer.current);
+    dragReleaseTimer.current = null;
+  }
+
+  function beginCarouselInteraction() {
+    clearDragReleaseTimer();
+    setCarouselInteracting(true);
+  }
+
+  function resumeCarouselAfterDrag() {
+    clearDragReleaseTimer();
+    dragReleaseTimer.current = setTimeout(() => {
+      dragReleaseTimer.current = null;
+      setCarouselInteracting(false);
+    }, 800);
+  }
 
   function syncCarouselViewport(event: LayoutChangeEvent) {
     const width = event.nativeEvent.layout.width;
@@ -254,30 +319,35 @@ export default function BuyerHomeHeader({
     const measuredCardWidth = Math.min(width * 0.76, 360);
     const measuredStep = measuredCardWidth - heroCardOverlap;
     requestAnimationFrame(() => featuredScrollRef.current?.scrollTo({
-      x: carouselPosition * measuredStep,
+      x: carouselPositionRef.current * measuredStep,
       animated: false,
     }));
   }
 
   function settleCarousel(offsetX: number) {
+    clearDragReleaseTimer();
+    setCarouselInteracting(false);
     const rawIndex = Math.round(offsetX / heroStep);
     if (rawIndex <= 0) {
       featuredScrollRef.current?.scrollTo({ x: brandSlides.length * heroStep, animated: false });
-      setCarouselPosition(brandSlides.length);
+      updateCarouselPosition(brandSlides.length);
       return;
     }
     if (rawIndex >= brandSlides.length + 1) {
       featuredScrollRef.current?.scrollTo({ x: heroStep, animated: false });
-      setCarouselPosition(1);
+      updateCarouselPosition(1);
       return;
     }
-    setCarouselPosition(rawIndex);
+    updateCarouselPosition(rawIndex);
   }
 
   function showSlide(index: number) {
     const nextPosition = index + 1;
-    setCarouselPosition(nextPosition);
-    featuredScrollRef.current?.scrollTo({ x: nextPosition * heroStep, animated: true });
+    beginCarouselInteraction();
+    updateCarouselPosition(nextPosition);
+    featuredScrollRef.current?.scrollTo({ x: nextPosition * heroStep, animated: !reduceMotion });
+    if (reduceMotion) setCarouselInteracting(false);
+    else resumeCarouselAfterDrag();
   }
 
   function selectTab(label: string) {
@@ -392,6 +462,8 @@ export default function BuyerHomeHeader({
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
         onLayout={syncCarouselViewport}
+        onScrollBeginDrag={beginCarouselInteraction}
+        onScrollEndDrag={resumeCarouselAfterDrag}
         onMomentumScrollEnd={event => settleCarousel(event.nativeEvent.contentOffset.x)}
         style={{ marginHorizontal: -20 }}
         contentContainerStyle={{
@@ -484,11 +556,11 @@ export default function BuyerHomeHeader({
             testID={`buyer-home-brand-slide-dot-${slide.id}`}
             accessibilityRole="button"
             accessibilityLabel={`Show brand slide ${index + 1}`}
-            accessibilityState={{ selected: carouselPosition === index + 1 }}
+            accessibilityState={{ selected: activeDotIndex === index }}
             onPress={() => showSlide(index)}
             style={[styles.dot, {
-              width: carouselPosition === index + 1 ? 20 : 6,
-              backgroundColor: carouselPosition === index + 1 ? colors.accent : colors.border,
+              width: activeDotIndex === index ? 20 : 6,
+              backgroundColor: activeDotIndex === index ? colors.accent : colors.border,
             }]}
           />
         ))}
