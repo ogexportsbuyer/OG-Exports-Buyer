@@ -1,5 +1,5 @@
-import React from 'react';
-import { Pressable, View } from 'react-native';
+import React, { useState } from 'react';
+import { Linking, Pressable, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { getGetBuyerRfqQueryKey, useGetBuyerRfq } from '@workspace/api-client-react';
@@ -9,10 +9,12 @@ import { LocalizedText as Text } from '@/components/LocalizedText';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { first, list, record } from '@/lib/data';
+import { buyerRfqStatus, formatBuyerRfqReference, resolveBuyerRfqAttachmentUrl } from '@/lib/buyer-rfq';
 
 export default function BuyerRfqDetail() {
   const colors = useColors();
-  const { token } = useAuth();
+  const { token, apiOrigin } = useAuth();
+  const [attachmentError, setAttachmentError] = useState('');
   const { id: rawId } = useLocalSearchParams<{ id: string | string[] }>();
   const routeId = Array.isArray(rawId) ? rawId[0] : rawId;
   const id = Number(routeId);
@@ -23,11 +25,12 @@ export default function BuyerRfqDetail() {
   const rfq = record(record(query.data).data);
   const quotations = list(rfq.quotations);
   const attachments = list(rfq.attachments);
+  const reference = first(rfq, ['reference', 'rfq_number'], formatBuyerRfqReference(routeId ?? ''));
 
   if (!token) return <BuyerAuthGate title="Quote request" body="Sign in to view the requirements and responses for this quotation request." returnTo={`/buyer-rfq/${routeId ?? ''}`} />;
 
   return (
-    <Screen title="Quote request" subtitle={first(rfq, ['reference', 'rfq_number'], `RFQ-${routeId ?? ''}`)} refreshable>
+    <Screen title="Quote request" subtitle={reference} refreshable>
       {!validId ? <Text style={{ color: colors.destructive }}>This request link is invalid.</Text> : null}
       {query.isLoading ? <LoadingCard label="Loading quote request…" lines={3} /> : null}
       {query.isError ? <ErrorState message="Quote request details could not be loaded." error={query.error} onRetry={() => void query.refetch()} /> : null}
@@ -37,9 +40,9 @@ export default function BuyerRfqDetail() {
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800' }}>{first(rfq, ['product_name'], first(record(rfq.product), ['name'], 'Export product'))}</Text>
-                <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 4 }}>Submitted {first(rfq, ['submitted_at', 'created_at'], 'Date unavailable')}</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 4 }}>Submitted {first(rfq, ['submitted_at', 'created_at'], 'Date unavailable').slice(0, 10)}</Text>
               </View>
-              <Status value={first(rfq, ['status'], 'Pending')} />
+              <Status value={buyerRfqStatus(rfq)} />
             </View>
             {[
               ['Quantity', first(rfq, ['qty'], 'Not provided')],
@@ -66,12 +69,36 @@ export default function BuyerRfqDetail() {
             <>
               <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '800', marginBottom: 8 }}>Attachments</Text>
               {attachments.map((attachment, index) => (
-                <Card key={first(attachment, ['id'], String(index))} style={{ padding: 12, marginBottom: 7, flexDirection: 'row', alignItems: 'center', gap: 9 }}>
-                  <Feather name="paperclip" size={15} color={colors.primary} />
-                  <Text style={{ color: colors.foreground, fontSize: 11, flex: 1 }}>{first(attachment, ['original_name', 'name'], 'Supporting file')}</Text>
-                  <Text style={{ color: colors.mutedForeground, fontSize: 9 }}>{first(attachment, ['mime'], '')}</Text>
-                </Card>
+                <Pressable
+                  key={first(attachment, ['id'], String(index))}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open attachment ${first(attachment, ['original_name', 'name'], 'Supporting file')}`}
+                  onPress={async () => {
+                    const uri = resolveBuyerRfqAttachmentUrl(
+                      first(attachment, ['path', 'attachment_path']),
+                      first(attachment, ['url', 'attachment_url']),
+                      apiOrigin,
+                    );
+                    if (!uri) {
+                      setAttachmentError('This attachment link is not available.');
+                      return;
+                    }
+                    try {
+                      await Linking.openURL(uri);
+                      setAttachmentError('');
+                    } catch {
+                      setAttachmentError('This attachment could not be opened on this device.');
+                    }
+                  }}
+                >
+                  <Card style={{ padding: 12, marginBottom: 7, flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+                    <Feather name="paperclip" size={15} color={colors.primary} />
+                    <Text style={{ color: colors.foreground, fontSize: 11, flex: 1 }}>{first(attachment, ['original_name', 'name'], 'Supporting file')}</Text>
+                    <Feather name="external-link" size={14} color={colors.mutedForeground} />
+                  </Card>
+                </Pressable>
               ))}
+              {attachmentError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 11, marginTop: 2 }}>{attachmentError}</Text> : null}
             </>
           ) : null}
 

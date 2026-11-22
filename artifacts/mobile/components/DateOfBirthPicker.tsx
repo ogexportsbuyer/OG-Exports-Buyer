@@ -31,6 +31,7 @@ type DateOfBirthPickerProps = {
   value: string;
   onChange: (value: string) => void;
   testID?: string;
+  futureOnly?: boolean;
 };
 
 function localeForLanguage(language: AppLanguage): string {
@@ -50,6 +51,7 @@ export function DateOfBirthPicker({
   value,
   onChange,
   testID = 'date-of-birth',
+  futureOnly = false,
 }: DateOfBirthPickerProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -60,7 +62,8 @@ export function DateOfBirthPicker({
   const locale = localeForLanguage(language);
   const today = getTodayParts();
   const selectedValue = parseDateOnly(value);
-  const minimumYear = Math.min(MIN_BIRTH_YEAR, selectedValue?.year ?? MIN_BIRTH_YEAR);
+  const minimumYear = futureOnly ? today.year : Math.min(MIN_BIRTH_YEAR, selectedValue?.year ?? MIN_BIRTH_YEAR);
+  const maximumYear = futureOnly ? today.year + 5 : today.year;
   const [visible, setVisible] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => ({
     year: today.year,
@@ -88,13 +91,18 @@ export function DateOfBirthPicker({
     return new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(sunday);
   }), [locale]);
   const years = useMemo(
-    () => Array.from({ length: Math.max(0, today.year - minimumYear + 1) }, (_, index) => today.year - index),
-    [minimumYear, today.year],
+    () => futureOnly
+      ? Array.from({ length: Math.max(0, maximumYear - today.year + 1) }, (_, index) => today.year + index)
+      : Array.from({ length: Math.max(0, today.year - minimumYear + 1) }, (_, index) => today.year - index),
+    [futureOnly, maximumYear, minimumYear, today.year],
   );
   const initialYearIndex = Math.max(0, years.indexOf(calendarMonth.year));
-  const canGoToPreviousMonth = calendarMonth.year > minimumYear || calendarMonth.month > 1;
-  const canGoToNextMonth = calendarMonth.year < today.year
-    || (calendarMonth.year === today.year && calendarMonth.month < today.month);
+  const canGoToPreviousMonth = futureOnly
+    ? calendarMonth.year > today.year || calendarMonth.month > today.month
+    : calendarMonth.year > minimumYear || calendarMonth.month > 1;
+  const canGoToNextMonth = futureOnly
+    ? calendarMonth.year < maximumYear || (calendarMonth.year === maximumYear && calendarMonth.month < 12)
+    : calendarMonth.year < today.year || (calendarMonth.year === today.year && calendarMonth.month < today.month);
   const previousMonthIcon = isRTL ? 'chevron-right' : 'chevron-left';
   const nextMonthIcon = isRTL ? 'chevron-left' : 'chevron-right';
 
@@ -104,7 +112,12 @@ export function DateOfBirthPicker({
 
   function openPicker() {
     const date = parseDateOnly(value);
-    const initialDate = date ?? today;
+    const tomorrow = new Date();
+    tomorrow.setHours(12, 0, 0, 0);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const initialDate = date ?? (futureOnly
+      ? { year: tomorrow.getFullYear(), month: tomorrow.getMonth() + 1, day: tomorrow.getDate() }
+      : today);
     setCalendarMonth({ year: initialDate.year, month: initialDate.month });
     setDraftDate(date);
     setShowYears(false);
@@ -118,18 +131,21 @@ export function DateOfBirthPicker({
 
   function moveMonth(offset: number) {
     const next = shiftCalendarMonth(calendarMonth, offset);
-    if (next.year < minimumYear || isDateAfter({ ...next, day: 1 }, today)) return;
+    if (futureOnly) {
+      if (next.year < today.year || (next.year === today.year && next.month < today.month) || next.year > maximumYear) return;
+    } else if (next.year < minimumYear || isDateAfter({ ...next, day: 1 }, today)) return;
     setCalendarMonth({ year: next.year, month: next.month });
   }
 
   function selectYear(year: number) {
+    if (year < minimumYear || year > maximumYear) return;
     setCalendarMonth(current => ({ ...current, year }));
     setShowYears(false);
   }
 
   function selectDay(day: number) {
     const date = { year: calendarMonth.year, month: calendarMonth.month, day };
-    if (date.year < minimumYear || isDateAfter(date, today)) return;
+    if (futureOnly ? !isDateAfter(date, today) : date.year < minimumYear || isDateAfter(date, today)) return;
     setDraftDate(date);
   }
 
@@ -173,7 +189,7 @@ export function DateOfBirthPicker({
           fontSize: 14,
           fontWeight: displayedValue ? '600' : '400',
         }}>
-          {displayedValue || 'Select date of birth'}
+                {displayedValue || (futureOnly ? 'Select required delivery date' : 'Select date of birth')}
         </Text>
         <Feather name="chevron-down" size={17} color={colors.mutedForeground} />
       </Pressable>
@@ -229,10 +245,10 @@ export function DateOfBirthPicker({
                 OG EXPORTS
               </Text>
               <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: '700' }}>
-                Select date of birth
+                {futureOnly ? 'Select delivery date' : 'Select date of birth'}
               </Text>
               <Text style={{ color: colors.mutedForeground, fontSize: 12, lineHeight: 17, marginTop: 3 }}>
-                Choose a day from the calendar.
+                {futureOnly ? 'Choose a future date for your shipment.' : 'Choose a day from the calendar.'}
               </Text>
             </View>
             <Pressable
@@ -276,7 +292,7 @@ export function DateOfBirthPicker({
           {showYears ? <>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingVertical: 8 }}>
               <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '700' }}>
-                Select birth year
+                {futureOnly ? 'Select year' : 'Select birth year'}
               </Text>
               <Pressable
                 testID={`${testID}-back-to-calendar`}
@@ -389,7 +405,9 @@ export function DateOfBirthPicker({
                 const isSelected = draftDate?.year === date.year
                   && draftDate.month === date.month
                   && draftDate.day === date.day;
-                const disabled = date.year < minimumYear || isDateAfter(date, today);
+                const disabled = futureOnly
+                  ? !isDateAfter(date, today)
+                  : date.year < minimumYear || isDateAfter(date, today);
                 const dateValue = formatDateOnly(date);
                 return <Pressable
                   key={dateValue}

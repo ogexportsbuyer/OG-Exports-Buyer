@@ -62,7 +62,7 @@ export default function BuyerOrders() {
       title="Orders"
       subtitle="Track orders, requests, and quotations"
       refreshable
-      action={<Pressable accessibilityRole="button" onPress={() => router.push('/buyer-rfq')} style={{ minHeight: 38, paddingHorizontal: 11, borderRadius: 11, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.primaryForeground, fontSize: 10, fontWeight: '800' }}>New RFQ</Text></Pressable>}
+      action={<Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/buyer-rfq', params: { mode: 'new' } })} style={{ minHeight: 38, paddingHorizontal: 11, borderRadius: 11, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.primaryForeground, fontSize: 10, fontWeight: '800' }}>New RFQ</Text></Pressable>}
     >
       <View style={{ flexDirection: 'row', padding: 4, borderRadius: 14, backgroundColor: colors.secondary, marginBottom: 16 }}>
         {([

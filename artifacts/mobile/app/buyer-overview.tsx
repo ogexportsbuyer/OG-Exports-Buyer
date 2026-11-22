@@ -22,7 +22,7 @@ import { amount, first, list, messageOf, money, record, type Json } from '@/lib/
 import { uploadInvestorFile } from '@/lib/file-upload';
 
 const quickActions = [
-  { label: 'New RFQ', detail: 'Request a trade quote', route: '/buyer-rfq', icon: 'file-plus' as const },
+  { label: 'New RFQ', detail: 'Request a trade quote', route: '/buyer-rfq?mode=new', icon: 'file-plus' as const },
   { label: 'Track shipment', detail: 'Follow active cargo', route: '/buyer-shipments', icon: 'truck' as const },
   { label: 'View documents', detail: 'Review trade files', route: '/buyer-documents', icon: 'file-text' as const },
   { label: 'Request quote', detail: 'Browse export products', route: '/(buyer-tabs)/buyer-products', icon: 'search' as const },
@@ -421,7 +421,10 @@ function BuyerOverviewContent() {
                 <Text numberOfLines={1} style={{ color: colors.foreground, fontSize: 11, fontWeight: '800' }}>{first(product, ['name'], 'Saved product')}</Text>
                 <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 9, marginTop: 3 }}>{[first(product, ['grade']), first(product, ['origin'])].filter(Boolean).join(' · ') || 'Product details available in catalogue'}</Text>
               </View>
-              <Pressable accessibilityRole="button" onPress={() => router.push('/buyer-rfq')}>
+              <Pressable accessibilityRole="button" onPress={() => {
+                const productId = first(product, ['id']);
+                router.push({ pathname: '/buyer-rfq', params: { mode: 'new', ...(productId ? { product_id: productId } : {}) } });
+              }}>
                 <Text style={{ color: colors.primary, fontSize: 10, fontWeight: '800' }}>RFQ</Text>
               </Pressable>
             </Card>
