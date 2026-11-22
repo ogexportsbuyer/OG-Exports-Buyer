@@ -2,13 +2,13 @@ import React, { useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
-import { BrandMark } from '@/components/BrandMark';
 import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/components/LocalizedText';
 import { useColors } from '@/hooks/useColors';
 import { first, record } from '@/lib/data';
 import { categoryName, displayPrice, rowsFromResponse } from '@/lib/buyer-data';
 
 type Product = ReturnType<typeof rowsFromResponse>[number];
+const officialLogo = require('../assets/images/og-official-mark.png');
 
 type Props = {
   products: Product[];
@@ -32,6 +32,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  brandBadge: {
+    width: 46,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    borderRadius: 10,
   },
   wordmark: {
     fontSize: 14,
@@ -63,27 +71,6 @@ const styles = StyleSheet.create({
     minHeight: 39,
     justifyContent: 'center',
     borderBottomWidth: 2,
-  },
-  eyebrow: {
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 1.7,
-    textTransform: 'uppercase',
-  },
-  headline: {
-    marginTop: 7,
-    marginBottom: 8,
-    fontFamily: 'serif',
-    fontSize: 34,
-    lineHeight: 38,
-    fontWeight: '400',
-    letterSpacing: -0.7,
-  },
-  intro: {
-    maxWidth: 320,
-    marginBottom: 17,
-    fontSize: 12,
-    lineHeight: 18,
   },
   searchRow: {
     minHeight: 48,
@@ -126,28 +113,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 10,
     fontWeight: '600',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    gap: 10,
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    marginTop: 4,
-    fontFamily: 'serif',
-    fontSize: 24,
-    lineHeight: 28,
-    fontWeight: '400',
-    letterSpacing: -0.4,
-  },
-  textAction: {
-    minHeight: 32,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
   },
   featureCard: {
     height: 184,
@@ -249,7 +214,14 @@ export default function BuyerHomeHeader({
     <>
       <View style={styles.masthead}>
         <View style={styles.brandLockup}>
-          <BrandMark width={46} />
+          <View style={[styles.brandBadge, { backgroundColor: colors.balanceCardStart }]}>
+            <Image
+              source={officialLogo}
+              accessibilityLabel="OG Exports official logo"
+              resizeMode="contain"
+              style={{ width: 42, height: 30 }}
+            />
+          </View>
           <View>
             <Text style={[styles.wordmark, { color: colors.foreground }]}>OG Exports</Text>
             <Text style={[styles.mastheadSubtitle, { color: colors.mutedForeground }]}>BUYER MARKETPLACE</Text>
@@ -326,7 +298,7 @@ export default function BuyerHomeHeader({
             onPress={() => onBrowse(search)}
             style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.accent, opacity: pressed ? 0.82 : 1 }]}
           >
-            <Feather name="search" size={19} color={colors.buttonForeground} />
+            <Feather name="search" size={19} color={colors.primary} />
           </Pressable>
         </View>
       </View>
@@ -462,7 +434,12 @@ export default function BuyerHomeHeader({
             opacity: pressed ? 0.88 : 1,
           }]}
         >
-          <BrandMark width={56} />
+          <Image
+            source={officialLogo}
+            accessibilityLabel="OG Exports official logo"
+            resizeMode="contain"
+            style={{ width: 56, height: 40 }}
+          />
           <View style={{ flex: 1 }}>
             <Text style={[styles.featureCategory, { color: colors.accent }]}>OG EXPORTS</Text>
             <Text style={[styles.featureName, { color: colors.buttonForeground }]}>Explore the catalogue</Text>
