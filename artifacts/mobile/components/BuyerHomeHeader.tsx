@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { BrandMark } from '@/components/BrandMark';
@@ -250,18 +250,26 @@ export default function BuyerHomeHeader({
   const { width: windowWidth } = useWindowDimensions();
   const [activeTopTab, setActiveTopTab] = useState('Worldwide');
   const [carouselPosition, setCarouselPosition] = useState(1);
+  const [carouselViewportWidth, setCarouselViewportWidth] = useState(windowWidth);
   const featuredScrollRef = useRef<ScrollViewInstance | null>(null);
-  const hasCenteredCarousel = useRef(false);
+  const lastViewportWidth = useRef(0);
   const carouselItems = [brandSlides[brandSlides.length - 1], ...brandSlides, brandSlides[0]];
-  const heroCardWidth = Math.min(windowWidth * 0.76, 360);
-  const heroCardOverlap = 16;
+  const heroCardWidth = Math.min(carouselViewportWidth * 0.76, 360);
+  const heroCardOverlap = 24;
   const heroStep = heroCardWidth - heroCardOverlap;
-  const heroSideInset = Math.max((windowWidth - heroCardWidth) / 2, 0);
+  const heroSideInset = (carouselViewportWidth - heroCardWidth) / 2;
 
-  function centerInitialSlide() {
-    if (hasCenteredCarousel.current) return;
-    hasCenteredCarousel.current = true;
-    requestAnimationFrame(() => featuredScrollRef.current?.scrollTo({ x: heroStep, animated: false }));
+  function syncCarouselViewport(event: LayoutChangeEvent) {
+    const width = event.nativeEvent.layout.width;
+    if (!width || Math.abs(width - lastViewportWidth.current) < 1) return;
+    lastViewportWidth.current = width;
+    setCarouselViewportWidth(width);
+    const measuredCardWidth = Math.min(width * 0.76, 360);
+    const measuredStep = measuredCardWidth - heroCardOverlap;
+    requestAnimationFrame(() => featuredScrollRef.current?.scrollTo({
+      x: carouselPosition * measuredStep,
+      animated: false,
+    }));
   }
 
   function settleCarousel(offsetX: number) {
@@ -396,7 +404,7 @@ export default function BuyerHomeHeader({
         disableIntervalMomentum
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
-        onLayout={centerInitialSlide}
+        onLayout={syncCarouselViewport}
         onMomentumScrollEnd={event => settleCarousel(event.nativeEvent.contentOffset.x)}
         style={{ marginHorizontal: -20 }}
         contentContainerStyle={{
@@ -416,9 +424,14 @@ export default function BuyerHomeHeader({
             <View
               key={`${slide.id}-${index}`}
               style={{
-                width: heroStep,
-                zIndex: isActive ? 3 : 1,
-                elevation: isActive ? 8 : 2,
+                width: heroCardWidth,
+                marginRight: -heroCardOverlap,
+                zIndex: isActive ? 4 : 1,
+                elevation: isActive ? 14 : 1,
+                shadowColor: colors.shadowColor,
+                shadowOpacity: isActive ? 0.28 : 0.035,
+                shadowRadius: isActive ? 22 : 7,
+                shadowOffset: { width: 0, height: isActive ? 11 : 3 },
                 overflow: 'visible',
               }}
             >
@@ -432,12 +445,8 @@ export default function BuyerHomeHeader({
                   width: heroCardWidth,
                   backgroundColor: colors.balanceCardStart,
                   borderColor: isActive ? colors.accent : colors.glassBorder,
-                  opacity: pressed ? 0.95 : isActive ? 1 : 0.58,
-                  transform: [{ scale: isActive ? 1 : 0.92 }],
-                  shadowColor: colors.shadowColor,
-                  shadowOpacity: isActive ? 0.24 : 0.08,
-                  shadowRadius: isActive ? 16 : 7,
-                  shadowOffset: { width: 0, height: isActive ? 8 : 3 },
+                  opacity: pressed ? 0.95 : isActive ? 1 : 0.48,
+                  transform: [{ scale: isActive ? 1 : 0.88 }],
                 }]}
               >
                 <LinearGradient
