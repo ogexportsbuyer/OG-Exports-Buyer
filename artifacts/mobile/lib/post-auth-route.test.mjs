@@ -57,7 +57,7 @@ test('serializes legacy transaction route query details for post-auth navigation
 });
 
 test('returns buyer sign-in to the requested marketplace destination', () => {
-  assert.equal(resolveBuyerPostAuthHref('/buyer-cart'), '/(buyer-tabs)/buyer-cart');
+  assert.equal(resolveBuyerPostAuthHref('/buyer-cart'), '/buyer-cart');
   assert.equal(resolveBuyerPostAuthHref('/buyer-products?search=rice'), '/(buyer-tabs)/buyer-products');
   assert.deepEqual(resolveBuyerPostAuthHref('/buyer-product/42'), {
     pathname: '/buyer-product/[id]',
@@ -89,7 +89,7 @@ test('buyer login and email verification keep the selected product through cart'
     pathname: '/(buyer-tabs)/buyer-products',
     params: { pendingProduct: '42' },
   });
-  assert.equal(buyerCartRouteAfterProductAdd(true), '/(buyer-tabs)/buyer-cart');
+  assert.equal(buyerCartRouteAfterProductAdd(true), '/buyer-cart');
   assert.equal(buyerCartRouteAfterProductAdd(false), null);
 });
 
@@ -105,7 +105,7 @@ test('pending buyer product is claimed only once and invalid IDs are rejected', 
 
 test('investor-only roles cannot route into investor tabs in the buyer app', () => {
   assert.equal(resolveAccountPostAuthHref(['investor'], '/buyer-cart'), '/(buyer-tabs)/buyer-home');
-  assert.equal(resolveAccountPostAuthHref(['buyer', 'investor'], '/buyer-cart'), '/(buyer-tabs)/buyer-cart');
+  assert.equal(resolveAccountPostAuthHref(['buyer', 'investor'], '/buyer-cart'), '/buyer-cart');
   assert.equal(hasBuyerRole(['investor']), false);
   assert.equal(hasBuyerRole([{ name: 'buyer' }]), true);
 });
@@ -114,7 +114,7 @@ test('recognizes buyer account type when the API omits the roles array', () => {
   assert.equal(hasBuyerAccountIdentity({ account_type: 'buyer' }), true);
   assert.equal(hasBuyerAccountIdentity({ accountType: 'buyer' }), true);
   assert.equal(hasBuyerAccountIdentity({ account_type: 'investor' }), false);
-  assert.equal(resolveUserPostAuthHref({ account_type: 'buyer' }, '/buyer-cart'), '/(buyer-tabs)/buyer-cart');
+  assert.equal(resolveUserPostAuthHref({ account_type: 'buyer' }, '/buyer-cart'), '/buyer-cart');
 });
 
 test('a returned non-buyer role takes precedence over a conflicting account type', () => {
@@ -127,6 +127,7 @@ test('buyer app route allowlist blocks investor screens and permits buyer suppor
   assert.equal(isBuyerAppRoute('(buyer-tabs)', '/buyer-home'), true);
   assert.equal(isBuyerAppRoute('(auth)', '/login'), true);
   assert.equal(isBuyerAppRoute('buyer-checkout', '/buyer-checkout'), true);
+  assert.equal(isBuyerAppRoute('buyer-cart', '/buyer-cart'), true);
   assert.equal(isBuyerAppRoute('buyer-product', '/buyer-product/42'), true);
   assert.equal(isBuyerAppRoute('account', '/account/notifications'), true);
   assert.equal(isBuyerAppRoute('(tabs)', '/'), false);
@@ -191,6 +192,7 @@ test('buyer bottom navigation places Dashboard before Messages and keeps home ca
   const home = readFileSync(new URL('../app/(buyer-tabs)/buyer-home.tsx', import.meta.url), 'utf8');
   const dashboardRoute = readFileSync(new URL('../app/(buyer-tabs)/dashboard.tsx', import.meta.url), 'utf8');
   const profile = readFileSync(new URL('../app/(buyer-tabs)/buyer-profile.tsx', import.meta.url), 'utf8');
+  const rootLayout = readFileSync(new URL('../app/_layout.tsx', import.meta.url), 'utf8');
   const dashboard = readFileSync(new URL('../app/buyer-overview.tsx', import.meta.url), 'utf8');
   assert.match(layout, /\['dashboard', 'Dashboard', 'bar-chart-2', 'chart\.bar', 'chart\.bar\.fill'\]/);
   assert.match(layout, /NativeTabs\.Trigger name="dashboard"/);
@@ -200,7 +202,8 @@ test('buyer bottom navigation places Dashboard before Messages and keeps home ca
   assert.ok(layout.indexOf('NativeTabs.Trigger name="dashboard"') < layout.indexOf('NativeTabs.Trigger name="buyer-messages"'));
   assert.doesNotMatch(layout, /\['buyer-cart', 'Cart'/);
   assert.doesNotMatch(layout, /NativeTabs\.Trigger name="buyer-cart"/);
-  assert.match(home, /onOpenCart=\{\(\) => router\.push\('\/\(buyer-tabs\)\/buyer-cart'\)\}/);
+  assert.match(home, /onOpenCart=\{\(\) => router\.push\('\/buyer-cart'\)\}/);
+  assert.match(rootLayout, /Stack\.Screen name="buyer-cart" options=\{\{ headerShown: false \}\}/);
   assert.match(profile, /\['Executive dashboard', '\/\(buyer-tabs\)\/dashboard'/);
   assert.match(dashboard, /if \(!isDashboardTab\) return <Redirect href="\/\(buyer-tabs\)\/dashboard" \/>/);
   assert.match(dashboard, /returnTo="\/\(buyer-tabs\)\/dashboard"/);

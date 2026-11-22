@@ -193,6 +193,7 @@ function RootLayoutNav() {
         }} />
         <Stack.Screen name="(buyer-tabs)" options={{ headerShown: false, animation: 'none' }} />
         <Stack.Screen name="buyer-product/[id]" options={{ title: t('Product details') }} />
+        <Stack.Screen name="buyer-cart" options={{ headerShown: false }} />
         <Stack.Screen name="buyer-checkout" options={{ title: t('Checkout') }} />
         <Stack.Screen name="buyer-order/[id]" options={{ title: t('Order details') }} />
         <Stack.Screen name="buyer-quotation/[id]" options={{ title: t('Quotation') }} />

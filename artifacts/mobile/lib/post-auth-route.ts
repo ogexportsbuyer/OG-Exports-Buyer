@@ -31,7 +31,7 @@ export type PostAuthHref =
 export type BuyerPostAuthHref =
   | '/(buyer-tabs)/buyer-home'
   | '/(buyer-tabs)/buyer-products'
-  | '/(buyer-tabs)/buyer-cart'
+  | '/buyer-cart'
   | '/(buyer-tabs)/dashboard'
   | '/(buyer-tabs)/buyer-orders'
   | '/(buyer-tabs)/buyer-messages'
@@ -93,8 +93,8 @@ export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPos
     '/(buyer-tabs)/buyer-home': '/(buyer-tabs)/buyer-home',
     '/buyer-products': '/(buyer-tabs)/buyer-products',
     '/(buyer-tabs)/buyer-products': '/(buyer-tabs)/buyer-products',
-    '/buyer-cart': '/(buyer-tabs)/buyer-cart',
-    '/(buyer-tabs)/buyer-cart': '/(buyer-tabs)/buyer-cart',
+    '/buyer-cart': '/buyer-cart',
+    '/(buyer-tabs)/buyer-cart': '/buyer-cart',
     '/dashboard': '/(buyer-tabs)/dashboard',
     '/(buyer-tabs)/dashboard': '/(buyer-tabs)/dashboard',
     '/buyer-orders': '/(buyer-tabs)/buyer-orders',
@@ -160,6 +160,7 @@ export function isBuyerAppRoute(firstSegment: string, pathname: string): boolean
     'index',
     '(auth)',
     '(buyer-tabs)',
+    'buyer-cart',
     'buyer-checkout',
     'buyer-product',
     'buyer-order',

@@ -9,6 +9,12 @@ The OG Exports mobile app is buyer-only. Guests can browse the public catalogue;
 
 **How to apply:** Use the existing Laravel product, cart, quotation, and order APIs. Keep the catalogue public, enforce buyer-only actions with backend role protection, and do not replace real catalogue data with mock products.
 
+Keep the cart as a root-stack route at `/buyer-cart`, not as a route inside the native tab group. Home, product, profile, and message shortcuts should navigate to that root route.
+
+**Why:** Expo SDK 58 NativeTabs cannot navigate to hidden triggers, and an untriggered route inside the tab group can fall back to the default Home tab.
+
+**How to apply:** When adding buyer routes without a bottom-tab item, register them in the root Stack and keep their canonical route outside `(buyer-tabs)`.
+
 The Replit browser preview cannot read the production catalogue because the API does not allow that preview origin via CORS, although the public catalogue endpoints respond successfully to direct requests.
 
 **Why:** Browser preview requests are subject to CORS; native iOS and Android requests are not.

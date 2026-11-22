@@ -13,6 +13,6 @@ export function claimPendingBuyerProduct(
   return pendingProduct;
 }
 
-export function buyerCartRouteAfterProductAdd(added: boolean): '/(buyer-tabs)/buyer-cart' | null {
-  return added ? '/(buyer-tabs)/buyer-cart' : null;
+export function buyerCartRouteAfterProductAdd(added: boolean): '/buyer-cart' | null {
+  return added ? '/buyer-cart' : null;
 }

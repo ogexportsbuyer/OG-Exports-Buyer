@@ -320,7 +320,7 @@ export default function BuyerProductDetails() {
             {added ? (
               <Pressable
                 accessibilityRole="button"
-                onPress={() => router.push('/(buyer-tabs)/buyer-cart')}
+                onPress={() => router.push('/buyer-cart')}
                 style={({ pressed }) => ({
                   minHeight: 50,
                   paddingHorizontal: 14,

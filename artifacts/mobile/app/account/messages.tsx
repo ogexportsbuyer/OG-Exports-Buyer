@@ -72,7 +72,7 @@ const buyerHelpTopics = [
     title: 'Cart',
     description: 'Review products saved for your next order.',
     icon: 'shopping-cart',
-    href: '/(buyer-tabs)/buyer-cart',
+    href: '/buyer-cart',
   },
   {
     title: 'Buyer account',

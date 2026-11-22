@@ -38,7 +38,7 @@ function CartThumbnail({ uri, label }: { uri: string; label: string }) {
   );
 }
 
-export default function BuyerCart() {
+export default function BuyerCartScreen() {
   const colors = useColors();
   const queryClient = useQueryClient();
   const { token } = useAuth();
@@ -199,67 +199,67 @@ export default function BuyerCart() {
 
       {items.length > 0 ? (
         <>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 3, marginBottom: 8 }}>
-          <Text style={{ color: colors.mutedForeground, fontSize: 11, fontWeight: '700' }}>{items.length} {items.length === 1 ? 'product' : 'products'} selected</Text>
-          <Pressable
-            testID="buyer-cart-clear-all"
-            accessibilityRole="button"
-            accessibilityState={{ disabled: mutationPending }}
-            disabled={mutationPending}
-            onPress={() => { setActionError(''); setClearAllConfirm(true); }}
-            style={{ minHeight: 36, paddingHorizontal: 10, justifyContent: 'center', opacity: mutationPending ? 0.5 : 1 }}
-          >
-            <Text style={{ color: colors.destructive, fontSize: 11, fontWeight: '700' }}>Clear all</Text>
-          </Pressable>
-        </View>
-        {clearAllConfirm ? (
-          <Card style={{ padding: 14, marginBottom: 10 }}>
-            <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '700' }}>Remove every item?</Text>
-            <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginTop: 4 }}>This will clear all {items.length} {items.length === 1 ? 'product' : 'products'} from your saved cart.</Text>
-            <View style={{ flexDirection: 'row', gap: 9, marginTop: 12 }}>
-              <Pressable
-                testID="buyer-cart-clear-cancel"
-                accessibilityRole="button"
-                onPress={() => setClearAllConfirm(false)}
-                disabled={clearingAll}
-                style={{ minHeight: 40, flex: 1, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '700' }}>Keep cart</Text>
-              </Pressable>
-              <Pressable
-                testID="buyer-cart-clear-confirm"
-                accessibilityRole="button"
-                accessibilityState={{ disabled: clearingAll, busy: clearingAll }}
-                onPress={() => void clearCart()}
-                disabled={clearingAll}
-                style={{ minHeight: 40, flex: 1, borderRadius: 12, backgroundColor: colors.destructive, alignItems: 'center', justifyContent: 'center', opacity: clearingAll ? 0.6 : 1 }}
-              >
-                <Text style={{ color: colors.destructiveForeground, fontSize: 12, fontWeight: '700' }}>{clearingAll ? 'Clearing…' : 'Remove all'}</Text>
-              </Pressable>
-            </View>
-          </Card>
-        ) : null}
-        <Card style={{ padding: 17, marginTop: 4 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14 }}>
-            <Text style={{ color: colors.mutedForeground }}>Estimated subtotal</Text>
-            <Text style={{ color: colors.foreground, fontWeight: '700' }}>{total > 0 ? money(total, cartCurrency) : 'Final price by quotation'}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 3, marginBottom: 8 }}>
+            <Text style={{ color: colors.mutedForeground, fontSize: 11, fontWeight: '700' }}>{items.length} {items.length === 1 ? 'product' : 'products'} selected</Text>
+            <Pressable
+              testID="buyer-cart-clear-all"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: mutationPending }}
+              disabled={mutationPending}
+              onPress={() => { setActionError(''); setClearAllConfirm(true); }}
+              style={{ minHeight: 36, paddingHorizontal: 10, justifyContent: 'center', opacity: mutationPending ? 0.5 : 1 }}
+            >
+              <Text style={{ color: colors.destructive, fontSize: 11, fontWeight: '700' }}>Clear all</Text>
+            </Pressable>
           </View>
-          {items.some(item => (amount(item, ['unit_price']) ?? 0) <= 0) ? (
-            <Text style={{ color: colors.accent, fontSize: 11, fontWeight: '600', marginBottom: 10 }}>
-              Some items need a confirmed quotation.
-            </Text>
+          {clearAllConfirm ? (
+            <Card style={{ padding: 14, marginBottom: 10 }}>
+              <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '700' }}>Remove every item?</Text>
+              <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginTop: 4 }}>This will clear all {items.length} {items.length === 1 ? 'product' : 'products'} from your saved cart.</Text>
+              <View style={{ flexDirection: 'row', gap: 9, marginTop: 12 }}>
+                <Pressable
+                  testID="buyer-cart-clear-cancel"
+                  accessibilityRole="button"
+                  onPress={() => setClearAllConfirm(false)}
+                  disabled={clearingAll}
+                  style={{ minHeight: 40, flex: 1, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '700' }}>Keep cart</Text>
+                </Pressable>
+                <Pressable
+                  testID="buyer-cart-clear-confirm"
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: clearingAll, busy: clearingAll }}
+                  onPress={() => void clearCart()}
+                  disabled={clearingAll}
+                  style={{ minHeight: 40, flex: 1, borderRadius: 12, backgroundColor: colors.destructive, alignItems: 'center', justifyContent: 'center', opacity: clearingAll ? 0.6 : 1 }}
+                >
+                  <Text style={{ color: colors.destructiveForeground, fontSize: 12, fontWeight: '700' }}>{clearingAll ? 'Clearing…' : 'Remove all'}</Text>
+                </Pressable>
+              </View>
+            </Card>
           ) : null}
-          <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginBottom: 14 }}>
-            Final pricing, freight and payment instructions are confirmed by OG Exports. No payment is taken in this cart.
-          </Text>
-          <Action
-            title="Continue to checkout"
-            icon="arrow-right"
-            onPress={() => router.push('/buyer-checkout')}
-            disabled={mutationPending}
-            testID="buyer-cart-checkout"
-          />
-        </Card>
+          <Card style={{ padding: 17, marginTop: 4 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14 }}>
+              <Text style={{ color: colors.mutedForeground }}>Estimated subtotal</Text>
+              <Text style={{ color: colors.foreground, fontWeight: '700' }}>{total > 0 ? money(total, cartCurrency) : 'Final price by quotation'}</Text>
+            </View>
+            {items.some(item => (amount(item, ['unit_price']) ?? 0) <= 0) ? (
+              <Text style={{ color: colors.accent, fontSize: 11, fontWeight: '600', marginBottom: 10 }}>
+                Some items need a confirmed quotation.
+              </Text>
+            ) : null}
+            <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginBottom: 14 }}>
+              Final pricing, freight and payment instructions are confirmed by OG Exports. No payment is taken in this cart.
+            </Text>
+            <Action
+              title="Continue to checkout"
+              icon="arrow-right"
+              onPress={() => router.push('/buyer-checkout')}
+              disabled={mutationPending}
+              testID="buyer-cart-checkout"
+            />
+          </Card>
         </>
       ) : null}
       {!cartQuery.isError ? (

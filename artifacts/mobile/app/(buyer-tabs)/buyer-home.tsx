@@ -109,7 +109,7 @@ export default function BuyerHome() {
         search={search}
         onSearchChange={setSearch}
         onBrowse={browseProducts}
-        onOpenCart={() => router.push('/(buyer-tabs)/buyer-cart')}
+        onOpenCart={() => router.push('/buyer-cart')}
         onOpenAccount={() => router.push('/(buyer-tabs)/buyer-profile')}
         onSelectTab={selectTopTab}
       />
