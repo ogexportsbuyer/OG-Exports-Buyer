@@ -279,7 +279,7 @@ export default function BuyerHomeHeader({
           : currentPosition + 1;
       updateCarouselPosition(nextPosition);
       featuredScrollRef.current?.scrollTo({ x: nextPosition * heroStep, animated: true });
-    }, 4000);
+    }, 5000);
     return () => clearTimeout(timer);
   }, [carouselInteracting, carouselPosition, heroStep, isFocused, reduceMotion, updateCarouselPosition]);
 
