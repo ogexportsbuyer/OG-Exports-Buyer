@@ -32,6 +32,7 @@ export type BuyerPostAuthHref =
   | '/(buyer-tabs)/buyer-home'
   | '/(buyer-tabs)/buyer-products'
   | '/(buyer-tabs)/buyer-cart'
+  | '/(buyer-tabs)/dashboard'
   | '/(buyer-tabs)/buyer-orders'
   | '/(buyer-tabs)/buyer-messages'
   | '/(buyer-tabs)/buyer-profile'
@@ -94,6 +95,8 @@ export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPos
     '/(buyer-tabs)/buyer-products': '/(buyer-tabs)/buyer-products',
     '/buyer-cart': '/(buyer-tabs)/buyer-cart',
     '/(buyer-tabs)/buyer-cart': '/(buyer-tabs)/buyer-cart',
+    '/dashboard': '/(buyer-tabs)/dashboard',
+    '/(buyer-tabs)/dashboard': '/(buyer-tabs)/dashboard',
     '/buyer-orders': '/(buyer-tabs)/buyer-orders',
     '/(buyer-tabs)/buyer-orders': '/(buyer-tabs)/buyer-orders',
     '/buyer-messages': '/(buyer-tabs)/buyer-messages',
@@ -105,7 +108,7 @@ export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPos
     '/buyer-profile-details': '/buyer-profile-details',
     '/buyer-company': '/buyer-company',
     '/buyer-security': '/buyer-security',
-    '/buyer-overview': '/buyer-overview',
+    '/buyer-overview': '/(buyer-tabs)/dashboard',
     '/buyer-analytics': '/buyer-analytics',
     '/buyer-repeat-orders': '/buyer-repeat-orders',
     '/buyer-rfq': '/buyer-rfq',

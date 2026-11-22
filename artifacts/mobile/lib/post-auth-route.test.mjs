@@ -135,7 +135,6 @@ test('buyer app route allowlist blocks investor screens and permits buyer suppor
   assert.equal(isBuyerAppRoute('buyer-system-settings', '/buyer-system-settings'), true);
   assert.equal(isBuyerAppRoute('buyer-notifications', '/buyer-notifications'), true);
   const profileRoutes = [
-    '/buyer-overview',
     '/buyer-analytics',
     '/buyer-profile-details',
     '/buyer-company',
@@ -153,6 +152,8 @@ test('buyer app route allowlist blocks investor screens and permits buyer suppor
     assert.equal(isBuyerAppRoute(segment, path), true, `${path} should stay inside the buyer app`);
     assert.equal(resolveBuyerPostAuthHref(path), path, `${path} should remain the post-login destination`);
   }
+  assert.equal(resolveBuyerPostAuthHref('/buyer-overview'), '/(buyer-tabs)/dashboard');
+  assert.equal(resolveBuyerPostAuthHref('/(buyer-tabs)/dashboard'), '/(buyer-tabs)/dashboard');
 });
 
 test('buyer return routes preserve system settings and notification destinations', () => {
@@ -180,12 +181,19 @@ test('buyer bottom navigation places Dashboard before Messages and keeps home ca
   const layout = readFileSync(new URL('../app/(buyer-tabs)/_layout.tsx', import.meta.url), 'utf8');
   const home = readFileSync(new URL('../app/(buyer-tabs)/buyer-home.tsx', import.meta.url), 'utf8');
   const dashboardRoute = readFileSync(new URL('../app/(buyer-tabs)/dashboard.tsx', import.meta.url), 'utf8');
+  const profile = readFileSync(new URL('../app/(buyer-tabs)/buyer-profile.tsx', import.meta.url), 'utf8');
+  const dashboard = readFileSync(new URL('../app/buyer-overview.tsx', import.meta.url), 'utf8');
   assert.match(layout, /\['dashboard', 'Dashboard', 'bar-chart-2', 'chart\.bar', 'chart\.bar\.fill'\]/);
   assert.match(layout, /NativeTabs\.Trigger name="dashboard"/);
+  assert.match(layout, /md=\{\{ default: 'bar_chart', selected: 'bar_chart' \}\}/);
+  assert.match(layout, /Platform\.OS === 'ios' && name !== 'dashboard'/);
   assert.ok(layout.indexOf("['dashboard', 'Dashboard'") < layout.indexOf("['buyer-messages', 'Messages'"));
   assert.ok(layout.indexOf('NativeTabs.Trigger name="dashboard"') < layout.indexOf('NativeTabs.Trigger name="buyer-messages"'));
   assert.doesNotMatch(layout, /\['buyer-cart', 'Cart'/);
   assert.doesNotMatch(layout, /NativeTabs\.Trigger name="buyer-cart"/);
   assert.match(home, /onOpenCart=\{\(\) => router\.push\('\/\(buyer-tabs\)\/buyer-cart'\)\}/);
+  assert.match(profile, /\['Executive dashboard', '\/\(buyer-tabs\)\/dashboard'/);
+  assert.match(dashboard, /if \(!isDashboardTab\) return <Redirect href="\/\(buyer-tabs\)\/dashboard" \/>/);
+  assert.match(dashboard, /returnTo="\/\(buyer-tabs\)\/dashboard"/);
   assert.match(dashboardRoute, /export \{ default \} from '\.\.\/buyer-overview'/);
 });

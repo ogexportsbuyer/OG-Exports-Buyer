@@ -38,7 +38,7 @@ function NativeLayout() {
     >
       <NativeTabs.Trigger name="buyer-home"><NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} /><NativeTabs.Trigger.Label>{t('Home')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="buyer-products"><NativeTabs.Trigger.Icon sf={{ default: 'square.grid.2x2', selected: 'square.grid.2x2.fill' }} /><NativeTabs.Trigger.Label>{t('Product')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
-      <NativeTabs.Trigger name="dashboard"><NativeTabs.Trigger.Icon sf={{ default: 'chart.bar', selected: 'chart.bar.fill' }} /><NativeTabs.Trigger.Label>{t('Dashboard')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="dashboard"><NativeTabs.Trigger.Icon sf={{ default: 'chart.bar', selected: 'chart.bar.fill' }} md={{ default: 'bar_chart', selected: 'bar_chart' }} /><NativeTabs.Trigger.Label>{t('Dashboard')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="buyer-messages"><NativeTabs.Trigger.Icon sf={{ default: 'bubble.left.and.bubble.right', selected: 'bubble.left.and.bubble.right.fill' }} /><NativeTabs.Trigger.Label>{t('Messages')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="buyer-profile"><NativeTabs.Trigger.Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} /><NativeTabs.Trigger.Label>{t('Profile')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
     </NativeTabs>
@@ -118,7 +118,7 @@ function ClassicLayout() {
       {buyerTabs.map(([name, title, icon, ios, iosSelected]) => (
         <Tabs.Screen key={name} name={name} options={{
           title: translateUi(title, preferences.language),
-          tabBarIcon: ({ color, focused }) => Platform.OS === 'ios'
+          tabBarIcon: ({ color, focused }) => Platform.OS === 'ios' && name !== 'dashboard'
             ? <SymbolView name={focused ? iosSelected : ios} tintColor={color} size={22} />
             : <Feather name={icon} size={21} color={focused ? colors.primary : colors.mutedForeground} />,
         }} />

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
-import { router } from 'expo-router';
+import { Redirect, router, useSegments } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useQueryClient } from '@tanstack/react-query';
@@ -54,6 +54,13 @@ function navigateTo(route: string) {
 }
 
 export default function BuyerOverview() {
+  const segments = useSegments();
+  const isDashboardTab = segments[0] === '(buyer-tabs)' && segments[1] === 'dashboard';
+  if (!isDashboardTab) return <Redirect href="/(buyer-tabs)/dashboard" />;
+  return <BuyerOverviewContent />;
+}
+
+function BuyerOverviewContent() {
   const colors = useColors();
   const { token, user, apiOrigin, updateUser } = useAuth();
   const queryClient = useQueryClient();
@@ -180,7 +187,7 @@ export default function BuyerOverview() {
   }
 
   if (!token) {
-    return <BuyerAuthGate title="Executive dashboard" body="Sign in to view your live orders, quotations, shipments, and trade activity." returnTo="/buyer-overview" />;
+    return <BuyerAuthGate title="Executive dashboard" body="Sign in to view your live orders, quotations, shipments, and trade activity." returnTo="/(buyer-tabs)/dashboard" />;
   }
 
   return (

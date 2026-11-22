@@ -19,7 +19,7 @@ const accountSections = [
   {
     title: 'Overview',
     links: [
-      ['Executive dashboard', '/buyer-overview', 'pie-chart'],
+      ['Executive dashboard', '/(buyer-tabs)/dashboard', 'bar-chart-2'],
       ['Analytics', '/buyer-analytics', 'bar-chart-2'],
     ],
   },
