@@ -176,12 +176,14 @@ test('buyer navigation uses Profile in both native and classic tab bars', () => 
   assert.match(layout, /NativeTabs\.Trigger\.Label>\{t\('Profile'\)\}/);
 });
 
-test('buyer bottom navigation replaces Cart with Dashboard while home keeps its cart shortcut', () => {
+test('buyer bottom navigation places Dashboard before Messages and keeps home cart shortcut', () => {
   const layout = readFileSync(new URL('../app/(buyer-tabs)/_layout.tsx', import.meta.url), 'utf8');
   const home = readFileSync(new URL('../app/(buyer-tabs)/buyer-home.tsx', import.meta.url), 'utf8');
   const dashboardRoute = readFileSync(new URL('../app/(buyer-tabs)/dashboard.tsx', import.meta.url), 'utf8');
   assert.match(layout, /\['dashboard', 'Dashboard', 'bar-chart-2', 'chart\.bar', 'chart\.bar\.fill'\]/);
   assert.match(layout, /NativeTabs\.Trigger name="dashboard"/);
+  assert.ok(layout.indexOf("['dashboard', 'Dashboard'") < layout.indexOf("['buyer-messages', 'Messages'"));
+  assert.ok(layout.indexOf('NativeTabs.Trigger name="dashboard"') < layout.indexOf('NativeTabs.Trigger name="buyer-messages"'));
   assert.doesNotMatch(layout, /\['buyer-cart', 'Cart'/);
   assert.doesNotMatch(layout, /NativeTabs\.Trigger name="buyer-cart"/);
   assert.match(home, /onOpenCart=\{\(\) => router\.push\('\/\(buyer-tabs\)\/buyer-cart'\)\}/);
