@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
+import { Animated, Easing, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type ScrollViewInstance, type ViewStyle } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
@@ -40,6 +40,40 @@ const brandSlides = [
     icon: 'message-circle' as const,
   },
 ] as const;
+
+function BrandSlideMotion({
+  active,
+  reduceMotion,
+  style,
+  children,
+}: {
+  active: boolean;
+  reduceMotion: boolean;
+  style: ViewStyle;
+  children: React.ReactNode;
+}) {
+  const progress = useRef(new Animated.Value(active ? 1 : 0)).current;
+
+  useEffect(() => {
+    const animation = Animated.timing(progress, {
+      toValue: active ? 1 : 0,
+      duration: reduceMotion ? 0 : 650,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: Platform.OS !== 'web',
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [active, progress, reduceMotion]);
+
+  const scale = progress.interpolate({ inputRange: [0, 1], outputRange: [0.88, 1] });
+  const opacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0.48, 1] });
+
+  return (
+    <Animated.View style={[style, { opacity, transform: [{ scale }] }]}>
+      {children}
+    </Animated.View>
+  );
+}
 
 const styles = StyleSheet.create({
   masthead: {
@@ -279,7 +313,7 @@ export default function BuyerHomeHeader({
           : currentPosition + 1;
       updateCarouselPosition(nextPosition);
       featuredScrollRef.current?.scrollTo({ x: nextPosition * heroStep, animated: true });
-    }, 5000);
+    }, 7000);
     return () => clearTimeout(timer);
   }, [carouselInteracting, carouselPosition, heroStep, isFocused, reduceMotion, updateCarouselPosition]);
 
@@ -480,8 +514,10 @@ export default function BuyerHomeHeader({
               ? 0
               : index - 1;
           return (
-            <View
+            <BrandSlideMotion
               key={`${slide.id}-${index}`}
+              active={isActive}
+              reduceMotion={reduceMotion}
               style={{
                 width: heroCardWidth,
                 marginRight: -heroCardOverlap,
@@ -504,8 +540,7 @@ export default function BuyerHomeHeader({
                   width: heroCardWidth,
                   backgroundColor: colors.balanceCardStart,
                   borderColor: isActive ? colors.accent : colors.glassBorder,
-                  opacity: pressed ? 0.95 : isActive ? 1 : 0.48,
-                  transform: [{ scale: isActive ? 1 : 0.88 }],
+                  opacity: pressed ? 0.95 : 1,
                 }]}
               >
                 <LinearGradient
@@ -545,7 +580,7 @@ export default function BuyerHomeHeader({
                   <Text style={{ color: colors.splashMuted, fontSize: 7, fontWeight: '700', letterSpacing: 0.8 }}>OG EXPORTS</Text>
                 </View>
               </Pressable>
-            </View>
+            </BrandSlideMotion>
           );
         })}
       </ScrollView>
