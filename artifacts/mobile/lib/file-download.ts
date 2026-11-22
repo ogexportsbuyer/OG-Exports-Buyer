@@ -6,7 +6,7 @@ import { getSavedToken } from '@/lib/api-config';
 import { saveHtmlAsPdf } from '@/lib/pdf-export';
 
 async function fetchAuthorizedFile(path: string, origin: string, mimeType: string) {
-  if (!origin) throw new Error('The investor service is not configured for this app. Contact OG Exports support.');
+  if (!origin) throw new Error('The OG Exports file service is not configured for this app. Contact support.');
   const token = await getSavedToken();
   if (!token) throw new Error('Sign in again before opening this file.');
 
