@@ -420,7 +420,7 @@ export default function BuyerHomeHeader({
         <View
           testID="buyer-home-featured-loading"
           accessibilityLabel="Loading featured products"
-          style={[styles.featureCard, { width: heroCardWidth, backgroundColor: colors.glassTintTeal, borderWidth: 1, borderColor: colors.glassBorder }]}
+          style={[styles.featureCard, { width: heroCardWidth, alignSelf: 'center', backgroundColor: colors.glassTintTeal, borderWidth: 1, borderColor: colors.glassBorder }]}
         >
           <View style={{ width: 94, height: 9, borderRadius: 6, backgroundColor: colors.glassTintGold }} />
           <View style={{ width: '76%', height: 15, borderRadius: 7, marginTop: 11, backgroundColor: colors.glassTintTeal }} />
@@ -440,6 +440,7 @@ export default function BuyerHomeHeader({
           onPress={() => onBrowse()}
           style={({ pressed }) => [styles.featureCard, {
             width: heroCardWidth,
+            alignSelf: 'center',
             flexDirection: 'row',
             alignItems: 'center',
             gap: 15,

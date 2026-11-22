@@ -63,7 +63,6 @@ const styles = StyleSheet.create({
   originRow: {
     flexDirection: 'row',
     gap: 7,
-    marginHorizontal: -20,
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 12,
@@ -83,7 +82,6 @@ const styles = StyleSheet.create({
   recommendationRow: {
     flexDirection: 'row',
     gap: 9,
-    marginHorizontal: -20,
     paddingHorizontal: 20,
     paddingBottom: 14,
   },
@@ -163,7 +161,6 @@ const styles = StyleSheet.create({
   categoryRow: {
     flexDirection: 'row',
     gap: 9,
-    marginHorizontal: -20,
     paddingHorizontal: 20,
     paddingBottom: 12,
   },
