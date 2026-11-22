@@ -59,6 +59,10 @@ test('serializes legacy transaction route query details for post-auth navigation
 test('returns buyer sign-in to the requested marketplace destination', () => {
   assert.equal(resolveBuyerPostAuthHref('/buyer-cart'), '/(buyer-tabs)/buyer-cart');
   assert.equal(resolveBuyerPostAuthHref('/buyer-products?search=rice'), '/(buyer-tabs)/buyer-products');
+  assert.deepEqual(resolveBuyerPostAuthHref('/buyer-product/42'), {
+    pathname: '/buyer-product/[id]',
+    params: { id: '42' },
+  });
   assert.deepEqual(
     resolveBuyerPostAuthHref('/buyer-products?pendingProduct=42'),
     { pathname: '/(buyer-tabs)/buyer-products', params: { pendingProduct: '42' } },
@@ -123,6 +127,7 @@ test('buyer app route allowlist blocks investor screens and permits buyer suppor
   assert.equal(isBuyerAppRoute('(buyer-tabs)', '/buyer-home'), true);
   assert.equal(isBuyerAppRoute('(auth)', '/login'), true);
   assert.equal(isBuyerAppRoute('buyer-checkout', '/buyer-checkout'), true);
+  assert.equal(isBuyerAppRoute('buyer-product', '/buyer-product/42'), true);
   assert.equal(isBuyerAppRoute('account', '/account/notifications'), true);
   assert.equal(isBuyerAppRoute('(tabs)', '/'), false);
   assert.equal(isBuyerAppRoute('wallet', '/wallet/deposit'), false);

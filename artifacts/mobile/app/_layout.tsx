@@ -66,7 +66,7 @@ function RootLayoutNav() {
   const routeParams = useGlobalSearchParams();
   const returnTo = serializeRouteState(pathname, routeParams);
   const firstSegment = String(segments[0] ?? '');
-  const publicSegments = new Set(['', 'index', '(auth)', 'forgot-password', '(buyer-tabs)']);
+  const publicSegments = new Set(['', 'index', '(auth)', 'forgot-password', '(buyer-tabs)', 'buyer-product']);
   const routeAllowed = isBuyerAppRoute(firstSegment, pathname);
   const accountId = String(record(user).id ?? record(user).user_id ?? '');
   const sessionScope = token ? `${apiOrigin}|${accountId || 'authenticated'}` : 'signed-out';
@@ -192,6 +192,7 @@ function RootLayoutNav() {
           sheetExpandsWhenScrolledToEdge: true,
         }} />
         <Stack.Screen name="(buyer-tabs)" options={{ headerShown: false, animation: 'none' }} />
+        <Stack.Screen name="buyer-product/[id]" options={{ title: t('Product details') }} />
         <Stack.Screen name="buyer-checkout" options={{ title: t('Checkout') }} />
         <Stack.Screen name="buyer-order/[id]" options={{ title: t('Order details') }} />
         <Stack.Screen name="buyer-quotation/[id]" options={{ title: t('Quotation') }} />

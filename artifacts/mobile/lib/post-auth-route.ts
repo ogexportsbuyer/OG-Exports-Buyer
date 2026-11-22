@@ -51,6 +51,7 @@ export type BuyerPostAuthHref =
   | '/account/messages'
   | '/account/notifications'
   | { pathname: '/(buyer-tabs)/buyer-products'; params: { pendingProduct: string } }
+  | { pathname: '/buyer-product/[id]'; params: { id: string } }
   | { pathname: '/buyer-rfq/[id]'; params: { id: string } }
   | { pathname: '/buyer-order/[id]'; params: { id: string } }
   | { pathname: '/buyer-quotation/[id]'; params: { id: string } }
@@ -59,6 +60,10 @@ export type BuyerPostAuthHref =
 export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPostAuthHref {
   const value = Array.isArray(returnTo) ? returnTo[0] : returnTo;
   const path = value?.split('?', 1)[0] ?? '';
+  const productId = path.match(/^\/buyer-product\/(\d+)\/?$/)?.[1];
+  if (productId && Number(productId) > 0) {
+    return { pathname: '/buyer-product/[id]', params: { id: productId } };
+  }
   const orderId = path.match(/^\/buyer-order\/(\d+)\/?$/)?.[1];
   if (orderId && Number(orderId) > 0) {
     return { pathname: '/buyer-order/[id]', params: { id: orderId } };
@@ -153,6 +158,7 @@ export function isBuyerAppRoute(firstSegment: string, pathname: string): boolean
     '(auth)',
     '(buyer-tabs)',
     'buyer-checkout',
+    'buyer-product',
     'buyer-order',
     'buyer-quotation',
     'buyer-rfq',

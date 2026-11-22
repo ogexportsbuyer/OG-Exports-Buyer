@@ -11,12 +11,11 @@ import { motionHaptic } from '@/lib/motion';
 
 type BuyerProductCardProps = {
   product: Json;
-  expanded: boolean;
   added: boolean;
   adding: boolean;
   signedIn: boolean;
   favorite: boolean;
-  onToggleDetails: () => void;
+  onOpenDetails: () => void;
   onAddToCart: () => void;
   onToggleFavorite: () => void;
 };
@@ -46,40 +45,13 @@ function Tag({ label, tone = 'neutral' }: { label: string; tone?: 'neutral' | 'a
   );
 }
 
-function ValueGroup({ title, values }: { title: string; values: string[] }) {
-  const colors = useColors();
-  if (!values.length) return null;
-
-  return (
-    <View style={{ marginTop: 14 }}>
-      <Text style={{ color: colors.mutedForeground, fontSize: 10, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8 }}>
-        {title}
-      </Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
-        {values.map((value, index) => <Tag key={`${value}-${index}`} label={value} />)}
-      </View>
-    </View>
-  );
-}
-
-function DetailValue({ label, value }: { label: string; value: string }) {
-  const colors = useColors();
-  return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-      <Text style={{ flex: 1, color: colors.mutedForeground, fontSize: 12 }}>{label}</Text>
-      <Text style={{ flex: 1.2, color: colors.foreground, fontSize: 12, fontWeight: '600', textAlign: 'right' }}>{value}</Text>
-    </View>
-  );
-}
-
 export function BuyerProductCard({
   product,
-  expanded,
   added,
   adding,
   signedIn,
   favorite,
-  onToggleDetails,
+  onOpenDetails,
   onAddToCart,
   onToggleFavorite,
 }: BuyerProductCardProps) {
@@ -91,13 +63,11 @@ export function BuyerProductCard({
   const category = categoryName(product);
   const origin = first(product, ['origin']);
   const description = first(product, ['short_description', 'shortDescription', 'description']);
-  const fullDescription = first(product, ['description'], description);
   const specs = buyerProductSpecs(product);
   const certifications = buyerProductValues(product, 'certifications');
   const paymentTerms = buyerProductValues(product, 'payment_terms');
   const deliveryTerms = buyerProductValues(product, 'delivery_terms');
   const packaging = buyerProductValues(product, 'packaging_options');
-  const exportMarkets = buyerProductValues(product, 'export_markets');
   const minimumOrder = first(product, ['moq', 'min_order']);
   const status = first(product, ['status']).toLowerCase();
   const approved = status === 'approved';
@@ -149,7 +119,7 @@ export function BuyerProductCard({
           </View>
         ) : null}
         {description ? (
-          <Text numberOfLines={expanded ? undefined : 2} style={{ color: colors.mutedForeground, fontSize: 12, lineHeight: 18, marginTop: 10 }}>
+          <Text numberOfLines={2} style={{ color: colors.mutedForeground, fontSize: 12, lineHeight: 18, marginTop: 10 }}>
             {description}
           </Text>
         ) : null}
@@ -207,56 +177,14 @@ export function BuyerProductCard({
           ) : null}
         </View>
 
-        {expanded ? (
-          <View testID={`buyer-product-full-details-${id}`} style={{ marginTop: 15, paddingTop: 13, borderTopWidth: 1, borderTopColor: colors.border }}>
-            {fullDescription ? (
-              <>
-                <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '800' }}>Product overview</Text>
-                <Text style={{ color: colors.mutedForeground, fontSize: 12, lineHeight: 19, marginTop: 7 }}>{fullDescription}</Text>
-              </>
-            ) : null}
-
-            {specs.length ? (
-              <View style={{ marginTop: 15 }}>
-                <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '800', marginBottom: 6 }}>Complete specifications</Text>
-                {specs.map((spec, index) => (
-                  <DetailValue key={`${spec.label}-${index}`} label={spec.label} value={spec.value} />
-                ))}
-              </View>
-            ) : null}
-
-            <ValueGroup title="Certifications" values={certifications} />
-            <ValueGroup title="Payment terms" values={paymentTerms} />
-            <ValueGroup title="Delivery terms" values={deliveryTerms} />
-            <ValueGroup title="Packaging options" values={packaging} />
-            <ValueGroup title="Active export markets" values={exportMarkets} />
-
-            {[
-              ['HS code', first(product, ['hs_code'])],
-              ['Shelf life', first(product, ['shelf_life'])],
-              ['Storage', first(product, ['storage_instructions'])],
-            ].filter(([, value]) => value).length ? (
-              <View style={{ marginTop: 14 }}>
-                {[
-                  ['HS code', first(product, ['hs_code'])],
-                  ['Shelf life', first(product, ['shelf_life'])],
-                  ['Storage', first(product, ['storage_instructions'])],
-                ].filter(([, value]) => value).map(([label, value]) => (
-                  <DetailValue key={label} label={label} value={value} />
-                ))}
-              </View>
-            ) : null}
-          </View>
-        ) : null}
-
         <View style={{ flexDirection: 'row', gap: 9, marginTop: 14 }}>
           <Pressable
             testID={`buyer-product-details-${id}`}
             accessibilityRole="button"
-            accessibilityState={{ expanded }}
+            accessibilityLabel={`Open details for ${name}`}
             onPress={() => {
               motionHaptic('micro');
-              onToggleDetails();
+              onOpenDetails();
             }}
             style={({ pressed }) => ({
               minHeight: 44,
@@ -272,8 +200,8 @@ export function BuyerProductCard({
               opacity: pressed ? 0.82 : 1,
             })}
           >
-            <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>{expanded ? 'Hide details' : 'Details'}</Text>
-            <Feather name={expanded ? 'chevron-up' : 'chevron-right'} size={14} color={colors.foreground} />
+            <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>Details</Text>
+            <Feather name="chevron-right" size={14} color={colors.foreground} />
           </Pressable>
           <Pressable
             testID={`buyer-product-add-${id}`}

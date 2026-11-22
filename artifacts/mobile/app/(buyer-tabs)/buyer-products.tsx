@@ -39,14 +39,13 @@ export default function BuyerProducts() {
   const initialSearch = Array.isArray(routeSearch) ? routeSearch[0] : routeSearch;
   const pendingProduct = Array.isArray(routePendingProduct) ? routePendingProduct[0] : routePendingProduct;
   const catalogEnabled = ready && !!apiOrigin;
-  const productsQuery = useGetProducts({ per_page: 50 }, { query: { queryKey: getGetProductsQueryKey({ per_page: 50 }), enabled: catalogEnabled, retry: false, staleTime: 60_000 } });
+  const productsQuery = useGetProducts({ per_page: 100 }, { query: { queryKey: getGetProductsQueryKey({ per_page: 100 }), enabled: catalogEnabled, retry: false, staleTime: 60_000 } });
   const categoriesQuery = useGetProductCategories({ query: { queryKey: getGetProductCategoriesQueryKey(), enabled: catalogEnabled, retry: false, staleTime: 300_000 } });
   const addToCart = useAddBuyerCartItem();
   const products = rowsFromResponse(productsQuery.data);
   const categories = categoryOptions(categoriesQuery.data);
   const [search, setSearch] = useState(initialSearch || '');
   const [category, setCategory] = useState(initialCategory || 'All');
-  const [expandedId, setExpandedId] = useState('');
   const [addedId, setAddedId] = useState('');
   const [actionError, setActionError] = useState('');
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
@@ -224,19 +223,17 @@ export default function BuyerProducts() {
 
       {filteredProducts.map((product, index) => {
         const id = first(product, ['id'], `product-${index}`);
-        const isExpanded = expandedId === id;
         const isAdded = addedId === id;
 
         return (
           <BuyerProductCard
             key={id}
             product={product}
-            expanded={isExpanded}
             added={isAdded}
             adding={addToCart.isPending}
             signedIn={!!token}
             favorite={favoriteIds.includes(id)}
-            onToggleDetails={() => setExpandedId(isExpanded ? '' : id)}
+            onOpenDetails={() => router.push({ pathname: '/buyer-product/[id]', params: { id } })}
             onAddToCart={() => void addProduct(product)}
             onToggleFavorite={() => void toggleFavorite(id)}
           />

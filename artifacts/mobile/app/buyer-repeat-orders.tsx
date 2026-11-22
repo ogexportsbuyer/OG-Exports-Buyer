@@ -33,7 +33,6 @@ export default function BuyerRepeatOrders() {
   const [pendingId, setPendingId] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
-  const [expandedId, setExpandedId] = useState('');
   const [addedId, setAddedId] = useState('');
   const query = useGetBuyerOrders({ per_page: 100 }, {
     query: { queryKey: getGetBuyerOrdersQueryKey({ per_page: 100 }), enabled: !!token, staleTime: 30_000 },
@@ -165,18 +164,16 @@ export default function BuyerRepeatOrders() {
           {productsQuery.isSuccess && favoriteProducts.length === 0 ? <EmptyState title="No saved products yet" body="Tap the heart on a product in the catalogue to save it here." icon="heart" /> : null}
           {favoriteProducts.map((product, index) => {
             const id = first(product, ['id'], String(index));
-            const expanded = expandedId === id;
             const added = addedId === id;
             return (
               <BuyerProductCard
                 key={id}
                 product={product}
-                expanded={expanded}
                 added={added}
                 adding={addToCart.isPending}
                 signedIn={true}
                 favorite={true}
-                onToggleDetails={() => setExpandedId(expanded ? '' : id)}
+                onOpenDetails={() => router.push({ pathname: '/buyer-product/[id]', params: { id } })}
                 onAddToCart={() => void addFavoriteToCart(product)}
                 onToggleFavorite={() => void toggleFavorite(id)}
               />
