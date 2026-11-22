@@ -182,21 +182,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 10,
   },
-  guide: {
-    minHeight: 39,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-    marginTop: 12,
-    marginBottom: 17,
-    paddingHorizontal: 12,
-    borderRadius: 11,
-  },
-  guideText: {
-    flex: 1,
-    fontSize: 10,
-    fontWeight: '600',
-  },
   promoCard: {
     height: 236,
     overflow: 'hidden',
@@ -597,18 +582,6 @@ export default function BuyerHomeHeader({
         </View>
       </View>
 
-      <Pressable
-        testID="buyer-home-catalogue-guide"
-        accessibilityRole="button"
-        accessibilityLabel="Explore export-ready products from Pakistan"
-        onPress={() => onBrowse()}
-        style={({ pressed }) => [styles.guide, { backgroundColor: colors.glassTintGold, opacity: pressed ? 0.82 : 1 }]}
-      >
-        <Feather name="map" size={15} color={colors.primary} />
-        <Text style={[styles.guideText, { color: colors.foreground }]}>Your guide to export products from Pakistan</Text>
-        <Feather name="arrow-right" size={14} color={colors.accent} />
-      </Pressable>
-
       <ScrollView
         ref={featuredScrollRef}
         horizontal
@@ -621,7 +594,7 @@ export default function BuyerHomeHeader({
         onScrollBeginDrag={beginCarouselInteraction}
         onScrollEndDrag={resumeCarouselAfterDrag}
         onMomentumScrollEnd={event => settleCarousel(event.nativeEvent.contentOffset.x)}
-        style={{ marginHorizontal: -20 }}
+        style={{ marginHorizontal: -20, marginTop: 17 }}
         contentContainerStyle={{
           paddingLeft: heroSideInset,
           paddingRight: heroSideInset + heroCardOverlap,

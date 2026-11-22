@@ -140,6 +140,11 @@ test('screen and PDF branding share the transparent approved SVG mark', () => {
   assert.match(buyerHeader, /const brandSlides = \[/);
   assert.doesNotMatch(buyerHeader, /<Image\b/, 'brand banners do not use product imagery');
   assert.doesNotMatch(buyerHeader, /promoAction|slide\.action/, 'brand banners do not show a product-browse button');
+  assert.doesNotMatch(
+    buyerHeader,
+    /Your guide to export products from Pakistan|buyer-home-catalogue-guide/,
+    'the buyer homepage omits the export guide banner',
+  );
   assert.match(buyerHeader, /}, 7000\);/, 'brand slides auto-advance every seven seconds');
   assert.match(buyerHeader, /!isFocused \|\| reduceMotion \|\| carouselInteracting/, 'autoplay pauses when hidden, reduced-motion is enabled, or the user is swiping');
   assert.match(buyerHeader, /Animated\.spring\(progress/);
