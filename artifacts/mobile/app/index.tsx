@@ -1,16 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Image, Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BrandMark } from '@/components/BrandMark';
 import { useAuth } from '@/context/AuthContext';
 import { homeRouteForAccount } from '@/lib/account-role';
+import { OFFICIAL_MARK_ASPECT } from '@/lib/official-mark-svg';
 import { useColors } from '@/hooks/useColors';
 import { MOTION, useMotion } from '@/lib/motion';
 import * as SplashScreen from 'expo-splash-screen';
 
 const INTRO_MIN_DURATION = 5000;
-const MARK_ASPECT = 490 / 560;
+const MARK_ASPECT = 1 / OFFICIAL_MARK_ASPECT;
 
 export default function Entry() {
   const { ready, token, user, appUnlocked } = useAuth();
@@ -97,12 +99,7 @@ export default function Entry() {
       />
       <View style={styles.center}>
         <Animated.View style={{ opacity: markOpacity, transform: [{ scale: animate ? markScale : 1 }] }}>
-          <Image
-            accessible={false}
-            source={require('../assets/images/og-splash-mark.png')}
-            resizeMode="contain"
-            style={{ width: markWidth, height: markWidth * MARK_ASPECT }}
-          />
+          <BrandMark width={markWidth} onBackground="dark" />
         </Animated.View>
         <Animated.View style={[styles.textBlock, { width: textBlockWidth, opacity: textOpacity, transform: [{ translateY: animate ? textLift : 0 }] }]}>
           <Animated.Text

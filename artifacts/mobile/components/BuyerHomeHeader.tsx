@@ -2,13 +2,13 @@ import React, { useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
+import { BrandMark } from '@/components/BrandMark';
 import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/components/LocalizedText';
 import { useColors } from '@/hooks/useColors';
 import { first, record } from '@/lib/data';
 import { categoryName, displayPrice, rowsFromResponse } from '@/lib/buyer-data';
 
 type Product = ReturnType<typeof rowsFromResponse>[number];
-const officialLogo = require('../assets/images/og-official-mark.png');
 
 type Props = {
   products: Product[];
@@ -32,14 +32,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  brandBadge: {
-    width: 46,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    borderRadius: 10,
   },
   wordmark: {
     fontSize: 14,
@@ -214,14 +206,7 @@ export default function BuyerHomeHeader({
     <>
       <View style={styles.masthead}>
         <View style={styles.brandLockup}>
-          <View style={[styles.brandBadge, { backgroundColor: colors.balanceCardStart }]}>
-            <Image
-              source={officialLogo}
-              accessibilityLabel="OG Exports official logo"
-              resizeMode="contain"
-              style={{ width: 42, height: 30 }}
-            />
-          </View>
+          <BrandMark width={46} />
           <View>
             <Text style={[styles.wordmark, { color: colors.foreground }]}>OG Exports</Text>
             <Text style={[styles.mastheadSubtitle, { color: colors.mutedForeground }]}>BUYER MARKETPLACE</Text>
@@ -434,12 +419,7 @@ export default function BuyerHomeHeader({
             opacity: pressed ? 0.88 : 1,
           }]}
         >
-          <Image
-            source={officialLogo}
-            accessibilityLabel="OG Exports official logo"
-            resizeMode="contain"
-            style={{ width: 56, height: 40 }}
-          />
+          <BrandMark width={56} onBackground="dark" />
           <View style={{ flex: 1 }}>
             <Text style={[styles.featureCategory, { color: colors.accent }]}>OG EXPORTS</Text>
             <Text style={[styles.featureName, { color: colors.buttonForeground }]}>Explore the catalogue</Text>

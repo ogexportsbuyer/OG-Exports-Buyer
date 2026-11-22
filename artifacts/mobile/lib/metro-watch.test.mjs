@@ -25,7 +25,7 @@ test('Metro ignores generated validation copies and recovery files', () => {
 test('Metro retains app sources and shared workspace packages', () => {
   for (const relativePath of [
     'artifacts/mobile/app/index.tsx',
-    'artifacts/mobile/assets/images/og-splash-mark.png',
+    'artifacts/mobile/assets/images/og-official-mark.svg',
     'lib/api-client-react/src/index.ts',
     'node_modules/.pnpm/react@19.3.0/node_modules/react/index.js',
     'generated-artifacts-other/index.js',

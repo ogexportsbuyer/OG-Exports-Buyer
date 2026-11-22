@@ -115,22 +115,36 @@ test('official mobile launcher assets use properly sized approved-logo PNGs', ()
   assert.deepEqual(pngDimensions(config.web.favicon), [128, 128]);
 });
 
-test('approved OG vector draws the G layers after its background', () => {
+test('approved OG vector is transparent and cropped to the official mark', () => {
   const source = readFileSync(new URL('../assets/images/og-official-mark.svg', import.meta.url), 'utf8');
-  assert.match(source, /<g id="G">/);
-  assert.match(source, /<g id="Gout"/);
-  assert.match(source, /<rect width="1024" height="1024" fill="url\(#bg\)"\/>\s*<use href="#Gout"\/>\s*<use href="#G"\/>/);
+  assert.match(source, /viewBox="100 230 820 570"/);
+  assert.doesNotMatch(source, /<rect[^>]+fill=/);
+  assert.match(source, /stroke="#0A3335"/);
+  assert.match(source, /stroke="url\(#og-metal\)"/);
 });
 
-test('screen and PDF branding share the transparent approved splash mark', () => {
-  assert.deepEqual(pngDimensions('assets/images/og-official-mark.png'), [389, 270]);
+test('screen and PDF branding share the transparent approved SVG mark', () => {
   const component = readFileSync(new URL('../components/BrandMark.tsx', import.meta.url), 'utf8');
+  const svgSource = readFileSync(new URL('./official-mark-svg.ts', import.meta.url), 'utf8');
+  const buyerHeader = readFileSync(new URL('../components/BuyerHomeHeader.tsx', import.meta.url), 'utf8');
   const pdf = readFileSync(new URL('./pdf-export.ts', import.meta.url), 'utf8');
-  assert.ok(component.includes("require('../assets/images/og-official-mark.png')"));
+  const splash = readFileSync(new URL('../app/index.tsx', import.meta.url), 'utf8');
+  const splashAsset = readFileSync(new URL('../assets/images/og-splash.svg', import.meta.url), 'utf8');
+  assert.match(component, /SvgXml/);
+  assert.ok(component.includes('officialMarkSvg(surface'));
+  assert.equal(component.includes('og-official-mark.png'), false);
+  assert.match(svgSource, /viewBox="100 230 820 570"/);
+  assert.match(svgSource, /surface === 'dark'/);
+  assert.match(buyerHeader, /<BrandMark width=\{46\}/);
+  assert.match(buyerHeader, /<BrandMark width=\{56\} onBackground="dark"/);
+  assert.match(splash, /<BrandMark width=\{markWidth\} onBackground="dark"/);
+  assert.equal(splash.includes('og-splash-mark.png'), false);
+  assert.match(splashAsset, /href="\.\/og-official-mark\.svg"/);
+  assert.equal(splashAsset.includes('og-logo.png'), false);
   assert.ok(pdf.includes("import { officialPdfLogoDataUri } from './pdf-logo'"));
   assert.equal(pdf.includes('Asset.fromModule'), false);
   assert.equal(pdf.includes('.base64()'), false, 'PDF branding does not read the asset through a potentially relative native file URI');
-  for (const route of ['(auth)/login', '(auth)/register', 'lock', 'onboarding', '(tabs)/index']) {
+  for (const route of ['(auth)/login', '(auth)/register', 'lock', 'onboarding', '(tabs)/index', 'index']) {
     const source = readFileSync(new URL(`../app/${route}.tsx`, import.meta.url), 'utf8');
     assert.match(source, /<(?:BrandMark|AuthBrandHeader)\b/, `${route} uses shared approved branding`);
     assert.equal(source.includes('og-logo.png'), false, `${route} does not use the former logo`);
