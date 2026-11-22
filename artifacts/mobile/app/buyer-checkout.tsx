@@ -6,6 +6,7 @@ import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Action, Card, EmptyState, ErrorState, Field, LoadingCard, Screen } from '@/components/InvestorUI';
 import { BuyerAuthGate } from '@/components/BuyerAuthGate';
+import { BuyerRfqPicker, type BuyerRfqOption } from '@/components/BuyerRfqPicker';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import {
@@ -108,7 +109,6 @@ export default function BuyerCheckout() {
   const bankAccountsQuery = useGetBuyerBankAccounts({ query: { queryKey: getGetBuyerBankAccountsQueryKey(), enabled: Boolean(token), staleTime: 300_000 } });
   const [step, setStep] = useState<CheckoutStep>(1);
   const [countryId, setCountryId] = useState<number | null>(null);
-  const [countrySearch, setCountrySearch] = useState('');
   const [portId, setPortId] = useState<number | null>(null);
   const [portSearch, setPortSearch] = useState('');
   const [incoterm, setIncoterm] = useState('');
@@ -136,8 +136,12 @@ export default function BuyerCheckout() {
   const cartCurrency = first(cart, ['currency', 'currency_code'], 'USD').toUpperCase();
   const countries = rowsFromResponse(countriesQuery.data).filter(country => (amount(country, ['ports_count']) ?? 0) > 0);
   const ports = rowsFromResponse(portsQuery.data);
-  const visibleCountries = countries.filter(country => first(country, ['name']).toLowerCase().includes(countrySearch.trim().toLowerCase())).slice(0, 8);
   const visiblePorts = ports.filter(port => `${first(port, ['name'])} ${first(port, ['unlocode'])}`.toLowerCase().includes(portSearch.trim().toLowerCase())).slice(0, 8);
+  const countryOptions: BuyerRfqOption[] = countries.map(country => ({
+    value: first(country, ['id']),
+    label: first(country, ['name'], 'Country'),
+    keywords: `${first(country, ['code'])} ${first(country, ['iso2'])}`,
+  }));
   const incoterms = rowsFromResponse(incotermsQuery.data);
   const paymentMethods = rowsFromResponse(paymentMethodsQuery.data);
   const bankAccounts = rowsFromResponse(bankAccountsQuery.data);
@@ -165,23 +169,14 @@ export default function BuyerCheckout() {
     );
   }
 
-  function selectCountry(country: ReturnType<typeof record>) {
+  function selectCountry(countryIdValue: string) {
+    const country = countries.find(option => first(option, ['id']) === countryIdValue);
+    if (!country) return;
     const id = amount(country, ['id']);
     if (id === null) return;
     setCountryId(id);
-    setCountrySearch(first(country, ['name']));
     setPortId(null);
     setPortSearch('');
-    setError('');
-  }
-
-  function updateCountrySearch(value: string) {
-    setCountrySearch(value);
-    if (selectedCountry && value.trim().toLowerCase() !== first(selectedCountry, ['name']).toLowerCase()) {
-      setCountryId(null);
-      setPortId(null);
-      setPortSearch('');
-    }
     setError('');
   }
 
@@ -425,34 +420,19 @@ export default function BuyerCheckout() {
                 </View>
                 <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16 }}>Choose a destination and a future delivery date for these products.</Text>
 
-                <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '700', marginTop: 16, marginBottom: 8 }}>Destination country</Text>
                 {countriesQuery.isLoading ? <LoadingCard label="Loading countries…" lines={2} /> : null}
                 {countriesQuery.isError ? <ErrorState message="Destination countries could not be loaded." error={countriesQuery.error} onRetry={() => void countriesQuery.refetch()} /> : null}
                 {!countriesQuery.isLoading && !countriesQuery.isError && countries.length === 0 ? <EmptyState title="No destinations available" body="There are no countries with listed ports right now." icon="map-pin" /> : null}
                 {!countriesQuery.isLoading && !countriesQuery.isError && countries.length > 0 ? (
-                  <>
-                  <Field label="Search country" value={countrySearch} onChangeText={updateCountrySearch} placeholder="Type a country name" autoCapitalize="words" />
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
-                    {visibleCountries.map(country => {
-                      const id = amount(country, ['id']);
-                      const selected = id !== null && id === countryId;
-                      return (
-                        <Pressable
-                          key={String(id)}
-                          testID={`buyer-checkout-country-${id}`}
-                          accessibilityRole="button"
-                          accessibilityState={{ selected }}
-                          onPress={() => selectCountry(country)}
-                          style={{ minHeight: 38, paddingHorizontal: 12, borderRadius: 19, borderWidth: 1, borderColor: selected ? colors.accent : colors.border, backgroundColor: selected ? colors.lightGreen : colors.secondary, alignItems: 'center', justifyContent: 'center' }}
-                        >
-                          <Text style={{ color: selected ? colors.foreground : colors.mutedForeground, fontSize: 11, fontWeight: selected ? '800' : '600' }}>{first(country, ['name'], 'Country')}</Text>
-                        </Pressable>
-                      );
-                    })}
-                    {countrySearch.trim() && visibleCountries.length === 0 ? <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>No matching destination. Check the spelling or try another name.</Text> : null}
-                  </View>
-                  {!countrySearch.trim() ? <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 6 }}>Search to find another destination.</Text> : null}
-                  </>
+                  <BuyerRfqPicker
+                    label="Destination country"
+                    value={countryId === null ? '' : String(countryId)}
+                    options={countryOptions}
+                    placeholder="Search and select a country"
+                    testID="buyer-checkout-country"
+                    emptyMessage="No eligible destination country found."
+                    onSelect={selectCountry}
+                  />
                 ) : null}
 
                 {countryId !== null ? (

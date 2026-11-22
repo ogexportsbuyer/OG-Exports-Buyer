@@ -7,6 +7,7 @@ import {
 } from '@workspace/api-client-react';
 import { BuyerAuthGate } from '@/components/BuyerAuthGate';
 import { Action, Card, ErrorState, Field, LoadingCard, Screen } from '@/components/InvestorUI';
+import { CountryPicker } from '@/components/CountryPicker';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
@@ -73,7 +74,7 @@ export default function BuyerProfileDetails() {
         <Field label="Email address" value={email} onChangeText={() => undefined} editable={false} />
         <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginTop: -5, marginBottom: 8 }}>Email is your sign-in identity. Contact support if it needs to be changed.</Text>
         <Field label="Phone number" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-        <Field label="Country" value={country} onChangeText={setCountry} placeholder="Select or enter your country" />
+        <CountryPicker label="Country" value={country} onChange={setCountry} placeholder="Select country" testID="buyer-profile-country" />
         <Action title="Save profile" icon="save" loading={updateProfile.isPending} disabled={updateProfile.isPending} onPress={() => void save()} testID="buyer-profile-details-save" />
       </Card>
     </Screen>

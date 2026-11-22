@@ -39,6 +39,25 @@ test('KYC nationality uses its own controlled searchable picker, not a text fiel
   assert.match(source, /nationality: nationality\.trim\(\)/);
 });
 
+test('buyer destination and profile country fields use the searchable upward picker', () => {
+  const checkout = readFileSync(new URL('../app/buyer-checkout.tsx', import.meta.url), 'utf8');
+  const profile = readFileSync(new URL('../app/buyer-profile-details.tsx', import.meta.url), 'utf8');
+  const company = readFileSync(new URL('../app/buyer-company.tsx', import.meta.url), 'utf8');
+  const rfqPicker = readFileSync(new URL('../components/BuyerRfqPicker.tsx', import.meta.url), 'utf8');
+  const countryPicker = readFileSync(new URL('../components/CountryPicker.tsx', import.meta.url), 'utf8');
+
+  assert.match(checkout, /<BuyerRfqPicker[\s\S]*?label="Destination country"[\s\S]*?testID="buyer-checkout-country"/);
+  assert.doesNotMatch(checkout, /<Field label="Search country"/);
+  assert.match(profile, /<CountryPicker label="Country"/);
+  assert.match(profile, /testID="buyer-profile-country"/);
+  assert.match(company, /<CountryPicker label="Country"/);
+  assert.match(company, /testID="buyer-company-country"/);
+  assert.match(rfqPicker, /animationType="slide"/);
+  assert.match(rfqPicker, /justifyContent: 'flex-end'/);
+  assert.match(countryPicker, /animationType="slide"/);
+  assert.match(countryPicker, /justifyContent: 'flex-end'/);
+});
+
 test('nationality selections retain country labels and do not erase legacy saved nationalities', () => {
   assert.equal(countryLabelForValue('PK'), 'Pakistan');
   assert.equal(countryLabelForValue('Pakistan'), 'Pakistan');

@@ -18,6 +18,7 @@ import {
 } from '@workspace/api-client-react';
 import { BuyerAuthGate } from '@/components/BuyerAuthGate';
 import { Action, Card, ErrorState, Field, LoadingCard, Screen, Status } from '@/components/InvestorUI';
+import { CountryPicker } from '@/components/CountryPicker';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
@@ -273,7 +274,7 @@ export default function BuyerCompany() {
               <Field label="Business type" value={companyFields.business_type} onChangeText={business_type => setCompanyFields(value => ({ ...value, business_type }))} placeholder="Importer, distributor, manufacturer…" />
               <Field label="Annual purchase volume" value={companyFields.annual_volume} onChangeText={annual_volume => setCompanyFields(value => ({ ...value, annual_volume }))} />
               <Field label="Company website" value={companyFields.website} onChangeText={website => setCompanyFields(value => ({ ...value, website }))} autoCapitalize="none" />
-              <Field label="Country" value={companyFields.country} onChangeText={country => setCompanyFields(value => ({ ...value, country }))} />
+              <CountryPicker label="Country" value={companyFields.country} onChange={country => setCompanyFields(value => ({ ...value, country }))} placeholder="Select country" testID="buyer-company-country" />
               <Field label="City" value={companyFields.city} onChangeText={city => setCompanyFields(value => ({ ...value, city }))} />
               <Field label="Business address" value={companyFields.address} onChangeText={address => setCompanyFields(value => ({ ...value, address }))} multiline />
               <Action title="Save company details" icon="save" loading={saveCompany.isPending} onPress={() => void saveCompanyDetails()} testID="buyer-company-save" />

@@ -15,6 +15,12 @@ Keep the cart as a root-stack route at `/buyer-cart`, not as a route inside the 
 
 **How to apply:** When adding buyer routes without a bottom-tab item, register them in the root Stack and keep their canonical route outside `(buyer-tabs)`.
 
+Country selection throughout the buyer journey should use a searchable bottom sheet rather than free-text inputs or inline chips. Checkout destinations must remain limited to countries with available ports.
+
+**Why:** The user requested the same upward country selector anywhere a country must be selected, matching the RFQ flow.
+
+**How to apply:** Use the existing bottom-sheet country pickers for buyer profile and company fields; use the RFQ-style picker for API-backed checkout destinations, preserving country IDs and port filtering.
+
 The Replit browser preview cannot read the production catalogue because the API does not allow that preview origin via CORS, although the public catalogue endpoints respond successfully to direct requests.
 
 **Why:** Browser preview requests are subject to CORS; native iOS and Android requests are not.
