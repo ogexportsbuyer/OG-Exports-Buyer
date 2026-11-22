@@ -160,7 +160,7 @@ export function BuyerProductCard({
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginTop: 13, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '700', letterSpacing: 0.6 }}>FOB PRICE</Text>
+            <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '700', letterSpacing: 0.6 }}>PRODUCT PRICE</Text>
             <Text style={{ color: colors.primary, fontSize: 15, fontWeight: '800', marginTop: 3 }}>{displayPrice(product)}</Text>
           </View>
           {minimumOrder ? (

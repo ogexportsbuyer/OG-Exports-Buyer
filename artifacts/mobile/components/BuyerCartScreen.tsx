@@ -11,11 +11,7 @@ import { useColors } from '@/hooks/useColors';
 import { useGetBuyerCart, useRemoveBuyerCartItem, useUpdateBuyerCartItem, getGetBuyerCartQueryKey } from '@workspace/api-client-react';
 import { amount, first, list, messageOf, record } from '@/lib/data';
 import { buyerCartItemMinimumQuantity, nextBuyerCartQuantity } from '@/lib/buyer-cart-flow';
-
-function money(value: number, currency = 'USD'): string {
-  const code = /^[A-Z]{3}$/.test(currency) ? currency : 'USD';
-  return `${code} ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
+import { formatFobPrice } from '@/lib/format-fob-price';
 
 function CartThumbnail({ uri, label }: { uri: string; label: string }) {
   const colors = useColors();
@@ -157,7 +153,7 @@ export default function BuyerCartScreen() {
                   {first(product, ['sku']) ? ` · ${first(product, ['sku'])}` : ''}
                 </Text>
                 <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700', marginTop: 7 }}>
-                  {unitPrice > 0 ? `${money(unitPrice, cartCurrency)} per unit` : 'Price confirmed by OG Exports'}
+                  {unitPrice > 0 ? `${formatFobPrice(unitPrice, cartCurrency)} per unit` : 'Price confirmed by OG Exports'}
                 </Text>
               </View>
             </View>
@@ -189,7 +185,7 @@ export default function BuyerCartScreen() {
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={{ color: colors.mutedForeground, fontSize: 10, textTransform: 'uppercase' }}>Line total</Text>
                 <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '700', marginTop: 3 }}>
-                  {subtotal > 0 ? money(subtotal, cartCurrency) : 'Quote required'}
+                  {subtotal > 0 ? formatFobPrice(subtotal, cartCurrency) : 'Quote required'}
                 </Text>
               </View>
             </View>
@@ -242,7 +238,7 @@ export default function BuyerCartScreen() {
           <Card style={{ padding: 17, marginTop: 4 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14 }}>
               <Text style={{ color: colors.mutedForeground }}>Estimated subtotal</Text>
-              <Text style={{ color: colors.foreground, fontWeight: '700' }}>{total > 0 ? money(total, cartCurrency) : 'Final price by quotation'}</Text>
+              <Text style={{ color: colors.foreground, fontWeight: '700' }}>{total > 0 ? formatFobPrice(total, cartCurrency) : 'Final price by quotation'}</Text>
             </View>
             {items.some(item => (amount(item, ['unit_price']) ?? 0) <= 0) ? (
               <Text style={{ color: colors.accent, fontSize: 11, fontWeight: '600', marginBottom: 10 }}>

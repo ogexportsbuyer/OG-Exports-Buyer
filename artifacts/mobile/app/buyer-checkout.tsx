@@ -29,6 +29,7 @@ import {
 } from '@workspace/api-client-react';
 import { amount, first, list, messageOf, record } from '@/lib/data';
 import { rowsFromResponse } from '@/lib/buyer-data';
+import { formatFobPrice } from '@/lib/format-fob-price';
 import {
   buildBuyerOrderNotes,
   formatBuyerDeliveryDateInput,
@@ -39,11 +40,6 @@ type CheckoutStep = 1 | 2 | 3;
 type CheckoutComplete =
   | { kind: 'order'; reference: string; orderId?: string }
   | { kind: 'quotation'; references: string[] };
-
-function money(value: number, currency = 'USD') {
-  const code = /^[A-Z]{3}$/.test(currency) ? currency : 'USD';
-  return `${code} ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
 
 function strings(value: unknown) {
   return Array.isArray(value)
@@ -526,13 +522,13 @@ export default function BuyerCheckout() {
                       <Text style={{ color: colors.mutedForeground, flex: 1, fontSize: 11 }}>
                         {first(product, ['name'], first(item, ['product_name'], 'Export product'))} × {quantity}
                       </Text>
-                      <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>{unitPrice > 0 ? money(quantity * unitPrice, cartCurrency) : 'Quote'}</Text>
+                      <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>{unitPrice > 0 ? formatFobPrice(quantity * unitPrice, cartCurrency) : 'Quote'}</Text>
                     </View>
                   );
                 })}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.border, marginTop: 13, paddingTop: 11 }}>
                   <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '800' }}>Estimated subtotal</Text>
-                  <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '800' }}>{subtotal > 0 ? money(subtotal, cartCurrency) : 'Price by quotation'}</Text>
+                  <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '800' }}>{subtotal > 0 ? formatFobPrice(subtotal, cartCurrency) : 'Price by quotation'}</Text>
                 </View>
                 {hasUnpricedItems ? <Text style={{ color: colors.accent, fontSize: 10, lineHeight: 15, marginTop: 8 }}>Some products need a confirmed price. Use a non-FOB term to send a quotation request.</Text> : null}
               </Card>
@@ -692,13 +688,13 @@ export default function BuyerCheckout() {
                         <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>{first(product, ['name'], first(item, ['product_name'], 'Export product'))}</Text>
                         <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 3 }}>Quantity: {quantity}</Text>
                       </View>
-                      <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>{unitPrice > 0 ? money(quantity * unitPrice, cartCurrency) : 'Quote'}</Text>
+                      <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>{unitPrice > 0 ? formatFobPrice(quantity * unitPrice, cartCurrency) : 'Quote'}</Text>
                     </View>
                   );
                 })}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.border, marginTop: 13, paddingTop: 11 }}>
                   <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '800' }}>Estimated subtotal</Text>
-                  <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '800' }}>{money(subtotal, cartCurrency)}</Text>
+                  <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '800' }}>{formatFobPrice(subtotal, cartCurrency)}</Text>
                 </View>
                 <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginTop: 7 }}>Freight and any final adjustments are confirmed separately. No money is transferred by placing this order.</Text>
               </Card>

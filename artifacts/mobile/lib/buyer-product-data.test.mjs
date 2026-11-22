@@ -1,6 +1,33 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import { buyerProductSpecs, buyerProductValues } from './buyer-product-data.ts';
+import { formatFobPrice } from './format-fob-price.ts';
+
+test('catalogue product prices display their FOB basis and quote-only products stay unpriced', () => {
+  assert.equal(formatFobPrice(1680, 'PKR'), 'FOB · PKR 1,680');
+  assert.equal(formatFobPrice(1680, 'invalid'), 'FOB · USD 1,680');
+  const buyerData = readFileSync(new URL('./buyer-data.ts', import.meta.url), 'utf8');
+  assert.match(buyerData, /return formatFobPrice\(price, first\(product, \['currency'\], 'USD'\)\)/);
+  assert.match(buyerData, /return 'Request a quote'/);
+});
+
+test('buyer product price surfaces consistently show the FOB basis', () => {
+  const homeCatalog = readFileSync(new URL('../components/BuyerHomeCatalog.tsx', import.meta.url), 'utf8');
+  const productCard = readFileSync(new URL('../components/BuyerProductCard.tsx', import.meta.url), 'utf8');
+  const productDetails = readFileSync(new URL('../app/buyer-product/[id].tsx', import.meta.url), 'utf8');
+  const cart = readFileSync(new URL('../components/BuyerCartScreen.tsx', import.meta.url), 'utf8');
+  const checkout = readFileSync(new URL('../app/buyer-checkout.tsx', import.meta.url), 'utf8');
+  const quotation = readFileSync(new URL('../app/buyer-quotation/[id].tsx', import.meta.url), 'utf8');
+
+  assert.match(homeCatalog, /displayPrice\(product\)/);
+  assert.match(productCard, /PRODUCT PRICE/);
+  assert.match(productCard, /displayPrice\(product\)/);
+  assert.match(productDetails, /displayPrice\(product\)/);
+  assert.match(cart, /formatFobPrice\(/);
+  assert.match(checkout, /formatFobPrice\(/);
+  assert.match(quotation, /FOB unit price:/);
+});
 
 test('product specs keep only complete label and value pairs', () => {
   assert.deepEqual(buyerProductSpecs({

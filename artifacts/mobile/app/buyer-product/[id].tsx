@@ -280,7 +280,7 @@ export default function BuyerProductDetails() {
 
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
             <Card style={{ flex: 1, marginBottom: 0, padding: 14, borderRadius: 18, backgroundColor: colors.glassTintGold }}>
-              <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '800', letterSpacing: 0.8 }}>FOB PRICE</Text>
+              <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '800', letterSpacing: 0.8 }}>PRODUCT PRICE</Text>
               <Text style={{ color: colors.primary, fontSize: 16, lineHeight: 21, fontWeight: '800', marginTop: 5 }}>{displayPrice(product)}</Text>
             </Card>
             <Card style={{ flex: 1, marginBottom: 0, padding: 14, borderRadius: 18 }}>

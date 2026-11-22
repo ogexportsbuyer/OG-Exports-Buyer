@@ -39,6 +39,12 @@ The buyer home should follow the user's marketplace reference: a centered swipea
 
 **How to apply:** Build the home from live catalog data and keep the reference's visual hierarchy without copying another marketplace's brand or fabricating content.
 
+Whenever the buyer app displays a real product price, identify its FOB basis alongside the amount across catalog cards, product details, cart and checkout summaries.
+
+**Why:** The user explicitly asked for `FOB` to appear with product prices on the homepage and anywhere else they are shown.
+
+**How to apply:** Keep the shared FOB formatter for product and cart price displays; leave quote-only products as “Request a quote” rather than showing a fabricated amount.
+
 An FOB order must not be placed when any cart item has no positive, confirmed price; guide the buyer to request a quotation instead.
 
 **Why:** The backend treats a missing product price as zero, which could otherwise create a confirmed zero-value order.
