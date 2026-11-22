@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useAppPreferences } from '@/context/AppPreferencesContext';
 import { translateUi } from '@/lib/strings';
-import { MOTION, useMotion } from '@/lib/motion';
+import { useMotion } from '@/lib/motion';
 import { TabBarBehaviorProvider, useTabBarBehavior } from '@/context/TabBarBehaviorContext';
 import { GlassLayers } from '@/components/GlassSurface';
 
@@ -38,56 +38,20 @@ function BuyerTabIcon({
   isDashboard: boolean;
 }) {
   const colors = useColors();
-  const { reduceMotion } = useMotion();
-  const progress = React.useRef(new Animated.Value(focused ? 1 : 0)).current;
-
-  React.useEffect(() => {
-    if (reduceMotion) {
-      progress.setValue(focused ? 1 : 0);
-      return;
-    }
-    Animated.timing(progress, {
-      toValue: focused ? 1 : 0,
-      duration: MOTION.micro,
-      useNativeDriver: true,
-    }).start();
-  }, [focused, progress, reduceMotion]);
-
-  const iconColor = focused ? colors.primary : colors.mutedForeground;
+  const iconColor = focused ? colors.accent : colors.mutedForeground;
   const icon = Platform.OS === 'ios' && !isDashboard
     ? <SymbolView name={focused ? iosSelectedName : iosName} tintColor={iconColor} size={22} />
     : <Feather name={featherName as React.ComponentProps<typeof Feather>['name']} size={21} color={iconColor} />;
 
-  return (
-    <View style={styles.tabIconFrame}>
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.selectedTabIconBackdrop,
-          {
-            backgroundColor: colors.lightGreen,
-            borderColor: colors.primary,
-            opacity: progress,
-            transform: [{ scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.84, 1] }) }],
-          },
-        ]}
-      />
-      {icon}
-    </View>
-  );
+  return <View style={styles.tabIconFrame}>{icon}</View>;
 }
 
 const styles = StyleSheet.create({
   tabIconFrame: {
     width: 44,
-    height: 32,
+    height: 26,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  selectedTabIconBackdrop: {
-    ...StyleSheet.absoluteFill,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
   },
 });
 
@@ -98,9 +62,9 @@ function NativeLayout() {
   const t = (value: string) => translateUi(value, preferences.language);
   return (
     <NativeTabs
-      tintColor={colors.primary}
-      iconColor={{ default: colors.mutedForeground, selected: colors.primary }}
-      labelStyle={{ default: { color: colors.mutedForeground }, selected: { color: colors.primary, fontWeight: '600' } }}
+      tintColor={colors.accent}
+      iconColor={{ default: colors.mutedForeground, selected: colors.accent }}
+      labelStyle={{ default: { color: colors.mutedForeground }, selected: { color: colors.accent, fontWeight: '600' } }}
       backgroundColor={colors.card}
       hidden={!visible}
       minimizeBehavior="never"
@@ -140,7 +104,7 @@ function ClassicLayout() {
   return (
     <Tabs screenOptions={{
       headerShown: false,
-      tabBarActiveTintColor: colors.primary,
+      tabBarActiveTintColor: colors.accent,
       tabBarInactiveTintColor: colors.mutedForeground,
       tabBarStyle: {
         position: 'absolute', left: 14, right: 14,
