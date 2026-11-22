@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import { BrandMark } from '@/components/BrandMark';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Action, Card, Screen } from '@/components/InvestorUI';
 import { BuyerAuthGate } from '@/components/BuyerAuthGate';
@@ -53,6 +54,82 @@ const accountSections = [
   },
 ] as const;
 
+const profileCardStyles = StyleSheet.create({
+  accent: {
+    height: 3,
+    width: '100%',
+  },
+  content: {
+    padding: 18,
+  },
+  brandLockup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  brandName: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
+  brandCaption: {
+    marginTop: 3,
+    fontSize: 8,
+    fontWeight: '700',
+    letterSpacing: 1.1,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: 16,
+  },
+  identity: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  avatarFrame: {
+    width: 68,
+    height: 68,
+    borderRadius: 23,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatar: {
+    width: 54,
+    height: 54,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  details: {
+    flex: 1,
+    minWidth: 0,
+  },
+  overline: {
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 1.15,
+    marginBottom: 4,
+  },
+  name: {
+    fontSize: 19,
+    lineHeight: 24,
+    fontWeight: '700',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginTop: 7,
+  },
+  metaText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+});
+
 export default function BuyerProfile() {
   const colors = useColors();
   const { token, user, signOut } = useAuth();
@@ -101,13 +178,41 @@ export default function BuyerProfile() {
 
   return (
     <Screen title="Profile" subtitle="Your OG Exports buyer account">
-      <Card style={{ padding: 19, marginBottom: 18 }}>
-        <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: colors.lightGreen, alignItems: 'center', justifyContent: 'center', marginBottom: 13 }}>
-          <Feather name="user" size={24} color={colors.primary} />
+      <Card testID="buyer-profile-identity-card" style={{ padding: 0, marginBottom: 18 }}>
+        <View style={[profileCardStyles.accent, { backgroundColor: colors.accent }]} />
+        <View style={profileCardStyles.content}>
+          <View style={profileCardStyles.brandLockup}>
+            <BrandMark width={42} />
+            <View>
+              <Text style={[profileCardStyles.brandName, { color: colors.foreground }]}>OG EXPORTS</Text>
+              <Text style={[profileCardStyles.brandCaption, { color: colors.accent }]}>BUYER ACCOUNT</Text>
+            </View>
+          </View>
+          <View style={[profileCardStyles.divider, { backgroundColor: colors.glassEdge }]} />
+          <View style={profileCardStyles.identity}>
+            <View style={[profileCardStyles.avatarFrame, { backgroundColor: colors.glassTintTeal, borderColor: colors.glassBorder }]}>
+              <View style={[profileCardStyles.avatar, { backgroundColor: colors.lightGreen }]}>
+                <Feather name="user" size={25} color={colors.primary} />
+              </View>
+            </View>
+            <View style={profileCardStyles.details}>
+              <Text style={[profileCardStyles.overline, { color: colors.accent }]}>ACCOUNT HOLDER</Text>
+              <Text numberOfLines={2} style={[profileCardStyles.name, { color: colors.foreground }]}>{displayName}</Text>
+              {company ? (
+                <View style={profileCardStyles.metaRow}>
+                  <Feather name="briefcase" size={13} color={colors.mutedForeground} />
+                  <Text numberOfLines={1} style={[profileCardStyles.metaText, { color: colors.mutedForeground }]}>{company}</Text>
+                </View>
+              ) : null}
+              {email ? (
+                <View style={profileCardStyles.metaRow}>
+                  <Feather name="mail" size={13} color={colors.mutedForeground} />
+                  <Text numberOfLines={1} style={[profileCardStyles.metaText, { color: colors.mutedForeground }]}>{email}</Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
         </View>
-        <Text style={{ color: colors.foreground, fontSize: 18, fontWeight: '700' }}>{displayName}</Text>
-        {company ? <Text style={{ color: colors.mutedForeground, marginTop: 5 }}>{company}</Text> : null}
-        {email ? <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 6 }}>{email}</Text> : null}
       </Card>
 
       {accountSections.map(section => (

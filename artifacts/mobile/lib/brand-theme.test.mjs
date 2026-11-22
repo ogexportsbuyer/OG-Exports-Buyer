@@ -197,3 +197,13 @@ test('login and registration use the same brand sizing and approved logo compone
     assert.match(source, /<AuthBrandHeader\s*\/>/);
   }
 });
+
+test('buyer profile identity card uses the official mark and branded account hierarchy', () => {
+  const profile = readFileSync(new URL('../app/(buyer-tabs)/buyer-profile.tsx', import.meta.url), 'utf8');
+  assert.match(profile, /testID="buyer-profile-identity-card"/);
+  assert.match(profile, /<BrandMark width=\{42\}/);
+  assert.match(profile, /BUYER ACCOUNT/);
+  assert.match(profile, /ACCOUNT HOLDER/);
+  assert.match(profile, /name="mail"/);
+  assert.match(profile, /name="briefcase"/);
+});
