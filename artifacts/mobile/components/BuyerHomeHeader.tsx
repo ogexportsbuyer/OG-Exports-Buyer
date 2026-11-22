@@ -24,9 +24,9 @@ const brandSlides = [
     title: 'Pakistan’s exports, clearly presented.',
     body: 'Explore current products, origin and trade information in one place.',
     icon: 'globe' as const,
-    backgroundColors: ['#08383B', '#155B5A'] as const,
-    iconColors: ['#2A6663', '#0B393A'] as const,
-    accent: '#E2C47A',
+    backgroundColors: ['#07363A', '#0F6260'] as const,
+    iconColors: ['#2A716C', '#0A3335'] as const,
+    accent: '#E6C77D',
   },
   {
     id: 'catalogue',
@@ -34,9 +34,9 @@ const brandSlides = [
     title: 'A clearer way to discover products.',
     body: 'Review specifications, packaging and order details before you enquire.',
     icon: 'search' as const,
-    backgroundColors: ['#142840', '#2B4E69'] as const,
-    iconColors: ['#456A83', '#172B42'] as const,
-    accent: '#E8CB83',
+    backgroundColors: ['#112744', '#2B5D82'] as const,
+    iconColors: ['#477A9A', '#132D49'] as const,
+    accent: '#E7CD8A',
   },
   {
     id: 'support',
@@ -44,9 +44,9 @@ const brandSlides = [
     title: 'Product details. Trade support.',
     body: 'Browse the catalogue, then contact our team when you are ready.',
     icon: 'message-circle' as const,
-    backgroundColors: ['#123D34', '#28715B'] as const,
-    iconColors: ['#43806C', '#15463A'] as const,
-    accent: '#E4C47A',
+    backgroundColors: ['#123C2D', '#2C7956'] as const,
+    iconColors: ['#438C68', '#174832'] as const,
+    accent: '#E4C27A',
   },
 ] as const;
 
@@ -74,8 +74,8 @@ function BrandSlideMotion({
     return () => animation.stop();
   }, [active, progress, reduceMotion]);
 
-  const scale = progress.interpolate({ inputRange: [0, 1], outputRange: [0.88, 1] });
-  const opacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0.48, 1] });
+  const scale = progress.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] });
+  const opacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0.72, 1] });
 
   return (
     <Animated.View style={[style, { opacity, transform: [{ scale }] }]}>
