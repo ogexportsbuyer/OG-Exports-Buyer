@@ -158,20 +158,20 @@ export default function BuyerOrders() {
           const product = first(row, ['product_name'], first(record(row.product), ['name'], 'Product quotation'));
           return (
             <Pressable key={id} testID={`buyer-rfq-${id}`} accessibilityRole="button" onPress={() => /^\d+$/.test(id) && router.push(`/buyer-rfq/${id}`)}>
-            <Card style={{ padding: 16, marginBottom: 11 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '700' }}>{reference}</Text>
-                  <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 4 }}>{product}</Text>
+              <Card style={{ padding: 16, marginBottom: 11 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '700' }}>{reference}</Text>
+                    <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 4 }}>{product}</Text>
+                  </View>
+                  <Status value={first(row, ['status'], 'Pending')} />
                 </View>
-                <Status value={first(row, ['status'], 'Pending')} />
-              </View>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-                {first(row, ['qty']) ? <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Quantity: {first(row, ['qty'])}</Text> : null}
-                {first(row, ['incoterm']) ? <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Term: {first(row, ['incoterm'])}</Text> : null}
-                {first(row, ['destination']) ? <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Destination: {first(row, ['destination'])}</Text> : null}
-              </View>
-            </Card>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                  {first(row, ['qty']) ? <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Quantity: {first(row, ['qty'])}</Text> : null}
+                  {first(row, ['incoterm']) ? <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Term: {first(row, ['incoterm'])}</Text> : null}
+                  {first(row, ['destination']) ? <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Destination: {first(row, ['destination'])}</Text> : null}
+                </View>
+              </Card>
             </Pressable>
           );
         }

@@ -35,16 +35,16 @@ const heroActions = [
 const alertRoutes: Record<string, string> = {
   shipment: '/buyer-shipments',
   rfq: '/buyer-rfq',
-  quotation: '/(buyer-tabs)/buyer-orders',
-  order: '/(buyer-tabs)/buyer-orders',
+  quotation: '/buyer-orders?view=quotations',
+  order: '/buyer-orders',
 };
 
 const activityRoutes: Record<string, string> = {
   rfq: '/buyer-rfq',
-  quotation: '/(buyer-tabs)/buyer-orders',
-  quotation_accepted: '/(buyer-tabs)/buyer-orders',
-  order: '/(buyer-tabs)/buyer-orders',
-  order_delivered: '/(buyer-tabs)/buyer-orders',
+  quotation: '/buyer-orders?view=quotations',
+  quotation_accepted: '/buyer-orders?view=quotations',
+  order: '/buyer-orders',
+  order_delivered: '/buyer-orders',
   shipment: '/buyer-shipments',
   document: '/buyer-documents',
 };
@@ -436,7 +436,7 @@ function BuyerOverviewContent() {
 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9, marginTop: 6 }}>
             <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800' }}>Trade activity</Text>
-            <Pressable accessibilityRole="button" onPress={() => router.push('/(buyer-tabs)/buyer-orders')}>
+            <Pressable accessibilityRole="button" onPress={() => router.push('/buyer-orders')}>
               <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '800' }}>View orders</Text>
             </Pressable>
           </View>
@@ -444,7 +444,7 @@ function BuyerOverviewContent() {
             const type = first(item, ['type'], 'order');
             const icon = type === 'rfq' ? 'file-plus' : type.includes('quotation') ? 'file-text' : type === 'shipment' ? 'truck' : type === 'document' ? 'folder' : 'shopping-bag';
             return (
-              <Pressable key={`${type}-${first(item, ['at'], String(index))}`} accessibilityRole="button" onPress={() => navigateTo(activityRoutes[type] || '/(buyer-tabs)/buyer-orders')}>
+              <Pressable key={`${type}-${first(item, ['at'], String(index))}`} accessibilityRole="button" onPress={() => navigateTo(activityRoutes[type] || '/buyer-orders')}>
                 <Card style={{ padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
                   <View style={{ width: 31, height: 31, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }}>
                     <Feather name={icon} size={14} color={colors.primary} />

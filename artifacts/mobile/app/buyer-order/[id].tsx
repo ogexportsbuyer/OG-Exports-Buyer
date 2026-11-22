@@ -62,7 +62,7 @@ export default function BuyerOrderDetail() {
               client.invalidateQueries({ queryKey: getGetBuyerRfqsQueryKey() }),
               client.invalidateQueries({ queryKey: getGetBuyerRfqsQueryKey({ per_page: 50 }) }),
             ]);
-            router.replace({ pathname: '/(buyer-tabs)/buyer-orders', params: { view: 'rfqs' } });
+            router.replace({ pathname: '/buyer-orders', params: { view: 'rfqs' } });
           }).catch(error => setActionError(messageOf(error))),
         },
       ],

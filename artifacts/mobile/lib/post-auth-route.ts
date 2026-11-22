@@ -33,7 +33,7 @@ export type BuyerPostAuthHref =
   | '/(buyer-tabs)/buyer-products'
   | '/buyer-cart'
   | '/(buyer-tabs)/dashboard'
-  | '/(buyer-tabs)/buyer-orders'
+  | '/buyer-orders'
   | '/(buyer-tabs)/buyer-messages'
   | '/(buyer-tabs)/buyer-profile'
   | '/buyer-notifications'
@@ -52,6 +52,7 @@ export type BuyerPostAuthHref =
   | '/account/messages'
   | '/account/notifications'
   | { pathname: '/(buyer-tabs)/buyer-products'; params: { pendingProduct: string } }
+  | { pathname: '/buyer-orders'; params: { view: 'orders' | 'rfqs' | 'quotations' } }
   | { pathname: '/buyer-product/[id]'; params: { id: string } }
   | { pathname: '/buyer-rfq/[id]'; params: { id: string } }
   | { pathname: '/buyer-order/[id]'; params: { id: string } }
@@ -61,6 +62,14 @@ export type BuyerPostAuthHref =
 export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPostAuthHref {
   const value = Array.isArray(returnTo) ? returnTo[0] : returnTo;
   const path = value?.split('?', 1)[0] ?? '';
+  const query = value?.split('?', 2)[1] ?? '';
+  if (path === '/buyer-orders' || path === '/(buyer-tabs)/buyer-orders') {
+    const view = queryValue(query, 'view');
+    if (view === 'orders' || view === 'rfqs' || view === 'quotations') {
+      return { pathname: '/buyer-orders', params: { view } };
+    }
+    return '/buyer-orders';
+  }
   const productId = path.match(/^\/buyer-product\/(\d+)\/?$/)?.[1];
   if (productId && Number(productId) > 0) {
     return { pathname: '/buyer-product/[id]', params: { id: productId } };
@@ -81,7 +90,6 @@ export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPos
   if (shipmentId) {
     return { pathname: '/buyer-shipment/[id]', params: { id: shipmentId } };
   }
-  const query = value?.split('?', 2)[1] ?? '';
   const pendingProduct = queryValue(query, 'pendingProduct');
   if (['/buyer-products', '/(buyer-tabs)/buyer-products'].includes(path)
     && /^\d+$/.test(pendingProduct)
@@ -97,8 +105,7 @@ export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPos
     '/(buyer-tabs)/buyer-cart': '/buyer-cart',
     '/dashboard': '/(buyer-tabs)/dashboard',
     '/(buyer-tabs)/dashboard': '/(buyer-tabs)/dashboard',
-    '/buyer-orders': '/(buyer-tabs)/buyer-orders',
-    '/(buyer-tabs)/buyer-orders': '/(buyer-tabs)/buyer-orders',
+    '/buyer-orders': '/buyer-orders',
     '/buyer-messages': '/(buyer-tabs)/buyer-messages',
     '/(buyer-tabs)/buyer-messages': '/(buyer-tabs)/buyer-messages',
     '/buyer-profile': '/(buyer-tabs)/buyer-profile',
@@ -162,6 +169,7 @@ export function isBuyerAppRoute(firstSegment: string, pathname: string): boolean
     '(buyer-tabs)',
     'buyer-cart',
     'buyer-checkout',
+    'buyer-orders',
     'buyer-product',
     'buyer-order',
     'buyer-quotation',

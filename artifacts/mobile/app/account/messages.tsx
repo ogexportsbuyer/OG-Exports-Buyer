@@ -66,7 +66,7 @@ const buyerHelpTopics = [
     title: 'Orders & quotes',
     description: 'Review your order and quotation updates.',
     icon: 'clipboard',
-    href: '/(buyer-tabs)/buyer-orders',
+    href: '/buyer-orders',
   },
   {
     title: 'Cart',

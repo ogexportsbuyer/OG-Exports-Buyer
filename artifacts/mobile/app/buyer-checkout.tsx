@@ -341,7 +341,7 @@ export default function BuyerCheckout() {
           icon="arrow-right"
           onPress={() => {
             if (completion.kind === 'order' && completion.orderId) router.replace(`/buyer-order/${completion.orderId}`);
-            else router.replace({ pathname: '/(buyer-tabs)/buyer-orders', params: { view: isOrder ? 'orders' : 'rfqs' } });
+            else router.replace({ pathname: '/buyer-orders', params: { view: isOrder ? 'orders' : 'rfqs' } });
           }}
           testID="buyer-checkout-view-result"
         />

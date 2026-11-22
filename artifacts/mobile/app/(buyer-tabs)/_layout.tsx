@@ -162,7 +162,6 @@ function ClassicLayout() {
           ),
         }} />
       ))}
-      <Tabs.Screen name="buyer-orders" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -58,6 +58,15 @@ test('serializes legacy transaction route query details for post-auth navigation
 
 test('returns buyer sign-in to the requested marketplace destination', () => {
   assert.equal(resolveBuyerPostAuthHref('/buyer-cart'), '/buyer-cart');
+  assert.equal(resolveBuyerPostAuthHref('/buyer-orders'), '/buyer-orders');
+  assert.deepEqual(resolveBuyerPostAuthHref('/buyer-orders?view=quotations'), {
+    pathname: '/buyer-orders',
+    params: { view: 'quotations' },
+  });
+  assert.deepEqual(resolveBuyerPostAuthHref('/(buyer-tabs)/buyer-orders?view=rfqs'), {
+    pathname: '/buyer-orders',
+    params: { view: 'rfqs' },
+  });
   assert.equal(resolveBuyerPostAuthHref('/buyer-products?search=rice'), '/(buyer-tabs)/buyer-products');
   assert.deepEqual(resolveBuyerPostAuthHref('/buyer-product/42'), {
     pathname: '/buyer-product/[id]',
@@ -144,6 +153,7 @@ test('buyer app route allowlist blocks investor screens and permits buyer suppor
     '/buyer-notifications',
     '/buyer-repeat-orders',
     '/buyer-rfq',
+    '/buyer-orders',
     '/buyer-shipments',
     '/buyer-documents',
     '/buyer-trade-finance',
@@ -208,4 +218,15 @@ test('buyer bottom navigation places Dashboard before Messages and keeps home ca
   assert.match(dashboard, /if \(!isDashboardTab\) return <Redirect href="\/\(buyer-tabs\)\/dashboard" \/>/);
   assert.match(dashboard, /returnTo="\/\(buyer-tabs\)\/dashboard"/);
   assert.match(dashboardRoute, /export \{ default \} from '\.\.\/buyer-overview'/);
+});
+
+test('buyer Orders is a root-stack destination, not an untriggered tab route', () => {
+  const rootLayout = readFileSync(new URL('../app/_layout.tsx', import.meta.url), 'utf8');
+  const tabsLayout = readFileSync(new URL('../app/(buyer-tabs)/_layout.tsx', import.meta.url), 'utf8');
+  const profile = readFileSync(new URL('../app/(buyer-tabs)/buyer-profile.tsx', import.meta.url), 'utf8');
+  const orders = readFileSync(new URL('../app/buyer-orders.tsx', import.meta.url), 'utf8');
+  assert.match(rootLayout, /Stack\.Screen name="buyer-orders" options=\{\{ headerShown: false \}\}/);
+  assert.doesNotMatch(tabsLayout, /Tabs\.Screen name="buyer-orders"/);
+  assert.match(profile, /\['Orders & quotations', '\/buyer-orders'/);
+  assert.match(orders, /returnTo="\/buyer-orders"/);
 });

@@ -89,12 +89,12 @@ export default function BuyerHome() {
 
   function openOrders() {
     if (token) {
-      router.push('/(buyer-tabs)/buyer-orders');
+      router.push('/buyer-orders');
       return;
     }
     router.push({
       pathname: '/(auth)/login',
-      params: { returnTo: '/(buyer-tabs)/buyer-orders' },
+      params: { returnTo: '/buyer-orders' },
     });
   }
 

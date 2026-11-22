@@ -9,11 +9,11 @@ The OG Exports mobile app is buyer-only. Guests can browse the public catalogue;
 
 **How to apply:** Use the existing Laravel product, cart, quotation, and order APIs. Keep the catalogue public, enforce buyer-only actions with backend role protection, and do not replace real catalogue data with mock products.
 
-Keep the cart as a root-stack route at `/buyer-cart`, not as a route inside the native tab group. Home, product, profile, and message shortcuts should navigate to that root route.
+Keep cart and other non-tab buyer destinations, including Orders & quotations, as root-stack routes rather than untriggered routes inside the native tab group. Shortcuts should navigate to their canonical root routes.
 
 **Why:** Expo SDK 58 NativeTabs cannot navigate to hidden triggers, and an untriggered route inside the tab group can fall back to the default Home tab.
 
-**How to apply:** When adding buyer routes without a bottom-tab item, register them in the root Stack and keep their canonical route outside `(buyer-tabs)`.
+**How to apply:** When adding buyer routes without a bottom-tab item, register them in the root Stack and keep the route file outside `(buyer-tabs)`.
 
 Country selection throughout the buyer journey should use a searchable bottom sheet rather than free-text inputs or inline chips. Checkout destinations must remain limited to countries with available ports.
 

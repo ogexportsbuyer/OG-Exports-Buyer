@@ -119,7 +119,7 @@ export default function BuyerQuotationDetail() {
                 queryClient.invalidateQueries({ queryKey: getGetBuyerOrdersQueryKey() }),
                 queryClient.invalidateQueries({ queryKey: getGetBuyerRfqsQueryKey() }),
               ]);
-              if (accepting) router.replace('/(buyer-tabs)/buyer-orders');
+              if (accepting) router.replace('/buyer-orders');
             }).catch(error => setDecisionError(messageOf(error)));
           },
         },

@@ -40,7 +40,7 @@ const accountSections = [
       ['Product catalogue', '/(buyer-tabs)/buyer-products', 'grid'],
       ['My cart', '/buyer-cart', 'shopping-cart'],
       ['Request a quotation', '/buyer-rfq', 'file-plus'],
-      ['Orders & quotations', '/(buyer-tabs)/buyer-orders', 'package'],
+      ['Orders & quotations', '/buyer-orders', 'package'],
       ['Repeat orders', '/buyer-repeat-orders', 'rotate-ccw'],
     ],
   },
