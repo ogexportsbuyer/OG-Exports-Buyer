@@ -254,8 +254,8 @@ export default function BuyerHomeHeader({
   const hasCenteredCarousel = useRef(false);
   const carouselItems = [brandSlides[brandSlides.length - 1], ...brandSlides, brandSlides[0]];
   const heroCardWidth = Math.min(windowWidth * 0.76, 360);
-  const heroCardGap = 12;
-  const heroStep = heroCardWidth + heroCardGap;
+  const heroCardOverlap = 16;
+  const heroStep = heroCardWidth - heroCardOverlap;
   const heroSideInset = Math.max((windowWidth - heroCardWidth) / 2, 0);
 
   function centerInitialSlide() {
@@ -399,7 +399,11 @@ export default function BuyerHomeHeader({
         onLayout={centerInitialSlide}
         onMomentumScrollEnd={event => settleCarousel(event.nativeEvent.contentOffset.x)}
         style={{ marginHorizontal: -20 }}
-        contentContainerStyle={{ gap: heroCardGap, paddingHorizontal: heroSideInset, paddingBottom: 3 }}
+        contentContainerStyle={{
+          paddingLeft: heroSideInset,
+          paddingRight: heroSideInset + heroCardOverlap,
+          paddingBottom: 3,
+        }}
       >
         {carouselItems.map((slide, index) => {
           const isActive = carouselPosition === index;
@@ -409,61 +413,74 @@ export default function BuyerHomeHeader({
               ? 0
               : index - 1;
           return (
-            <Pressable
+            <View
               key={`${slide.id}-${index}`}
-              testID={`buyer-home-brand-slide-${slide.id}-${index}`}
-              accessibilityRole="button"
-              accessibilityLabel={`${slide.title} ${slide.body}`}
-              accessibilityState={{ selected: isActive }}
-              onPress={() => onBrowse()}
-              style={({ pressed }) => [styles.promoCard, {
-                width: heroCardWidth,
-                backgroundColor: colors.balanceCardStart,
-                borderColor: isActive ? colors.accent : colors.glassBorder,
-                opacity: pressed ? 0.95 : isActive ? 1 : 0.66,
-                transform: [{ scale: isActive ? 1 : 0.92 }],
-              }]}
+              style={{
+                width: heroStep,
+                zIndex: isActive ? 3 : 1,
+                elevation: isActive ? 8 : 2,
+                overflow: 'visible',
+              }}
             >
-              <LinearGradient
-                colors={[colors.balanceCardStart, colors.balanceCardEnd] as const}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFill}
-              />
-              <View style={styles.promoHeader}>
-                <View style={styles.promoBrandLockup}>
-                  <BrandMark width={37} onBackground="dark" />
-                  <View>
-                    <Text style={[styles.promoWordmark, { color: colors.splashText }]}>OG EXPORTS</Text>
-                    <Text style={[styles.promoSubmark, { color: colors.splashMuted }]}>PAKISTAN · GLOBAL TRADE</Text>
+              <Pressable
+                testID={`buyer-home-brand-slide-${slide.id}-${index}`}
+                accessibilityRole="button"
+                accessibilityLabel={`${slide.title} ${slide.body}`}
+                accessibilityState={{ selected: isActive }}
+                onPress={() => onBrowse()}
+                style={({ pressed }) => [styles.promoCard, {
+                  width: heroCardWidth,
+                  backgroundColor: colors.balanceCardStart,
+                  borderColor: isActive ? colors.accent : colors.glassBorder,
+                  opacity: pressed ? 0.95 : isActive ? 1 : 0.58,
+                  transform: [{ scale: isActive ? 1 : 0.92 }],
+                  shadowColor: colors.shadowColor,
+                  shadowOpacity: isActive ? 0.24 : 0.08,
+                  shadowRadius: isActive ? 16 : 7,
+                  shadowOffset: { width: 0, height: isActive ? 8 : 3 },
+                }]}
+              >
+                <LinearGradient
+                  colors={[colors.balanceCardStart, colors.balanceCardEnd] as const}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={styles.promoHeader}>
+                  <View style={styles.promoBrandLockup}>
+                    <BrandMark width={37} onBackground="dark" />
+                    <View>
+                      <Text style={[styles.promoWordmark, { color: colors.splashText }]}>OG EXPORTS</Text>
+                      <Text style={[styles.promoSubmark, { color: colors.splashMuted }]}>PAKISTAN · GLOBAL TRADE</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.promoIndex, { color: colors.splashMuted }]}>
+                    {String(realIndex + 1).padStart(2, '0')} / {String(brandSlides.length).padStart(2, '0')}
+                  </Text>
+                </View>
+
+                <View style={styles.promoBody}>
+                  <View style={styles.promoCopy}>
+                    <Text style={[styles.promoEyebrow, { color: colors.accent }]}>{slide.eyebrow}</Text>
+                    <Text numberOfLines={2} style={[styles.promoTitle, { color: colors.splashText }]}>{slide.title}</Text>
+                    <Text numberOfLines={2} style={[styles.promoDescription, { color: colors.splashMuted }]}>{slide.body}</Text>
+                  </View>
+                  <View style={[styles.promoArtwork, { borderColor: colors.glassBorder, backgroundColor: colors.glassFill }]}>
+                    <View style={[styles.promoArtworkInner, { borderColor: colors.glassBorder, backgroundColor: colors.glassTintTeal }]}>
+                      <Feather name={slide.icon} size={24} color={colors.accent} />
+                    </View>
                   </View>
                 </View>
-                <Text style={[styles.promoIndex, { color: colors.splashMuted }]}>
-                  {String(realIndex + 1).padStart(2, '0')} / {String(brandSlides.length).padStart(2, '0')}
-                </Text>
-              </View>
 
-              <View style={styles.promoBody}>
-                <View style={styles.promoCopy}>
-                  <Text style={[styles.promoEyebrow, { color: colors.accent }]}>{slide.eyebrow}</Text>
-                  <Text numberOfLines={2} style={[styles.promoTitle, { color: colors.splashText }]}>{slide.title}</Text>
-                  <Text numberOfLines={2} style={[styles.promoDescription, { color: colors.splashMuted }]}>{slide.body}</Text>
-                </View>
-                <View style={[styles.promoArtwork, { borderColor: colors.glassBorder, backgroundColor: colors.glassFill }]}>
-                  <View style={[styles.promoArtworkInner, { borderColor: colors.glassBorder, backgroundColor: colors.glassTintTeal }]}>
-                    <Feather name={slide.icon} size={24} color={colors.accent} />
+                <View style={styles.promoFooter}>
+                  <View style={[styles.promoAction, { borderColor: colors.glassBorder, backgroundColor: colors.glassFill }]}>
+                    <Text style={{ color: colors.splashText, fontSize: 9, fontWeight: '700' }}>{slide.action}</Text>
+                    <Feather name="arrow-right" size={12} color={colors.accent} />
                   </View>
+                  <Text style={{ color: colors.splashMuted, fontSize: 7, fontWeight: '700', letterSpacing: 0.8 }}>OG EXPORTS</Text>
                 </View>
-              </View>
-
-              <View style={styles.promoFooter}>
-                <View style={[styles.promoAction, { borderColor: colors.glassBorder, backgroundColor: colors.glassFill }]}>
-                  <Text style={{ color: colors.splashText, fontSize: 9, fontWeight: '700' }}>{slide.action}</Text>
-                  <Feather name="arrow-right" size={12} color={colors.accent} />
-                </View>
-                <Text style={{ color: colors.splashMuted, fontSize: 7, fontWeight: '700', letterSpacing: 0.8 }}>OG EXPORTS</Text>
-              </View>
-            </Pressable>
+              </Pressable>
+            </View>
           );
         })}
       </ScrollView>
