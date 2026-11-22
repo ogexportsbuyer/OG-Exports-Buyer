@@ -5,23 +5,30 @@ import { Platform } from 'react-native';
 import { getSavedToken } from '@/lib/api-config';
 import { saveHtmlAsPdf } from '@/lib/pdf-export';
 
-export async function shareInvestorFile(downloadUrl: string, name: string, origin: string, mimeType: string, extension: string, ensurePdf = false) {
+async function fetchAuthorizedFile(path: string, origin: string, mimeType: string) {
   if (!origin) throw new Error('The investor service is not configured for this app. Contact OG Exports support.');
   const token = await getSavedToken();
-  if (!token) throw new Error('Sign in again before downloading this file.');
+  if (!token) throw new Error('Sign in again before opening this file.');
 
-  const url = /^https?:\/\//i.test(downloadUrl)
-    ? downloadUrl
-    : `${origin.replace(/\/+$/, '')}/${downloadUrl.replace(/^\/+/, '')}`;
+  const url = /^https?:\/\//i.test(path)
+    ? path
+    : `${origin.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
   const response = await fetch(url, {
     headers: { Accept: mimeType, Authorization: `Bearer ${token}` },
   });
   if (!response.ok) {
     const message = await response.text().catch(() => '');
-    throw new Error(message || 'The report could not be downloaded.');
+    throw new Error(message || 'The document could not be opened.');
   }
+  return new Uint8Array(await response.arrayBuffer());
+}
 
-  const contents = new Uint8Array(await response.arrayBuffer());
+function safeFileName(name: string) {
+  return name.replace(/[^a-z0-9_-]/gi, '-').replace(/-+/g, '-').slice(0, 70) || 'og-exports-document';
+}
+
+export async function shareInvestorFile(downloadUrl: string, name: string, origin: string, mimeType: string, extension: string, ensurePdf = false) {
+  const contents = await fetchAuthorizedFile(downloadUrl, origin, mimeType);
   if (ensurePdf) {
     const signature = new TextDecoder().decode(contents.slice(0, 5));
     if (signature === '%PDF-') {
@@ -36,17 +43,17 @@ export async function shareInvestorFile(downloadUrl: string, name: string, origi
       return;
     }
   }
-  const safeName = name.replace(/[^a-z0-9_-]/gi, '-').replace(/-+/g, '-').slice(0, 70) || 'investor-report';
+  const fileName = safeFileName(name);
   if (Platform.OS === 'web') {
     const url = URL.createObjectURL(new Blob([contents], { type: mimeType }));
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${safeName}.${extension}`;
+    link.download = `${fileName}.${extension}`;
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     return;
   }
-  const file = new File(Paths.cache, `${safeName}.${extension}`);
+  const file = new File(Paths.cache, `${fileName}.${extension}`);
   file.create({ overwrite: true });
   file.write(contents);
 
@@ -54,4 +61,39 @@ export async function shareInvestorFile(downloadUrl: string, name: string, origi
     throw new Error('File sharing is not available on this device.');
   }
   await Sharing.shareAsync(file.uri, { mimeType, dialogTitle: name });
+}
+
+export async function openInvestorFile(path: string, name: string, origin: string, mimeType: string, extension: string) {
+  // Reserve a browser tab on the click before awaiting the authenticated request.
+  const popup = Platform.OS === 'web' ? window.open('', '_blank') : null;
+  if (popup) {
+    popup.document.title = 'Loading document…';
+    popup.document.body.textContent = 'Loading document…';
+  }
+
+  try {
+    const contents = await fetchAuthorizedFile(path, origin, mimeType);
+    if (Platform.OS === 'web') {
+      const url = URL.createObjectURL(new Blob([contents], { type: mimeType }));
+      if (!popup || popup.closed) {
+        URL.revokeObjectURL(url);
+        throw new Error('The document preview was blocked. Allow pop-ups and try again.');
+      }
+      popup.location.href = url;
+      popup.document.title = name;
+      window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
+      return;
+    }
+
+    const file = new File(Paths.cache, `${safeFileName(name)}.${extension}`);
+    file.create({ overwrite: true });
+    file.write(contents);
+    if (!(await Sharing.isAvailableAsync())) {
+      throw new Error('Document preview is not available on this device.');
+    }
+    await Sharing.shareAsync(file.uri, { mimeType, dialogTitle: name });
+  } catch (error) {
+    popup?.close();
+    throw error;
+  }
 }

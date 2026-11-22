@@ -1,114 +1,114 @@
-import React, { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import React, { useMemo } from 'react';
+import { View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { getGetBuyerShipmentQueryKey, useGetBuyerShipment } from '@workspace/api-client-react';
 import { BuyerAuthGate } from '@/components/BuyerAuthGate';
-import { Card, ErrorState, LoadingCard, Screen, Status } from '@/components/InvestorUI';
+import { Action, Card, EmptyState, ErrorState, LoadingCard, Screen, Status } from '@/components/InvestorUI';
+import { BuyerShipmentDocuments } from '@/components/BuyerShipmentDocuments';
+import { BuyerShipmentTimeline } from '@/components/BuyerShipmentTimeline';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
-import { shareInvestorFile } from '@/lib/file-download';
-import { first, list, messageOf, record } from '@/lib/data';
+import { record } from '@/lib/data';
+import { mapBuyerShipment } from '@/lib/buyer-shipment-data';
 
 export default function BuyerShipmentDetail() {
   const colors = useColors();
-  const { token, apiOrigin } = useAuth();
+  const { token } = useAuth();
   const { id: rawId } = useLocalSearchParams<{ id: string | string[] }>();
   const routeId = Array.isArray(rawId) ? rawId[0] : rawId;
   const id = Number(routeId);
   const validId = Number.isInteger(id) && id > 0;
-  const [downloadError, setDownloadError] = useState('');
   const query = useGetBuyerShipment(validId ? id : 0, {
     query: { queryKey: getGetBuyerShipmentQueryKey(validId ? id : 0), enabled: !!token && validId },
   });
-  const shipment = record(record(query.data).data);
-  const order = record(shipment.order);
-  const milestones = list(shipment.milestones).sort((a, b) => {
-    const firstTime = Date.parse(first(a, ['event_date', 'created_at'], ''));
-    const secondTime = Date.parse(first(b, ['event_date', 'created_at'], ''));
-    return Number.isFinite(firstTime) && Number.isFinite(secondTime) ? firstTime - secondTime : 0;
-  });
-  const documents = list(shipment.trade_documents ?? shipment.tradeDocuments);
-
-  async function downloadDocument(document: Record<string, unknown>) {
-    setDownloadError('');
-    const title = first(document, ['title', 'type'], 'Trade document');
-    const path = first(document, ['download_url']);
-    const mime = first(document, ['mime'], 'application/octet-stream');
-    const extension = first(document, ['path']).split('.').pop() || (mime.includes('pdf') ? 'pdf' : 'file');
-    try {
-      await shareInvestorFile(path, title, apiOrigin, mime, extension);
-    } catch (error) {
-      setDownloadError(messageOf(error));
-    }
-  }
+  const shipment = useMemo(
+    () => mapBuyerShipment(record(query.data).data),
+    [query.data],
+  );
 
   if (!token) return <BuyerAuthGate title="Shipment details" body="Sign in to view shipment milestones, documents, and order information." returnTo={`/buyer-shipment/${routeId ?? ''}`} />;
 
   return (
-    <Screen title="Shipment details" subtitle={first(shipment, ['container_number', 'reference'], `Shipment ${routeId ?? ''}`)} refreshable>
-      {!validId ? <Text style={{ color: colors.destructive }}>This shipment link is invalid.</Text> : null}
-      {query.isLoading ? <LoadingCard label="Loading shipment details…" lines={3} /> : null}
+    <Screen title="Shipment details" subtitle={shipment.container === '—' ? `Shipment ${routeId ?? ''}` : shipment.container} refreshable>
+      {!validId ? <Text accessibilityRole="alert" style={{ color: colors.destructive }}>This shipment link is invalid.</Text> : null}
+      {query.isLoading ? <LoadingCard label="Loading shipment details…" lines={4} /> : null}
       {query.isError ? <ErrorState message="Shipment details could not be loaded." error={query.error} onRetry={() => void query.refetch()} /> : null}
-      {query.isSuccess ? (
+      {query.isSuccess && !shipment.id ? (
+        <EmptyState title="Shipment unavailable" body="This shipment could not be found for your buyer account." icon="truck" />
+      ) : null}
+      {query.isSuccess && shipment.id ? (
         <>
           <Card style={{ padding: 15, marginBottom: 13 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.mutedForeground, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Current status</Text>
-                <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800', marginTop: 5 }}>{first(shipment, ['container_number', 'reference'], 'Shipment')}</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Shipment #{shipment.id}</Text>
+                <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800', marginTop: 5 }}>{shipment.product}</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 11, marginTop: 5 }}>Order {shipment.orderNumber}</Text>
               </View>
-              <Status value={first(shipment, ['status'], 'Pending')} />
+              <Status value={shipment.statusLabel} />
             </View>
-            {first(shipment, ['tracking_number', 'tracking_code']) ? <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 12 }}>Tracking number: {first(shipment, ['tracking_number', 'tracking_code'])}</Text> : null}
-            <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 7 }}>Destination: {first(shipment, ['destination', 'destination_port'], 'Not provided')}</Text>
-            {first(shipment, ['estimated_delivery', 'estimated_delivery_date']) ? <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 7 }}>Estimated delivery: {first(shipment, ['estimated_delivery', 'estimated_delivery_date'])}</Text> : null}
-            {first(order, ['id']) ? (
-              <Pressable accessibilityRole="button" onPress={() => router.push(`/buyer-order/${first(order, ['id'])}`)} style={{ minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
-                <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '800' }}>Open related order</Text>
-                <Feather name="arrow-up-right" size={13} color={colors.primary} />
-              </Pressable>
+
+            {shipment.trackingNumber ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 13 }}>
+                <Feather name="hash" size={13} color={colors.primary} />
+                <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>Tracking number: {shipment.trackingNumber}</Text>
+              </View>
+            ) : null}
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 }}>
+              <Feather name="map-pin" size={14} color={colors.primary} />
+              <Text style={{ flex: 1, color: colors.foreground, fontSize: 11, fontWeight: '700' }}>{shipment.origin}  →  {shipment.destination}</Text>
+            </View>
+            <View style={{ height: 6, borderRadius: 5, overflow: 'hidden', backgroundColor: colors.border, marginTop: 10 }}>
+              <View style={{ width: `${shipment.progress}%`, height: '100%', borderRadius: 5, backgroundColor: shipment.statusLabel === 'Delivered' ? colors.statusSuccess : colors.primary }} />
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
+              <Text style={{ color: colors.mutedForeground, fontSize: 9 }}>ETD {shipment.etd}</Text>
+              <Text style={{ color: colors.mutedForeground, fontSize: 9 }}>ETA {shipment.eta}</Text>
+            </View>
+            {shipment.orderRecordId ? (
+              <Action
+                title="Open related order"
+                icon="arrow-up-right"
+                secondary
+                onPress={() => router.push(`/buyer-order/${shipment.orderRecordId}`)}
+                testID={`buyer-shipment-order-${shipment.id}`}
+              />
             ) : null}
           </Card>
 
-          <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '800', marginBottom: 9 }}>Shipment milestones</Text>
-          {milestones.length ? milestones.map((milestone, index) => (
-            <Card key={first(milestone, ['id'], String(index))} style={{ padding: 13, marginBottom: 8 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-                <View style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
-                  <Feather name="check" size={14} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '800' }}>{first(milestone, ['title', 'label', 'status'], 'Shipment update')}</Text>
-                  {first(milestone, ['description', 'notes']) ? <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginTop: 4 }}>{first(milestone, ['description', 'notes'])}</Text> : null}
-                  <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 5 }}>{first(milestone, ['event_date', 'created_at'], '')}</Text>
-                </View>
-              </View>
-            </Card>
-          )) : (
-            <Card style={{ padding: 14, marginBottom: 12 }}>
-              <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>No shipment milestones have been posted yet.</Text>
-            </Card>
-          )}
+          <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '800', marginBottom: 9 }}>Shipping details</Text>
+          <Card style={{ padding: 13, marginBottom: 13 }}>
+            <DetailRow label="Container number" value={shipment.container} colors={colors} />
+            <DetailRow label="Order reference" value={shipment.orderNumber} colors={colors} />
+            <DetailRow label="Shipping line" value={shipment.shippingLine} colors={colors} />
+            <DetailRow label="Vessel" value={shipment.vessel} colors={colors} />
+            <DetailRow label="Origin port" value={shipment.origin} colors={colors} />
+            <DetailRow label="Destination port" value={shipment.destination} colors={colors} />
+            <DetailRow label="Estimated departure" value={shipment.etd} colors={colors} />
+            <DetailRow label="Estimated arrival" value={shipment.eta} colors={colors} last />
+          </Card>
 
-          {documents.length ? (
-            <>
-              <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '800', marginTop: 12, marginBottom: 9 }}>Shipment documents</Text>
-              {documents.map((document, index) => (
-                <Pressable key={first(document, ['id'], String(index))} accessibilityRole="button" onPress={() => void downloadDocument(document)}>
-                  <Card style={{ padding: 13, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Feather name="file-text" size={16} color={colors.primary} />
-                    <Text style={{ flex: 1, color: colors.foreground, fontSize: 12, fontWeight: '700' }}>{first(document, ['title', 'type'], 'Trade document')}</Text>
-                    <Feather name="download" size={15} color={colors.primary} />
-                  </Card>
-                </Pressable>
-              ))}
-            </>
-          ) : null}
-          {downloadError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, marginTop: 8 }}>{downloadError}</Text> : null}
+          <BuyerShipmentTimeline steps={shipment.timeline} updates={shipment.recentUpdates} />
+          <BuyerShipmentDocuments documents={shipment.documents} />
         </>
       ) : null}
     </Screen>
+  );
+}
+
+function DetailRow({ label, value, colors, last = false }: {
+  label: string;
+  value: string;
+  colors: ReturnType<typeof useColors>;
+  last?: boolean;
+}) {
+  return (
+    <View style={{ minHeight: 39, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: colors.border }}>
+      <Text style={{ color: colors.mutedForeground, fontSize: 10 }}>{label}</Text>
+      <Text numberOfLines={2} style={{ flex: 1, textAlign: 'right', color: colors.foreground, fontSize: 10, fontWeight: '700' }}>{value}</Text>
+    </View>
   );
 }
