@@ -29,6 +29,17 @@ test('buyer product price surfaces consistently show the FOB basis', () => {
   assert.match(quotation, /FOB unit price:/);
 });
 
+test('buyer homepage product sections use consistent premium spacing', () => {
+  const homeCatalog = readFileSync(new URL('../components/BuyerHomeCatalog.tsx', import.meta.url), 'utf8');
+
+  assert.match(homeCatalog, /recommendationRow:\s*\{\s*flexDirection: 'row',\s*gap: 12,[\s\S]*?paddingBottom: 18,/);
+  assert.match(homeCatalog, /productGrid:\s*\{\s*flexDirection: 'row',\s*flexWrap: 'wrap',\s*gap: 14,[\s\S]*?paddingBottom: 10,/);
+  assert.match(homeCatalog, /categoryRow:\s*\{\s*flexDirection: 'row',\s*gap: 12,[\s\S]*?paddingBottom: 14,/);
+  assert.match(homeCatalog, /styles\.sectionHeader, \{ marginTop: 8, marginBottom: 12 \}/);
+  assert.match(homeCatalog, /styles\.sectionHeader, \{ marginTop: 12, marginBottom: 12 \}/);
+  assert.match(homeCatalog, /marginTop: 14, marginBottom: 16/);
+});
+
 test('product specs keep only complete label and value pairs', () => {
   assert.deepEqual(buyerProductSpecs({
     specs: [

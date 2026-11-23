@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'space-between',
     gap: 10,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   eyebrow: {
     fontSize: 9,
@@ -81,9 +81,9 @@ const styles = StyleSheet.create({
   },
   recommendationRow: {
     flexDirection: 'row',
-    gap: 9,
+    gap: 12,
     paddingHorizontal: 20,
-    paddingBottom: 14,
+    paddingBottom: 18,
   },
   recommendationImage: {
     height: 96,
@@ -117,8 +117,8 @@ const styles = StyleSheet.create({
   productGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    paddingBottom: 14,
+    gap: 14,
+    paddingBottom: 10,
   },
   productImage: {
     width: '100%',
@@ -160,9 +160,9 @@ const styles = StyleSheet.create({
   },
   categoryRow: {
     flexDirection: 'row',
-    gap: 9,
+    gap: 12,
     paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingBottom: 14,
   },
   categoryImage: {
     height: 125,
@@ -257,7 +257,7 @@ export default function BuyerHomeCatalog({
 
       {!productsLoading && !productsError && filteredProducts.length > 0 ? (
         <>
-          <View style={[styles.sectionHeader, { marginTop: 2, marginBottom: 4 }]}>
+          <View style={[styles.sectionHeader, { marginTop: 8, marginBottom: 12 }]}>
             <View>
               <Text style={[styles.eyebrow, { color: colors.accent }]}>OG EXPORTS CATALOGUE</Text>
               <Text style={[styles.sectionTitle, { color: colors.foreground, fontSize: 20, lineHeight: 24 }]}>Products to explore</Text>
@@ -381,7 +381,7 @@ export default function BuyerHomeCatalog({
         })}
       </View>
 
-      <View style={[styles.sectionHeader, { marginTop: 7 }]}>
+      <View style={[styles.sectionHeader, { marginTop: 12, marginBottom: 12 }]}>
         <View>
           <Text style={[styles.eyebrow, { color: colors.accent }]}>Browse by trade</Text>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Explore categories</Text>
@@ -443,7 +443,7 @@ export default function BuyerHomeCatalog({
         })}
       </ScrollView>
 
-      <Card style={{ marginTop: 8, marginBottom: 12, borderRadius: colors.radius + 2 }}>
+      <Card style={{ marginTop: 14, marginBottom: 16, borderRadius: colors.radius + 2 }}>
         <View style={styles.supportRow}>
           <View style={[styles.supportIcon, { backgroundColor: colors.lightGreen }]}>
             <Feather name="message-circle" size={18} color={colors.primary} />
