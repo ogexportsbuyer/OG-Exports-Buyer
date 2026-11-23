@@ -32,6 +32,7 @@ test('buyer product price surfaces consistently show the FOB basis', () => {
 test('buyer homepage product sections use consistent premium spacing', () => {
   const homeCatalog = readFileSync(new URL('../components/BuyerHomeCatalog.tsx', import.meta.url), 'utf8');
 
+  assert.match(homeCatalog, /const productGridCardWidth = Math\.min\(224, \(windowWidth - 54\) \/ 2\);/);
   assert.match(homeCatalog, /recommendationRow:\s*\{\s*flexDirection: 'row',\s*gap: 12,[\s\S]*?paddingBottom: 18,/);
   assert.match(homeCatalog, /productGrid:\s*\{\s*flexDirection: 'row',\s*flexWrap: 'wrap',\s*gap: 14,[\s\S]*?paddingBottom: 10,/);
   assert.match(homeCatalog, /categoryRow:\s*\{\s*flexDirection: 'row',\s*gap: 12,[\s\S]*?paddingBottom: 14,/);

@@ -223,7 +223,7 @@ export default function BuyerHomeCatalog({
   const filteredProducts = selectedOrigin === 'Global'
     ? products
     : products.filter(product => first(product, ['origin']) === selectedOrigin);
-  const productGridCardWidth = Math.min(224, Math.max(130, (windowWidth - 50) / 2));
+  const productGridCardWidth = Math.min(224, (windowWidth - 54) / 2);
 
   return (
     <>
