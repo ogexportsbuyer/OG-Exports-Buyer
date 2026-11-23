@@ -1,31 +1,38 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, PanResponder, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, PanResponder, Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { BrandMark } from '@/components/BrandMark';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { router } from 'expo-router';
 import Svg, { Circle, Ellipse, Path, Rect } from 'react-native-svg';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Action, Card } from '@/components/InvestorUI';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { MOTION, MotionProgress, motionHaptic, useMotion } from '@/lib/motion';
 import { RouteBrandBackdrop } from "@/components/GlassSurface";
+import { Feather } from '@expo/vector-icons';
 
 const slides = [
   {
     illustration: 'container' as const,
-    title: 'Trade With Confidence',
-    body: 'Explore export products, verified trade opportunities, and shipment information from OG Exports.',
+    eyebrow: '01  /  DISCOVER',
+    title: 'A clearer way to source.',
+    body: 'Explore export products with origin and specification details, then request a quote when a product fits your needs.',
+    detail: 'LIVE CATALOGUE  ·  ORIGIN  ·  SPECS',
   },
   {
     illustration: 'shipment' as const,
-    title: 'Track Every Trade',
-    body: 'Follow each trade from cargo preparation through shipment and arrival at its destination.',
+    eyebrow: '02  /  ALIGN',
+    title: 'Decide with clear details.',
+    body: 'Review quotation details and keep your RFQs, trade terms and order information together in your buyer account.',
+    detail: 'RFQ  ·  QUOTATION  ·  TRADE TERMS',
   },
   {
     illustration: 'portfolio' as const,
-    title: 'Stay on Top of Trade',
-    body: 'Follow your products, orders, account activity, and shipment updates in one place.',
+    eyebrow: '03  /  FOLLOW',
+    title: 'Stay in step with every order.',
+    body: 'Follow order progress, available trade documents and shipment updates in one place.',
+    detail: 'ORDERS  ·  DOCUMENTS  ·  SHIPMENTS',
   },
 ];
 
@@ -274,7 +281,7 @@ function OnboardingIllustration({ kind, stageA, stageB, stageC, reduceMotion }: 
     ? 'Shipping container connected to a global trade route'
     : kind === 'shipment'
       ? 'Cargo ship moving through cargo preparation, shipment and destination milestones'
-      : 'Digital investor portfolio with trade investments, wallet and performance';
+    : 'Order overview with trade documents and shipment progress';
 
   useEffect(() => {
     travelProgress.setValue(0);
@@ -319,6 +326,8 @@ export default function Onboarding() {
   const { completeOnboarding } = useAuth();
   const colors = useColors();
   const { reduceMotion } = useMotion();
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const [step, setStep] = useState(0);
   const [error, setError] = useState('');
   const opacity = useRef(new Animated.Value(1)).current;
@@ -334,6 +343,8 @@ export default function Onboarding() {
   const copyOffset = useRef(new Animated.Value(10)).current;
   const swipeDirection = useRef(1);
   const slide = slides[step];
+  const compact = windowHeight < 720;
+  const horizontalPadding = windowWidth < 360 ? 18 : 24;
 
   useEffect(() => {
     if (reduceMotion) {
@@ -408,18 +419,20 @@ export default function Onboarding() {
   }, [copyOffset, copyOpacity, illustrationOpacity, illustrationScale, illustrationStages, reduceMotion, step]);
 
   const swipeResponder = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (_, gesture) => !reduceMotion && Math.abs(gesture.dx) > 10 && Math.abs(gesture.dx) > Math.abs(gesture.dy),
+    onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > 10 && Math.abs(gesture.dx) > Math.abs(gesture.dy),
     onPanResponderMove: (_, gesture) => {
       translateX.setValue(Math.max(-90, Math.min(90, gesture.dx * 0.42)));
     },
     onPanResponderRelease: (_, gesture) => {
       if (Math.abs(gesture.dx) < 54 || Math.abs(gesture.dx) < Math.abs(gesture.dy) * 1.25) {
-        Animated.spring(translateX, { toValue: 0, ...MOTION.spring, useNativeDriver: Platform.OS !== 'web' }).start();
+        if (reduceMotion) translateX.setValue(0);
+        else Animated.spring(translateX, { toValue: 0, ...MOTION.spring, useNativeDriver: Platform.OS !== 'web' }).start();
         return;
       }
       const next = gesture.dx < 0 ? Math.min(slides.length - 1, step + 1) : Math.max(0, step - 1);
       if (next === step) {
-        Animated.spring(translateX, { toValue: 0, ...MOTION.spring, useNativeDriver: Platform.OS !== 'web' }).start();
+        if (reduceMotion) translateX.setValue(0);
+        else Animated.spring(translateX, { toValue: 0, ...MOTION.spring, useNativeDriver: Platform.OS !== 'web' }).start();
         return;
       }
       motionHaptic('micro');
@@ -442,39 +455,116 @@ export default function Onboarding() {
     }
   }
 
+  const goTo = (next: number) => {
+    if (next < 0 || next >= slides.length || next === step) return;
+    swipeDirection.current = next > step ? 1 : -1;
+    motionHaptic('micro');
+    setStep(next);
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, paddingHorizontal: 22 }}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background, paddingHorizontal: horizontalPadding, paddingTop: 0, paddingBottom: 0 }]}>
       <RouteBrandBackdrop />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: Platform.OS === 'ios' ? 0 : 10 }}>
-        <BrandMark width={56} />
-        <View><Text style={{ color: colors.primary, fontWeight: '700', fontSize: 16 }}>OG Exports</Text><Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 1 }}>Global Trade. Digital Investment.</Text></View>
+      <View style={[styles.header, { paddingTop: Platform.OS === 'web' ? Math.max(insets.top, 67) : 8 }]}>
+        <View style={styles.brandLockup}>
+          <BrandMark width={57} />
+          <View style={{ gap: 2 }}>
+            <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 15, letterSpacing: 0.2 }}>OG Exports</Text>
+            <Text style={{ color: colors.mutedForeground, fontSize: 10, letterSpacing: 1.25 }}>BUYER  ·  GLOBAL TRADE</Text>
+          </View>
+        </View>
+        <View accessible accessibilityLabel={`Slide ${step + 1} of ${slides.length}`} style={[styles.stepPill, { backgroundColor: colors.secondary }]}>
+          <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>{String(step + 1).padStart(2, '0')} / 03</Text>
+        </View>
       </View>
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <Animated.View {...swipeResponder.panHandlers} style={{ opacity, transform: [{ translateX }] }}>
           <Animated.View style={{ opacity: illustrationOpacity, transform: [{ scale: illustrationScale }] }}>
-            <Card style={{ height: 218, padding: 0, overflow: 'hidden', backgroundColor: colors.secondary, borderColor: colors.border, marginBottom: 23 }}>
+            <Card testID={`onboarding-illustration-${step + 1}`} style={[styles.illustrationCard, { height: compact ? 190 : 232, backgroundColor: colors.secondary, borderColor: colors.border, marginBottom: compact ? 20 : 27 }]}>
               <OnboardingIllustration kind={slide.illustration} stageA={illustrationStages[0]} stageB={illustrationStages[1]} stageC={illustrationStages[2]} reduceMotion={reduceMotion} />
+              <View pointerEvents="none" style={styles.artLabel}>
+                <Feather name={step === 0 ? 'globe' : step === 1 ? 'file-text' : 'navigation'} size={13} color={colors.primary} />
+                <Text style={{ color: colors.primary, fontSize: 10, fontWeight: '700', letterSpacing: 1.1 }}>{slide.eyebrow}</Text>
+              </View>
+              <View pointerEvents="none" style={[styles.artRule, { backgroundColor: colors.border }]} />
             </Card>
           </Animated.View>
           <Animated.View style={{ opacity: copyOpacity, transform: [{ translateY: copyOffset }] }}>
-            <Text style={{ color: colors.primary, fontSize: 29, lineHeight: 36, fontWeight: '700', marginTop: 4, textAlign: 'center', letterSpacing: -0.4 }}>{slide.title}</Text>
-            <Text style={{ color: colors.foreground, opacity: 0.78, fontSize: 15, lineHeight: 23, marginTop: 10, textAlign: 'center' }}>{slide.body}</Text>
+            <Text style={{ color: colors.accent, fontSize: 10, lineHeight: 16, fontWeight: '700', letterSpacing: 1.65, textAlign: 'center' }}>{slide.eyebrow.split('/')[1].trim()}</Text>
+            <Text accessibilityRole="header" style={{ color: colors.primary, fontSize: compact ? 28 : 32, lineHeight: compact ? 35 : 39, fontWeight: '700', marginTop: 8, textAlign: 'center', letterSpacing: -0.65 }}>{slide.title}</Text>
+            <Text style={{ color: colors.foreground, opacity: 0.82, fontSize: 15, lineHeight: 23, marginTop: 12, textAlign: 'center', paddingHorizontal: 4 }}>{slide.body}</Text>
+            <View style={[styles.detailLine, { borderColor: colors.border }]}>
+              <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '700', letterSpacing: 1.05, textAlign: 'center' }}>{slide.detail}</Text>
+            </View>
           </Animated.View>
         </Animated.View>
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-        <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>{step + 1} of {slides.length}</Text>
+      <View style={styles.controlsBlock}>
+        <View style={styles.controlTopline}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Previous onboarding page"
+            testID="onboarding-back"
+            accessibilityState={{ disabled: step === 0 }}
+            disabled={step === 0}
+            hitSlop={10}
+            onPress={() => goTo(step - 1)}
+            style={({ pressed }) => [styles.previousButton, { opacity: step === 0 ? 0.35 : pressed ? 0.65 : 1 }]}
+          >
+            <Feather name="arrow-left" size={16} color={colors.primary} />
+            <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '600' }}>Back</Text>
+          </Pressable>
+          <View accessibilityRole="tablist" accessibilityLabel="Onboarding pages" style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+            {slides.map((item, index) => (
+              <Pressable
+                key={item.illustration}
+                accessibilityRole="tab"
+                accessibilityLabel={`Page ${index + 1}: ${item.title}`}
+                testID={`onboarding-page-${index + 1}`}
+                accessibilityState={{ selected: index === step }}
+                onPress={() => goTo(index)}
+                hitSlop={8}
+                style={[styles.dot, { width: index === step ? 24 : 7, backgroundColor: index === step ? colors.primary : colors.border }]}
+              />
+            ))}
+          </View>
+          <Text style={{ color: colors.mutedForeground, fontSize: 11, letterSpacing: 0.7 }}>{String(step + 1).padStart(2, '0')} <Text style={{ color: colors.border }}>/</Text> 03</Text>
+        </View>
+        <MotionProgress value={((step + 1) / slides.length) * 100} height={3} color={colors.primary} trackColor={colors.secondary} style={{ marginBottom: 15 }} accessibilityLabel={`Onboarding step ${step + 1} of ${slides.length}`} />
       </View>
-      <MotionProgress value={((step + 1) / slides.length) * 100} height={4} color={colors.primary} trackColor={colors.secondary} style={{ marginBottom: 16 }} accessibilityLabel={`Onboarding step ${step + 1} of ${slides.length}`} />
       {error ? <Text accessibilityRole="alert" style={{ color: colors.destructive, marginBottom: 10 }}>{error}</Text> : null}
       <Action
-        title={step === slides.length - 1 ? 'Get Started' : 'Continue'}
-        icon={step === slides.length - 1 ? 'arrow-right' : undefined}
-        onPress={() => step === slides.length - 1 ? void finish('/(auth)/register') : setStep(value => value + 1)}
+        title={step === slides.length - 1 ? 'Finish & create account' : 'Continue'}
+        icon="arrow-right"
+        testID={step === slides.length - 1 ? 'onboarding-finish' : 'onboarding-continue'}
+        onPress={() => step === slides.length - 1 ? void finish('/(auth)/register') : goTo(step + 1)}
       />
-      <Pressable onPress={() => void finish('/(auth)/login')} style={{ alignSelf: 'center', paddingVertical: 18, paddingHorizontal: 10 }}>
-        <Text style={{ color: colors.primary, fontWeight: '700' }}>Already have an account? Sign In</Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Finish onboarding and sign in"
+        testID="onboarding-sign-in"
+        onPress={() => void finish('/(auth)/login')}
+        style={({ pressed }) => [styles.signIn, { paddingBottom: Platform.OS === 'web' ? 34 : 8, opacity: pressed ? 0.65 : 1 }]}
+      >
+        <Text style={{ color: colors.mutedForeground, fontSize: 13 }}>Already buying with us? </Text>
+        <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 13 }}>Sign in</Text>
       </Pressable>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1 },
+  header: { minHeight: 66, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  brandLockup: { flexDirection: 'row', alignItems: 'center', gap: 11 },
+  stepPill: { minHeight: 30, borderRadius: 15, paddingHorizontal: 11, alignItems: 'center', justifyContent: 'center' },
+  illustrationCard: { padding: 0, overflow: 'hidden', borderWidth: 1, borderRadius: 22, position: 'relative' },
+  artLabel: { position: 'absolute', left: 15, top: 14, flexDirection: 'row', alignItems: 'center', gap: 7 },
+  artRule: { position: 'absolute', left: 15, right: 15, bottom: 13, height: StyleSheet.hairlineWidth },
+  detailLine: { alignSelf: 'center', borderTopWidth: StyleSheet.hairlineWidth, marginTop: 17, paddingTop: 11, paddingHorizontal: 8 },
+  controlsBlock: { marginBottom: 5 },
+  controlTopline: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 42, marginBottom: 10 },
+  previousButton: { flexDirection: 'row', alignItems: 'center', gap: 7, minWidth: 66, minHeight: 42, justifyContent: 'flex-start' },
+  dot: { height: 7, borderRadius: 4 },
+  signIn: { minHeight: 50, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', paddingTop: 10 },
+});

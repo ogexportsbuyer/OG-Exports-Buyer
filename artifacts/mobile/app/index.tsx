@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BrandMark } from '@/components/BrandMark';
 import { useAuth } from '@/context/AuthContext';
 import { homeRouteForAccount } from '@/lib/account-role';
+import { buyerEntryDestination } from '@/lib/post-auth-route';
 import { OFFICIAL_MARK_ASPECT } from '@/lib/official-mark-svg';
 import { useColors } from '@/hooks/useColors';
 import { MOTION, useMotion } from '@/lib/motion';
@@ -15,7 +16,7 @@ const INTRO_MIN_DURATION = 5000;
 const MARK_ASPECT = 1 / OFFICIAL_MARK_ASPECT;
 
 export default function Entry() {
-  const { ready, token, user, appUnlocked } = useAuth();
+  const { ready, token, user, appUnlocked, onboardingComplete } = useAuth();
   const colors = useColors();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -71,9 +72,9 @@ export default function Entry() {
     if (!introDurationElapsed) return;
     const destination = token
       ? appUnlocked ? homeRouteForAccount(user) : '/lock'
-      : '/(buyer-tabs)/buyer-home';
+      : buyerEntryDestination(onboardingComplete);
     router.replace(destination);
-  }, [ready, motionSettingsReady, introDurationElapsed, token, user, appUnlocked]);
+  }, [ready, motionSettingsReady, introDurationElapsed, token, user, appUnlocked, onboardingComplete]);
 
   const animate = motionSettingsReady && !reduceMotion;
   const staticShown = !motionSettingsReady || reduceMotion;

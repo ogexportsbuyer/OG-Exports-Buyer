@@ -9,6 +9,7 @@ import {
   isBuyerAppRoute,
   resolvePostAuthHref,
   resolveUserPostAuthHref,
+  buyerEntryDestination,
   serializeRouteState,
   isBuyerRoutePublicBeforeAuth,
 } from './post-auth-route.ts';
@@ -98,6 +99,15 @@ test('allows the buyer notifications screen to render its own sign-in gate', () 
   assert.equal(isBuyerRoutePublicBeforeAuth('buyer-orders'), false);
   const rootLayout = readFileSync(new URL('../app/_layout.tsx', import.meta.url), 'utf8');
   assert.match(rootLayout, /Stack\.Screen name="buyer-notifications" options=\{\{ headerShown: false \}\}/);
+});
+
+test('routes first-time guests through onboarding and returning guests to the buyer home', () => {
+  assert.equal(buyerEntryDestination(false), '/onboarding');
+  assert.equal(buyerEntryDestination(true), '/(buyer-tabs)/buyer-home');
+  assert.equal(isBuyerAppRoute('onboarding', '/onboarding'), true);
+  assert.equal(isBuyerRoutePublicBeforeAuth('onboarding'), true);
+  const entry = readFileSync(new URL('../app/index.tsx', import.meta.url), 'utf8');
+  assert.match(entry, /buyerEntryDestination\(onboardingComplete\)/);
 });
 test('buyer login and email verification keep the selected product through cart', () => {
   const returnTo = pendingProductAuthReturnTo(42);

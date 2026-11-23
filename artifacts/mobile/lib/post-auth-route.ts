@@ -61,6 +61,10 @@ export type BuyerPostAuthHref =
   | { pathname: '/buyer-shipment/[id]'; params: { id: string } }
   | { pathname: '/buyer-trade-finance'; params: { orderId: string } };
 
+export function buyerEntryDestination(onboardingComplete: boolean): '/(buyer-tabs)/buyer-home' | '/onboarding' {
+  return onboardingComplete ? '/(buyer-tabs)/buyer-home' : '/onboarding';
+}
+
 export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPostAuthHref {
   const value = Array.isArray(returnTo) ? returnTo[0] : returnTo;
   const path = value?.split('?', 1)[0] ?? '';
@@ -188,6 +192,7 @@ export function isBuyerAppRoute(firstSegment: string, pathname: string): boolean
     'buyer-shipments',
     'buyer-documents',
     'buyer-trade-finance',
+    'onboarding',
     'forgot-password',
     'lock',
   ]);
@@ -206,6 +211,7 @@ export function isBuyerRoutePublicBeforeAuth(firstSegment: string): boolean {
     'buyer-product',
     'buyer-cart',
     'buyer-notifications',
+    'onboarding',
   ]).has(firstSegment);
 }
 
