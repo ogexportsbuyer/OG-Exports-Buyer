@@ -1,326 +1,42 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, PanResponder, Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Animated, Image, PanResponder, Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { BrandMark } from '@/components/BrandMark';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { router } from 'expo-router';
-import Svg, { Circle, Ellipse, Path, Rect } from 'react-native-svg';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Action, Card } from '@/components/InvestorUI';
+import { Action } from '@/components/InvestorUI';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { MOTION, MotionProgress, motionHaptic, useMotion } from '@/lib/motion';
-import { RouteBrandBackdrop } from "@/components/GlassSurface";
+import { RouteBrandBackdrop } from '@/components/GlassSurface';
 import { Feather } from '@expo/vector-icons';
 
 const slides = [
   {
-    illustration: 'container' as const,
+    image: require('../assets/onboarding/sesame-4k.jpg'),
+    imageLabel: 'White sesame seeds spilling from a burlap sack',
     eyebrow: '01  /  DISCOVER',
     title: 'A clearer way to source.',
     body: 'Explore export products with origin and specification details, then request a quote when a product fits your needs.',
     detail: 'LIVE CATALOGUE  ·  ORIGIN  ·  SPECS',
   },
   {
-    illustration: 'shipment' as const,
+    image: require('../assets/onboarding/maize-4k.jpg'),
+    imageLabel: 'Golden maize kernels and a fresh corn cob',
     eyebrow: '02  /  ALIGN',
     title: 'Decide with clear details.',
     body: 'Review quotation details and keep your RFQs, trade terms and order information together in your buyer account.',
     detail: 'RFQ  ·  QUOTATION  ·  TRADE TERMS',
   },
   {
-    illustration: 'portfolio' as const,
+    image: require('../assets/onboarding/rice-4k.jpg'),
+    imageLabel: 'Long-grain basmati rice being poured into a bowl',
     eyebrow: '03  /  FOLLOW',
     title: 'Stay in step with every order.',
     body: 'Follow order progress, available trade documents and shipment updates in one place.',
     detail: 'ORDERS  ·  DOCUMENTS  ·  SHIPMENTS',
   },
 ];
-
-type IllustrationKind = (typeof slides)[number]['illustration'];
-type IllustrationStage = 'A' | 'B' | 'C';
-type IllustrationPoint = { x: number; y: number };
-
-const travelRoutes: Record<IllustrationKind, { points: IllustrationPoint[]; radius: number }> = {
-  container: {
-    points: [
-      { x: 35, y: 57 },
-      { x: 82, y: 36 },
-      { x: 142, y: 31 },
-      { x: 202, y: 42 },
-      { x: 253, y: 68 },
-    ],
-    radius: 5,
-  },
-  shipment: {
-    points: [{ x: 49, y: 39 }, { x: 251, y: 39 }],
-    radius: 5,
-  },
-  portfolio: {
-    points: [
-      { x: 165, y: 164 },
-      { x: 179, y: 155 },
-      { x: 190, y: 160 },
-      { x: 205, y: 143 },
-      { x: 218, y: 148 },
-      { x: 232, y: 135 },
-    ],
-    radius: 3.5,
-  },
-};
-
-function TravelingMarker({ kind, progress, width, height }: {
-  kind: IllustrationKind;
-  progress: Animated.Value;
-  width: number;
-  height: number;
-}) {
-  const colors = useColors();
-  const route = travelRoutes[kind];
-  const start = route.points[0];
-  const scale = Math.min(width / 300, height / 220);
-  const renderedWidth = 300 * scale;
-  const renderedHeight = 220 * scale;
-  const offsetX = (width - renderedWidth) / 2;
-  const offsetY = (height - renderedHeight) / 2;
-  const inputRange = route.points.map((_, index) => index / (route.points.length - 1));
-  const translateX = progress.interpolate({
-    inputRange,
-    outputRange: route.points.map(point => (point.x - start.x) * scale),
-  });
-  const translateY = progress.interpolate({
-    inputRange,
-    outputRange: route.points.map(point => (point.y - start.y) * scale),
-  });
-  const diameter = route.radius * 2 * scale;
-
-  return (
-    <Animated.View
-      accessible={false}
-      style={{
-        position: 'absolute',
-        left: offsetX + start.x * scale - diameter / 2,
-        top: offsetY + start.y * scale - diameter / 2,
-        width: diameter,
-        height: diameter,
-        borderRadius: diameter / 2,
-        backgroundColor: colors.accent,
-        pointerEvents: 'none',
-        transform: [{ translateX }, { translateY }],
-      }}
-    />
-  );
-}
-
-function MovingWater({ progress, reveal, width, height }: {
-  progress: Animated.Value;
-  reveal: Animated.Value;
-  width: number;
-  height: number;
-}) {
-  const colors = useColors();
-  const scale = Math.min(width / 300, height / 220);
-  const renderedWidth = 300 * scale;
-  const renderedHeight = 220 * scale;
-  const offsetX = (width - renderedWidth) / 2;
-  const offsetY = (height - renderedHeight) / 2;
-  const translateX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, -60 * scale] });
-
-  return (
-    <View
-      style={{
-        position: 'absolute',
-        left: offsetX,
-        top: offsetY,
-        width: renderedWidth,
-        height: renderedHeight,
-        overflow: 'hidden',
-        pointerEvents: 'none',
-      }}
-    >
-      <Animated.View
-        style={{
-          width: 360 * scale,
-          height: renderedHeight,
-          opacity: reveal,
-          transform: [{ translateX }],
-        }}
-      >
-        <Svg width="100%" height="100%" viewBox="0 0 360 220">
-          <Path
-            d="M-30 190 C-10 184 10 196 30 190 C50 184 70 196 90 190 C110 184 130 196 150 190 C170 184 190 196 210 190 C230 184 250 196 270 190 C290 184 310 196 330 190 C350 184 370 196 390 190"
-            fill="none"
-            stroke={colors.tint}
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <Path
-            d="M-30 199 C-10 194 10 204 30 199 C50 194 70 204 90 199 C110 194 130 204 150 199 C170 194 190 204 210 199 C230 194 250 204 270 199 C290 194 310 204 330 199 C350 194 370 204 390 199"
-            fill="none"
-            stroke={colors.border}
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </Svg>
-      </Animated.View>
-    </View>
-  );
-}
-
-function IllustrationLayer({ kind, stage, progress }: {
-  kind: IllustrationKind;
-  stage: IllustrationStage;
-  progress: Animated.Value;
-}) {
-  const colors = useColors();
-  const entranceX = progress.interpolate({ inputRange: [0, 1], outputRange: [stage === 'C' ? 4 : -4, 0] });
-  const entranceY = progress.interpolate({ inputRange: [0, 1], outputRange: [6, 0] });
-  const entranceScale = progress.interpolate({ inputRange: [0, 1], outputRange: [0.985, 1] });
-
-  return (
-    <Animated.View
-      style={[
-        StyleSheet.absoluteFill,
-        {
-          opacity: progress,
-          pointerEvents: 'none',
-          transform: [
-            { translateX: entranceX },
-            { translateY: entranceY },
-            { scale: entranceScale },
-          ],
-        },
-      ]}
-    >
-      <Svg width="100%" height="100%" viewBox="0 0 300 220">
-        {kind === 'container' && stage === 'A' ? <>
-        <Circle cx="148" cy="112" r="79" fill={colors.lightGreen} fillOpacity="0.58" />
-        <Path d="M35 57 C86 17 197 23 253 68" fill="none" stroke={colors.tint} strokeWidth="1.5" strokeDasharray="4 6" />
-        <Circle cx="253" cy="68" r="5" fill={colors.primary} />
-        </> : null}
-        {kind === 'container' && stage === 'B' ? <>
-      <Path d="M48 82 L76 62 H216 L189 82 Z" fill={colors.secondary} stroke={colors.primary} strokeWidth="1.5" strokeLinejoin="round" />
-      <Path d="M189 82 L216 62 V137 L189 158 Z" fill={colors.lightGreen} stroke={colors.primary} strokeWidth="1.5" strokeLinejoin="round" />
-      <Rect x="48" y="82" width="141" height="76" rx="3" fill={colors.card} stroke={colors.primary} strokeWidth="1.8" />
-      <Path d="M60 88 V151 M72 86 V153 M84 85 V155 M96 84 V156 M108 83 V157 M120 83 V158 M132 83 V158 M144 83 V158 M156 83 V158 M168 83 V158 M180 83 V158" stroke={colors.tint} strokeOpacity="0.58" strokeWidth="1.5" />
-      <Path d="M119 83 V158 M113 112 H116 M123 112 H126" stroke={colors.primary} strokeWidth="1.5" />
-      <Rect x="77" y="115" width="28" height="15" rx="3" fill={colors.secondary} />
-      <Path d="M83 120 H99 M83 125 H95" stroke={colors.primary} strokeWidth="1.2" strokeLinecap="round" />
-        </> : null}
-        {kind === 'container' && stage === 'C' ? <>
-      <Path d="M197 77 V150 M206 70 V145" stroke={colors.tint} strokeOpacity="0.65" strokeWidth="1.4" />
-      <Path d="M211 158 C222 150 226 144 229 136" fill="none" stroke={colors.primary} strokeWidth="1.5" strokeDasharray="3 4" />
-      <Circle cx="251" cy="116" r="25" fill={colors.card} stroke={colors.border} strokeWidth="1.5" />
-      <Ellipse cx="251" cy="116" rx="11" ry="25" fill="none" stroke={colors.tint} strokeWidth="1.2" />
-      <Path d="M227 116 H275 M232 104 C243 109 259 109 270 104 M232 128 C243 123 259 123 270 128" fill="none" stroke={colors.tint} strokeWidth="1.2" />
-      <Circle cx="262" cy="105" r="3.5" fill={colors.accent} />
-        </> : null}
-        {kind === 'shipment' && stage === 'A' ? <>
-      <Circle cx="150" cy="115" r="83" fill={colors.lightGreen} fillOpacity="0.48" />
-      <Path d="M49 39 H251" fill="none" stroke={colors.border} strokeWidth="2" />
-      <Path d="M49 39 H150" fill="none" stroke={colors.primary} strokeWidth="2" />
-      <Circle cx="150" cy="39" r="7" fill={colors.primary} />
-      <Circle cx="251" cy="39" r="7" fill={colors.card} stroke={colors.primary} strokeWidth="1.5" />
-        </> : null}
-        {kind === 'shipment' && stage === 'B' ? <>
-      <Rect x="83" y="55" width="37" height="33" rx="3" fill={colors.lightGreen} stroke={colors.primary} strokeWidth="1.4" />
-      <Rect x="122" y="55" width="37" height="33" rx="3" fill={colors.card} stroke={colors.primary} strokeWidth="1.4" />
-      <Rect x="65" y="90" width="37" height="36" rx="3" fill={colors.card} stroke={colors.primary} strokeWidth="1.4" />
-      <Rect x="104" y="90" width="37" height="36" rx="3" fill={colors.lightGreen} stroke={colors.primary} strokeWidth="1.4" />
-      <Rect x="143" y="90" width="37" height="36" rx="3" fill={colors.card} stroke={colors.primary} strokeWidth="1.4" />
-      <Path d="M73 95 V121 M80 93 V123 M88 93 V123 M96 93 V123 M112 95 V121 M120 93 V123 M128 93 V123 M151 95 V121 M159 93 V123 M167 93 V123 M91 60 V83 M99 58 V85 M130 60 V83 M138 58 V85" stroke={colors.tint} strokeOpacity="0.72" strokeWidth="1" />
-      <Path d="M181 91 L193 78 H225 L238 91 V127 H181 Z" fill={colors.secondary} stroke={colors.primary} strokeWidth="1.5" strokeLinejoin="round" />
-      <Rect x="190" y="97" width="9" height="10" rx="1" fill={colors.card} />
-      <Rect x="204" y="97" width="9" height="10" rx="1" fill={colors.card} />
-      <Rect x="218" y="97" width="9" height="10" rx="1" fill={colors.card} />
-        </> : null}
-        {kind === 'shipment' && stage === 'C' ? <>
-      <Path d="M34 130 H265 L239 169 C235 176 230 179 219 179 H78 C64 179 58 174 52 163 Z" fill={colors.primary} stroke={colors.primary} strokeWidth="1.5" strokeLinejoin="round" />
-      <Path d="M52 151 H251" stroke={colors.accent} strokeOpacity="0.7" strokeWidth="2" />
-        </> : null}
-        {kind === 'portfolio' && stage === 'A' ? <>
-      <Rect x="42" y="29" width="216" height="163" rx="18" fill={colors.card} stroke={colors.border} strokeWidth="1.5" />
-      <Circle cx="61" cy="49" r="4" fill={colors.primary} />
-      <Rect x="73" y="46" width="69" height="6" rx="3" fill={colors.tint} fillOpacity="0.55" />
-      <Rect x="203" y="39" width="40" height="23" rx="6" fill={colors.lightGreen} stroke={colors.border} strokeWidth="1" />
-      <Path d="M210 46 H235 M210 52 H223" stroke={colors.primary} strokeWidth="1.5" strokeLinecap="round" />
-        </> : null}
-        {kind === 'portfolio' && stage === 'B' ? <>
-      <Rect x="57" y="72" width="186" height="42" rx="10" fill={colors.secondary} />
-      <Rect x="68" y="84" width="22" height="17" rx="3" fill={colors.card} stroke={colors.primary} strokeWidth="1.3" />
-      <Path d="M73 86 V99 M78 85 V100 M83 85 V100" stroke={colors.tint} strokeWidth="1" />
-      <Rect x="99" y="82" width="75" height="6" rx="3" fill={colors.primary} fillOpacity="0.6" />
-      <Rect x="99" y="94" width="51" height="5" rx="2.5" fill={colors.border} />
-      <Circle cx="225" cy="93" r="7" fill={colors.lightGreen} />
-      <Path d="M221 93 L224 96 L229 90" fill="none" stroke={colors.primary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </> : null}
-        {kind === 'portfolio' && stage === 'C' ? <>
-      <Rect x="57" y="124" width="84" height="53" rx="9" fill={colors.lightGreen} />
-      <Circle cx="75" cy="150" r="11" fill={colors.card} />
-      <Path d="M69 150 H80 M77 146 L81 150 L77 154" fill="none" stroke={colors.primary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <Rect x="92" y="137" width="37" height="5" rx="2.5" fill={colors.tint} fillOpacity="0.6" />
-      <Rect x="92" y="147" width="29" height="5" rx="2.5" fill={colors.border} />
-      <Rect x="153" y="124" width="90" height="53" rx="9" fill={colors.secondary} />
-      <Path d="M165 164 L179 155 L190 160 L205 143 L218 148 L232 135" fill="none" stroke={colors.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <Path d="M164 167 H233" stroke={colors.border} strokeWidth="1" />
-        </> : null}
-      </Svg>
-    </Animated.View>
-  );
-}
-
-function OnboardingIllustration({ kind, stageA, stageB, stageC, reduceMotion }: {
-  kind: IllustrationKind;
-  stageA: Animated.Value;
-  stageB: Animated.Value;
-  stageC: Animated.Value;
-  reduceMotion: boolean;
-}) {
-  const [viewport, setViewport] = useState({ width: 0, height: 0 });
-  const travelProgress = useRef(new Animated.Value(0)).current;
-  const accessibleLabel = kind === 'container'
-    ? 'Shipping container connected to a global trade route'
-    : kind === 'shipment'
-      ? 'Cargo ship moving through cargo preparation, shipment and destination milestones'
-    : 'Order overview with trade documents and shipment progress';
-
-  useEffect(() => {
-    travelProgress.setValue(0);
-    if (reduceMotion || viewport.width <= 0 || viewport.height <= 0) return;
-
-    const travelLoop = Animated.loop(Animated.timing(travelProgress, {
-      toValue: 1,
-      duration: 2000,
-      easing: Easing.linear,
-      useNativeDriver: Platform.OS !== 'web',
-      isInteraction: false,
-    }));
-    travelLoop.start();
-    return () => travelLoop.stop();
-  }, [kind, reduceMotion, travelProgress, viewport.height, viewport.width]);
-
-  return (
-    <View
-      accessible
-      accessibilityRole="image"
-      accessibilityLabel={accessibleLabel}
-      style={{ flex: 1, width: '100%', height: '100%' }}
-      onLayout={event => {
-        const { width, height } = event.nativeEvent.layout;
-        setViewport(current => current.width === width && current.height === height ? current : { width, height });
-      }}
-    >
-      <IllustrationLayer kind={kind} stage="A" progress={stageA} />
-      <IllustrationLayer kind={kind} stage="B" progress={stageB} />
-      <IllustrationLayer kind={kind} stage="C" progress={stageC} />
-      {kind === 'shipment' && viewport.width > 0 && viewport.height > 0 ? (
-        <MovingWater progress={travelProgress} reveal={stageC} width={viewport.width} height={viewport.height} />
-      ) : null}
-      {viewport.width > 0 && viewport.height > 0 ? (
-        <TravelingMarker kind={kind} progress={travelProgress} width={viewport.width} height={viewport.height} />
-      ) : null}
-    </View>
-  );
-}
 
 export default function Onboarding() {
   const { completeOnboarding } = useAuth();
@@ -332,21 +48,24 @@ export default function Onboarding() {
   const [error, setError] = useState('');
   const opacity = useRef(new Animated.Value(1)).current;
   const translateX = useRef(new Animated.Value(0)).current;
-  const illustrationOpacity = useRef(new Animated.Value(0)).current;
-  const illustrationScale = useRef(new Animated.Value(0.96)).current;
-  const illustrationStages = useRef([
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-  ]).current;
-  const copyOpacity = useRef(new Animated.Value(0)).current;
-  const copyOffset = useRef(new Animated.Value(10)).current;
+  const photoOpacity = useRef(new Animated.Value(1)).current;
+  const photoScale = useRef(new Animated.Value(1)).current;
+  const copyOpacity = useRef(new Animated.Value(1)).current;
+  const copyOffset = useRef(new Animated.Value(0)).current;
+  const previousAnimatedStep = useRef(step);
+  const previousPhotoStep = useRef(step);
   const swipeDirection = useRef(1);
   const slide = slides[step];
   const compact = windowHeight < 800 || windowWidth < 375;
   const horizontalPadding = windowWidth < 360 ? 18 : 24;
+  const photoHeight = Math.max(
+    280,
+    Math.min(compact ? 410 : 530, windowHeight - (Platform.OS === 'web' ? 370 : 280)),
+  );
 
   useEffect(() => {
+    if (previousAnimatedStep.current === step) return;
+    previousAnimatedStep.current = step;
     if (reduceMotion) {
       opacity.setValue(1);
       translateX.setValue(0);
@@ -361,62 +80,29 @@ export default function Onboarding() {
   }, [step, opacity, reduceMotion, translateX]);
 
   useEffect(() => {
+    if (previousPhotoStep.current === step) return;
+    previousPhotoStep.current = step;
     if (reduceMotion) {
-      illustrationOpacity.setValue(1);
-      illustrationScale.setValue(1);
-      illustrationStages.forEach(stage => stage.setValue(1));
+      photoOpacity.setValue(1);
+      photoScale.setValue(1);
       copyOpacity.setValue(1);
       copyOffset.setValue(0);
       return;
     }
-    illustrationOpacity.setValue(0);
-    illustrationScale.setValue(0.96);
-    illustrationStages.forEach(stage => stage.setValue(0));
+    photoOpacity.setValue(0);
+    photoScale.setValue(0.98);
     copyOpacity.setValue(0);
     copyOffset.setValue(10);
     const useNativeDriver = Platform.OS !== 'web';
-    const illustrationReveal = Animated.stagger(105, illustrationStages.map(stage => Animated.timing(stage, {
-      toValue: 1,
-      duration: 115,
-      easing: MOTION.easeOut,
-      useNativeDriver,
-    })));
-    const reveal = Animated.stagger(45, [
-      Animated.parallel([
-        Animated.timing(illustrationOpacity, {
-          toValue: 1,
-          duration: MOTION.component,
-          easing: MOTION.easeOut,
-          useNativeDriver,
-        }),
-        Animated.spring(illustrationScale, {
-          toValue: 1,
-          ...MOTION.successSpring,
-          useNativeDriver,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.timing(copyOpacity, {
-          toValue: 1,
-          duration: MOTION.component,
-          easing: MOTION.easeOut,
-          useNativeDriver,
-        }),
-        Animated.timing(copyOffset, {
-          toValue: 0,
-          duration: MOTION.component,
-          easing: MOTION.easeOut,
-          useNativeDriver,
-        }),
-      ]),
+    const entrance = Animated.parallel([
+      Animated.timing(photoOpacity, { toValue: 1, duration: MOTION.component, easing: MOTION.easeOut, useNativeDriver }),
+      Animated.spring(photoScale, { toValue: 1, ...MOTION.successSpring, useNativeDriver }),
+      Animated.timing(copyOpacity, { toValue: 1, duration: MOTION.component, easing: MOTION.easeOut, useNativeDriver }),
+      Animated.timing(copyOffset, { toValue: 0, duration: MOTION.component, easing: MOTION.easeOut, useNativeDriver }),
     ]);
-    illustrationReveal.start();
-    reveal.start();
-    return () => {
-      reveal.stop();
-      illustrationReveal.stop();
-    };
-  }, [copyOffset, copyOpacity, illustrationOpacity, illustrationScale, illustrationStages, reduceMotion, step]);
+    entrance.start();
+    return () => entrance.stop();
+  }, [copyOffset, copyOpacity, photoOpacity, photoScale, reduceMotion, step]);
 
   const swipeResponder = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > 10 && Math.abs(gesture.dx) > Math.abs(gesture.dy),
@@ -477,24 +163,37 @@ export default function Onboarding() {
           <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>{String(step + 1).padStart(2, '0')} / 03</Text>
         </View>
       </View>
-      <View style={{ flex: 1, justifyContent: 'center' }}>
+      <View style={styles.content}>
         <Animated.View {...swipeResponder.panHandlers} style={{ opacity, transform: [{ translateX }] }}>
-          <Animated.View style={{ opacity: illustrationOpacity, transform: [{ scale: illustrationScale }] }}>
-            <Card testID={`onboarding-illustration-${step + 1}`} style={[styles.illustrationCard, { height: compact ? 158 : 232, backgroundColor: colors.secondary, borderColor: colors.border, marginBottom: compact ? 13 : 27 }]}>
-              <OnboardingIllustration kind={slide.illustration} stageA={illustrationStages[0]} stageB={illustrationStages[1]} stageC={illustrationStages[2]} reduceMotion={reduceMotion} />
-              <View pointerEvents="none" style={styles.artLabel}>
-                <Feather name={step === 0 ? 'globe' : step === 1 ? 'file-text' : 'navigation'} size={13} color={colors.primary} />
-                <Text style={{ color: colors.primary, fontSize: 10, fontWeight: '700', letterSpacing: 1.1 }}>{slide.eyebrow}</Text>
+          <Animated.View style={{ opacity: photoOpacity, transform: [{ scale: photoScale }] }}>
+            <View testID={`onboarding-illustration-${step + 1}`} style={[styles.photoCard, { height: photoHeight, borderColor: colors.border }]}>
+              <View style={styles.photo}>
+                <Image
+                  source={slide.image}
+                  accessible
+                  accessibilityRole="image"
+                  accessibilityLabel={slide.imageLabel}
+                  resizeMode="cover"
+                  style={styles.photoImage}
+                />
+                <View pointerEvents="none" style={[styles.photoTint, { backgroundColor: colors.primary, opacity: 0.16 }]} />
+                <View pointerEvents="none" style={[styles.photoTop, { backgroundColor: colors.primary }]}>
+                  <Feather name={step === 0 ? 'search' : step === 1 ? 'file-text' : 'navigation'} size={13} color={colors.primaryForeground} />
+                  <Text style={[styles.photoEyebrow, { color: colors.primaryForeground }]}>{slide.eyebrow}</Text>
+                </View>
+                <Animated.View style={[styles.photoCopy, { backgroundColor: colors.primary, opacity: 0.78, transform: [{ translateY: copyOffset }] }]}>
+                  <Animated.View style={{ opacity: copyOpacity }}>
+                    <Text style={[styles.photoKicker, { color: colors.accent }]}>{slide.eyebrow.split('/')[1].trim()}</Text>
+                    <Text accessibilityRole="header" style={[styles.title, { color: colors.primaryForeground, fontSize: compact ? 27 : 31, lineHeight: compact ? 33 : 38 }]}>
+                      {slide.title}
+                    </Text>
+                    <Text style={[styles.body, { color: colors.primaryForeground, opacity: 0.94 }]}>{slide.body}</Text>
+                    <View style={[styles.photoDetail, { borderColor: colors.primaryForeground }]}>
+                      <Text style={[styles.detailText, { color: colors.primaryForeground }]}>{slide.detail}</Text>
+                    </View>
+                  </Animated.View>
+                </Animated.View>
               </View>
-              <View pointerEvents="none" style={[styles.artRule, { backgroundColor: colors.border }]} />
-            </Card>
-          </Animated.View>
-          <Animated.View style={{ opacity: copyOpacity, transform: [{ translateY: copyOffset }] }}>
-            <Text style={{ color: colors.accent, fontSize: 10, lineHeight: 16, fontWeight: '700', letterSpacing: 1.65, textAlign: 'center' }}>{slide.eyebrow.split('/')[1].trim()}</Text>
-            <Text accessibilityRole="header" style={{ color: colors.primary, fontSize: compact ? 26 : 32, lineHeight: compact ? 33 : 39, fontWeight: '700', marginTop: compact ? 6 : 8, textAlign: 'center', letterSpacing: -0.65 }}>{slide.title}</Text>
-            <Text style={{ color: colors.foreground, opacity: 0.82, fontSize: compact ? 14 : 15, lineHeight: compact ? 20 : 23, marginTop: compact ? 8 : 12, textAlign: 'center', paddingHorizontal: 4 }}>{slide.body}</Text>
-            <View style={[styles.detailLine, { borderColor: colors.border }, compact ? { marginTop: 10, paddingTop: 8 } : null]}>
-              <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '700', letterSpacing: 1.05, textAlign: 'center' }}>{slide.detail}</Text>
             </View>
           </Animated.View>
         </Animated.View>
@@ -517,7 +216,7 @@ export default function Onboarding() {
           <View accessibilityRole="tablist" accessibilityLabel="Onboarding pages" style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
             {slides.map((item, index) => (
               <Pressable
-                key={item.illustration}
+                key={`page-${index + 1}`}
                 accessibilityRole="tab"
                 accessibilityLabel={`Page ${index + 1}: ${item.title}`}
                 testID={`onboarding-page-${index + 1}`}
@@ -558,10 +257,19 @@ const styles = StyleSheet.create({
   header: { minHeight: 66, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   brandLockup: { flexDirection: 'row', alignItems: 'center', gap: 11 },
   stepPill: { minHeight: 30, borderRadius: 15, paddingHorizontal: 11, alignItems: 'center', justifyContent: 'center' },
-  illustrationCard: { padding: 0, overflow: 'hidden', borderWidth: 1, borderRadius: 22, position: 'relative' },
-  artLabel: { position: 'absolute', left: 15, top: 14, flexDirection: 'row', alignItems: 'center', gap: 7 },
-  artRule: { position: 'absolute', left: 15, right: 15, bottom: 13, height: StyleSheet.hairlineWidth },
-  detailLine: { alignSelf: 'center', borderTopWidth: StyleSheet.hairlineWidth, marginTop: 17, paddingTop: 11, paddingHorizontal: 8 },
+  content: { flex: 1, justifyContent: 'center' },
+  photoCard: { width: '100%', borderWidth: 1, borderRadius: 24, overflow: 'hidden' },
+  photo: { flex: 1, justifyContent: 'space-between', overflow: 'hidden', position: 'relative' },
+  photoImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
+  photoTint: { ...StyleSheet.absoluteFill },
+  photoTop: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', margin: 16, paddingHorizontal: 12, minHeight: 32, borderRadius: 16 },
+  photoEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.1 },
+  photoCopy: { margin: 10, borderRadius: 19, paddingHorizontal: 20, paddingTop: 17, paddingBottom: 16 },
+  photoKicker: { fontSize: 10, lineHeight: 16, fontWeight: '700', letterSpacing: 1.6, marginBottom: 4 },
+  title: { fontWeight: '700', letterSpacing: -0.5 },
+  body: { fontSize: 14, lineHeight: 20, marginTop: 7 },
+  photoDetail: { alignSelf: 'flex-start', borderTopWidth: StyleSheet.hairlineWidth, marginTop: 12, paddingTop: 9, paddingHorizontal: 2 },
+  detailText: { fontSize: 9, fontWeight: '700', letterSpacing: 1.05 },
   controlsBlock: { marginBottom: 5 },
   controlTopline: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 42, marginBottom: 10 },
   previousButton: { flexDirection: 'row', alignItems: 'center', gap: 7, minWidth: 66, minHeight: 42, justifyContent: 'flex-start' },
