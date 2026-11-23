@@ -83,7 +83,7 @@ test('product list fields accept delimited text and safely ignore absent data', 
   assert.deepEqual(buyerProductValues({}, 'packaging_options'), []);
 });
 
-test('product gallery combines the cover and sorted media, skips non-images, and caps at ten', () => {
+test('product gallery shows every uploaded image, ordered and without duplicate cover photos', () => {
   const gallery = buyerProductGalleryImages({
     image_url: 'product_images/cover.jpg',
     media: [
@@ -98,10 +98,24 @@ test('product gallery combines the cover and sorted media, skips non-images, and
     ],
   }, 'https://api.example.test');
 
-  assert.equal(gallery.length, 10);
+  assert.equal(gallery.length, 15);
   assert.equal(gallery[0], 'https://api.example.test/product_images/cover.jpg');
   assert.equal(gallery[1], 'https://api.example.test/product_images/photo-1.jpg');
   assert.equal(gallery.includes('https://api.example.test/product_images/video.mp4'), false);
+});
+
+test('product gallery also reads the admin gallery path format', () => {
+  assert.deepEqual(
+    buyerProductGalleryImages({
+      imagePath: 'product_images/cover.jpg',
+      galleryPaths: ['product_images/side.jpg', 'product_images/detail.jpg'],
+    }, 'https://api.example.test'),
+    [
+      'https://api.example.test/product_images/cover.jpg',
+      'https://api.example.test/product_images/side.jpg',
+      'https://api.example.test/product_images/detail.jpg',
+    ],
+  );
 });
 
 test('product report action uses the public PDF route and only accepts PDF reports', () => {

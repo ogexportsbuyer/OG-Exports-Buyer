@@ -86,7 +86,7 @@ export function buyerProductGalleryImages(product: Json, apiOrigin: string): str
   const entries: { path: string; order: number; position: number }[] = [];
   let position = 0;
 
-  for (const field of ['media', 'images', 'gallery_images', 'gallery']) {
+  for (const field of ['media', 'images', 'gallery_images', 'gallery', 'galleryPaths', 'galleryUrls']) {
     const collection = product[field];
     if (!Array.isArray(collection)) continue;
     collection.forEach((entry) => {
@@ -105,8 +105,7 @@ export function buyerProductGalleryImages(product: Json, apiOrigin: string): str
     .map((entry) => entry.path);
   return Array.from(new Set([primary, ...mediaPaths]
     .map((path) => resolveBuyerProductImageUrl(path, apiOrigin))
-    .filter(Boolean)))
-    .slice(0, 10);
+    .filter(Boolean)));
 }
 
 export function buyerProductReportDownloadPath(product: Json): string {

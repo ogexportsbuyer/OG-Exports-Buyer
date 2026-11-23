@@ -5,7 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { LocalizedText as Text } from '@/components/LocalizedText';
-import { Action, Card, EmptyState, ErrorState, LoadingCard, Screen } from '@/components/InvestorUI';
+import { Card, EmptyState, ErrorState, LoadingCard, Screen } from '@/components/InvestorUI';
 import { useColors } from '@/hooks/useColors';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -113,8 +113,8 @@ export default function BuyerProductDetails() {
   const name = product ? first(product, ['name'], 'Export product') : 'Product details';
   const galleryWidth = Math.max(1, windowWidth - 40);
   const reportDownloadPath = product ? buyerProductReportDownloadPath(product) : '';
-  const hasReport = !!product && !!first(product, ['lab_report_path', 'labReportPath', 'lab_report_url', 'labReportUrl']);
   const hasPdfReport = !!product && buyerProductHasPdfReport(product);
+  const productApproved = !!product && first(product, ['status']).toLowerCase() === 'approved';
   const summary = product
     ? first(product, ['short_description', 'shortDescription', 'description'])
     : '';
@@ -123,6 +123,7 @@ export default function BuyerProductDetails() {
     : '';
   const specs = product ? buyerProductSpecs(product) : [];
   const certifications = product ? buyerProductValues(product, 'certifications') : [];
+  const labTested = hasPdfReport || certifications.some(value => /lab|sgs|coa|test/i.test(value));
   const paymentTerms = product ? buyerProductValues(product, 'payment_terms') : [];
   const deliveryTerms = product ? buyerProductValues(product, 'delivery_terms') : [];
   const packaging = product ? buyerProductValues(product, 'packaging_options') : [];
@@ -351,6 +352,52 @@ export default function BuyerProductDetails() {
               ))}
             </ScrollView>
           ) : null}
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, marginBottom: 4 }}>
+            <Pressable
+              testID="buyer-product-download-lab-report"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !hasPdfReport || reportDownloading, busy: reportDownloading }}
+              accessibilityLabel={hasPdfReport ? `Download or share ${name} PDF report` : 'Product PDF report is not available'}
+              disabled={!hasPdfReport || reportDownloading}
+              onPress={() => void handleDownloadReport()}
+              style={({ pressed }) => ({
+                flex: 1.15,
+                minHeight: 68,
+                borderRadius: 15,
+                borderWidth: 1,
+                borderColor: hasPdfReport ? colors.accent : colors.border,
+                backgroundColor: hasPdfReport ? colors.glassTintGold : colors.secondary,
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                opacity: !hasPdfReport ? 0.72 : pressed ? 0.82 : 1,
+              })}
+            >
+              {reportDownloading
+                ? <ActivityIndicator size="small" color={colors.primary} />
+                : <Feather name="download" size={18} color={hasPdfReport ? colors.primary : colors.mutedForeground} />}
+              <Text numberOfLines={1} style={{ color: colors.primary, fontSize: 8, fontWeight: '800', letterSpacing: 0.3 }}>
+                {reportDownloading ? 'PREPARING PDF' : hasPdfReport ? 'DOWNLOAD REPORT' : 'REPORT NOT ADDED'}
+              </Text>
+            </Pressable>
+            <View style={{ flex: 1, minHeight: 68, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 4 }}>
+              <Feather name={productApproved ? 'award' : 'shield'} size={18} color={productApproved ? colors.primary : colors.mutedForeground} />
+              <Text numberOfLines={1} style={{ color: productApproved ? colors.primary : colors.mutedForeground, fontSize: 8, fontWeight: '800', letterSpacing: 0.3 }}>
+                {productApproved ? 'QUALITY ASSURED' : 'QUALITY REVIEW PENDING'}
+              </Text>
+            </View>
+            <View style={{ flex: 1, minHeight: 68, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 4 }}>
+              <Feather name={labTested ? 'check-circle' : 'file-text'} size={18} color={labTested ? colors.primary : colors.mutedForeground} />
+              <Text numberOfLines={1} style={{ color: labTested ? colors.primary : colors.mutedForeground, fontSize: 8, fontWeight: '800', letterSpacing: 0.3 }}>
+                {labTested ? 'LAB TESTED' : 'LAB REPORT PENDING'}
+              </Text>
+            </View>
+          </View>
+          {reportError ? (
+            <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, lineHeight: 18, marginTop: 5 }}>
+              {reportError}
+            </Text>
+          ) : null}
 
           <View style={{ marginTop: 17 }}>
             <Text style={{ color: colors.accent, fontSize: 10, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' }}>
@@ -451,29 +498,6 @@ export default function BuyerProductDetails() {
           ) : null}
 
           <ValueSection title="Certifications" values={certifications} />
-          {hasReport ? (
-            <DetailSection title="Product laboratory report">
-              <Text style={{ color: colors.mutedForeground, fontSize: 12, lineHeight: 18, marginBottom: 12 }}>
-                {hasPdfReport
-                  ? 'Download the official product report as a PDF or share it from your device.'
-                  : 'A PDF laboratory report is not available for this product yet.'}
-              </Text>
-              {reportError ? (
-                <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, lineHeight: 18, marginBottom: 10 }}>
-                  {reportError}
-                </Text>
-              ) : null}
-              {hasPdfReport ? (
-                <Action
-                  title="Download / share PDF report"
-                  icon="download"
-                  loading={reportDownloading}
-                  onPress={() => void handleDownloadReport()}
-                  testID="buyer-product-download-lab-report"
-                />
-              ) : null}
-            </DetailSection>
-          ) : null}
           <ValueSection title="Payment terms" values={paymentTerms} />
           <ValueSection title="Delivery terms" values={deliveryTerms} />
           <ValueSection title="Packaging options" values={packaging} />
