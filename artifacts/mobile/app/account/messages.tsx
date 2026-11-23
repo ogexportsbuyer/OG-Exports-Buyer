@@ -177,6 +177,9 @@ export function SupportMessages({ buyerMode = false }: { buyerMode?: boolean }) 
   const investorId = first(record(user), ['id'], '');
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const chatBottomClearance = Platform.OS === 'android'
+    ? Math.max(70 + Math.max(insets.bottom - 4, 8) + 12 - insets.bottom, 0)
+    : 0;
   const [mode, setMode] = useState<SupportMode>('help');
   const [message, setMessage] = useState('');
   const [subject, setSubject] = useState('');
@@ -377,7 +380,11 @@ export function SupportMessages({ buyerMode = false }: { buyerMode?: boolean }) 
     </> : null}
 
     {mode === 'chat' ? <>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={0}>
+      <KeyboardAvoidingView
+        style={{ flex: 1, paddingBottom: chatBottomClearance }}
+        behavior="padding"
+        keyboardVerticalOffset={0}
+      >
         <Card>
           <Text style={{ color: colors.foreground, fontWeight: '700' }}>{buyerMode ? 'Buyer support conversation' : 'Investor support conversation'}</Text>
           <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 17, marginTop: 4 }}>
