@@ -203,6 +203,8 @@ test('buyer bottom navigation places Dashboard before Messages and keeps home ca
   const dashboardRoute = readFileSync(new URL('../app/(buyer-tabs)/dashboard.tsx', import.meta.url), 'utf8');
   const profile = readFileSync(new URL('../app/(buyer-tabs)/buyer-profile.tsx', import.meta.url), 'utf8');
   const rootLayout = readFileSync(new URL('../app/_layout.tsx', import.meta.url), 'utf8');
+  const cartScreen = readFileSync(new URL('../components/BuyerCartScreen.tsx', import.meta.url), 'utf8');
+  const homeHeader = readFileSync(new URL('../components/BuyerHomeHeader.tsx', import.meta.url), 'utf8');
   const dashboard = readFileSync(new URL('../app/buyer-overview.tsx', import.meta.url), 'utf8');
   assert.match(layout, /\['dashboard', 'Dashboard', 'bar-chart-2', 'chart\.bar', 'chart\.bar\.fill'\]/);
   assert.match(layout, /NativeTabs\.Trigger name="dashboard"/);
@@ -213,6 +215,9 @@ test('buyer bottom navigation places Dashboard before Messages and keeps home ca
   assert.doesNotMatch(layout, /\['buyer-cart', 'Cart'/);
   assert.doesNotMatch(layout, /NativeTabs\.Trigger name="buyer-cart"/);
   assert.match(home, /onOpenCart=\{\(\) => router\.push\('\/buyer-cart'\)\}/);
+  assert.match(rootLayout, /publicSegments = new Set\(\[[^\]]*'buyer-cart'/);
+  assert.match(cartScreen, /if \(!token\) \{\s*return <BuyerAuthGate[\s\S]*?returnTo="\/buyer-cart"/);
+  assert.match(homeHeader, /<Feather name="shopping-cart" size=\{20\} color=\{colors\.accent\} \/>/);
   assert.match(rootLayout, /Stack\.Screen name="buyer-cart" options=\{\{ headerShown: false \}\}/);
   assert.match(profile, /\['Executive dashboard', '\/\(buyer-tabs\)\/dashboard'/);
   assert.match(dashboard, /if \(!isDashboardTab\) return <Redirect href="\/\(buyer-tabs\)\/dashboard" \/>/);

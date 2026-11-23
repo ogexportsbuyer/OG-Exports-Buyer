@@ -66,7 +66,8 @@ function RootLayoutNav() {
   const routeParams = useGlobalSearchParams();
   const returnTo = serializeRouteState(pathname, routeParams);
   const firstSegment = String(segments[0] ?? '');
-  const publicSegments = new Set(['', 'index', '(auth)', 'forgot-password', '(buyer-tabs)', 'buyer-product']);
+  // The cart screen has its own buyer sign-in gate and must render before auth redirects.
+  const publicSegments = new Set(['', 'index', '(auth)', 'forgot-password', '(buyer-tabs)', 'buyer-product', 'buyer-cart']);
   const routeAllowed = isBuyerAppRoute(firstSegment, pathname);
   const accountId = String(record(user).id ?? record(user).user_id ?? '');
   const sessionScope = token ? `${apiOrigin}|${accountId || 'authenticated'}` : 'signed-out';

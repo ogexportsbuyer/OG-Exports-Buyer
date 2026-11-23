@@ -540,7 +540,7 @@ export default function BuyerHomeHeader({
             hitSlop={8}
             style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.6 : 1 }]}
           >
-            <Feather name="shopping-bag" size={19} color={colors.foreground} />
+            <Feather name="shopping-cart" size={20} color={colors.accent} />
           </Pressable>
           <Pressable
             testID="buyer-home-account"
