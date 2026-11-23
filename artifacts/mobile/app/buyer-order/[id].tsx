@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { LocalizedText as Text } from '@/components/LocalizedText';
+import { BrandedConfirmDialog } from '@/components/BrandedConfirmDialog';
 import { Action, Card, ErrorState, LoadingCard, Screen, Status } from '@/components/InvestorUI';
 import { useColors } from '@/hooks/useColors';
 import {
@@ -29,6 +30,7 @@ export default function BuyerOrderDetail() {
   const validId = Number.isInteger(id) && id > 0;
   const [actionError, setActionError] = useState('');
   const [downloading, setDownloading] = useState(false);
+  const [repeatConfirmationVisible, setRepeatConfirmationVisible] = useState(false);
   const repeatOrder = useRepeatBuyerOrder();
   const query = useGetBuyerOrder(validId ? id : 0, { query: { queryKey: getGetBuyerOrderQueryKey(validId ? id : 0), enabled: validId } });
   const order = record(record(query.data).data);
@@ -49,24 +51,19 @@ export default function BuyerOrderDetail() {
     }
   }
 
-  function confirmRepeatOrder() {
-    Alert.alert(
-      'Request this order again?',
-      'This creates new quotation requests using the previous products and destination. It does not place or pay for a new order.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Create quote request',
-          onPress: () => void repeatOrder.mutateAsync({ id }).then(async () => {
-            await Promise.all([
-              client.invalidateQueries({ queryKey: getGetBuyerRfqsQueryKey() }),
-              client.invalidateQueries({ queryKey: getGetBuyerRfqsQueryKey({ per_page: 50 }) }),
-            ]);
-            router.replace({ pathname: '/buyer-orders', params: { view: 'rfqs' } });
-          }).catch(error => setActionError(messageOf(error))),
-        },
-      ],
-    );
+  async function confirmRepeatOrder() {
+    try {
+      await repeatOrder.mutateAsync({ id });
+      await Promise.all([
+        client.invalidateQueries({ queryKey: getGetBuyerRfqsQueryKey() }),
+        client.invalidateQueries({ queryKey: getGetBuyerRfqsQueryKey({ per_page: 50 }) }),
+      ]);
+      setRepeatConfirmationVisible(false);
+      router.replace({ pathname: '/buyer-orders', params: { view: 'rfqs' } });
+    } catch (error) {
+      setRepeatConfirmationVisible(false);
+      setActionError(messageOf(error));
+    }
   }
 
   return (
@@ -76,11 +73,25 @@ export default function BuyerOrderDetail() {
       {query.isError ? <ErrorState message="Order details could not be loaded." error={query.error} onRetry={() => void query.refetch()} /> : null}
       {!query.isLoading && !query.isError && validId ? (
         <>
+          <BrandedConfirmDialog
+            visible={repeatConfirmationVisible}
+            eyebrow={`ORDER DESK · ${displayOrderNumber(order)}`}
+            title="Request this order again?"
+            message="We’ll prepare new quotation requests from the previous products and destination. This does not place an order or take payment."
+            context={displayOrderNumber(order)}
+            icon="rotate-ccw"
+            confirmLabel="Create request"
+            busyLabel="Preparing…"
+            busy={repeatOrder.isPending}
+            onCancel={() => setRepeatConfirmationVisible(false)}
+            onConfirm={() => void confirmRepeatOrder()}
+            testID="buyer-repeat-order-confirmation"
+          />
           {actionError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, lineHeight: 18, marginBottom: 10 }}>{actionError}</Text> : null}
           <Card style={{ padding: 11, marginBottom: 12 }}>
             <Action title="Download order PDF" icon="download" secondary loading={downloading} disabled={downloading} onPress={() => void downloadOrderPdf()} testID="buyer-order-download-pdf" />
             <Action title="Submit payment details" icon="credit-card" secondary onPress={() => router.push({ pathname: '/buyer-trade-finance', params: { orderId: String(id) } })} testID="buyer-order-payment" />
-            <Action title={repeatOrder.isPending ? 'Creating quote request…' : 'Request repeat quotation'} icon="rotate-ccw" secondary loading={repeatOrder.isPending} disabled={repeatOrder.isPending} onPress={confirmRepeatOrder} testID="buyer-order-repeat" />
+              <Action title={repeatOrder.isPending ? 'Creating quote request…' : 'Request repeat quotation'} icon="rotate-ccw" secondary loading={repeatOrder.isPending} disabled={repeatOrder.isPending} onPress={() => { setActionError(''); setRepeatConfirmationVisible(true); }} testID="buyer-order-repeat" />
           </Card>
           <Card style={{ padding: 16, marginBottom: 14 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>

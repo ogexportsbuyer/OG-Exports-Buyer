@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { File as ExpoFile } from 'expo-file-system';
 import { Feather } from '@expo/vector-icons';
@@ -17,6 +17,7 @@ import {
   useUploadBuyerCompanyKycDocument,
 } from '@workspace/api-client-react';
 import { BuyerAuthGate } from '@/components/BuyerAuthGate';
+import { BrandedConfirmDialog } from '@/components/BrandedConfirmDialog';
 import { Action, Card, ErrorState, Field, LoadingCard, Screen, Status } from '@/components/InvestorUI';
 import { CountryPicker } from '@/components/CountryPicker';
 import { LocalizedText as Text } from '@/components/LocalizedText';
@@ -69,6 +70,7 @@ export default function BuyerCompany() {
   const [preferences, setPreferences] = useState({ payment_terms: '', incoterm: '', shipping: '', ports: '', commodities: '' });
   const [contactFields, setContactFields] = useState<ContactFields>(emptyContact);
   const [editingContact, setEditingContact] = useState<number | null>(null);
+  const [contactToDelete, setContactToDelete] = useState<{ id: number; name: string } | null>(null);
   const [showContactForm, setShowContactForm] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -191,15 +193,17 @@ export default function BuyerCompany() {
     }
   }
 
-  function confirmDeleteContact(id: number) {
-    Alert.alert('Remove contact?', 'This person will no longer be listed as a company contact.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => void deleteContact.mutateAsync({ id }).then(refreshCompany).catch((err: unknown) => setError(messageOf(err))),
-      },
-    ]);
+  async function confirmDeleteContact() {
+    if (!contactToDelete) return;
+    try {
+      await deleteContact.mutateAsync({ id: contactToDelete.id });
+      await refreshCompany();
+      setNotice('Company contact removed.');
+      setContactToDelete(null);
+    } catch (err) {
+      setContactToDelete(null);
+      setError(messageOf(err));
+    }
   }
 
   async function pickAndUpload(docType: string) {
@@ -249,6 +253,21 @@ export default function BuyerCompany() {
 
   return (
     <Screen title="Company profile" subtitle="Company information and trade setup" refreshable>
+      <BrandedConfirmDialog
+        visible={contactToDelete !== null}
+        eyebrow="COMPANY PROFILE · CONTACTS"
+        title="Remove this contact?"
+        message="This person will no longer be listed as a company contact."
+        context={contactToDelete?.name}
+        icon="user-x"
+        tone="danger"
+        confirmLabel="Remove contact"
+        busyLabel="Removing…"
+        busy={deleteContact.isPending}
+        onCancel={() => setContactToDelete(null)}
+        onConfirm={() => void confirmDeleteContact()}
+        testID="buyer-contact-remove-confirmation"
+      />
       {companyQuery.isLoading ? <LoadingCard label="Loading company profile…" lines={3} /> : null}
       {companyQuery.isError ? <ErrorState message="Company profile could not be loaded." error={companyQuery.error} onRetry={() => void companyQuery.refetch()} /> : null}
       {companyQuery.isSuccess ? (
@@ -340,7 +359,7 @@ export default function BuyerCompany() {
                     {first(contact, ['phone']) ? <Text style={{ color: colors.mutedForeground, fontSize: 11, marginTop: 4 }}>{first(contact, ['phone'])}</Text> : null}
                     <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
                       <Pressable accessibilityRole="button" onPress={() => beginEditContact(contact)}><Text style={{ color: colors.primary, fontWeight: '700', fontSize: 11 }}>Edit</Text></Pressable>
-                      {Number.isInteger(id) && id > 0 ? <Pressable accessibilityRole="button" onPress={() => confirmDeleteContact(id)}><Text style={{ color: colors.destructive, fontWeight: '700', fontSize: 11 }}>Remove</Text></Pressable> : null}
+                      {Number.isInteger(id) && id > 0 ? <Pressable accessibilityRole="button" onPress={() => { setError(''); setContactToDelete({ id, name: first(contact, ['name'], 'Contact') }); }}><Text style={{ color: colors.destructive, fontWeight: '700', fontSize: 11 }}>Remove</Text></Pressable> : null}
                     </View>
                   </Card>
                 );

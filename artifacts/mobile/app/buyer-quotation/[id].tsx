@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, FlatList, Pressable, View } from 'react-native';
+import { FlatList, Pressable, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -18,6 +18,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { BuyerAuthGate } from '@/components/BuyerAuthGate';
 import { Action, Card, EmptyState, ErrorState, Field, LoadingCard, Screen, Status } from '@/components/InvestorUI';
+import { BrandedConfirmDialog } from '@/components/BrandedConfirmDialog';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
@@ -72,6 +73,7 @@ export default function BuyerQuotationDetail() {
   const [message, setMessage] = useState('');
   const [sendError, setSendError] = useState('');
   const [decisionError, setDecisionError] = useState('');
+  const [confirmationAction, setConfirmationAction] = useState<'accept' | 'reject' | null>(null);
   const messages = list(record(messagesQuery.data).data);
   const orderedMessages = [...messages].sort((left, right) => {
     const leftTime = Date.parse(first(left, ['created_at'], ''));
@@ -99,32 +101,27 @@ export default function BuyerQuotationDetail() {
 
   function decide(action: 'accept' | 'reject') {
     setDecisionError('');
-    const accepting = action === 'accept';
-    Alert.alert(
-      accepting ? 'Accept this quotation?' : 'Decline this quotation?',
-      accepting
-        ? 'Accepting creates an order and shipment record. Payment is not taken in the app; the trade desk will confirm the next steps.'
-        : 'This will mark the quotation as declined. You can still send a message to the trade desk.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: accepting ? 'Accept quotation' : 'Decline quotation',
-          style: accepting ? 'default' : 'destructive',
-          onPress: () => {
-            const mutation = accepting ? acceptQuotation : rejectQuotation;
-            void mutation.mutateAsync({ id }).then(async () => {
-              await Promise.all([
-                queryClient.invalidateQueries({ queryKey: getGetBuyerQuotationQueryKey(id) }),
-                queryClient.invalidateQueries({ queryKey: getGetBuyerQuotationsQueryKey() }),
-                queryClient.invalidateQueries({ queryKey: getGetBuyerOrdersQueryKey() }),
-                queryClient.invalidateQueries({ queryKey: getGetBuyerRfqsQueryKey() }),
-              ]);
-              if (accepting) router.replace('/buyer-orders');
-            }).catch(error => setDecisionError(messageOf(error)));
-          },
-        },
-      ],
-    );
+    setConfirmationAction(action);
+  }
+
+  async function confirmDecision() {
+    if (!confirmationAction || !validId) return;
+    const accepting = confirmationAction === 'accept';
+    const mutation = accepting ? acceptQuotation : rejectQuotation;
+    try {
+      await mutation.mutateAsync({ id });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getGetBuyerQuotationQueryKey(id) }),
+        queryClient.invalidateQueries({ queryKey: getGetBuyerQuotationsQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: getGetBuyerOrdersQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: getGetBuyerRfqsQueryKey() }),
+      ]);
+      setConfirmationAction(null);
+      if (accepting) router.replace('/buyer-orders');
+    } catch (error) {
+      setConfirmationAction(null);
+      setDecisionError(messageOf(error));
+    }
   }
 
   if (!token) {
@@ -151,6 +148,23 @@ export default function BuyerQuotationDetail() {
 
       {quotationLoaded ? (
         <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={0}>
+          <BrandedConfirmDialog
+            visible={confirmationAction !== null}
+            eyebrow={`TRADE DESK · ${quotationReference(id)}`}
+            title={confirmationAction === 'accept' ? 'Accept this quotation?' : 'Decline this quotation?'}
+            message={confirmationAction === 'accept'
+              ? 'Accepting confirms these quotation terms and creates an order. No payment is taken in the app; the trade desk will confirm the next steps.'
+              : 'This will mark the quotation as declined. You can still message the OG Exports trade desk.'}
+            context={`${product}${productUnitPrice === null ? '' : ` · ${money(productUnitPrice)} per MT`}`}
+            icon={confirmationAction === 'accept' ? 'check-circle' : 'x-circle'}
+            tone={confirmationAction === 'accept' ? 'brand' : 'danger'}
+            confirmLabel={confirmationAction === 'accept' ? 'Accept quotation' : 'Decline quotation'}
+            busyLabel={confirmationAction === 'accept' ? 'Accepting…' : 'Declining…'}
+            busy={acceptQuotation.isPending || rejectQuotation.isPending}
+            onCancel={() => setConfirmationAction(null)}
+            onConfirm={() => void confirmDecision()}
+            testID="buyer-quotation-confirmation"
+          />
           <Card testID="buyer-quotation-context" style={{ padding: 15, marginBottom: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
               <View style={{ flex: 1 }}>

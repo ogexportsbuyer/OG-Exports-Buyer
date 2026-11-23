@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -14,6 +14,7 @@ import {
   useUpdateInvestorPassword,
 } from '@workspace/api-client-react';
 import { BuyerAuthGate } from '@/components/BuyerAuthGate';
+import { BrandedConfirmDialog } from '@/components/BrandedConfirmDialog';
 import { Action, Card, EmptyState, Field, LoadingCard, Screen, Status } from '@/components/InvestorUI';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { useAuth } from '@/context/AuthContext';
@@ -59,6 +60,8 @@ export default function BuyerSecurity() {
   const [setupRequested, setSetupRequested] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [sessionToRemove, setSessionToRemove] = useState<{ id: string; label: string } | null>(null);
+  const [confirmRemoveOthers, setConfirmRemoveOthers] = useState(false);
   const sessionsQuery = useGetInvestorSessions({ query: { queryKey: ['buyer-security-sessions'], enabled: !!token, refetchOnMount: 'always' } });
   const activityQuery = useGetInvestorSecurityActivity({ query: { queryKey: ['buyer-security-activity'], enabled: !!token, staleTime: 30_000 } });
   const twoFactorQuery = useGetInvestorTwoFactorStatus({ query: { queryKey: ['buyer-two-factor-status'], enabled: !!token } });
@@ -145,17 +148,37 @@ export default function BuyerSecurity() {
       setError('To end the current app session, sign out from Profile.');
       return;
     }
-    Alert.alert('Remove this device?', 'This device will need to sign in again before it can access the account.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove device', style: 'destructive', onPress: () => void revokeSession.mutateAsync({ id }).then(refreshSecurity).catch(err => setError(messageOf(err))) },
-    ]);
+    const session = sessions.find(item => first(item, ['id']) === id);
+    setError('');
+    setSessionToRemove({ id, label: session ? first(session, ['device', 'session_type'], 'Signed-in device') : 'Signed-in device' });
   }
 
   function removeOtherSessions() {
-    Alert.alert('Sign out other devices?', 'All other browser and app sessions will be revoked. This device stays signed in.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out others', style: 'destructive', onPress: () => void revokeOthers.mutateAsync().then(refreshSecurity).catch(err => setError(messageOf(err))) },
-    ]);
+    setError('');
+    setConfirmRemoveOthers(true);
+  }
+
+  async function confirmRemoveSession() {
+    if (!sessionToRemove) return;
+    try {
+      await revokeSession.mutateAsync({ id: sessionToRemove.id });
+      await refreshSecurity();
+      setSessionToRemove(null);
+    } catch (err) {
+      setSessionToRemove(null);
+      setError(messageOf(err));
+    }
+  }
+
+  async function confirmRemoveOtherSessions() {
+    try {
+      await revokeOthers.mutateAsync();
+      await refreshSecurity();
+      setConfirmRemoveOthers(false);
+    } catch (err) {
+      setConfirmRemoveOthers(false);
+      setError(messageOf(err));
+    }
   }
 
   if (!token) return <BuyerAuthGate title="Security & settings" body="Sign in to manage your password, two-factor authentication, active devices, and account activity." returnTo="/buyer-security" />;
@@ -168,6 +191,36 @@ export default function BuyerSecurity() {
 
   return (
     <Screen title="Security & settings" subtitle="Protect your buyer account" refreshable>
+      <BrandedConfirmDialog
+        visible={sessionToRemove !== null}
+        eyebrow="ACCOUNT SECURITY · DEVICES"
+        title="Remove this device?"
+        message="This device will need to sign in again before it can access your buyer account."
+        context={sessionToRemove?.label}
+        icon="smartphone"
+        tone="danger"
+        confirmLabel="Remove device"
+        busyLabel="Removing…"
+        busy={revokeSession.isPending}
+        onCancel={() => setSessionToRemove(null)}
+        onConfirm={() => void confirmRemoveSession()}
+        testID="buyer-device-remove-confirmation"
+      />
+      <BrandedConfirmDialog
+        visible={confirmRemoveOthers}
+        eyebrow="ACCOUNT SECURITY · DEVICES"
+        title="Sign out other devices?"
+        message="All other browser and app sessions will be ended. This device stays signed in."
+        context={`${sessions.length - 1} other session${sessions.length === 2 ? '' : 's'}`}
+        icon="log-out"
+        tone="danger"
+        confirmLabel="Sign out others"
+        busyLabel="Signing out…"
+        busy={revokeOthers.isPending}
+        onCancel={() => setConfirmRemoveOthers(false)}
+        onConfirm={() => void confirmRemoveOtherSessions()}
+        testID="buyer-other-devices-confirmation"
+      />
       <View style={{ flexDirection: 'row', padding: 4, borderRadius: 14, backgroundColor: colors.secondary, marginBottom: 14 }}>
         {tabs.map(([value, label]) => (
           <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: tab === value }} onPress={() => setTab(value)} style={{ flex: 1, minHeight: 39, borderRadius: 11, justifyContent: 'center', alignItems: 'center', backgroundColor: tab === value ? colors.card : 'transparent', borderWidth: tab === value ? 1 : 0, borderColor: colors.border }}>
