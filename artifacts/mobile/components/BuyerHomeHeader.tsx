@@ -71,7 +71,7 @@ const brandSlides = [
 ] as const;
 
 function getHeroCardWidth(viewportWidth: number) {
-  return Math.min(viewportWidth * 0.7, 340);
+  return Math.min(viewportWidth * 0.74, 350);
 }
 
 function BrandSlideMotion({
