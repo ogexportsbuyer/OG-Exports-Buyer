@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   promoCard: {
-    height: 220,
+    height: 200,
     overflow: 'hidden',
     borderRadius: 24,
     padding: 16,
