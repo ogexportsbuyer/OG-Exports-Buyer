@@ -11,7 +11,7 @@ import { useColors } from '@/hooks/useColors';
 import { useGetBuyerCart, useRemoveBuyerCartItem, useUpdateBuyerCartItem, getGetBuyerCartQueryKey } from '@workspace/api-client-react';
 import { amount, first, list, messageOf, record } from '@/lib/data';
 import { buyerCartItemMinimumQuantity, nextBuyerCartQuantity } from '@/lib/buyer-cart-flow';
-import { resolveBuyerProductImageUrl } from '@/lib/buyer-product-image';
+import { resolveBuyerProductImageUrl } from '@/lib/buyer-product-data';
 import { formatFobPrice } from '@/lib/format-fob-price';
 
 function CartThumbnail({ uri, label }: { uri: string; label: string }) {

@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { buyerProductSpecs, buyerProductValues } from './buyer-product-data.ts';
+import {
+  buyerProductGalleryImages,
+  buyerProductHasPdfReport,
+  buyerProductReportDownloadPath,
+  buyerProductSpecs,
+  buyerProductValues,
+  resolveBuyerProductImageUrl,
+} from './buyer-product-data.ts';
 import { formatFobPrice } from './format-fob-price.ts';
 
 test('catalogue product prices display their FOB basis and quote-only products stay unpriced', () => {
@@ -74,4 +81,50 @@ test('product list fields accept delimited text and safely ignore absent data', 
     'SBLC',
   ]);
   assert.deepEqual(buyerProductValues({}, 'packaging_options'), []);
+});
+
+test('product gallery combines the cover and sorted media, skips non-images, and caps at ten', () => {
+  const gallery = buyerProductGalleryImages({
+    image_url: 'product_images/cover.jpg',
+    media: [
+      { url: 'product_images/photo-2.jpg', type: 'image', sort_order: 1 },
+      { url: 'product_images/photo-1.jpg', type: 'image', sort_order: 0 },
+      { url: 'product_images/video.mp4', type: 'video', sort_order: 2 },
+      ...Array.from({ length: 12 }, (_, index) => ({
+        url: `product_images/extra-${index}.jpg`,
+        type: 'image',
+        sort_order: index + 3,
+      })),
+    ],
+  }, 'https://api.example.test');
+
+  assert.equal(gallery.length, 10);
+  assert.equal(gallery[0], 'https://api.example.test/product_images/cover.jpg');
+  assert.equal(gallery[1], 'https://api.example.test/product_images/photo-1.jpg');
+  assert.equal(gallery.includes('https://api.example.test/product_images/video.mp4'), false);
+});
+
+test('product report action uses the public PDF route and only accepts PDF reports', () => {
+  assert.equal(
+    buyerProductReportDownloadPath({ slug: 'premium-rice' }),
+    'api/products/premium-rice/lab-report',
+  );
+  assert.equal(
+    buyerProductReportDownloadPath({ lab_report_url: 'https://cdn.example.test/coa.pdf' }),
+    'https://cdn.example.test/coa.pdf',
+  );
+  assert.equal(buyerProductHasPdfReport({ lab_report_path: 'downloads/reports/coa.PDF' }), true);
+  assert.equal(buyerProductHasPdfReport({ lab_report_path: 'downloads/reports/coa.docx' }), false);
+});
+
+test('product image paths resolve to the API host for native image loading', () => {
+  assert.equal(
+    resolveBuyerProductImageUrl('product_images/maize.jpg', 'https://api.example.test/api'),
+    'https://api.example.test/product_images/maize.jpg',
+  );
+  assert.equal(
+    resolveBuyerProductImageUrl('uploads/products/rice.jpg', 'https://api.example.test'),
+    'https://api.example.test/storage/uploads/products/rice.jpg',
+  );
+  assert.equal(resolveBuyerProductImageUrl('', 'https://api.example.test'), '');
 });

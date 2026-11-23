@@ -63,6 +63,39 @@ export async function shareInvestorFile(downloadUrl: string, name: string, origi
   await Sharing.shareAsync(file.uri, { mimeType, dialogTitle: name });
 }
 
+export async function downloadAndSharePublicPdf(downloadUrl: string, name: string, origin: string) {
+  if (!origin) throw new Error('The OG Exports file service is not configured for this app. Contact support.');
+  const url = /^https?:\/\//i.test(downloadUrl)
+    ? downloadUrl
+    : `${origin.replace(/\/+$/, '')}/${downloadUrl.replace(/^\/+/, '')}`;
+  const response = await fetch(url, { headers: { Accept: 'application/pdf' } });
+  if (!response.ok) {
+    const message = await response.text().catch(() => '');
+    throw new Error(message || 'The product report could not be downloaded.');
+  }
+
+  const contents = new Uint8Array(await response.arrayBuffer());
+  const header = new TextDecoder().decode(contents.slice(0, 1024));
+  if (!header.includes('%PDF-')) throw new Error('The product report is not a valid PDF file.');
+
+  const fileName = safeFileName(name);
+  if (Platform.OS === 'web') {
+    const url = URL.createObjectURL(new Blob([contents], { type: 'application/pdf' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${fileName}.pdf`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return;
+  }
+
+  const file = new File(Paths.cache, `${fileName}.pdf`);
+  file.create({ overwrite: true });
+  file.write(contents);
+  if (!(await Sharing.isAvailableAsync())) throw new Error('PDF sharing is not available on this device.');
+  await Sharing.shareAsync(file.uri, { mimeType: 'application/pdf', dialogTitle: name });
+}
+
 export async function openInvestorFile(path: string, name: string, origin: string, mimeType: string, extension: string) {
   // Reserve a browser tab on the click before awaiting the authenticated request.
   const popup = Platform.OS === 'web' ? window.open('', '_blank') : null;

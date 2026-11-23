@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Image, Pressable, ScrollView, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { LocalizedText as Text } from '@/components/LocalizedText';
-import { Card, EmptyState, ErrorState, LoadingCard, Screen } from '@/components/InvestorUI';
+import { Action, Card, EmptyState, ErrorState, LoadingCard, Screen } from '@/components/InvestorUI';
 import { useColors } from '@/hooks/useColors';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -16,7 +16,8 @@ import {
 } from '@workspace/api-client-react';
 import { amount, first, messageOf, record } from '@/lib/data';
 import { categoryName, displayPrice, productMinimumQuantity, rowsFromResponse } from '@/lib/buyer-data';
-import { buyerProductSpecs, buyerProductValues } from '@/lib/buyer-product-data';
+import { buyerProductGalleryImages, buyerProductHasPdfReport, buyerProductReportDownloadPath, buyerProductSpecs, buyerProductValues } from '@/lib/buyer-product-data';
+import { downloadAndSharePublicPdf } from '@/lib/file-download';
 import { pendingProductAuthReturnTo } from '@/lib/buyer-auth-flow';
 import { motionHaptic } from '@/lib/motion';
 
@@ -73,6 +74,7 @@ function ValueSection({ title, values }: { title: string; values: string[] }) {
 
 export default function BuyerProductDetails() {
   const colors = useColors();
+  const { width: windowWidth } = useWindowDimensions();
   const queryClient = useQueryClient();
   const { ready, token, apiOrigin, user } = useAuth();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
@@ -93,15 +95,26 @@ export default function BuyerProductDetails() {
     () => validId ? products.find(item => amount(item, ['id']) === numericId) ?? null : null,
     [numericId, products, validId],
   );
-  const [imageFailed, setImageFailed] = useState(false);
+  const galleryRef = useRef<ScrollViewInstance | null>(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [failedImageUrls, setFailedImageUrls] = useState<string[]>([]);
   const [added, setAdded] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [reportError, setReportError] = useState('');
+  const [reportDownloading, setReportDownloading] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const productId = product ? String(amount(product, ['id']) ?? numericId) : String(numericId);
   const favoritesKey = `buyer-product-favourites:${first(record(user), ['id'], 'guest')}`;
+  const galleryImages = useMemo(
+    () => product ? buyerProductGalleryImages(product, apiOrigin) : [],
+    [apiOrigin, product],
+  );
   const addToCart = useAddBuyerCartItem();
   const name = product ? first(product, ['name'], 'Export product') : 'Product details';
-  const imageUrl = product ? first(product, ['image_url', 'imageUrl']) : '';
+  const galleryWidth = Math.max(1, windowWidth - 40);
+  const reportDownloadPath = product ? buyerProductReportDownloadPath(product) : '';
+  const hasReport = !!product && !!first(product, ['lab_report_path', 'labReportPath', 'lab_report_url', 'labReportUrl']);
+  const hasPdfReport = !!product && buyerProductHasPdfReport(product);
   const summary = product
     ? first(product, ['short_description', 'shortDescription', 'description'])
     : '';
@@ -140,9 +153,11 @@ export default function BuyerProductDetails() {
   }, [favoritesKey]);
 
   useEffect(() => {
-    setImageFailed(false);
+    setActiveImageIndex(0);
+    setFailedImageUrls([]);
     setAdded(false);
     setActionError('');
+    setReportError('');
   }, [productId]);
 
   async function handleAddToCart() {
@@ -191,6 +206,19 @@ export default function BuyerProductDetails() {
     }
   }
 
+  async function handleDownloadReport() {
+    if (!product || !reportDownloadPath) return;
+    setReportError('');
+    setReportDownloading(true);
+    try {
+      await downloadAndSharePublicPdf(reportDownloadPath, `${name}-lab-report`, apiOrigin);
+    } catch (error) {
+      setReportError(messageOf(error));
+    } finally {
+      setReportDownloading(false);
+    }
+  }
+
   return (
     <Screen title="Product details" hideHeader refreshable>
       {!ready ? <LoadingCard label="Connecting to the OG Exports catalogue…" lines={2} /> : null}
@@ -209,15 +237,39 @@ export default function BuyerProductDetails() {
 
       {product ? (
         <>
-          <View style={{ height: 246, overflow: 'hidden', borderRadius: 24, backgroundColor: colors.secondary }}>
-            {imageUrl && !imageFailed ? (
-              <Image
-                source={{ uri: imageUrl }}
-                accessibilityLabel={`${name} product`}
-                resizeMode="cover"
-                onError={() => setImageFailed(true)}
-                style={{ width: '100%', height: '100%' }}
-              />
+          <View testID="buyer-product-gallery" style={{ height: 246, overflow: 'hidden', borderRadius: 24, backgroundColor: colors.secondary }}>
+            {galleryImages.length ? (
+              <ScrollView
+                ref={galleryRef}
+                horizontal
+                pagingEnabled
+                bounces={false}
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={event => {
+                  const index = Math.round(event.nativeEvent.contentOffset.x / galleryWidth);
+                  setActiveImageIndex(Math.max(0, Math.min(index, galleryImages.length - 1)));
+                }}
+              >
+                {galleryImages.map((uri, index) => (
+                  <View key={`${uri}-${index}`} style={{ width: galleryWidth, height: 246 }}>
+                    {failedImageUrls.includes(uri) ? (
+                      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }}>
+                        <Feather name="package" size={42} color={colors.primary} />
+                        <Text style={{ color: colors.mutedForeground, fontSize: 11, marginTop: 8 }}>OG Exports product</Text>
+                      </View>
+                    ) : (
+                      <Image
+                        testID={`buyer-product-gallery-image-${index + 1}`}
+                        source={{ uri }}
+                        accessibilityLabel={`${name} product photo ${index + 1} of ${galleryImages.length}`}
+                        resizeMode="cover"
+                        onError={() => setFailedImageUrls(current => current.includes(uri) ? current : [...current, uri])}
+                        style={{ width: '100%', height: '100%' }}
+                      />
+                    )}
+                  </View>
+                ))}
+              </ScrollView>
             ) : (
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }}>
                 <Feather name="package" size={42} color={colors.primary} />
@@ -257,7 +309,48 @@ export default function BuyerProductDetails() {
             >
               <Feather name="heart" size={18} color={favorite ? colors.accent : colors.foreground} />
             </Pressable>
+            {galleryImages.length > 1 ? (
+              <View style={{ position: 'absolute', right: 12, bottom: 12, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: colors.card }}>
+                <Text style={{ color: colors.foreground, fontSize: 10, fontWeight: '800' }}>
+                  {String(activeImageIndex + 1).padStart(2, '0')} / {String(galleryImages.length).padStart(2, '0')}
+                </Text>
+              </View>
+            ) : null}
           </View>
+          {galleryImages.length > 1 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 10, paddingBottom: 2 }}>
+              {galleryImages.map((uri, index) => (
+                <Pressable
+                  key={`${uri}-thumbnail-${index}`}
+                  testID={`buyer-product-gallery-thumbnail-${index + 1}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Show product photo ${index + 1} of ${galleryImages.length}`}
+                  accessibilityState={{ selected: activeImageIndex === index }}
+                  onPress={() => {
+                    setActiveImageIndex(index);
+                    galleryRef.current?.scrollTo({ x: index * galleryWidth, y: 0, animated: true });
+                  }}
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 13,
+                    overflow: 'hidden',
+                    borderWidth: activeImageIndex === index ? 2 : 1,
+                    borderColor: activeImageIndex === index ? colors.accent : colors.border,
+                    backgroundColor: colors.lightGreen,
+                  }}
+                >
+                  {failedImageUrls.includes(uri) ? (
+                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                      <Feather name="package" size={17} color={colors.primary} />
+                    </View>
+                  ) : (
+                    <Image source={{ uri }} accessibilityLabel={`${name} photo thumbnail ${index + 1}`} resizeMode="cover" onError={() => setFailedImageUrls(current => current.includes(uri) ? current : [...current, uri])} style={{ width: '100%', height: '100%' }} />
+                  )}
+                </Pressable>
+              ))}
+            </ScrollView>
+          ) : null}
 
           <View style={{ marginTop: 17 }}>
             <Text style={{ color: colors.accent, fontSize: 10, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' }}>
@@ -358,6 +451,29 @@ export default function BuyerProductDetails() {
           ) : null}
 
           <ValueSection title="Certifications" values={certifications} />
+          {hasReport ? (
+            <DetailSection title="Product laboratory report">
+              <Text style={{ color: colors.mutedForeground, fontSize: 12, lineHeight: 18, marginBottom: 12 }}>
+                {hasPdfReport
+                  ? 'Download the official product report as a PDF or share it from your device.'
+                  : 'A PDF laboratory report is not available for this product yet.'}
+              </Text>
+              {reportError ? (
+                <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, lineHeight: 18, marginBottom: 10 }}>
+                  {reportError}
+                </Text>
+              ) : null}
+              {hasPdfReport ? (
+                <Action
+                  title="Download / share PDF report"
+                  icon="download"
+                  loading={reportDownloading}
+                  onPress={() => void handleDownloadReport()}
+                  testID="buyer-product-download-lab-report"
+                />
+              ) : null}
+            </DetailSection>
+          ) : null}
           <ValueSection title="Payment terms" values={paymentTerms} />
           <ValueSection title="Delivery terms" values={deliveryTerms} />
           <ValueSection title="Packaging options" values={packaging} />
