@@ -7,8 +7,10 @@ import {
   getGetBuyerOrdersQueryKey,
   getGetBuyerPaymentHistoryQueryKey,
   getGetBuyerBankAccountsQueryKey,
+  getGetBuyerCompanyQueryKey,
   getGetPaymentMethodsQueryKey,
   useGetBuyerBankAccounts,
+  useGetBuyerCompany,
   useGetBuyerOrders,
   useGetBuyerPaymentHistory,
   useGetPaymentMethods,
@@ -21,6 +23,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { amount, first, list, messageOf, record } from '@/lib/data';
 import { displayOrderNumber, rowsFromResponse } from '@/lib/buyer-data';
+import { buyerKycStatusLabel, isBuyerKycApproved } from '@/lib/buyer-kyc-approval';
 
 type FinanceTab = 'accounts' | 'history' | 'submit';
 
@@ -54,6 +57,9 @@ export default function BuyerTradeFinance() {
   const accountsQuery = useGetBuyerBankAccounts({
     query: { queryKey: getGetBuyerBankAccountsQueryKey(), enabled: !!token, staleTime: 300_000 },
   });
+  const companyQuery = useGetBuyerCompany({
+    query: { queryKey: getGetBuyerCompanyQueryKey(), enabled: !!token, staleTime: 0, refetchOnMount: 'always' },
+  });
   const methodsQuery = useGetPaymentMethods({
     query: { queryKey: getGetPaymentMethodsQueryKey(), enabled: !!token, staleTime: 300_000 },
   });
@@ -65,6 +71,11 @@ export default function BuyerTradeFinance() {
   });
   const submitPayment = useMarkBuyerOrderPaid();
   const accounts = rowsFromResponse(accountsQuery.data);
+  const kycApproved = companyQuery.isSuccess
+    && !companyQuery.isError
+    && !companyQuery.isFetching
+    && isBuyerKycApproved(companyQuery.data);
+  const kycStatusLabel = buyerKycStatusLabel(companyQuery.data);
   const methods = rowsFromResponse(methodsQuery.data);
   const orders = rowsFromResponse(ordersQuery.data);
   const history = rowsFromResponse(historyQuery.data);
@@ -142,6 +153,16 @@ export default function BuyerTradeFinance() {
         <>
           {accountsQuery.isLoading ? <LoadingCard label="Loading OG Exports bank details…" lines={3} /> : null}
           {accountsQuery.isError ? <ErrorState message="Bank details could not be loaded." error={accountsQuery.error} onRetry={() => void accountsQuery.refetch()} /> : null}
+          {companyQuery.isLoading || companyQuery.isFetching ? <LoadingCard label="Checking company verification…" lines={1} /> : null}
+          {companyQuery.isError ? <ErrorState message="Company verification could not be confirmed. Transfer IBANs remain hidden until approval is confirmed." error={companyQuery.error} onRetry={() => void companyQuery.refetch()} /> : null}
+          {companyQuery.isSuccess && !companyQuery.isError && !companyQuery.isFetching && !kycApproved ? (
+            <Card testID="transfer-iban-kyc-gate" style={{ padding: 14, marginBottom: 11, borderColor: colors.accent }}>
+              <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '800' }}>Transfer details unlock after verification</Text>
+              <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 17, marginTop: 5 }}>
+                OG Exports will show the bank IBAN after an administrator approves your company KYC. Current status: {kycStatusLabel}.
+              </Text>
+            </Card>
+          ) : null}
           {accounts.length === 0 && accountsQuery.isSuccess ? <EmptyState title="No bank accounts listed" body="Contact OG Exports support to confirm the correct transfer details." icon="credit-card" /> : null}
           {accounts.map((account, index) => (
             <Card key={first(account, ['id'], String(index))} style={{ padding: 15, marginBottom: 10 }}>
@@ -151,7 +172,7 @@ export default function BuyerTradeFinance() {
               </View>
               {[
                 ['Account title', first(account, ['account_title', 'account_name'])],
-                ['IBAN / account', first(account, ['iban', 'account_number'])],
+                ...(kycApproved ? [['IBAN / account', first(account, ['iban', 'account_number'])] as [string, string]] : []),
                 ['SWIFT code', first(account, ['swift_code', 'swift'])],
               ].filter(([, value]) => !!value).map(([label, value]) => (
                 <View key={label} style={{ marginTop: 10 }}>
