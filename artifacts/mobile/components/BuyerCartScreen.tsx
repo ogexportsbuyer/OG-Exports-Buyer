@@ -11,6 +11,7 @@ import { useColors } from '@/hooks/useColors';
 import { useGetBuyerCart, useRemoveBuyerCartItem, useUpdateBuyerCartItem, getGetBuyerCartQueryKey } from '@workspace/api-client-react';
 import { amount, first, list, messageOf, record } from '@/lib/data';
 import { buyerCartItemMinimumQuantity, nextBuyerCartQuantity } from '@/lib/buyer-cart-flow';
+import { resolveBuyerProductImageUrl } from '@/lib/buyer-product-image';
 import { formatFobPrice } from '@/lib/format-fob-price';
 
 function CartThumbnail({ uri, label }: { uri: string; label: string }) {
@@ -37,7 +38,7 @@ function CartThumbnail({ uri, label }: { uri: string; label: string }) {
 export default function BuyerCartScreen() {
   const colors = useColors();
   const queryClient = useQueryClient();
-  const { token } = useAuth();
+  const { token, apiOrigin } = useAuth();
   const cartQuery = useGetBuyerCart({ query: { queryKey: getGetBuyerCartQueryKey(), enabled: !!token, staleTime: 15_000 } });
   const updateItem = useUpdateBuyerCartItem();
   const removeItem = useRemoveBuyerCartItem();
@@ -127,7 +128,12 @@ export default function BuyerCartScreen() {
         const quantity = amount(item, ['qty']) ?? minimumQuantity;
         const unitPrice = amount(item, ['unit_price']) ?? 0;
         const name = first(product, ['name'], first(item, ['product_name'], 'Export product'));
-        const image = first(product, ['image_url', 'imageUrl']);
+        const imagePath = first(
+          product,
+          ['image_url', 'imageUrl', 'image_path', 'imagePath'],
+          first(item, ['product_image_url', 'productImageUrl']),
+        );
+        const image = resolveBuyerProductImageUrl(imagePath, apiOrigin);
         const subtotal = quantity * unitPrice;
         return (
           <Card key={itemId} testID={`buyer-cart-item-${itemId}`} style={{ padding: 16, marginBottom: 12 }}>
