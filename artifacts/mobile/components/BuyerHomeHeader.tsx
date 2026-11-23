@@ -561,7 +561,7 @@ export default function BuyerHomeHeader({
         style={[styles.topTabs, { borderBottomColor: colors.border }]}
         contentContainerStyle={{ flexDirection: 'row', alignItems: 'center', gap: 25, paddingHorizontal: 20 }}
       >
-        {['For you', 'Products', 'Worldwide'].map(label => {
+        {['Worldwide'].map(label => {
           const active = activeTopTab === label;
           return (
             <Pressable

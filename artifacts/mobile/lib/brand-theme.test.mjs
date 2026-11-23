@@ -137,6 +137,8 @@ test('screen and PDF branding share the transparent approved SVG mark', () => {
   assert.match(svgSource, /surface === 'dark'/);
   assert.match(buyerHeader, /<BrandMark width=\{46\}/);
   assert.match(buyerHeader, /<BrandMark width=\{37\} onBackground="dark"/);
+  assert.match(buyerHeader, /\['Worldwide'\]\.map\(label => \{/, 'the buyer homepage top navigation keeps only Worldwide');
+  assert.doesNotMatch(buyerHeader, /'For you'|'Products'/, 'For you and Products are removed from the homepage top navigation');
   assert.match(buyerHeader, /const brandSlides = \[/);
   assert.doesNotMatch(buyerHeader, /<Image\b/, 'brand banners do not use product imagery');
   assert.doesNotMatch(buyerHeader, /promoAction|slide\.action/, 'brand banners do not show a product-browse button');
