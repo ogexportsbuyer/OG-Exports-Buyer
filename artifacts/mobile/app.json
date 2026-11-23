@@ -34,6 +34,13 @@
     "plugins": [
       "expo-router",
       [
+        "expo-navigation-bar",
+        {
+          "enforceContrast": false,
+          "style": "light"
+        }
+      ],
+      [
         "expo-notifications",
         {
           "defaultChannel": "investor-updates-v2"

@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { ActivityIndicator, Platform, Pressable, StatusBar as NativeStatusBar, View } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
+import { NavigationBar } from 'expo-navigation-bar';
+import * as SystemUI from 'expo-system-ui';
 import { Feather } from '@expo/vector-icons';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -44,12 +46,14 @@ function RootLayoutNav() {
   const colors = useColors();
   const t = (value: string) => translateUi(value, preferences.language);
   const segments = useSegments();
-  const isHomeRoute = segments[0] === '(buyer-tabs)' && segments[1] === 'buyer-home';
   const isDarkStatusBar = resolvedAppearance === 'dark';
-  const useLightStatusBar = isHomeRoute || isDarkStatusBar;
   const statusBar = Platform.OS === 'android'
-    ? <NativeStatusBar barStyle={useLightStatusBar ? 'light-content' : 'dark-content'} />
-    : <ExpoStatusBar style={useLightStatusBar ? 'light' : 'dark'} />;
+    ? <NativeStatusBar barStyle={isDarkStatusBar ? 'light-content' : 'dark-content'} backgroundColor="transparent" />
+    : <ExpoStatusBar style={isDarkStatusBar ? 'light' : 'dark'} />;
+  const navigationBar = Platform.OS === 'android'
+    ? <NavigationBar style={isDarkStatusBar ? 'dark' : 'light'} />
+    : null;
+  const systemBars = <>{statusBar}{navigationBar}</>;
   const safeBackButton = (fallbackHref: Href, testID: string) => () => (
     <Pressable
       testID={testID}
@@ -72,6 +76,11 @@ function RootLayoutNav() {
   const accountId = String(record(user).id ?? record(user).user_id ?? '');
   const sessionScope = token ? `${apiOrigin}|${accountId || 'authenticated'}` : 'signed-out';
   const previousSessionScope = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    void SystemUI.setBackgroundColorAsync(colors.background).catch(() => undefined);
+  }, [colors.background]);
 
   useEffect(() => {
     if (!ready) return;
@@ -138,14 +147,14 @@ function RootLayoutNav() {
 
   if (!ready && (!routeAllowed || !publicSegments.has(firstSegment))) {
     return <>
-      {statusBar}
+      {systemBars}
       <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color={colors.primary} />
       </View>
     </>;
   }
   if (ready && token && !hasBuyerAccount(user)) {
-    return <>{statusBar}<BuyerAccountRequired /></>;
+    return <>{systemBars}<BuyerAccountRequired /></>;
   }
   if (ready && (!routeAllowed || (!token && !publicSegments.has(firstSegment)))) {
     return <Redirect href={token
@@ -156,7 +165,7 @@ function RootLayoutNav() {
 
   if (token && !appUnlocked) {
     return <>
-      {statusBar}
+      {systemBars}
       <Stack screenOptions={{ headerShown: false, animation: reduceMotion ? 'fade' : 'slide_from_right', animationDuration: MOTION.page, contentStyle: { backgroundColor: colors.background, direction: isRTL ? 'rtl' : 'ltr' } }}>
         <Stack.Screen name="lock" />
         <Stack.Screen name="(auth)" options={{ presentation: 'modal', headerShown: false }} />
@@ -166,7 +175,7 @@ function RootLayoutNav() {
 
   return (
     <>
-      {statusBar}
+      {systemBars}
       <Stack screenOptions={{
         animation: reduceMotion ? 'fade' : 'slide_from_right',
         animationDuration: MOTION.page,
