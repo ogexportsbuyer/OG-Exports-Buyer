@@ -153,6 +153,8 @@ test('screen and PDF branding share the transparent approved SVG mark', () => {
   assert.match(buyerHeader, /const heroCardWidth = getHeroCardWidth\(carouselViewportWidth\)/, 'the carousel uses the shared responsive width');
   assert.match(buyerHeader, /const measuredCardWidth = getHeroCardWidth\(width\)/, 'viewport remeasurement keeps carousel snapping aligned');
   assert.match(buyerHeader, /promoCard:\s*\{\s*height: 200,/, 'brand banners use the requested compact vertical height');
+  assert.match(buyerHeader, /promoCopy:\s*\{[^}]*justifyContent: 'flex-start'/, 'banner copy starts below the logo row instead of expanding upward');
+  assert.match(buyerHeader, /promoBody:\s*\{[^}]*marginTop: 6,/, 'banner copy keeps a clear gap from the logo row');
   for (const message of [
     'Connecting Markets. Delivering Excellence.',
     'Exceptional Quality. Uncompromising Standards.',
