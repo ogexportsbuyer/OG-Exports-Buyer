@@ -343,7 +343,7 @@ export default function Onboarding() {
   const copyOffset = useRef(new Animated.Value(10)).current;
   const swipeDirection = useRef(1);
   const slide = slides[step];
-  const compact = windowHeight < 720;
+  const compact = windowHeight < 800 || windowWidth < 375;
   const horizontalPadding = windowWidth < 360 ? 18 : 24;
 
   useEffect(() => {
@@ -480,7 +480,7 @@ export default function Onboarding() {
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <Animated.View {...swipeResponder.panHandlers} style={{ opacity, transform: [{ translateX }] }}>
           <Animated.View style={{ opacity: illustrationOpacity, transform: [{ scale: illustrationScale }] }}>
-            <Card testID={`onboarding-illustration-${step + 1}`} style={[styles.illustrationCard, { height: compact ? 190 : 232, backgroundColor: colors.secondary, borderColor: colors.border, marginBottom: compact ? 20 : 27 }]}>
+            <Card testID={`onboarding-illustration-${step + 1}`} style={[styles.illustrationCard, { height: compact ? 158 : 232, backgroundColor: colors.secondary, borderColor: colors.border, marginBottom: compact ? 13 : 27 }]}>
               <OnboardingIllustration kind={slide.illustration} stageA={illustrationStages[0]} stageB={illustrationStages[1]} stageC={illustrationStages[2]} reduceMotion={reduceMotion} />
               <View pointerEvents="none" style={styles.artLabel}>
                 <Feather name={step === 0 ? 'globe' : step === 1 ? 'file-text' : 'navigation'} size={13} color={colors.primary} />
@@ -491,9 +491,9 @@ export default function Onboarding() {
           </Animated.View>
           <Animated.View style={{ opacity: copyOpacity, transform: [{ translateY: copyOffset }] }}>
             <Text style={{ color: colors.accent, fontSize: 10, lineHeight: 16, fontWeight: '700', letterSpacing: 1.65, textAlign: 'center' }}>{slide.eyebrow.split('/')[1].trim()}</Text>
-            <Text accessibilityRole="header" style={{ color: colors.primary, fontSize: compact ? 28 : 32, lineHeight: compact ? 35 : 39, fontWeight: '700', marginTop: 8, textAlign: 'center', letterSpacing: -0.65 }}>{slide.title}</Text>
-            <Text style={{ color: colors.foreground, opacity: 0.82, fontSize: 15, lineHeight: 23, marginTop: 12, textAlign: 'center', paddingHorizontal: 4 }}>{slide.body}</Text>
-            <View style={[styles.detailLine, { borderColor: colors.border }]}>
+            <Text accessibilityRole="header" style={{ color: colors.primary, fontSize: compact ? 26 : 32, lineHeight: compact ? 33 : 39, fontWeight: '700', marginTop: compact ? 6 : 8, textAlign: 'center', letterSpacing: -0.65 }}>{slide.title}</Text>
+            <Text style={{ color: colors.foreground, opacity: 0.82, fontSize: compact ? 14 : 15, lineHeight: compact ? 20 : 23, marginTop: compact ? 8 : 12, textAlign: 'center', paddingHorizontal: 4 }}>{slide.body}</Text>
+            <View style={[styles.detailLine, { borderColor: colors.border }, compact ? { marginTop: 10, paddingTop: 8 } : null]}>
               <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '700', letterSpacing: 1.05, textAlign: 'center' }}>{slide.detail}</Text>
             </View>
           </Animated.View>
