@@ -1,16 +1,16 @@
 {
   "expo": {
     "name": "OG Exports",
-    "slug": "og-exports-50",
-    "owner": "ogexp55",
-    "version": "2.1.6",
+    "slug": "og-exports-buyer",
+    "owner": "og-exports-buyer",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/og-app-icon.png",
     "scheme": "mobile",
     "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "com.ogexports.buyer",
-      "version": "2.1.6",
+      "version": "1.0.1",
       "buildNumber": "4",
       "supportsTablet": false,
       "icon": "./assets/images/og-app-icon.png"
@@ -18,7 +18,7 @@
     "android": {
       "package": "com.ogexports.buyer",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 6,
+      "versionCode": 1,
       "icon": "./assets/images/og-app-icon.png",
       "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
@@ -68,7 +68,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "1178e32b-a81d-4a9e-a36e-df5090f3c8ba"
+        "projectId": "ece154fe-bee2-416a-8139-d269db75224c"
       }
     },
     "experiments": {
