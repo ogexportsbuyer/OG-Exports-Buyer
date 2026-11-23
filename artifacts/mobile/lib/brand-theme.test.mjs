@@ -149,6 +149,9 @@ test('screen and PDF branding share the transparent approved SVG mark', () => {
   assert.match(buyerHeader, /!isFocused \|\| reduceMotion \|\| carouselInteracting/, 'autoplay pauses when hidden, reduced-motion is enabled, or the user is swiping');
   assert.match(buyerHeader, /Animated\.spring\(progress/);
   assert.match(buyerHeader, /outputRange: \[0\.9, 1\.045\]/, 'the active slide expands horizontally while moving forward');
+  assert.match(buyerHeader, /function getHeroCardWidth\(viewportWidth: number\) \{\s*return Math\.min\(viewportWidth \* 0\.7, 340\);/, 'brand banners use a narrower, responsive card width');
+  assert.match(buyerHeader, /const heroCardWidth = getHeroCardWidth\(carouselViewportWidth\)/, 'the carousel uses the shared responsive width');
+  assert.match(buyerHeader, /const measuredCardWidth = getHeroCardWidth\(width\)/, 'viewport remeasurement keeps carousel snapping aligned');
   for (const message of [
     'Connecting Markets. Delivering Excellence.',
     'Exceptional Quality. Uncompromising Standards.',

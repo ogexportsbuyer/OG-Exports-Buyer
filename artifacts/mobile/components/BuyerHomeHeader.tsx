@@ -70,6 +70,10 @@ const brandSlides = [
   },
 ] as const;
 
+function getHeroCardWidth(viewportWidth: number) {
+  return Math.min(viewportWidth * 0.7, 340);
+}
+
 function BrandSlideMotion({
   active,
   reduceMotion,
@@ -389,7 +393,7 @@ export default function BuyerHomeHeader({
   const dragReleaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastViewportWidth = useRef(0);
   const carouselItems = [brandSlides[brandSlides.length - 1], ...brandSlides, brandSlides[0]];
-  const heroCardWidth = Math.min(carouselViewportWidth * 0.76, 360);
+  const heroCardWidth = getHeroCardWidth(carouselViewportWidth);
   const heroCardOverlap = 24;
   const heroStep = heroCardWidth - heroCardOverlap;
   const heroSideInset = (carouselViewportWidth - heroCardWidth) / 2;
@@ -457,7 +461,7 @@ export default function BuyerHomeHeader({
     if (!width || Math.abs(width - lastViewportWidth.current) < 1) return;
     lastViewportWidth.current = width;
     setCarouselViewportWidth(width);
-    const measuredCardWidth = Math.min(width * 0.76, 360);
+    const measuredCardWidth = getHeroCardWidth(width);
     const measuredStep = measuredCardWidth - heroCardOverlap;
     requestAnimationFrame(() => featuredScrollRef.current?.scrollTo({
       x: carouselPositionRef.current * measuredStep,
