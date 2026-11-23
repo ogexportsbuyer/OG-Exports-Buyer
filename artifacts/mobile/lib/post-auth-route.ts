@@ -26,7 +26,8 @@ export type PostAuthHref =
   | { pathname: '/project/[id]'; params: { id: string } }
   | { pathname: '/position/[id]'; params: { id: string } }
   | { pathname: '/account/transaction/[id]'; params: { id: string; kind?: 'deposit' | 'withdrawal' | 'wallet'; page?: string } }
-  | TransactionHref;
+  | TransactionHref
+  | BuyerPostAuthHref;
 
 export type BuyerPostAuthHref =
   | '/(buyer-tabs)/buyer-home'
@@ -57,7 +58,8 @@ export type BuyerPostAuthHref =
   | { pathname: '/buyer-rfq/[id]'; params: { id: string } }
   | { pathname: '/buyer-order/[id]'; params: { id: string } }
   | { pathname: '/buyer-quotation/[id]'; params: { id: string } }
-  | { pathname: '/buyer-shipment/[id]'; params: { id: string } };
+  | { pathname: '/buyer-shipment/[id]'; params: { id: string } }
+  | { pathname: '/buyer-trade-finance'; params: { orderId: string } };
 
 export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPostAuthHref {
   const value = Array.isArray(returnTo) ? returnTo[0] : returnTo;
@@ -192,6 +194,19 @@ export function isBuyerAppRoute(firstSegment: string, pathname: string): boolean
   if (buyerSegments.has(firstSegment)) return true;
   return firstSegment === 'account'
     && ['/account/messages', '/account/notifications'].includes(pathname);
+}
+
+export function isBuyerRoutePublicBeforeAuth(firstSegment: string): boolean {
+  return new Set([
+    '',
+    'index',
+    '(auth)',
+    'forgot-password',
+    '(buyer-tabs)',
+    'buyer-product',
+    'buyer-cart',
+    'buyer-notifications',
+  ]).has(firstSegment);
 }
 
 function decode(value: string) {

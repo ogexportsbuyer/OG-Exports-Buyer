@@ -30,7 +30,7 @@ import { translateUi } from '@/lib/strings';
 import { MOTION, MotionProvider, useMotion } from '@/lib/motion';
 import { goBackOrReplace } from '@/lib/safe-navigation';
 import { homeRouteForAccount, hasBuyerAccount } from '@/lib/account-role';
-import { isBuyerAppRoute } from '@/lib/post-auth-route';
+import { isBuyerAppRoute, isBuyerRoutePublicBeforeAuth } from '@/lib/post-auth-route';
 import { BuyerAccountRequired } from '@/components/BuyerAccountRequired';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -71,7 +71,6 @@ function RootLayoutNav() {
   const returnTo = serializeRouteState(pathname, routeParams);
   const firstSegment = String(segments[0] ?? '');
   // The cart screen has its own buyer sign-in gate and must render before auth redirects.
-  const publicSegments = new Set(['', 'index', '(auth)', 'forgot-password', '(buyer-tabs)', 'buyer-product', 'buyer-cart']);
   const routeAllowed = isBuyerAppRoute(firstSegment, pathname);
   const accountId = String(record(user).id ?? record(user).user_id ?? '');
   const sessionScope = token ? `${apiOrigin}|${accountId || 'authenticated'}` : 'signed-out';
@@ -105,7 +104,7 @@ function RootLayoutNav() {
       if (handledResponses.size > 10) handledResponses.clear();
       void notificationsApi.clearLastNotificationResponseAsync();
       const data = record(request.content.data);
-      router.push(notificationHref(data) ?? '/account/notifications');
+      router.push(notificationHref(data) ?? '/buyer-notifications');
     };
     void import('expo-notifications').then(notificationsApi => {
       if (!active) return;
@@ -145,7 +144,7 @@ function RootLayoutNav() {
     }
   }, [ready, token, user, appUnlocked, firstSegment, returnTo]);
 
-  if (!ready && (!routeAllowed || !publicSegments.has(firstSegment))) {
+  if (!ready && (!routeAllowed || !isBuyerRoutePublicBeforeAuth(firstSegment))) {
     return <>
       {systemBars}
       <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
@@ -156,7 +155,7 @@ function RootLayoutNav() {
   if (ready && token && !hasBuyerAccount(user)) {
     return <>{systemBars}<BuyerAccountRequired /></>;
   }
-  if (ready && (!routeAllowed || (!token && !publicSegments.has(firstSegment)))) {
+  if (ready && (!routeAllowed || (!token && !isBuyerRoutePublicBeforeAuth(firstSegment)))) {
     return <Redirect href={token
       ? homeRouteForAccount(user)
       : { pathname: '/(auth)/login', params: { returnTo } }

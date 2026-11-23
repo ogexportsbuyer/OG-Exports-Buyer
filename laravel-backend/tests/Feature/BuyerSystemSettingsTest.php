@@ -124,7 +124,35 @@ it('keeps buyer push alerts out of the investor-only signed callback', function 
     InvestorPushBridge::sendNotification($this->buyer, $notification);
 
     expect(Http::recorded())->toHaveCount(1);
-    Http::assertSent(fn ($request) => $request->url() === 'https://exp.host/--/api/v2/push/send');
+    Http::assertSent(fn ($request) => $request->url() === 'https://exp.host/--/api/v2/push/send'
+        && $request->data()[0]['data']['href'] === '/buyer/orders'
+        && $request->data()[0]['data']['order_id'] === '42');
+});
+
+it('sends safe, actionable buyer quotation pushes with their related record IDs', function () {
+    InvestorPushToken::query()->create([
+        'user_id' => $this->buyer->id,
+        'expo_push_token' => 'ExponentPushToken[Buyerdeviceabcdefghijk123456789]',
+        'platform' => 'ios',
+    ]);
+    Http::fake([
+        'https://exp.host/--/api/v2/push/send' => Http::response(['data' => [['status' => 'ok']]]),
+    ]);
+    $notification = AppNotification::query()->create([
+        'user_id' => $this->buyer->id,
+        'type' => PortalNotificationTypes::QUOTATION_REPLY,
+        'title' => 'Reply on quotation',
+        'body' => 'A private quotation reply',
+        'data' => ['href' => '/buyer/quotations', 'quotation_id' => 91, 'rfq_id' => 37],
+    ]);
+
+    InvestorPushBridge::sendNotification($this->buyer, $notification);
+
+    Http::assertSent(fn ($request) => $request->url() === 'https://exp.host/--/api/v2/push/send'
+        && $request->data()[0]['title'] === 'Quotation response received'
+        && $request->data()[0]['data']['href'] === '/buyer/quotations'
+        && $request->data()[0]['data']['quotation_id'] === '91'
+        && $request->data()[0]['data']['rfq_id'] === '37');
 });
 
 it('uses buyer notification category preferences for future in-app alerts', function () {

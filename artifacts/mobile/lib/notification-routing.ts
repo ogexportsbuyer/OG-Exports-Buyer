@@ -1,5 +1,5 @@
 import { first, record } from '@/lib/data';
-import type { PostAuthHref } from '@/lib/post-auth-route';
+import type { BuyerPostAuthHref, PostAuthHref } from '@/lib/post-auth-route';
 
 type NotificationTarget =
   | { kind: 'trade'; id: string }
@@ -111,6 +111,11 @@ export function notificationTarget(item: Record<string, unknown>): NotificationT
 }
 
 export function notificationHref(item: Record<string, unknown>): PostAuthHref | null {
+  const payload = record(item.data ?? item.metadata ?? item.payload);
+  const route = first(payload, ['href', 'deep_link', 'action_url', 'route', 'url', 'link'], first(item, ['href', 'deep_link', 'action_url', 'route', 'url', 'link']));
+  const buyerHref = buyerNotificationHref(item, payload, route);
+  if (buyerHref) return buyerHref;
+
   const target = notificationTarget(item);
   if (!target) return null;
   if (target.kind === 'trade') return { pathname: '/project/[id]', params: { id: target.id } };
@@ -132,4 +137,61 @@ export function notificationHref(item: Record<string, unknown>): PostAuthHref | 
     return { pathname: '/account/transactions', params: { tab: 'Wallet', search: target.id, selected: target.id } };
   }
   return target.path;
+}
+
+function buyerNotificationHref(
+  item: Record<string, unknown>,
+  payload: Record<string, unknown>,
+  route: string,
+): BuyerPostAuthHref | null {
+  const type = first(item, ['type', 'event_type'], first(payload, ['type', 'event_type'])).toLowerCase();
+  const normalizedRoute = route.toLowerCase().split(/[?#]/, 1)[0].replace(/\/+$/, '');
+  const isBuyerNotification = normalizedRoute.startsWith('/buyer/')
+    || normalizedRoute === '/buyer-notifications'
+    || type.startsWith('buyer_')
+    || ['order_status', 'quotation', 'quotation_reply', 'shipment_update', 'trade_document', 'support_ticket'].includes(type)
+    || ['order_id', 'quotation_id', 'rfq_id', 'shipment_id', 'document_id', 'ticket_id'].some(key => first(payload, [key]) !== '');
+  if (!isBuyerNotification) return null;
+
+  const idFor = (...keys: string[]) => {
+    for (const key of keys) {
+      const value = safeId(first(payload, [key]));
+      if (value) return value;
+    }
+    return '';
+  };
+
+  const orderId = idFor('order_id');
+  const quotationId = idFor('quotation_id');
+  const rfqId = idFor('rfq_id');
+  const shipmentId = idFor('shipment_id');
+
+  if (normalizedRoute.includes('/quotation') || type.includes('quotation') || type.includes('quote')) {
+    if (quotationId) return { pathname: '/buyer-quotation/[id]', params: { id: quotationId } };
+    if (rfqId && !type.includes('quotation')) return { pathname: '/buyer-rfq/[id]', params: { id: rfqId } };
+    return { pathname: '/buyer-orders', params: { view: 'quotations' } };
+  }
+  if (normalizedRoute.includes('/rfq') || type.includes('rfq')) {
+    if (rfqId) return { pathname: '/buyer-rfq/[id]', params: { id: rfqId } };
+    return { pathname: '/buyer-orders', params: { view: 'rfqs' } };
+  }
+  if (normalizedRoute.includes('/shipment') || type.includes('shipment')) {
+    if (shipmentId) return { pathname: '/buyer-shipment/[id]', params: { id: shipmentId } };
+    return '/buyer-shipments';
+  }
+  if (normalizedRoute.includes('/document') || type.includes('document')) return '/buyer-documents';
+  if (normalizedRoute.includes('/payment') || normalizedRoute.includes('/finance') || type.includes('payment')) {
+    return orderId ? { pathname: '/buyer-trade-finance', params: { orderId } } : '/buyer-trade-finance';
+  }
+  if (normalizedRoute.includes('/message') || normalizedRoute.includes('/support') || type.includes('support') || type.includes('message')) {
+    return '/(buyer-tabs)/buyer-messages';
+  }
+  if (normalizedRoute.includes('/company')) return '/buyer-company';
+  if (normalizedRoute.includes('/security')) return '/buyer-security';
+  if (normalizedRoute.includes('/settings')) return '/buyer-system-settings';
+  if (normalizedRoute.includes('/profile')) return '/buyer-profile-details';
+  if (normalizedRoute.includes('/order') || type.includes('order')) {
+    return orderId ? { pathname: '/buyer-order/[id]', params: { id: orderId } } : { pathname: '/buyer-orders', params: { view: 'orders' } };
+  }
+  return '/buyer-notifications';
 }

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { isBuyerRoutePublicBeforeAuth } from './post-auth-route.ts';
 
 const source = path => readFileSync(new URL(path, import.meta.url), 'utf8');
 
@@ -11,7 +12,8 @@ test('forgot password opens as a native bottom sheet over sign in', () => {
 
   assert.match(login, /pathname: '\/forgot-password'/);
   assert.match(login, /typeof returnTo === 'string' \? \{ params: \{ returnTo \} \} : \{\}/);
-  assert.match(rootLayout, /publicSegments = new Set\(\[[^\]]*'forgot-password'/);
+  assert.equal(isBuyerRoutePublicBeforeAuth('forgot-password'), true);
+  assert.match(rootLayout, /isBuyerRoutePublicBeforeAuth\(firstSegment\)/);
   assert.match(rootLayout, /name="forgot-password" options=\{\{[\s\S]*?presentation: 'formSheet'[\s\S]*?sheetAllowedDetents: \[0\.82, 1\]/);
   assert.match(rootLayout, /sheetGrabberVisible: true/);
   assert.match(publicRoute, /export \{ default \} from '\.\//);

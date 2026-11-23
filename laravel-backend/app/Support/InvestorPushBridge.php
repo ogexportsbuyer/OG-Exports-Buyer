@@ -79,7 +79,21 @@ final class InvestorPushBridge
             'notification_id' => $notificationId,
             'href' => $href,
         ];
-        foreach (['deposit_id', 'withdrawal_id', 'investment_id', 'project_id', 'transaction_id', 'kyc_id', 'ticket_id', 'trade_update_id'] as $key) {
+        foreach ([
+            'deposit_id',
+            'withdrawal_id',
+            'investment_id',
+            'project_id',
+            'transaction_id',
+            'kyc_id',
+            'ticket_id',
+            'trade_update_id',
+            'order_id',
+            'quotation_id',
+            'rfq_id',
+            'shipment_id',
+            'document_id',
+        ] as $key) {
             $value = $notificationData[$key] ?? null;
             if (is_int($value) || (is_string($value) && preg_match('/^\d+$/', $value) === 1)) {
                 $pushData[$key] = (string) $value;
@@ -291,6 +305,34 @@ final class InvestorPushBridge
         }
 
         return match ($type) {
+            PortalNotificationTypes::ORDER_STATUS => [
+                'Order status updated',
+                'A change to your buyer order is ready. Open OG Exports to review its progress.',
+            ],
+            PortalNotificationTypes::QUOTATION => [
+                'New quotation received',
+                'OG Exports has shared a quotation for your request. Review the terms in the app.',
+            ],
+            PortalNotificationTypes::QUOTATION_REPLY => [
+                'Quotation response received',
+                'A response to your quotation request is ready. Open OG Exports to review it.',
+            ],
+            PortalNotificationTypes::TRADE_DOCUMENT => [
+                'Trade document available',
+                'A new document is ready for your order. Open OG Exports to view it.',
+            ],
+            PortalNotificationTypes::BUYER_PAYMENT_APPROVED => [
+                'Payment verified',
+                'Your buyer order payment was verified. Open OG Exports for the latest status.',
+            ],
+            PortalNotificationTypes::BUYER_PAYMENT_REJECTED => [
+                'Payment needs attention',
+                'Open OG Exports to review the payment update and next steps.',
+            ],
+            PortalNotificationTypes::BUYER_PAYMENT_CANCELLED => [
+                'Payment request cancelled',
+                'A pending payment request was cancelled. Open OG Exports for details.',
+            ],
             InvestorNotificationTypes::OPPORTUNITY_PUBLISHED => [
                 'New trade opportunity',
                 'A new opportunity is available. Explore its details in OG Exports.',

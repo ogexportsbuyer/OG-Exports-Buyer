@@ -10,6 +10,7 @@ import {
   resolvePostAuthHref,
   resolveUserPostAuthHref,
   serializeRouteState,
+  isBuyerRoutePublicBeforeAuth,
 } from './post-auth-route.ts';
 import {
   buyerCartRouteAfterProductAdd,
@@ -90,6 +91,11 @@ test('returns buyer sign-in to the requested marketplace destination', () => {
 test('uses a safe buyer home fallback for unknown post-auth routes', () => {
   assert.equal(resolveBuyerPostAuthHref('//external.example'), '/(buyer-tabs)/buyer-home');
   assert.equal(resolveBuyerPostAuthHref('/admin'), '/(buyer-tabs)/buyer-home');
+});
+
+test('allows the buyer notifications screen to render its own sign-in gate', () => {
+  assert.equal(isBuyerRoutePublicBeforeAuth('buyer-notifications'), true);
+  assert.equal(isBuyerRoutePublicBeforeAuth('buyer-orders'), false);
 });
 test('buyer login and email verification keep the selected product through cart', () => {
   const returnTo = pendingProductAuthReturnTo(42);
