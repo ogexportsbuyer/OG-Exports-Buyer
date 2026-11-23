@@ -68,6 +68,36 @@ const brandSlides = [
     iconColors: ['#7C8150', '#343B25'] as const,
     accent: '#B08D57',
   },
+  {
+    id: 'sgs-quality',
+    eyebrow: 'QUALITY DOCUMENTATION',
+    title: 'SGS Reports. Quality You Can Verify.',
+    body: 'Request product-specific inspection reports and quality documents for eligible shipments.',
+    icon: 'file-text' as const,
+    backgroundColors: ['#153C34', '#39725E'] as const,
+    iconColors: ['#4F816B', '#13352D'] as const,
+    accent: '#B08D57',
+  },
+  {
+    id: 'food-safety',
+    eyebrow: 'FOOD SAFETY STANDARDS',
+    title: 'ISO 22000 & HACCP-Aligned Supply.',
+    body: 'Supplier certificates and scope are confirmed for each applicable product before order.',
+    icon: 'check-circle' as const,
+    backgroundColors: ['#214438', '#567557'] as const,
+    iconColors: ['#6A8A64', '#1A382F'] as const,
+    accent: '#B08D57',
+  },
+  {
+    id: 'halal-assurance',
+    eyebrow: 'HALAL SOURCING',
+    title: 'Halal Documentation, Clearly Verified.',
+    body: 'Halal certificates are confirmed by product and supplier before you place an order.',
+    icon: 'shield' as const,
+    backgroundColors: ['#41472A', '#747D46'] as const,
+    iconColors: ['#858B59', '#343A25'] as const,
+    accent: '#B08D57',
+  },
 ] as const;
 
 function getHeroCardWidth(viewportWidth: number) {
@@ -242,17 +272,6 @@ const styles = StyleSheet.create({
     fontSize: 7,
     fontWeight: '600',
     letterSpacing: 0.8,
-  },
-  promoIndex: {
-    fontSize: 8,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  promoIndexPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderWidth: 1,
-    borderRadius: 12,
   },
   promoBody: {
     flex: 1,
@@ -609,11 +628,6 @@ export default function BuyerHomeHeader({
       >
         {carouselItems.map((slide, index) => {
           const isActive = carouselPosition === index;
-          const realIndex = index === 0
-            ? brandSlides.length - 1
-            : index === brandSlides.length + 1
-              ? 0
-              : index - 1;
           return (
             <BrandSlideMotion
               key={`${slide.id}-${index}`}
@@ -660,14 +674,6 @@ export default function BuyerHomeHeader({
                       <Text style={[styles.promoWordmark, { color: colors.splashText }]}>OG EXPORTS</Text>
                       <Text style={[styles.promoSubmark, { color: colors.splashMuted }]}>PAKISTAN · GLOBAL TRADE</Text>
                     </View>
-                  </View>
-                  <View style={[styles.promoIndexPill, {
-                    borderColor: `${slide.accent}55`,
-                    backgroundColor: 'rgba(255,255,255,0.06)',
-                  }]}>
-                    <Text style={[styles.promoIndex, { color: colors.splashMuted }]}>
-                      {String(realIndex + 1).padStart(2, '0')} / {String(brandSlides.length).padStart(2, '0')}
-                    </Text>
                   </View>
                 </View>
 

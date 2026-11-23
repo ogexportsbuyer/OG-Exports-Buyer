@@ -155,18 +155,25 @@ test('screen and PDF branding share the transparent approved SVG mark', () => {
   assert.match(buyerHeader, /promoCard:\s*\{\s*height: 200,/, 'brand banners use the requested compact vertical height');
   assert.match(buyerHeader, /promoCopy:\s*\{[^}]*justifyContent: 'flex-start'/, 'banner copy starts below the logo row instead of expanding upward');
   assert.match(buyerHeader, /promoBody:\s*\{[^}]*marginTop: 6,/, 'banner copy keeps a clear gap from the logo row');
+  assert.doesNotMatch(buyerHeader, /promoIndex|promoIndexPill|padStart\(2, '0'\)/, 'brand banner cards do not show slide numbers');
   for (const message of [
     'Connecting Markets. Delivering Excellence.',
     'Exceptional Quality. Uncompromising Standards.',
     'Powering Global Trade Through Reliable Supply.',
     'Quality Assured. Relationships Built on Trust.',
     'Beyond Business. Building Lasting Partnerships.',
+    'SGS Reports. Quality You Can Verify.',
+    'ISO 22000 & HACCP-Aligned Supply.',
+    'Halal Documentation, Clearly Verified.',
+    'Request product-specific inspection reports and quality documents for eligible shipments.',
+    'Supplier certificates and scope are confirmed for each applicable product before order.',
+    'Halal certificates are confirmed by product and supplier before you place an order.',
   ]) {
     assert.ok(buyerHeader.includes(message), `homepage banner copy includes ${message}`);
   }
   const bannerPalettes = [...buyerHeader.matchAll(/backgroundColors: \['(#[A-F0-9]{6})', '(#[A-F0-9]{6})'\] as const/gi)];
-  assert.equal(bannerPalettes.length, 5, 'each brand banner defines its own premium palette');
-  assert.equal(new Set(bannerPalettes.map(([, firstColor]) => firstColor.toUpperCase())).size, 5);
+  assert.equal(bannerPalettes.length, 8, 'each brand banner defines its own premium palette');
+  assert.equal(new Set(bannerPalettes.map(([, firstColor]) => firstColor.toUpperCase())).size, 8);
   assert.deepEqual(
     bannerPalettes.map(([, start, end]) => [start.toUpperCase(), end.toUpperCase()]),
     [
@@ -175,6 +182,9 @@ test('screen and PDF branding share the transparent approved SVG mark', () => {
       ['#193F33', '#47735B'],
       ['#1D4033', '#4F7653'],
       ['#3B4025', '#6A7137'],
+      ['#153C34', '#39725E'],
+      ['#214438', '#567557'],
+      ['#41472A', '#747D46'],
     ],
     'banner backgrounds stay within the branded teal and green palette',
   );
