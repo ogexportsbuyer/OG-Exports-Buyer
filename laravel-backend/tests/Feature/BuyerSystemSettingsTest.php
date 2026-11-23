@@ -155,6 +155,31 @@ it('sends safe, actionable buyer quotation pushes with their related record IDs'
         && $request->data()[0]['data']['rfq_id'] === '37');
 });
 
+it('uses buyer-specific private lock-screen copy for business verification updates', function () {
+    InvestorPushToken::query()->create([
+        'user_id' => $this->buyer->id,
+        'expo_push_token' => 'ExponentPushToken[Buyerdeviceabcdefghijk123456789]',
+        'platform' => 'ios',
+    ]);
+    Http::fake([
+        'https://exp.host/--/api/v2/push/send' => Http::response(['data' => [['status' => 'ok']]]),
+    ]);
+    $notification = AppNotification::query()->create([
+        'user_id' => $this->buyer->id,
+        'type' => PortalNotificationTypes::KYC_REJECTED,
+        'title' => 'Business verification needs attention',
+        'body' => 'Private review details',
+        'data' => ['href' => '/buyer/company'],
+    ]);
+
+    InvestorPushBridge::sendNotification($this->buyer, $notification);
+
+    Http::assertSent(fn ($request) => $request->url() === 'https://exp.host/--/api/v2/push/send'
+        && $request->data()[0]['title'] === 'Business verification needs attention'
+        && str_contains($request->data()[0]['body'], 'review your business profile')
+        && ! str_contains($request->data()[0]['body'], 'Private review details'));
+});
+
 it('uses buyer notification category preferences for future in-app alerts', function () {
     UserProfile::query()->create([
         'user_id' => $this->buyer->id,

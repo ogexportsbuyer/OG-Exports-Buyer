@@ -96,6 +96,8 @@ test('uses a safe buyer home fallback for unknown post-auth routes', () => {
 test('allows the buyer notifications screen to render its own sign-in gate', () => {
   assert.equal(isBuyerRoutePublicBeforeAuth('buyer-notifications'), true);
   assert.equal(isBuyerRoutePublicBeforeAuth('buyer-orders'), false);
+  const rootLayout = readFileSync(new URL('../app/_layout.tsx', import.meta.url), 'utf8');
+  assert.match(rootLayout, /Stack\.Screen name="buyer-notifications" options=\{\{ headerShown: false \}\}/);
 });
 test('buyer login and email verification keep the selected product through cart', () => {
   const returnTo = pendingProductAuthReturnTo(42);
@@ -221,7 +223,8 @@ test('buyer bottom navigation places Dashboard before Messages and keeps home ca
   assert.doesNotMatch(layout, /\['buyer-cart', 'Cart'/);
   assert.doesNotMatch(layout, /NativeTabs\.Trigger name="buyer-cart"/);
   assert.match(home, /onOpenCart=\{\(\) => router\.push\('\/buyer-cart'\)\}/);
-  assert.match(rootLayout, /publicSegments = new Set\(\[[^\]]*'buyer-cart'/);
+  assert.match(rootLayout, /isBuyerRoutePublicBeforeAuth\(firstSegment\)/);
+  assert.equal(isBuyerRoutePublicBeforeAuth('buyer-cart'), true);
   assert.match(cartScreen, /if \(!token\) \{\s*return <BuyerAuthGate[\s\S]*?returnTo="\/buyer-cart"/);
   assert.match(homeHeader, /<Feather name="shopping-cart" size=\{20\} color=\{colors\.accent\} \/>/);
   assert.match(rootLayout, /Stack\.Screen name="buyer-cart" options=\{\{ headerShown: false \}\}/);

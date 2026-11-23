@@ -1,4 +1,3 @@
-import { first, record } from '@/lib/data';
 import type { BuyerPostAuthHref, PostAuthHref } from '@/lib/post-auth-route';
 
 type NotificationTarget =
@@ -12,6 +11,21 @@ type NotificationTarget =
       selected?: string;
     }
   | { kind: 'screen'; path: '/account/kyc' | '/wallet/deposit' | '/wallet/withdraw' | '/account/reports' | '/account/messages' | '/account/portfolio' | '/buyer-notifications' | '/(tabs)/opportunities' | '/(tabs)/wallet' };
+
+function record(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function first(source: Record<string, unknown>, keys: string[], fallback = ''): string {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  }
+  return fallback;
+}
 
 function decode(value: string) {
   try {
@@ -155,7 +169,7 @@ function buyerNotificationHref(
 
   const idFor = (...keys: string[]) => {
     for (const key of keys) {
-      const value = safeId(first(payload, [key]));
+      const value = safeId(first(payload, [key], first(item, [key])));
       if (value) return value;
     }
     return '';

@@ -73,7 +73,7 @@ final class InvestorPushBridge
         if (! is_string($href) || ! str_starts_with($href, '/')) {
             $href = $defaultHref;
         }
-        [$pushTitle, $pushBody] = self::lockScreenContent($type, $notificationData, $inAppTitle, $inAppBody);
+        [$pushTitle, $pushBody] = self::lockScreenContent($type, $notificationData, $inAppTitle, $inAppBody, $isBuyer);
         $pushData = [
             'type' => $type,
             'notification_id' => $notificationId,
@@ -299,7 +299,29 @@ final class InvestorPushBridge
         array $data = [],
         ?string $inAppTitle = null,
         ?string $inAppBody = null,
+        bool $isBuyer = false,
     ): array {
+        if ($isBuyer && in_array($type, [
+            InvestorNotificationTypes::KYC_SUBMITTED,
+            InvestorNotificationTypes::KYC_APPROVED,
+            InvestorNotificationTypes::KYC_REJECTED,
+        ], true)) {
+            return match ($type) {
+                InvestorNotificationTypes::KYC_SUBMITTED => [
+                    'Business verification received',
+                    'Your buyer account documents are under review. Open OG Exports for updates.',
+                ],
+                InvestorNotificationTypes::KYC_APPROVED => [
+                    'Business verification approved',
+                    'Your buyer business profile is verified. Open OG Exports to continue.',
+                ],
+                default => [
+                    'Business verification needs attention',
+                    'Open OG Exports to review your business profile and next steps.',
+                ],
+            };
+        }
+
         if (self::isFinancialType($type)) {
             return self::financialLockScreenContent($type, $data, $inAppTitle, $inAppBody);
         }

@@ -12,6 +12,17 @@ test('opens the exact quotation sent in a buyer notification', () => {
   });
 });
 
+test('opens deep links from a tapped push payload with top-level record IDs', () => {
+  assert.deepEqual(notificationHref({
+    type: 'order_status',
+    href: '/buyer/orders',
+    order_id: '42',
+  }), {
+    pathname: '/buyer-order/[id]',
+    params: { id: '42' },
+  });
+});
+
 test('opens the related buyer RFQ when its admin update has no quotation yet', () => {
   assert.deepEqual(notificationHref({
     type: 'rfq_status',

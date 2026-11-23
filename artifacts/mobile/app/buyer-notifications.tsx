@@ -19,6 +19,7 @@ import { first, list, messageOf, record } from '@/lib/data';
 import { notificationHref } from '@/lib/notification-routing';
 import { BUYER_NOTIFICATION_CATEGORIES, notificationCategory, notificationCategoryLabel, type NotificationCategoryFilter } from '@/lib/notification-categories';
 import { formatNotificationTimestamp, isInvestorNotificationUnread } from '@/lib/notification-utils';
+import { goBackOrReplace } from '@/lib/safe-navigation';
 
 export default function BuyerNotifications() {
   const colors = useColors();
@@ -83,11 +84,19 @@ export default function BuyerNotifications() {
       title="Notifications"
       subtitle="Important updates for your buyer account"
       refreshable
-      action={unreadCount ? (
-        <Pressable testID="buyer-notifications-mark-all" accessibilityRole="button" disabled={markAll.isPending} onPress={() => void markAllRead()} style={{ minHeight: 36, justifyContent: 'center', paddingHorizontal: 5 }}>
-          <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '800' }}>{markAll.isPending ? 'Saving…' : 'Mark all read'}</Text>
-        </Pressable>
-      ) : null}
+      action={(
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Pressable testID="buyer-notifications-back" accessibilityRole="button" accessibilityLabel="Back to home" onPress={() => goBackOrReplace('/(buyer-tabs)/buyer-home')} style={{ minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 3 }}>
+            <Feather name="arrow-left" size={14} color={colors.primary} />
+            <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>Back</Text>
+          </Pressable>
+          {unreadCount ? (
+            <Pressable testID="buyer-notifications-mark-all" accessibilityRole="button" disabled={markAll.isPending} onPress={() => void markAllRead()} style={{ minHeight: 36, justifyContent: 'center', paddingHorizontal: 5 }}>
+              <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '800' }}>{markAll.isPending ? 'Saving…' : 'Mark all read'}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      )}
     >
       {query.isLoading ? <LoadingCard label="Loading notifications…" lines={3} /> : null}
       {query.isError ? <ErrorState message="Notifications could not be loaded." error={query.error} onRetry={() => void query.refetch()} /> : null}

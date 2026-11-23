@@ -172,7 +172,7 @@ export function BuyerPushNotificationSettings({
           <View style={{ flex: 1 }}>
             <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '700' }}>Device push notifications</Text>
             <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginTop: 3 }}>
-              Order, payment, shipment and support alerts on this device.
+              RFQ, quotation, account, order, payment, shipment and support updates.
             </Text>
           </View>
           <Switch
