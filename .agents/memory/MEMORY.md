@@ -45,3 +45,4 @@
 - [Expo store versioning](expo-store-versioning.md) — EAS reads the user-facing release version from shared `expo.version`; changing it affects both platforms.
 - [Buyer marketplace flow](buyer-marketplace-flow.md) — keep buyer browsing public in the same app, gate cart/account actions with sign-in, and preserve role-based investor tabs.
 - [Buyer push and preferences](buyer-push-delivery.md) — keep buyer settings and device notifications separate from investor-only identity and push callbacks.
+- [Expo SDK 58 Android system bars](expo-sdk58-system-bars.md) — edge-to-edge is enforced; navigation-bar contrast settings need a native build, not Expo Go.

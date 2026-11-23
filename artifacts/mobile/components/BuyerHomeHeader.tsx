@@ -13,7 +13,8 @@ type Props = {
   onSearchChange: (value: string) => void;
   onBrowse: (searchTerm?: string) => void;
   onOpenCart: () => void;
-  onOpenAccount: () => void;
+  onOpenNotifications: () => void;
+  unreadNotificationCount: number;
   onSelectTab: (label: string) => void;
 };
 
@@ -398,7 +399,8 @@ export default function BuyerHomeHeader({
   onSearchChange,
   onBrowse,
   onOpenCart,
-  onOpenAccount,
+  onOpenNotifications,
+  unreadNotificationCount,
   onSelectTab,
 }: Props) {
   const colors = useColors();
@@ -543,14 +545,42 @@ export default function BuyerHomeHeader({
             <Feather name="shopping-cart" size={20} color={colors.accent} />
           </Pressable>
           <Pressable
-            testID="buyer-home-account"
+            testID="buyer-home-notifications"
             accessibilityRole="button"
-            accessibilityLabel="Open buyer account"
-            onPress={onOpenAccount}
+            accessibilityLabel={unreadNotificationCount > 0
+              ? `Open notifications, ${unreadNotificationCount} unread`
+              : 'Open notifications'}
+            accessibilityHint="View and manage buyer account updates"
+            onPress={onOpenNotifications}
             hitSlop={8}
             style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.6 : 1 }]}
           >
-            <Feather name="user" size={19} color={colors.foreground} />
+            <View style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
+              <Feather name="bell" size={19} color={colors.foreground} />
+              {unreadNotificationCount > 0 ? (
+                <View
+                  testID="buyer-home-notification-count"
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    right: 0,
+                    minWidth: 17,
+                    height: 17,
+                    borderRadius: 9,
+                    paddingHorizontal: 3,
+                    borderWidth: 1,
+                    borderColor: colors.card,
+                    backgroundColor: colors.accent,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text numberOfLines={1} style={{ color: colors.accentForeground, fontSize: 8, lineHeight: 11, fontWeight: '700' }}>
+                    {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
           </Pressable>
         </View>
       </View>

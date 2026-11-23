@@ -48,7 +48,7 @@ function RootLayoutNav() {
   const segments = useSegments();
   const isDarkStatusBar = resolvedAppearance === 'dark';
   const statusBar = Platform.OS === 'android'
-    ? <NativeStatusBar barStyle={isDarkStatusBar ? 'light-content' : 'dark-content'} backgroundColor="transparent" />
+    ? <NativeStatusBar barStyle={isDarkStatusBar ? 'light-content' : 'dark-content'} />
     : <ExpoStatusBar style={isDarkStatusBar ? 'light' : 'dark'} />;
   const navigationBar = Platform.OS === 'android'
     ? <NavigationBar style={isDarkStatusBar ? 'dark' : 'light'} />

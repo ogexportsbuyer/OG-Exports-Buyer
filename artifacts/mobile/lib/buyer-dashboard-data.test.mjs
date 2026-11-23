@@ -4,6 +4,7 @@ import {
   buyerDashboardErrorMessage,
   buyerDashboardAlertTime,
   buyerDashboardKycLabel,
+  buyerUnreadNotificationCount,
   mapBuyerDashboardOrderStatuses,
   recentBuyerApprovalNotifications,
   unwrapBuyerDashboardResponse,
@@ -24,6 +25,13 @@ test('keeps missing or invalid dashboard payloads empty instead of inventing met
   assert.deepEqual(unwrapBuyerDashboardResponse(null), {});
   assert.deepEqual(unwrapBuyerDashboardResponse({ data: null }), {});
   assert.deepEqual(unwrapBuyerDashboardResponse({ data: [] }), {});
+});
+
+test('reads the buyer notification unread count from the Laravel response envelope', () => {
+  assert.equal(buyerUnreadNotificationCount({ data: { unread_count: 4 } }), 4);
+  assert.equal(buyerUnreadNotificationCount({ unread_count: '2' }), 2);
+  assert.equal(buyerUnreadNotificationCount({ data: { unread_count: -1 } }), 0);
+  assert.equal(buyerUnreadNotificationCount({ data: {} }), 0);
 });
 
 test('explains dashboard authorization and server failures without exposing response bodies', () => {

@@ -12,12 +12,15 @@ import {
   getGetBuyerOrdersQueryKey,
   getGetProductCategoriesQueryKey,
   getGetProductsQueryKey,
+  getGetSharedUnreadNotificationCountQueryKey,
   useGetBuyerOrders,
   useGetProductCategories,
   useGetProducts,
+  useGetSharedUnreadNotificationCount,
 } from '@workspace/api-client-react';
-import { first } from '@/lib/data';
+import { first, record } from '@/lib/data';
 import { displayOrderNumber, rowsFromResponse } from '@/lib/buyer-data';
+import { buyerUnreadNotificationCount } from '@/lib/buyer-dashboard-data';
 
 const styles = StyleSheet.create({
   ordersSection: {
@@ -62,6 +65,15 @@ export default function BuyerHome() {
     { per_page: 10 },
     { query: { queryKey: getGetBuyerOrdersQueryKey({ per_page: 10 }), enabled: ready && !!token && !!apiOrigin, staleTime: 30_000 } },
   );
+  const unreadNotificationsQuery = useGetSharedUnreadNotificationCount({
+    query: {
+      queryKey: getGetSharedUnreadNotificationCountQueryKey(),
+      enabled: ready && !!token && !!apiOrigin,
+      staleTime: 20_000,
+      refetchOnMount: 'always',
+      refetchOnReconnect: true,
+    },
+  });
   const catalogEnabled = ready && !!apiOrigin;
   const productsQuery = useGetProducts(
     { per_page: 8 },
@@ -74,6 +86,9 @@ export default function BuyerHome() {
   const activeOrders = orders.filter(order => !['completed', 'cancelled', 'delivered'].includes(first(order, ['status']).toLowerCase()));
   const products = rowsFromResponse(productsQuery.data);
   const categories = rowsFromResponse(categoriesQuery.data).map(category => first(category, ['name'])).filter(Boolean).slice(0, 8);
+  const unreadNotificationCount = token
+    ? buyerUnreadNotificationCount(record(unreadNotificationsQuery.data))
+    : 0;
 
   function browseProducts(searchTerm = '') {
     const normalized = searchTerm.trim();
@@ -110,7 +125,8 @@ export default function BuyerHome() {
         onSearchChange={setSearch}
         onBrowse={browseProducts}
         onOpenCart={() => router.push('/buyer-cart')}
-        onOpenAccount={() => router.push('/(buyer-tabs)/buyer-profile')}
+        onOpenNotifications={() => router.push('/buyer-notifications')}
+        unreadNotificationCount={unreadNotificationCount}
         onSelectTab={selectTopTab}
       />
       <BuyerHomeCatalog

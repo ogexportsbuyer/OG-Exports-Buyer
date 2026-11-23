@@ -17,6 +17,18 @@ export function unwrapBuyerDashboardResponse(value: unknown): BuyerDashboardReco
   return current;
 }
 
+export function buyerUnreadNotificationCount(value: unknown): number {
+  const response = asRecord(value);
+  const data = asRecord(response.data);
+  const rawCount = data.unread_count ?? response.unread_count;
+  const count = typeof rawCount === 'number'
+    ? rawCount
+    : typeof rawCount === 'string' && rawCount.trim()
+      ? Number(rawCount)
+      : Number.NaN;
+  return Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
+}
+
 export function buyerDashboardErrorMessage(error: unknown): string {
   const response = asRecord(error);
   const status = typeof response.status === 'number' ? response.status : 0;

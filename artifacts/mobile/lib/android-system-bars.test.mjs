@@ -9,7 +9,7 @@ test('Android system bars blend with the branded screen while keeping readable c
     plugin => Array.isArray(plugin) && plugin[0] === 'expo-navigation-bar',
   );
 
-  assert.match(rootLayout, /NativeStatusBar barStyle=\{isDarkStatusBar \? 'light-content' : 'dark-content'\} backgroundColor="transparent"/);
+  assert.match(rootLayout, /NativeStatusBar barStyle=\{isDarkStatusBar \? 'light-content' : 'dark-content'\}/);
   assert.match(rootLayout, /<NavigationBar style=\{isDarkStatusBar \? 'dark' : 'light'\} \/>/);
   assert.match(rootLayout, /SystemUI\.setBackgroundColorAsync\(colors\.background\)/);
   assert.deepEqual(navigationBarPlugin, [
