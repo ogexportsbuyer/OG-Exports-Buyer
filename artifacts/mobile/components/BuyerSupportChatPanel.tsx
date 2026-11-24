@@ -8,6 +8,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/components/LocalizedText';
 import { useColors } from '@/hooks/useColors';
@@ -45,6 +46,8 @@ export type BuyerSupportChatPanelProps = {
   onSend: () => void;
   sendDisabled: boolean;
   sending: boolean;
+  cameraBusy: boolean;
+  onRecordVideo: () => void;
   pendingMedia: BuyerSupportPendingMedia[];
   onRemovePending: (mediaId: string) => void;
   onPickMedia: () => void;
@@ -84,6 +87,8 @@ export function BuyerSupportChatPanel({
   onSend,
   sendDisabled,
   sending,
+  cameraBusy,
+  onRecordVideo,
   onRemovePending,
   onPickMedia,
   recording,
@@ -99,6 +104,7 @@ export function BuyerSupportChatPanel({
   pendingMedia: pendingMediaValue,
 }: BuyerSupportChatPanelProps) {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList<BuyerSupportMessage>>(null);
   const pendingMedia = Array.isArray(pendingMediaValue) ? pendingMediaValue : [];
   const pendingCardWidth = 84;
@@ -321,15 +327,23 @@ export function BuyerSupportChatPanel({
         </>
       ) : null}
 
-      <View style={[styles.composer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <View style={styles.composerActions}>
+      <View style={[styles.composer, { backgroundColor: colors.background, borderColor: colors.border }]}>
+        <View style={[styles.composerContent, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+          <View style={styles.composerActions}>
           <Pressable
             testID="buyer-chat-attach"
             accessibilityRole="button"
             accessibilityLabel="Attach a photo, video or audio file"
             disabled={sending || recording}
             onPress={onPickMedia}
-            style={({ pressed }) => [styles.utilityButton, { backgroundColor: colors.secondary, opacity: sending || recording ? 0.5 : pressed ? 0.72 : 1 }]}
+            style={({ pressed }) => [
+              styles.utilityButton,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                opacity: sending || recording ? 0.5 : pressed ? 0.72 : 1,
+              },
+            ]}
           >
             <Feather name="paperclip" size={17} color={colors.primary} />
           </Pressable>
@@ -347,6 +361,26 @@ export function BuyerSupportChatPanel({
               { backgroundColor: colors.input, color: colors.foreground, borderColor: colors.border },
             ]}
           />
+          <Pressable
+            testID="buyer-chat-record-video"
+            accessibilityRole="button"
+            accessibilityLabel={cameraBusy ? 'Opening camera' : 'Record a support video'}
+            accessibilityState={{ disabled: sending || recording || cameraBusy || pendingMedia.length >= MAX_BUYER_CHAT_ATTACHMENTS, busy: cameraBusy }}
+            disabled={sending || recording || cameraBusy || pendingMedia.length >= MAX_BUYER_CHAT_ATTACHMENTS}
+            onPress={onRecordVideo}
+            style={({ pressed }) => [
+              styles.utilityButton,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                opacity: sending || recording || cameraBusy || pendingMedia.length >= MAX_BUYER_CHAT_ATTACHMENTS ? 0.5 : pressed ? 0.72 : 1,
+              },
+            ]}
+          >
+            {cameraBusy
+              ? <ActivityIndicator size="small" color={colors.primary} />
+              : <Feather name="video" size={17} color={colors.primary} />}
+          </Pressable>
           {recording ? (
             <Pressable
               testID="buyer-chat-stop-recording"
@@ -357,53 +391,62 @@ export function BuyerSupportChatPanel({
             >
               <Feather name="square" size={15} color={colors.destructiveForeground} />
             </Pressable>
-          ) : draft.trim() || pendingMedia.length > 0 ? (
-            <Pressable
-              testID="buyer-chat-send"
-              accessibilityRole="button"
-              accessibilityLabel={sending ? 'Sending message' : 'Send message'}
-              accessibilityState={{ disabled: sendDisabled || sending, busy: sending }}
-              disabled={sendDisabled || sending}
-              onPress={onSend}
-              style={({ pressed }) => [
-                styles.sendButton,
-                { backgroundColor: colors.primary, opacity: sendDisabled || sending ? 0.45 : pressed ? 0.78 : 1 },
-              ]}
-            >
-              {sending ? <ActivityIndicator size="small" color={colors.primaryForeground} /> : <Feather name="send" size={15} color={colors.primaryForeground} />}
-              <Text style={[styles.sendLabel, { color: colors.primaryForeground }]}>{sending ? sendProgressLabel || 'Sending' : 'Send'}</Text>
-            </Pressable>
           ) : (
-            <Pressable
-              testID="buyer-chat-start-recording"
-              accessibilityRole="button"
-              accessibilityLabel="Start voice recording"
-              onPress={onStartRecording}
-              style={({ pressed }) => [styles.utilityButton, { backgroundColor: colors.secondary, opacity: pressed ? 0.72 : 1 }]}
-            >
-              <Feather name="mic" size={17} color={colors.primary} />
-            </Pressable>
+            <>
+              <Pressable
+                testID="buyer-chat-start-recording"
+                accessibilityRole="button"
+                accessibilityLabel="Start voice recording"
+                accessibilityState={{ disabled: sending || cameraBusy }}
+                disabled={sending || cameraBusy}
+                onPress={onStartRecording}
+                style={({ pressed }) => [
+                  styles.utilityButton,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                    opacity: sending || cameraBusy ? 0.5 : pressed ? 0.72 : 1,
+                  },
+                ]}
+              >
+                <Feather name="mic" size={17} color={colors.primary} />
+              </Pressable>
+              {draft.trim() || pendingMedia.length > 0 ? (
+                <Pressable
+                  testID="buyer-chat-send"
+                  accessibilityRole="button"
+                  accessibilityLabel={sending ? 'Sending message' : 'Send message'}
+                  accessibilityState={{ disabled: sendDisabled || sending, busy: sending }}
+                  disabled={sendDisabled || sending}
+                  onPress={onSend}
+                  style={({ pressed }) => [
+                    styles.sendButton,
+                    { backgroundColor: colors.primary, opacity: sendDisabled || sending ? 0.45 : pressed ? 0.78 : 1 },
+                  ]}
+                >
+                  {sending ? <ActivityIndicator size="small" color={colors.primaryForeground} /> : <Feather name="send" size={15} color={colors.primaryForeground} />}
+                  <Text style={[styles.sendLabel, { color: colors.primaryForeground }]}>{sending ? sendProgressLabel || 'Sending' : 'Send'}</Text>
+                </Pressable>
+              ) : null}
+            </>
           )}
-        </View>
-        {recording ? (
-          <View style={styles.recordingStatus} accessibilityLiveRegion="polite">
-            <View style={[styles.recordingDot, { backgroundColor: colors.destructive }]} />
-            <Text style={[styles.recordingText, { color: colors.mutedForeground }]}>
-              Recording · {formatDuration(recordingSeconds)}
-            </Text>
-            <Text style={[styles.recordingAction, { color: colors.primary }]}>Tap stop when ready</Text>
           </View>
-        ) : pendingMedia.length > 0 ? (
-          <Text style={[styles.composerFootnote, { color: colors.mutedForeground }]}>
-            {pendingMedia.length === 1
-              ? 'Tap Send once to share this attachment.'
-              : `Tap Send once to share all ${pendingMedia.length} attachments.`}
-          </Text>
-        ) : (
-          <Text style={[styles.composerFootnote, { color: colors.mutedForeground }]}>
-            Keep order and quote details in this private conversation.
-          </Text>
-        )}
+          {recording ? (
+            <View style={styles.recordingStatus} accessibilityLiveRegion="polite">
+              <View style={[styles.recordingDot, { backgroundColor: colors.destructive }]} />
+              <Text style={[styles.recordingText, { color: colors.mutedForeground }]}>
+                Recording · {formatDuration(recordingSeconds)}
+              </Text>
+              <Text style={[styles.recordingAction, { color: colors.primary }]}>Tap stop when ready</Text>
+            </View>
+          ) : pendingMedia.length > 0 ? (
+            <Text style={[styles.composerFootnote, { color: colors.mutedForeground }]}>
+              {pendingMedia.length === 1
+                ? 'Tap Send once to share this attachment.'
+                : `Tap Send once to share all ${pendingMedia.length} attachments.`}
+            </Text>
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -459,9 +502,10 @@ const styles = StyleSheet.create({
   waveformBar: { width: 2, borderRadius: 2, opacity: 0.76 },
   previewButton: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   removeButton: { position: 'absolute', top: 5, right: 5, zIndex: 2, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  composer: { borderTopWidth: StyleSheet.hairlineWidth, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 9, gap: 8 },
+  composer: { width: '100%', borderTopWidth: StyleSheet.hairlineWidth },
+  composerContent: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8, gap: 4 },
   composerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  utilityButton: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  utilityButton: { width: 38, height: 40, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   input: { flex: 1, minHeight: 42, maxHeight: 104, borderRadius: 15, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 13, paddingTop: 10, paddingBottom: 9, fontSize: 13, lineHeight: 18 },
   sendButton: { minWidth: 74, height: 42, paddingHorizontal: 12, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   sendLabel: { fontSize: 12, fontWeight: '700' },

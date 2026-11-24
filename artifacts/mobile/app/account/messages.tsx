@@ -463,7 +463,7 @@ export function SupportMessages({
           {conversationQuery.isLoading ? <Card><Text style={{ color: colors.mutedForeground }}>Opening your support conversation…</Text></Card> : null}
           {conversationQuery.isError ? <ErrorState message="Your support conversation could not be opened." error={conversationQuery.error} onRetry={() => void conversationQuery.refetch()} /> : null}
           {!conversationQuery.isLoading && !conversationQuery.isError && !conversationId ? <EmptyState title="Conversation unavailable" body="Use a support ticket or email instead. The support conversation could not be opened." /> : null}
-          {conversationId ? <View style={{ flex: 1, paddingBottom: insets.bottom }}>
+          {conversationId ? <View style={{ flex: 1 }}>
             <BuyerSupportChatExperience
               conversationId={conversationId}
               messages={messages}

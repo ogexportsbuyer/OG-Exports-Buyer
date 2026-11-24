@@ -49,6 +49,14 @@
       "expo-secure-store",
       "expo-sharing",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "OG Exports accesses selected photos and videos so you can share them with buyer support.",
+          "cameraPermission": "OG Exports uses your camera to record videos for buyer support.",
+          "microphonePermission": "OG Exports uses your microphone to record audio with support videos."
+        }
+      ],
+      [
         "expo-local-authentication",
         {
           "faceIDPermission": "OG Exports uses Face ID to unlock your saved investor account and confirm protected actions."

@@ -118,6 +118,7 @@ export function BuyerSupportChatExperience({
   const [pendingMedia, setPendingMedia] = useState<QueuedBuyerMedia[]>([]);
   const queuedPendingMedia = Array.isArray(pendingMedia) ? pendingMedia : [];
   const [uploading, setUploading] = useState(false);
+  const [cameraBusy, setCameraBusy] = useState(false);
   const [actionError, setActionError] = useState('');
   const [sendProgress, setSendProgress] = useState<{ current: number; total: number } | null>(null);
   const sendingRef = useRef(false);
@@ -182,6 +183,98 @@ export function BuyerSupportChatExperience({
     } catch (err) {
       setActionError(messageOf(err));
       motionHaptic('error');
+    }
+  }
+
+  async function recordSupportVideo() {
+    if (cameraBusy || recorderState.isRecording) return;
+    if (queuedPendingMedia.length >= MAX_BUYER_CHAT_ATTACHMENTS) {
+      setActionError(`You can send up to ${MAX_BUYER_CHAT_ATTACHMENTS} attachments at a time. Send or remove selected files first.`);
+      return;
+    }
+
+    setActionError('');
+    setCameraBusy(true);
+    try {
+      if (Platform.OS !== 'web') {
+        const currentCameraPermission = await ImagePicker.getCameraPermissionsAsync();
+        const cameraPermission = currentCameraPermission.granted
+          ? currentCameraPermission
+          : await ImagePicker.requestCameraPermissionsAsync();
+        if (!cameraPermission.granted) {
+          const detail = cameraPermission.canAskAgain
+            ? 'Allow camera access to record a support video.'
+            : 'Enable camera access in your device settings to record a support video.';
+          setActionError(detail);
+          if (!cameraPermission.canAskAgain) {
+            Alert.alert('Camera access is off', detail, [
+              { text: 'Not now', style: 'cancel' },
+              { text: 'Open settings', onPress: () => void Linking.openSettings() },
+            ]);
+          }
+          return;
+        }
+
+        const microphonePermission = await requestRecordingPermissionsAsync();
+        if (!microphonePermission.granted) {
+          const detail = microphonePermission.canAskAgain
+            ? 'Allow microphone access so your support video includes sound.'
+            : 'Enable microphone access in your device settings so support videos include sound.';
+          setActionError(detail);
+          if (!microphonePermission.canAskAgain) {
+            Alert.alert('Microphone access is off', detail, [
+              { text: 'Not now', style: 'cancel' },
+              { text: 'Open settings', onPress: () => void Linking.openSettings() },
+            ]);
+          }
+          return;
+        }
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['videos'],
+        allowsEditing: false,
+        videoMaxDuration: 60,
+        videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium,
+        cameraType: ImagePicker.CameraType.back,
+      });
+      const asset = result.canceled ? undefined : result.assets[0];
+      if (!asset) return;
+
+      const extension = asset.fileName?.split('.').pop()?.toLowerCase();
+      const fallbackMime = extension === 'mov'
+        ? 'video/quicktime'
+        : extension === 'webm'
+          ? 'video/webm'
+          : extension === 'avi'
+            ? 'video/x-msvideo'
+            : 'video/mp4';
+      const mimeType = asset.mimeType || fallbackMime;
+      const name = normalizedName(asset.fileName, mimeType, 'video');
+      const size = asset.fileSize ?? asset.file?.size ?? new ExpoFile(asset.uri).size;
+      if (size > 0) validateBuyerChatMediaFile(name, mimeType, size, 'video');
+      const durationSeconds = asset.duration != null
+        ? Math.max(1, Math.round(asset.duration / 1000))
+        : undefined;
+
+      setPendingMedia((current) => [
+        ...(Array.isArray(current) ? current : []),
+        {
+          id: createMediaId(),
+          uri: asset.uri,
+          name,
+          mimeType,
+          kind: 'video' as const,
+          durationSeconds,
+          source: asset.file ?? asset.uri,
+        },
+      ].slice(0, MAX_BUYER_CHAT_ATTACHMENTS));
+      motionHaptic('success');
+    } catch (err) {
+      setActionError(messageOf(err));
+      motionHaptic('error');
+    } finally {
+      setCameraBusy(false);
     }
   }
 
@@ -362,6 +455,8 @@ export function BuyerSupportChatExperience({
       onSend={() => void sendMessage()}
       sendDisabled={!draft.trim() && queuedPendingMedia.length === 0}
       sending={uploading || send.isPending}
+      cameraBusy={cameraBusy}
+      onRecordVideo={recordSupportVideo}
       pendingMedia={queuedPendingMedia.map(({ source: _source, ...media }) => media)}
       onRemovePending={removePendingMedia}
       onPickMedia={() => void pickMedia()}
