@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, FlatList, Linking, Platform, Pressable, View } from 'react-native';
+import { Animated, Easing, FlatList, Linking, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -187,7 +187,8 @@ export function SupportMessages({
   const chatBottomClearance = !buyerMode && Platform.OS === 'android'
     ? Math.max(70 + Math.max(insets.bottom - 4, 8) + 12 - insets.bottom, 0)
     : 0;
-  const [mode, setMode] = useState<SupportMode>('help');
+  const [mode, setMode] = useState<SupportMode>(buyerMode ? 'chat' : 'help');
+  const [supportMenuOpen, setSupportMenuOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [subject, setSubject] = useState('');
   const [ticketBody, setTicketBody] = useState('');
@@ -204,6 +205,10 @@ export function SupportMessages({
     if (typeof params.subject === 'string') setSubject(params.subject);
     if (typeof params.body === 'string') setTicketBody(params.body);
   }, [params.mode, params.subject, params.body]);
+
+  useEffect(() => {
+    if (buyerMode && params.mode !== 'tickets') setMode('chat');
+  }, [buyerMode, params.mode]);
 
   const settingsQuery = useGetPublicInvestorAppSettings({
     query: { queryKey: getGetPublicInvestorAppSettingsQueryKey(), staleTime: 300_000 },
@@ -299,6 +304,14 @@ export function SupportMessages({
     }
   }
 
+  function selectSupportMode(nextMode: SupportMode) {
+    motionHaptic('micro');
+    setMode(nextMode);
+    setError('');
+    setNotice('');
+    setSupportMenuOpen(false);
+  }
+
   return <Screen
     title={buyerMode ? 'Buyer support' : 'Support'}
     subtitle="Help Center, live chat, and support tickets"
@@ -329,11 +342,32 @@ export function SupportMessages({
       <View style={{ flex: 1 }}>
         <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: '700' }}>Buyer support</Text>
         <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 2 }}>
-          {mode === 'chat' ? 'Messages with OG Exports support' : 'Help Center, live chat, and tickets'}
+          {mode === 'chat' ? 'Messages with OG Exports support' : mode === 'help' ? 'Help Center' : 'Support tickets'}
         </Text>
       </View>
+      <Pressable
+        testID="buyer-support-mode-menu"
+        accessibilityRole="button"
+        accessibilityLabel="More support options"
+        accessibilityState={{ expanded: supportMenuOpen }}
+        onPress={() => setSupportMenuOpen(true)}
+        hitSlop={8}
+        style={({ pressed }) => ({
+          width: 42,
+          height: 42,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: colors.glassBorder,
+          backgroundColor: colors.glassFill,
+          opacity: pressed ? 0.74 : 1,
+        })}
+      >
+        <Feather name="more-vertical" size={19} color={colors.primary} />
+      </Pressable>
     </View> : null}
-    <View accessibilityRole="tablist" style={{ flexDirection: 'row', gap: 7, marginBottom: 14 }}>
+    {!buyerMode ? <View accessibilityRole="tablist" style={{ flexDirection: 'row', gap: 7, marginBottom: 14 }}>
       {([
         ['help', 'Help Center'],
         ['chat', 'Live chat'],
@@ -344,13 +378,13 @@ export function SupportMessages({
           testID={`support-tab-${value}`}
           accessibilityRole="tab"
           accessibilityState={{ selected: mode === value }}
-          onPress={() => { motionHaptic('micro'); setMode(value); setError(''); setNotice(''); }}
+          onPress={() => selectSupportMode(value)}
           style={{ flex: 1, alignItems: 'center', borderRadius: 18, paddingHorizontal: 8, paddingVertical: 10, backgroundColor: mode === value ? colors.primary : colors.secondary }}
         >
           <Text style={{ color: mode === value ? colors.primaryForeground : colors.foreground, fontWeight: '700', fontSize: 11 }}>{label}</Text>
         </Pressable>
       ))}
-    </View>
+    </View> : null}
 
     {error ? <ErrorState message={error} /> : null}
     {notice ? <Card><Text style={{ color: colors.primary, lineHeight: 20 }}>{notice}</Text></Card> : null}
@@ -536,5 +570,100 @@ export function SupportMessages({
       onDismiss={() => setTicketFeedbackVisible(false)}
       testID="support-ticket-success-feedback"
     />
+    {buyerMode ? (
+      <Modal
+        visible={supportMenuOpen}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => setSupportMenuOpen(false)}
+      >
+        <View style={StyleSheet.absoluteFill}>
+          <Pressable
+            testID="buyer-support-menu-backdrop"
+            accessibilityRole="button"
+            accessibilityLabel="Close support options"
+            onPress={() => setSupportMenuOpen(false)}
+            style={[StyleSheet.absoluteFill, styles.supportMenuBackdrop]}
+          />
+          <View
+            testID="buyer-support-mode-popover"
+            accessibilityRole="menu"
+            style={[
+              styles.supportPopover,
+              {
+                top: insets.top + 60,
+                backgroundColor: colors.glassFill,
+                borderColor: colors.glassBorder,
+              },
+            ]}
+          >
+            <Text style={{ color: colors.mutedForeground, fontSize: 10, fontWeight: '800', letterSpacing: 1, paddingHorizontal: 9, paddingTop: 4, paddingBottom: 8 }}>
+              SUPPORT OPTIONS
+            </Text>
+            {([
+              ['chat', 'Live chat', 'Message our support team', 'message-circle'],
+              ['help', 'Help Center', 'Guides and account help', 'help-circle'],
+              ['tickets', 'Tickets', 'Requests and status updates', 'file-text'],
+            ] as const).map(([value, label, description, icon]) => {
+              const active = mode === value;
+              return (
+                <Pressable
+                  key={value}
+                  testID={`support-tab-${value}`}
+                  accessibilityRole="menuitem"
+                  accessibilityState={{ selected: active }}
+                  onPress={() => selectSupportMode(value)}
+                  style={({ pressed }) => [
+                    styles.supportMenuItem,
+                    {
+                      backgroundColor: active ? colors.lightGreen : 'transparent',
+                      opacity: pressed ? 0.74 : 1,
+                    },
+                  ]}
+                >
+                  <View style={[styles.supportMenuIcon, { backgroundColor: active ? colors.card : colors.secondary }]}>
+                    <Feather name={icon} size={16} color={colors.primary} />
+                  </View>
+                  <View style={styles.supportMenuCopy}>
+                    <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '700' }}>{label}</Text>
+                    <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 2 }}>{description}</Text>
+                  </View>
+                  {active ? <Feather name="check" size={16} color={colors.primary} /> : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      </Modal>
+    ) : null}
   </Screen>;
 }
+
+const styles = StyleSheet.create({
+  supportMenuBackdrop: { backgroundColor: 'rgba(8, 22, 19, 0.12)' },
+  supportPopover: {
+    position: 'absolute',
+    right: 14,
+    width: 276,
+    padding: 9,
+    borderRadius: 21,
+    borderWidth: 1,
+    shadowColor: '#102923',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.17,
+    shadowRadius: 22,
+    elevation: 14,
+  },
+  supportMenuItem: {
+    minHeight: 58,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: 15,
+  },
+  supportMenuIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
+  supportMenuCopy: { flex: 1, minWidth: 0 },
+});
