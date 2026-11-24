@@ -3,7 +3,9 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Keyboard,
   Pressable,
+  Platform,
   ScrollView,
   StyleSheet,
   View,
@@ -105,6 +107,7 @@ export function BuyerSupportChatPanel({
 }: BuyerSupportChatPanelProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const [keyboardVisible, setKeyboardVisible] = React.useState(false);
   const listRef = useRef<FlatList<BuyerSupportMessage>>(null);
   const pendingMedia = Array.isArray(pendingMediaValue) ? pendingMediaValue : [];
   const pendingCardWidth = 84;
@@ -113,6 +116,17 @@ export function BuyerSupportChatPanel({
     const frame = requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: false }));
     return () => cancelAnimationFrame(frame);
   }, [messages.length]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const show = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const renderMessage = ({ item }: { item: BuyerSupportMessage }) => {
     const own = item.own;
@@ -328,7 +342,7 @@ export function BuyerSupportChatPanel({
       ) : null}
 
       <View style={[styles.composer, { backgroundColor: 'transparent', borderColor: colors.glassBorder }]}>
-        <View style={[styles.composerContent, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+        <View style={[styles.composerContent, { paddingBottom: keyboardVisible ? 0 : Math.max(insets.bottom, 10) }]}>
           <View style={styles.composerActions}>
           <Pressable
             testID="buyer-chat-attach"
