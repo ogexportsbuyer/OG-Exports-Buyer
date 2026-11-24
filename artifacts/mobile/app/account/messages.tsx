@@ -459,6 +459,7 @@ export function SupportMessages({
         style={{ flex: 1, paddingBottom: chatBottomClearance }}
         behavior="padding"
         keyboardVerticalOffset={0}
+        automaticOffset
       >
         {buyerMode ? <>
           {conversationQuery.isLoading ? <Card><Text style={{ color: colors.mutedForeground }}>Opening your support conversation…</Text></Card> : null}
