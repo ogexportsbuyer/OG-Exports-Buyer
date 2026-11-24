@@ -76,8 +76,8 @@ export default function BuyerHome() {
   });
   const catalogEnabled = ready && !!apiOrigin;
   const productsQuery = useGetProducts(
-    { per_page: 8 },
-    { query: { queryKey: getGetProductsQueryKey({ per_page: 8 }), enabled: catalogEnabled, retry: false, staleTime: 60_000 } },
+    { per_page: 100 },
+    { query: { queryKey: getGetProductsQueryKey({ per_page: 100 }), enabled: catalogEnabled, retry: false, staleTime: 60_000 } },
   );
   const categoriesQuery = useGetProductCategories(
     { query: { queryKey: getGetProductCategoriesQueryKey(), enabled: catalogEnabled, retry: false, staleTime: 300_000 } },
@@ -85,7 +85,7 @@ export default function BuyerHome() {
   const orders = rowsFromResponse(ordersQuery.data);
   const activeOrders = orders.filter(order => !['completed', 'cancelled', 'delivered'].includes(first(order, ['status']).toLowerCase()));
   const products = rowsFromResponse(productsQuery.data);
-  const categories = rowsFromResponse(categoriesQuery.data).map(category => first(category, ['name'])).filter(Boolean).slice(0, 8);
+  const categories = rowsFromResponse(categoriesQuery.data).map(category => first(category, ['name'])).filter(Boolean);
   const unreadNotificationCount = token
     ? buyerUnreadNotificationCount(record(unreadNotificationsQuery.data))
     : 0;

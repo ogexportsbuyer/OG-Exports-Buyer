@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   BUYER_PRODUCT_CATEGORY_TREE,
+  buyerHomeCategoryProducts,
   buyerProductFacetValues,
   buyerProductFilterCount,
   emptyBuyerProductFilters,
@@ -92,6 +93,27 @@ test('category and subcategory filters match the live catalogue naming variants'
   assert.deepEqual(filterBuyerProducts(products, rice).map(product => product.name), ['Premium Basmati Rice']);
   assert.deepEqual(filterBuyerProducts(products, grains).map(product => product.name), ['Yellow Maize (Corn)']);
   assert.deepEqual(filterBuyerProducts(products, seeds).map(product => product.name), ['Sesame Seeds']);
+});
+
+test('homepage shows up to two real products for each filter category with matches', () => {
+  const catalogue = [
+    ...products,
+    { id: 4, name: 'Premium Long Grain Rice', category: { name: 'Rice' }, fob: '1420' },
+    { id: 5, name: 'Broken Basmati Rice', category: { name: 'Rice' }, fob: '980' },
+    { id: 6, name: 'Black Sesame Seeds', category: { name: 'Seeds & Oilseeds' }, fob: '1750' },
+  ];
+
+  const sections = buyerHomeCategoryProducts(catalogue, [
+    { name: 'Grains' },
+    { name: 'Rice' },
+    { name: 'Seeds & Oilseeds' },
+    { name: 'Empty Catalogue Category' },
+  ]);
+
+  assert.deepEqual(sections.map(section => section.name), ['Grains & Cereals', 'Seeds & Oilseeds']);
+  assert.deepEqual(sections[0].products.map(product => product.name), ['Premium Basmati Rice', 'Yellow Maize (Corn)']);
+  assert.deepEqual(sections[1].products.map(product => product.name), ['Sesame Seeds', 'Black Sesame Seeds']);
+  assert.ok(sections.every(section => section.products.length <= 2));
 });
 
 test('trade, price, origin, MOQ, supply capacity, currency, and availability filters compose', () => {

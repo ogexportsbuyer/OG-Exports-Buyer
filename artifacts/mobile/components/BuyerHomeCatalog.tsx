@@ -8,6 +8,7 @@ import { Card, EmptyState, ErrorState, LoadingCard } from '@/components/Investor
 import { useColors } from '@/hooks/useColors';
 import { first, record } from '@/lib/data';
 import { categoryName, displayPrice, rowsFromResponse } from '@/lib/buyer-data';
+import { buyerHomeCategoryProducts } from '@/lib/buyer-product-filters';
 
 type Product = ReturnType<typeof rowsFromResponse>[number];
 
@@ -220,6 +221,10 @@ export default function BuyerHomeCatalog({
     () => ['Global', ...Array.from(new Set(products.map(product => first(product, ['origin'])).filter(Boolean)))],
     [products],
   );
+  const categorySections = useMemo(
+    () => buyerHomeCategoryProducts(products, categories.map(name => ({ name }))),
+    [categories, products],
+  );
   const filteredProducts = selectedOrigin === 'Global'
     ? products
     : products.filter(product => first(product, ['origin']) === selectedOrigin);
@@ -333,50 +338,16 @@ export default function BuyerHomeCatalog({
       <View style={styles.productGrid}>
         {filteredProducts.slice(0, 8).map((product, index) => {
           const id = first(product, ['id'], `product-${index}`);
-          const image = first(product, ['image_url', 'imageUrl']);
-          const name = first(product, ['name'], 'Export product');
-          const origin = first(product, ['origin'], 'Origin not specified');
-          const minimumOrder = first(product, ['moq', 'min_order']);
-          const imageHeight = Math.min(190, Math.round(productGridCardWidth * 1.02));
           return (
-            <Pressable
+            <HomeProductCard
               key={id}
+              product={product}
+              index={index}
+              width={productGridCardWidth}
               testID={`buyer-home-product-${id}`}
-              accessibilityRole="button"
-              accessibilityLabel={`View ${name}, ${displayPrice(product)}, origin ${origin}`}
-              onPress={() => id.startsWith('product-') ? onBrowse(name) : onSelectProduct(id)}
-              style={({ pressed }) => ({ width: productGridCardWidth, opacity: pressed ? 0.88 : 1 })}
-            >
-              <Card style={{ width: productGridCardWidth, padding: 0, overflow: 'hidden', borderRadius: colors.radius + 2, marginBottom: 0 }}>
-                {image ? (
-                  <Image
-                    source={{ uri: image }}
-                    accessibilityLabel={`${name} product image`}
-                    resizeMode="cover"
-                    style={[styles.productImage, { height: imageHeight, backgroundColor: colors.secondary }]}
-                  />
-                ) : (
-                  <View style={{ height: imageHeight, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
-                    <Feather name="package" size={25} color={colors.mutedForeground} />
-                  </View>
-                )}
-                <View style={styles.productBody}>
-                  <View style={{ minHeight: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
-                    <Text numberOfLines={1} style={[styles.productCategory, { flex: 1, color: colors.mutedForeground }]}>{categoryName(product)}</Text>
-                    {recordFeatured(product) ? <Text style={{ color: colors.accent, fontSize: 8, fontWeight: '800' }}>FEATURED</Text> : null}
-                  </View>
-                  <Text numberOfLines={2} style={[styles.productName, { color: colors.foreground }]}>{name}</Text>
-                  <View style={styles.productOrigin}>
-                    <Feather name="map-pin" size={10} color={colors.mutedForeground} />
-                    <Text numberOfLines={1} style={{ flex: 1, color: colors.mutedForeground, fontSize: 9 }}>{origin}</Text>
-                  </View>
-                  <Text numberOfLines={1} style={[styles.productPrice, { color: colors.primary }]}>{displayPrice(product)}</Text>
-                  {minimumOrder ? (
-                    <Text numberOfLines={1} style={[styles.productMoq, { color: colors.mutedForeground }]}>MOQ: {minimumOrder}</Text>
-                  ) : null}
-                </View>
-              </Card>
-            </Pressable>
+              onBrowse={onBrowse}
+              onSelectProduct={onSelectProduct}
+            />
           );
         })}
       </View>
@@ -402,13 +373,14 @@ export default function BuyerHomeCatalog({
       {categoriesError ? (
         <ErrorState message="Product categories could not be loaded." error={categoriesErrorValue} onRetry={onRetryCategories} />
       ) : null}
-      {!categoriesLoading && !categoriesError && categories.length === 0 ? (
-        <EmptyState title="No categories published" body="Categories will appear here when OG Exports publishes them." icon="grid" />
+      {!categoriesLoading && !categoriesError && categorySections.length === 0 ? (
+        <EmptyState title="No products in categories yet" body="Published products will appear in their matching category here." icon="grid" />
       ) : null}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={styles.categoryRow}>
-        {categories.map(category => {
-          const categoryProduct = products.find(product => categoryName(product) === category);
+        {categorySections.map(categorySection => {
+          const { name: category } = categorySection;
+          const categoryProduct = categorySection.products[0];
           const image = categoryProduct ? first(categoryProduct, ['image_url', 'imageUrl']) : '';
           return (
             <Pressable
@@ -443,6 +415,52 @@ export default function BuyerHomeCatalog({
         })}
       </ScrollView>
 
+      {categorySections.map((section, sectionIndex) => {
+        const categorySlug = section.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        return (
+          <View
+            key={section.name}
+            testID={`buyer-home-category-products-${categorySlug}`}
+            style={{ marginTop: sectionIndex === 0 ? 2 : 14 }}
+          >
+            <View style={[styles.sectionHeader, { marginBottom: 10 }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.eyebrow, { color: colors.accent }]}>OG EXPORTS CATALOGUE</Text>
+                <Text numberOfLines={2} style={[styles.sectionTitle, { color: colors.foreground, fontSize: 19, lineHeight: 23 }]}>
+                  {section.name}
+                </Text>
+              </View>
+              <Pressable
+                testID={`buyer-home-category-browse-${categorySlug}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Browse all ${section.name} products`}
+                onPress={() => onSelectCategory(section.name)}
+                style={styles.textAction}
+              >
+                <Text style={{ color: colors.foreground, fontSize: 10, fontWeight: '700' }}>View all</Text>
+                <Feather name="arrow-up-right" size={13} color={colors.accent} />
+              </Pressable>
+            </View>
+            <View style={styles.productGrid}>
+              {section.products.map((product, index) => {
+                const productId = first(product, ['id'], `${categorySlug}-${index}`);
+                return (
+                  <HomeProductCard
+                    key={`${section.name}-${productId}`}
+                    product={product}
+                    index={index}
+                    width={productGridCardWidth}
+                    testID={`buyer-home-category-product-${categorySlug}-${productId}`}
+                    onBrowse={onBrowse}
+                    onSelectProduct={onSelectProduct}
+                  />
+                );
+              })}
+            </View>
+          </View>
+        );
+      })}
+
       <Card style={{ marginTop: 14, marginBottom: 16, borderRadius: colors.radius + 2 }}>
         <View style={styles.supportRow}>
           <View style={[styles.supportIcon, { backgroundColor: colors.lightGreen }]}>
@@ -467,6 +485,67 @@ export default function BuyerHomeCatalog({
         </View>
       </Card>
     </>
+  );
+}
+
+type HomeProductCardProps = {
+  product: Product;
+  index: number;
+  width: number;
+  testID: string;
+  onBrowse: (searchTerm?: string) => void;
+  onSelectProduct: (productId: string) => void;
+};
+
+function HomeProductCard({ product, index, width, testID, onBrowse, onSelectProduct }: HomeProductCardProps) {
+  const colors = useColors();
+  const id = first(product, ['id'], `product-${index}`);
+  const image = first(product, ['image_url', 'imageUrl']);
+  const name = first(product, ['name'], 'Export product');
+  const origin = first(product, ['origin'], 'Origin not specified');
+  const minimumOrder = first(product, ['moq', 'min_order']);
+  const imageHeight = Math.min(190, Math.round(width * 1.02));
+
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={`View ${name}, ${displayPrice(product)}, origin ${origin}`}
+      onPress={() => id.startsWith('product-') ? onBrowse(name) : onSelectProduct(id)}
+      style={({ pressed }) => ({ width, opacity: pressed ? 0.88 : 1 })}
+    >
+      <Card style={{ width, padding: 0, overflow: 'hidden', borderRadius: colors.radius + 2, marginBottom: 0 }}>
+        {image ? (
+          <Image
+            source={{ uri: image }}
+            accessibilityLabel={`${name} product image`}
+            resizeMode="cover"
+            style={[styles.productImage, { height: imageHeight, backgroundColor: colors.secondary }]}
+          />
+        ) : (
+          <View style={{ height: imageHeight, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
+            <Feather name="package" size={25} color={colors.mutedForeground} />
+          </View>
+        )}
+        <View style={styles.productBody}>
+          <View style={{ minHeight: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+            <Text numberOfLines={1} style={[styles.productCategory, { flex: 1, color: colors.mutedForeground }]}>
+              {categoryName(product)}
+            </Text>
+            {recordFeatured(product) ? <Text style={{ color: colors.accent, fontSize: 8, fontWeight: '800' }}>FEATURED</Text> : null}
+          </View>
+          <Text numberOfLines={2} style={[styles.productName, { color: colors.foreground }]}>{name}</Text>
+          <View style={styles.productOrigin}>
+            <Feather name="map-pin" size={10} color={colors.mutedForeground} />
+            <Text numberOfLines={1} style={{ flex: 1, color: colors.mutedForeground, fontSize: 9 }}>{origin}</Text>
+          </View>
+          <Text numberOfLines={1} style={[styles.productPrice, { color: colors.primary }]}>{displayPrice(product)}</Text>
+          {minimumOrder ? (
+            <Text numberOfLines={1} style={[styles.productMoq, { color: colors.mutedForeground }]}>MOQ: {minimumOrder}</Text>
+          ) : null}
+        </View>
+      </Card>
+    </Pressable>
   );
 }
 

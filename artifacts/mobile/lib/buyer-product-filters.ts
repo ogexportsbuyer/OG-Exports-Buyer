@@ -224,7 +224,7 @@ function productText(product: Json): string {
 function matchesAny(value: string, candidates: string[], aliases: string[] = []): boolean {
   const text = normalized(value);
   const choices = [...candidates, ...aliases].map(normalized).filter(Boolean);
-  return choices.some(candidate => text.includes(candidate) || candidate.includes(text));
+  return choices.some(candidate => text.includes(candidate));
 }
 
 function matchesCategory(product: Json, category: string, subcategory: string): boolean {
@@ -381,5 +381,23 @@ export function filterBuyerProducts(products: Json[], filters: BuyerProductFilte
     if (filters.verifiedSupplierOnly && fieldBoolean(product, ['verified_supplier', 'supplier_verified', 'is_supplier_verified', 'supplier.verified', 'supplier.is_verified']) !== true) return false;
     return true;
   });
+}
+
+export function buyerHomeCategoryProducts(
+  products: Json[],
+  apiCategories: Json[],
+  productLimit = 2,
+): Array<BuyerProductCategory & { products: Json[] }> {
+  const limit = Math.max(0, Math.floor(productLimit));
+  return mergeBuyerProductCategories(apiCategories)
+    .map(category => {
+      const categoryFilter = filtersFromBuyerCategoryRoute(category.name);
+      const filters = { ...emptyBuyerProductFilters(), ...categoryFilter };
+      return {
+        ...category,
+        products: filterBuyerProducts(products, filters).slice(0, limit),
+      };
+    })
+    .filter(category => category.products.length > 0);
 }
 
