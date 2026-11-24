@@ -3,11 +3,11 @@ name: Buyer marketplace flow
 description: Product discovery and account navigation expectations for the OG Exports mobile app.
 ---
 
-The OG Exports mobile app is buyer-only. Guests can browse the public catalogue; cart, account, and order actions require buyer sign-in or registration. Registration has no account-type choice or investor-signup link, and the server must always assign new registrations the buyer role. Email verification remains required; after verification, establish the session and take the user directly to the requested buyer route without a separate login. Investor-only sessions/routes must not enter the buyer app. Do not delete investor accounts or data.
+The OG Exports mobile app is buyer-only. Guests can browse the public catalogue, build a cart, and prepare RFQ or checkout details. Ask them to sign in or register only when they submit an RFQ, request a quotation, or place an order; preserve their draft and resume it after authentication. Keep buyer profiles, RFQ/order history, and other account data behind authentication. Registration has no account-type choice or investor-signup link, and the server must always assign new registrations the buyer role. Email verification remains required; after verification, establish the session and take the user directly to the requested buyer route without a separate login. Investor-only sessions/routes must not enter the buyer app. Do not delete investor accounts or data.
 
-**Why:** The user specified that the complete mobile app is for buyers only and that successful registration should proceed into the app instead of returning to sign-in.
+**Why:** The user specified that onboarding must lead to the buyer homepage and that authentication should happen at the final transaction action, with drafts kept through sign-in or registration.
 
-**How to apply:** Use the existing Laravel product, cart, quotation, and order APIs. Keep the catalogue public, enforce buyer-only actions with backend role protection, and do not replace real catalogue data with mock products.
+**How to apply:** Use persistent local guest-cart and form drafts, merge guest quantities idempotently into the authenticated cart, and resume the exact RFQ/order action after account verification. Use existing Laravel APIs, enforce buyer-only submissions server-side, and do not replace real catalogue data with mock products.
 
 Keep cart and other non-tab buyer destinations, including Orders & quotations, as root-stack routes rather than untriggered routes inside the native tab group. Shortcuts should navigate to their canonical root routes.
 

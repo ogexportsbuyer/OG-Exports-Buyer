@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Action, Card, EmptyState, ErrorState, Field, LoadingCard, Screen } from '@/components/InvestorUI';
-import { BuyerAuthGate } from '@/components/BuyerAuthGate';
 import { BuyerRfqPicker, type BuyerRfqOption } from '@/components/BuyerRfqPicker';
 import { useAuth } from '@/context/AuthContext';
+import { useBuyerGuestFlow } from '@/context/BuyerGuestFlowContext';
 import { useColors } from '@/hooks/useColors';
 import {
   getGetBuyerBankAccountsQueryKey,
@@ -35,6 +35,7 @@ import {
   formatBuyerDeliveryDateInput,
   isFutureBuyerDeliveryDate,
 } from '@/lib/buyer-cart-flow';
+import { buyerGuestCartRow, type BuyerGuestCheckoutDraft } from '@/lib/buyer-guest-flow';
 
 type CheckoutStep = 1 | 2 | 3;
 type CheckoutComplete =
@@ -97,11 +98,15 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 export default function BuyerCheckout() {
   const colors = useColors();
   const queryClient = useQueryClient();
-  const { token } = useAuth();
+  const { ready, token, apiOrigin } = useAuth();
+  const guestFlow = useBuyerGuestFlow();
+  const params = useLocalSearchParams<{ resumeAction?: string | string[] }>();
+  const rawResumeAction = Array.isArray(params.resumeAction) ? params.resumeAction[0] : params.resumeAction;
+  const resumeAction: 'quote' | 'order' | undefined = rawResumeAction === 'quote' || rawResumeAction === 'order' ? rawResumeAction : undefined;
   const cartQuery = useGetBuyerCart({ query: { queryKey: getGetBuyerCartQueryKey(), enabled: Boolean(token), staleTime: 10_000 } });
-  const countriesQuery = useGetCountries({ query: { queryKey: getGetCountriesQueryKey(), enabled: Boolean(token), staleTime: 300_000 } });
-  const incotermsQuery = useGetIncoterms({ query: { queryKey: getGetIncotermsQueryKey(), enabled: Boolean(token), staleTime: 300_000 } });
-  const paymentMethodsQuery = useGetPaymentMethods({ query: { queryKey: getGetPaymentMethodsQueryKey(), enabled: Boolean(token), staleTime: 300_000 } });
+  const countriesQuery = useGetCountries({ query: { queryKey: getGetCountriesQueryKey(), enabled: ready && Boolean(apiOrigin), staleTime: 300_000 } });
+  const incotermsQuery = useGetIncoterms({ query: { queryKey: getGetIncotermsQueryKey(), enabled: ready && Boolean(apiOrigin), staleTime: 300_000 } });
+  const paymentMethodsQuery = useGetPaymentMethods({ query: { queryKey: getGetPaymentMethodsQueryKey(), enabled: ready && Boolean(apiOrigin), staleTime: 300_000 } });
   const bankAccountsQuery = useGetBuyerBankAccounts({ query: { queryKey: getGetBuyerBankAccountsQueryKey(), enabled: Boolean(token), staleTime: 300_000 } });
   const [step, setStep] = useState<CheckoutStep>(1);
   const [countryId, setCountryId] = useState<number | null>(null);
@@ -116,19 +121,27 @@ export default function BuyerCheckout() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState('');
   const [completion, setCompletion] = useState<CheckoutComplete | null>(null);
+  const [restoredDraftReady, setRestoredDraftReady] = useState(!resumeAction);
   const placeOrder = useCheckoutBuyerCart();
   const requestQuote = useRequestBuyerCartQuotation();
+  const restoredDraft = useRef(false);
+  const attemptedCartMerge = useRef('');
+  const attemptedResume = useRef('');
 
   const portsQuery = useGetCountryPorts(countryId ?? 0, {
     query: {
       queryKey: getGetCountryPortsQueryKey(countryId ?? 0),
-      enabled: Boolean(token) && countryId !== null,
+      enabled: Boolean(apiOrigin) && countryId !== null,
       staleTime: 300_000,
     },
   });
 
   const cart = record(record(cartQuery.data).data);
-  const cartItems = list(cart.items);
+  const cartItems = token && !guestFlow.mergeError
+    ? list(cart.items)
+    : guestFlow.cart.length
+      ? guestFlow.cart.map(buyerGuestCartRow)
+      : list(cart.items);
   const cartCurrency = first(cart, ['currency', 'currency_code'], 'USD').toUpperCase();
   const countries = rowsFromResponse(countriesQuery.data).filter(country => (amount(country, ['ports_count']) ?? 0) > 0);
   const ports = rowsFromResponse(portsQuery.data);
@@ -154,16 +167,38 @@ export default function BuyerCheckout() {
   const subtotal = cartItems.reduce((sum, item) => {
     return sum + (amount(item, ['qty']) ?? 0) * (amount(item, ['unit_price']) ?? 0);
   }, 0);
+  const waitingForGuestCart = Boolean(token && guestFlow.cart.length && !guestFlow.mergeError);
+  const canRenderCart = !cartQuery.isLoading && !waitingForGuestCart
+    && (!cartQuery.isError || (token && Boolean(guestFlow.mergeError)));
 
-  if (!token) {
-    return (
-      <BuyerAuthGate
-        title="Checkout"
-        body="Sign in to confirm delivery details and place an order or request a quotation."
-        returnTo="/buyer-checkout"
-      />
-    );
-  }
+  const guestMergeKey = guestFlow.cart.map(item => `${item.productId}:${item.quantity}`).join('|');
+  useEffect(() => {
+    if (!token || !guestFlow.ready || !guestFlow.cart.length || attemptedCartMerge.current === guestMergeKey) return;
+    attemptedCartMerge.current = guestMergeKey;
+    void guestFlow.mergeGuestCart().then(merged => {
+      if (!merged) setError('Your saved cart could not be synced to your account. Retry before submitting.');
+    });
+  }, [guestFlow.cart, guestFlow.mergeGuestCart, guestFlow.ready, guestMergeKey, token]);
+
+  useEffect(() => {
+    if (!resumeAction || !guestFlow.ready || restoredDraft.current) return;
+    const draft = guestFlow.checkoutDraft;
+    if (draft) {
+      setStep(draft.step);
+      setCountryId(draft.countryId);
+      setPortId(draft.portId);
+      setPortSearch(draft.portSearch);
+      setIncoterm(draft.incoterm);
+      setDeliveryDate(draft.deliveryDate);
+      setNotes(draft.notes);
+      setPaymentMethodCode(draft.paymentMethodCode);
+      setPaymentFieldValues(draft.paymentFieldValues);
+      setSelectedBankId(draft.selectedBankId);
+      setTermsAccepted(draft.termsAccepted);
+    }
+    restoredDraft.current = true;
+    setRestoredDraftReady(true);
+  }, [guestFlow.checkoutDraft, guestFlow.ready, resumeAction]);
 
   function selectCountry(countryIdValue: string) {
     const country = countries.find(option => first(option, ['id']) === countryIdValue);
@@ -180,6 +215,35 @@ export default function BuyerCheckout() {
     setPortSearch(value);
     if (selectedPort && value.trim().toLowerCase() !== first(selectedPort, ['name']).toLowerCase()) setPortId(null);
     setError('');
+  }
+
+  function guestCheckoutDraft(action: 'quote' | 'order'): BuyerGuestCheckoutDraft {
+    return {
+      step,
+      countryId,
+      portId,
+      portSearch,
+      incoterm,
+      deliveryDate,
+      notes,
+      paymentMethodCode,
+      paymentFieldValues,
+      selectedBankId,
+      termsAccepted,
+      resumeAction: action,
+    };
+  }
+
+  async function requestSignInToFinish(action: 'quote' | 'order') {
+    try {
+      await guestFlow.saveCheckoutDraft(guestCheckoutDraft(action));
+      router.push({
+        pathname: '/(auth)/login',
+        params: { returnTo: `/buyer-checkout?resumeAction=${action}` },
+      });
+    } catch (saveError) {
+      setError(messageOf(saveError));
+    }
   }
 
   function validateDelivery() {
@@ -209,7 +273,7 @@ export default function BuyerCheckout() {
   function validatePayment() {
     if (!isFob) return true;
     if (!selectedMethod || !paymentMethodCode) { setError('Select a payment method.'); return false; }
-    if (!selectedBank) { setError('Select an active OG Exports bank account.'); return false; }
+    if (token && !selectedBank) { setError('Select an active OG Exports bank account.'); return false; }
     if (hasUnpricedItems) {
       setError('One or more products need a confirmed price. Go back and choose a non-FOB term to request a quotation.');
       return false;
@@ -224,11 +288,11 @@ export default function BuyerCheckout() {
 
   function continueFromPayment() {
     setError('');
-    if (paymentMethodsQuery.isError || bankAccountsQuery.isError) {
+    if (paymentMethodsQuery.isError || (token && bankAccountsQuery.isError)) {
       setError('Payment details could not be loaded. Refresh the failed list before continuing.');
       return;
     }
-    if (paymentMethodsQuery.isLoading || bankAccountsQuery.isLoading) return;
+    if (paymentMethodsQuery.isLoading || (token && bankAccountsQuery.isLoading)) return;
     if (validatePayment()) setStep(3);
   }
 
@@ -245,6 +309,14 @@ export default function BuyerCheckout() {
   async function submitQuotationRequest() {
     setError('');
     if (!validateDelivery() || countryId === null || portId === null) return;
+    if (token && guestFlow.cart.length) {
+      setError('Sync your saved cart before submitting. Use Retry cart sync, then try again.');
+      return;
+    }
+    if (!token) {
+      await requestSignInToFinish('quote');
+      return;
+    }
     try {
       const response = await requestQuote.mutateAsync({
         data: {
@@ -259,6 +331,7 @@ export default function BuyerCheckout() {
       const rfqs = list(payload.rfqs);
       const references = rfqs.map(rfq => first(rfq, ['reference'], first(rfq, ['id'], 'Quote request')));
       invalidateAfterCheckout();
+      void guestFlow.clearCheckoutDraft().catch(() => undefined);
       setCompletion({ kind: 'quotation', references: references.length ? references : ['Quote request submitted'] });
     } catch (err) {
       setError(messageOf(err));
@@ -270,7 +343,20 @@ export default function BuyerCheckout() {
     if (!validateDelivery()) { setStep(1); return; }
     if (!validatePayment()) { setStep(2); return; }
     if (!termsAccepted) { setError('Confirm the order details before placing the order.'); return; }
-    if (countryId === null || portId === null || !selectedMethod || !selectedBank) return;
+    if (token && guestFlow.cart.length) {
+      setError('Sync your saved cart before submitting. Use Retry cart sync, then try again.');
+      return;
+    }
+    if (countryId === null || portId === null || !selectedMethod) return;
+    if (!token) {
+      await requestSignInToFinish('order');
+      return;
+    }
+    if (!selectedBank) {
+      setError('Select an active OG Exports bank account.');
+      setStep(2);
+      return;
+    }
 
     const accountName = first(selectedBank, ['bank_name', 'bankName'], 'OG Exports');
     const accountTitle = first(selectedBank, ['account_title', 'account_name', 'accountTitle']);
@@ -303,11 +389,44 @@ export default function BuyerCheckout() {
       const orderId = /^\d+$/.test(rawId) ? rawId : undefined;
       const reference = first(order, ['order_number', 'reference'], orderId ? `Order ${orderId}` : 'Order placed');
       invalidateAfterCheckout();
+      void guestFlow.clearCheckoutDraft().catch(() => undefined);
       setCompletion({ kind: 'order', reference, orderId });
     } catch (err) {
       setError(messageOf(err));
     }
   }
+
+  useEffect(() => {
+    if (!resumeAction || !token || !guestFlow.ready || !restoredDraftReady || attemptedResume.current === resumeAction) return;
+    if (cartQuery.isLoading || waitingForGuestCart || countriesQuery.isLoading || incotermsQuery.isLoading || paymentMethodsQuery.isLoading) return;
+    if (countryId !== null && portsQuery.isLoading) return;
+    if (resumeAction === 'order' && isFob && bankAccountsQuery.isLoading) return;
+    if (cartQuery.isError || countriesQuery.isError || incotermsQuery.isError || paymentMethodsQuery.isError || portsQuery.isError) return;
+    if (resumeAction === 'order' && isFob && bankAccountsQuery.isError) return;
+    attemptedResume.current = resumeAction;
+    if (resumeAction === 'quote') void submitQuotationRequest();
+    else void submitOrder();
+  }, [
+    resumeAction,
+    token,
+    guestFlow.ready,
+    restoredDraftReady,
+    cartQuery.isLoading,
+    cartQuery.isError,
+    waitingForGuestCart,
+    countriesQuery.isLoading,
+    countriesQuery.isError,
+    incotermsQuery.isLoading,
+    incotermsQuery.isError,
+    paymentMethodsQuery.isLoading,
+    paymentMethodsQuery.isError,
+    portsQuery.isLoading,
+    portsQuery.isError,
+    bankAccountsQuery.isLoading,
+    bankAccountsQuery.isError,
+    countryId,
+    isFob,
+  ]);
 
   if (completion) {
     const isOrder = completion.kind === 'order';
@@ -364,17 +483,29 @@ export default function BuyerCheckout() {
 
   return (
     <Screen title="Checkout" subtitle={pageSubtitle} refreshable>
-      {cartQuery.isLoading ? <LoadingCard label="Loading your cart…" /> : null}
+      {token && (cartQuery.isLoading || waitingForGuestCart) ? <LoadingCard label={waitingForGuestCart ? 'Preparing your saved cart…' : 'Loading your cart…'} /> : null}
+      {token && guestFlow.mergeError ? (
+        <View style={{ marginBottom: 12 }}>
+          <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, lineHeight: 18, marginBottom: 9 }}>{guestFlow.mergeError}</Text>
+          <Action title="Retry cart sync" icon="refresh-cw" secondary onPress={() => void guestFlow.mergeGuestCart()} testID="buyer-checkout-retry-merge" />
+        </View>
+      ) : null}
       {cartQuery.isError ? <ErrorState message="Your cart could not be loaded." error={cartQuery.error} onRetry={() => void cartQuery.refetch()} /> : null}
+      {!token && canRenderCart && cartItems.length > 0 ? (
+        <Card style={{ padding: 13, marginBottom: 12 }}>
+          <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>You can prepare this request as a guest.</Text>
+          <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginTop: 4 }}>Sign in or register only when you send the quotation request or place the order.</Text>
+        </Card>
+      ) : null}
 
-      {!cartQuery.isLoading && !cartQuery.isError && cartItems.length === 0 ? (
+      {canRenderCart && cartItems.length === 0 ? (
         <>
           <EmptyState title="Your cart is empty" body="Add products before starting checkout." icon="shopping-cart" />
           <Action title="Browse products" icon="grid" onPress={() => router.replace('/(buyer-tabs)/buyer-products')} testID="buyer-checkout-browse" />
         </>
       ) : null}
 
-      {!cartQuery.isLoading && !cartQuery.isError && cartItems.length > 0 ? (
+      {canRenderCart && cartItems.length > 0 ? (
         <>
           <Card style={{ padding: 13, marginBottom: 14 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -596,7 +727,7 @@ export default function BuyerCheckout() {
                 ) : null}
               </Card>
 
-              <Card style={{ padding: 16, marginBottom: 13 }}>
+              {token ? <Card style={{ padding: 16, marginBottom: 13 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
                   <Feather name="home" size={16} color={colors.accent} />
                   <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '800' }}>OG Exports receiving account</Text>
@@ -631,7 +762,15 @@ export default function BuyerCheckout() {
                     </SelectableCard>
                   );
                 })}
-              </Card>
+              </Card> : (
+                <Card style={{ padding: 15, marginBottom: 13 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+                    <Feather name="lock" size={15} color={colors.accent} />
+                    <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '800' }}>Secure receiving account</Text>
+                  </View>
+                  <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginTop: 7 }}>Company bank details are shown after sign-in. You can finish reviewing your order now; sign-in is only requested when you place it.</Text>
+                </Card>
+              )}
 
               {hasUnpricedItems ? (
                 <Card style={{ padding: 13, marginBottom: 12, borderColor: colors.accent }}>
@@ -640,7 +779,7 @@ export default function BuyerCheckout() {
               ) : null}
               <View style={{ flexDirection: 'row', gap: 9 }}>
                 <View style={{ flex: 1 }}><Action title="Back" icon="arrow-left" secondary onPress={() => { setError(''); setStep(1); }} testID="buyer-checkout-back-delivery" /></View>
-                <View style={{ flex: 1 }}><Action title="Review order" icon="arrow-right" disabled={isBusy || paymentMethodsQuery.isLoading || bankAccountsQuery.isLoading || paymentMethods.length === 0 || bankAccounts.length === 0 || hasUnpricedItems} onPress={continueFromPayment} testID="buyer-checkout-review-order" /></View>
+                <View style={{ flex: 1 }}><Action title="Review order" icon="arrow-right" disabled={isBusy || paymentMethodsQuery.isLoading || (token && bankAccountsQuery.isLoading) || paymentMethods.length === 0 || (token && bankAccounts.length === 0) || hasUnpricedItems} onPress={continueFromPayment} testID="buyer-checkout-review-order" /></View>
               </View>
             </>
           ) : null}
@@ -716,8 +855,8 @@ export default function BuyerCheckout() {
                   <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '800' }}>Payment plan</Text>
                 </View>
                 <SummaryRow label="Method" value={first(selectedMethod ?? {}, ['label'])} />
-                <SummaryRow label="OG Exports bank" value={first(selectedBank ?? {}, ['bank_name', 'bankName'])} />
-                <SummaryRow label="IBAN / account" value={first(selectedBank ?? {}, ['iban', 'account_number'])} />
+                <SummaryRow label="OG Exports bank" value={token ? first(selectedBank ?? {}, ['bank_name', 'bankName']) : 'Shown after sign-in'} />
+                <SummaryRow label="IBAN / account" value={token ? first(selectedBank ?? {}, ['iban', 'account_number']) : 'Shown after sign-in'} />
                 {methodFields.map(field => paymentFieldValues[field]?.trim() ? <SummaryRow key={field} label={field} value={paymentFieldValues[field].trim()} /> : null)}
               </Card>
 

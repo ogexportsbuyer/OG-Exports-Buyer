@@ -74,6 +74,18 @@ test('returns buyer sign-in to the requested marketplace destination', () => {
     pathname: '/buyer-product/[id]',
     params: { id: '42' },
   });
+  assert.deepEqual(resolveBuyerPostAuthHref('/buyer-rfq?mode=new&resumeAfterAuth=1&product_id=42'), {
+    pathname: '/buyer-rfq',
+    params: { mode: 'new', resumeAfterAuth: '1', product_id: '42' },
+  });
+  assert.deepEqual(resolveBuyerPostAuthHref('/buyer-checkout?resumeAction=order'), {
+    pathname: '/buyer-checkout',
+    params: { resumeAction: 'order' },
+  });
+  assert.deepEqual(resolveBuyerPostAuthHref('/buyer-checkout?resumeAction=quote'), {
+    pathname: '/buyer-checkout',
+    params: { resumeAction: 'quote' },
+  });
   assert.deepEqual(
     resolveBuyerPostAuthHref('/buyer-products?pendingProduct=42'),
     { pathname: '/(buyer-tabs)/buyer-products', params: { pendingProduct: '42' } },
@@ -97,6 +109,8 @@ test('uses a safe buyer home fallback for unknown post-auth routes', () => {
 test('allows the buyer notifications screen to render its own sign-in gate', () => {
   assert.equal(isBuyerRoutePublicBeforeAuth('buyer-notifications'), true);
   assert.equal(isBuyerRoutePublicBeforeAuth('buyer-orders'), false);
+  assert.equal(isBuyerRoutePublicBeforeAuth('buyer-checkout'), true);
+  assert.equal(isBuyerRoutePublicBeforeAuth('buyer-rfq'), true);
   const rootLayout = readFileSync(new URL('../app/_layout.tsx', import.meta.url), 'utf8');
   assert.match(rootLayout, /Stack\.Screen name="buyer-notifications" options=\{\{ headerShown: false \}\}/);
 });
@@ -235,7 +249,8 @@ test('buyer bottom navigation places Dashboard before Messages and keeps home ca
   assert.match(home, /onOpenCart=\{\(\) => router\.push\('\/buyer-cart'\)\}/);
   assert.match(rootLayout, /isBuyerRoutePublicBeforeAuth\(firstSegment\)/);
   assert.equal(isBuyerRoutePublicBeforeAuth('buyer-cart'), true);
-  assert.match(cartScreen, /if \(!token\) \{\s*return <BuyerAuthGate[\s\S]*?returnTo="\/buyer-cart"/);
+  assert.doesNotMatch(cartScreen, /return <BuyerAuthGate/);
+  assert.match(cartScreen, /buyerGuestCartRow/);
   assert.match(homeHeader, /<Feather name="shopping-cart" size=\{20\} color=\{colors\.accent\} \/>/);
   assert.match(rootLayout, /Stack\.Screen name="buyer-cart" options=\{\{ headerShown: false \}\}/);
   assert.match(profile, /\['Executive dashboard', '\/\(buyer-tabs\)\/dashboard'/);

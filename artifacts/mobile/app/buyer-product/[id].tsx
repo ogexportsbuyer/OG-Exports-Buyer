@@ -18,8 +18,8 @@ import { amount, first, messageOf, record } from '@/lib/data';
 import { categoryName, displayPrice, productMinimumQuantity, rowsFromResponse } from '@/lib/buyer-data';
 import { buyerProductGalleryImages, buyerProductHasPdfReport, buyerProductReportDownloadPath, buyerProductSpecs, buyerProductValues } from '@/lib/buyer-product-data';
 import { downloadAndSharePublicPdf } from '@/lib/file-download';
-import { pendingProductAuthReturnTo } from '@/lib/buyer-auth-flow';
 import { motionHaptic } from '@/lib/motion';
+import { useBuyerGuestFlow } from '@/context/BuyerGuestFlowContext';
 
 function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
   const colors = useColors();
@@ -77,6 +77,7 @@ export default function BuyerProductDetails() {
   const { width: windowWidth } = useWindowDimensions();
   const queryClient = useQueryClient();
   const { ready, token, apiOrigin, user } = useAuth();
+  const guestFlow = useBuyerGuestFlow();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const numericId = Number(rawId);
@@ -168,16 +169,18 @@ export default function BuyerProductDetails() {
       setActionError('This product is missing its catalogue ID, so it cannot be added to your cart.');
       return;
     }
+    setActionError('');
     if (!token) {
-      const returnTo = pendingProductAuthReturnTo(id);
-      if (!returnTo) {
-        setActionError('This product cannot be saved while you sign in. Please return to the catalogue and try again.');
-        return;
+      try {
+        await guestFlow.addGuestProduct(product);
+        setAdded(true);
+        motionHaptic('action');
+      } catch (error) {
+        motionHaptic('error');
+        setActionError(messageOf(error));
       }
-      router.push({ pathname: '/(auth)/login', params: { returnTo } });
       return;
     }
-    setActionError('');
     try {
       await addToCart.mutateAsync({ data: { product_id: id, qty: productMinimumQuantity(product) } });
       await queryClient.invalidateQueries({ queryKey: getGetBuyerCartQueryKey() });

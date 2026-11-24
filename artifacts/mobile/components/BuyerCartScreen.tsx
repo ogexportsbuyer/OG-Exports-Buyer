@@ -5,12 +5,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Action, Card, EmptyState, ErrorState, LoadingCard, Screen } from '@/components/InvestorUI';
-import { BuyerAuthGate } from '@/components/BuyerAuthGate';
 import { useAuth } from '@/context/AuthContext';
+import { useBuyerGuestFlow } from '@/context/BuyerGuestFlowContext';
 import { useColors } from '@/hooks/useColors';
 import { useGetBuyerCart, useRemoveBuyerCartItem, useUpdateBuyerCartItem, getGetBuyerCartQueryKey } from '@workspace/api-client-react';
 import { amount, first, list, messageOf, record } from '@/lib/data';
 import { buyerCartItemMinimumQuantity, nextBuyerCartQuantity } from '@/lib/buyer-cart-flow';
+import { buyerGuestCartRow } from '@/lib/buyer-guest-flow';
 import { resolveBuyerProductImageUrl } from '@/lib/buyer-product-data';
 import { formatFobPrice } from '@/lib/format-fob-price';
 
@@ -39,29 +40,56 @@ export default function BuyerCartScreen() {
   const colors = useColors();
   const queryClient = useQueryClient();
   const { token, apiOrigin } = useAuth();
+  const guestFlow = useBuyerGuestFlow();
   const cartQuery = useGetBuyerCart({ query: { queryKey: getGetBuyerCartQueryKey(), enabled: !!token, staleTime: 15_000 } });
   const updateItem = useUpdateBuyerCartItem();
   const removeItem = useRemoveBuyerCartItem();
   const cart = record(record(cartQuery.data).data);
-  const items = list(cart.items);
+  const items = token && !guestFlow.mergeError
+    ? list(cart.items)
+    : guestFlow.cart.length
+      ? guestFlow.cart.map(buyerGuestCartRow)
+      : list(cart.items);
   const cartCurrency = first(cart, ['currency', 'currency_code'], 'USD').toUpperCase();
   const [actionError, setActionError] = useState('');
   const [clearAllConfirm, setClearAllConfirm] = useState(false);
   const [clearingAll, setClearingAll] = useState(false);
+  const attemptedMergeKey = React.useRef('');
+  const guestMergeKey = guestFlow.cart.map(item => `${item.productId}:${item.quantity}`).join('|');
+  React.useEffect(() => {
+    if (!token || !guestFlow.ready || !guestFlow.cart.length || attemptedMergeKey.current === guestMergeKey) return;
+    attemptedMergeKey.current = guestMergeKey;
+    void guestFlow.mergeGuestCart().then(merged => {
+      if (!merged) setActionError('Your saved guest cart could not be added to your account. Retry before checkout.');
+    });
+  }, [guestFlow.cart, guestFlow.mergeGuestCart, guestFlow.ready, guestMergeKey, token]);
+  const waitingForGuestCart = Boolean(token && guestFlow.cart.length && !guestFlow.mergeError);
+  const canRenderCart = !cartQuery.isLoading && !waitingForGuestCart
+    && (!cartQuery.isError || (token && Boolean(guestFlow.mergeError)));
   const total = items.reduce((sum, item) => {
     const quantity = amount(item, ['qty']) ?? 0;
     const unitPrice = amount(item, ['unit_price']) ?? 0;
     return sum + quantity * unitPrice;
   }, 0);
-  const mutationPending = updateItem.isPending || removeItem.isPending || clearingAll;
+  const mutationPending = updateItem.isPending || removeItem.isPending || clearingAll || guestFlow.isMergingCart;
 
   async function changeQuantity(item: ReturnType<typeof record>, delta: number) {
     const id = amount(item, ['id']);
     const minimumQuantity = buyerCartItemMinimumQuantity(item);
     const currentQuantity = amount(item, ['qty']) ?? minimumQuantity;
-    if (!id) return;
     const nextQuantity = nextBuyerCartQuantity(currentQuantity, delta, minimumQuantity);
     setActionError('');
+    if (!token || String(item.id).startsWith('guest-')) {
+      const productId = amount(item, ['product_id']);
+      if (!productId) return;
+      try {
+        await guestFlow.setGuestQuantity(productId, nextQuantity);
+      } catch (error) {
+        setActionError(messageOf(error));
+      }
+      return;
+    }
+    if (!id) return;
     try {
       await updateItem.mutateAsync({ item: id, data: { qty: nextQuantity } });
       await queryClient.invalidateQueries({ queryKey: getGetBuyerCartQueryKey() });
@@ -71,6 +99,17 @@ export default function BuyerCartScreen() {
   }
 
   async function deleteItem(item: ReturnType<typeof record>) {
+    if (!token || String(item.id).startsWith('guest-')) {
+      const productId = amount(item, ['product_id']);
+      if (!productId) return;
+      setActionError('');
+      try {
+        await guestFlow.removeGuestProduct(productId);
+      } catch (error) {
+        setActionError(messageOf(error));
+      }
+      return;
+    }
     const id = amount(item, ['id']);
     if (!id) return;
     setActionError('');
@@ -85,6 +124,15 @@ export default function BuyerCartScreen() {
   async function clearCart() {
     if (!items.length) return;
     setActionError('');
+    if (!token || items.every(item => String(item.id).startsWith('guest-'))) {
+      try {
+        await guestFlow.clearGuestCart();
+        setClearAllConfirm(false);
+      } catch (error) {
+        setActionError(messageOf(error));
+      }
+      return;
+    }
     setClearingAll(true);
     try {
       for (const item of items) {
@@ -101,27 +149,28 @@ export default function BuyerCartScreen() {
     }
   }
 
-  if (!token) {
-    return <BuyerAuthGate
-      title="Your cart"
-      body="Sign in to view saved products, change quantities, and continue to order or request a quotation."
-      returnTo="/buyer-cart"
-    />;
-  }
-
   return (
     <Screen title="Your cart" subtitle={`${items.length} ${items.length === 1 ? 'product' : 'products'} in your cart`} refreshable>
       {actionError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, marginBottom: 12 }}>{actionError}</Text> : null}
-      {cartQuery.isLoading ? <LoadingCard label="Loading your cart…" /> : null}
+      {token && (cartQuery.isLoading || waitingForGuestCart) ? <LoadingCard label={waitingForGuestCart ? 'Preparing your saved cart…' : 'Loading your cart…'} /> : null}
+      {!token && items.length > 0 ? (
+        <Card style={{ padding: 13, marginBottom: 12 }}>
+          <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>Your cart is saved on this device.</Text>
+          <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginTop: 4 }}>You can browse and prepare your request now. Sign in or register only when you submit it.</Text>
+        </Card>
+      ) : null}
+      {token && guestFlow.mergeError ? (
+        <Action title="Retry cart sync" icon="refresh-cw" secondary onPress={() => void guestFlow.mergeGuestCart()} testID="buyer-cart-retry-merge" />
+      ) : null}
       {cartQuery.isError ? <ErrorState message="Your cart could not be loaded." error={cartQuery.error} onRetry={() => void cartQuery.refetch()} /> : null}
-      {!cartQuery.isLoading && !cartQuery.isError && items.length === 0 ? (
+      {canRenderCart && items.length === 0 ? (
         <>
           <EmptyState title="Your cart is empty" body="Browse the approved product catalogue and add products to start an order." icon="shopping-cart" />
           <Action title="Browse products" icon="grid" secondary onPress={() => router.push('/(buyer-tabs)/buyer-products')} testID="buyer-cart-browse-empty" />
         </>
       ) : null}
 
-      {!cartQuery.isLoading && !cartQuery.isError && items.map((item, index) => {
+      {canRenderCart && items.map((item, index) => {
         const product = record(item.product);
         const itemId = first(item, ['id'], `item-${index}`);
         const minimumQuantity = buyerCartItemMinimumQuantity(item);
@@ -146,7 +195,7 @@ export default function BuyerCartScreen() {
                     testID={`buyer-cart-remove-${itemId}`}
                     accessibilityRole="button"
                     accessibilityLabel={`Remove ${name} from cart`}
-                    disabled={mutationPending}
+                    disabled={mutationPending || Boolean(guestFlow.mergeError)}
                     onPress={() => void deleteItem(item)}
                     hitSlop={8}
                     style={{ width: 30, height: 30, alignItems: 'center', justifyContent: 'center', opacity: mutationPending ? 0.5 : 1 }}
@@ -169,7 +218,7 @@ export default function BuyerCartScreen() {
                   testID={`buyer-cart-decrease-${itemId}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Decrease ${name} quantity`}
-                  disabled={mutationPending || quantity <= minimumQuantity}
+                  disabled={mutationPending || Boolean(guestFlow.mergeError) || quantity <= minimumQuantity}
                   onPress={() => void changeQuantity(item, -1)}
                   style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: quantity <= minimumQuantity ? 0.45 : 1 }}
                 >
@@ -180,7 +229,7 @@ export default function BuyerCartScreen() {
                   testID={`buyer-cart-increase-${itemId}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Increase ${name} quantity`}
-                  disabled={mutationPending}
+                  disabled={mutationPending || Boolean(guestFlow.mergeError)}
                   onPress={() => void changeQuantity(item, 1)}
                   style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: mutationPending ? 0.5 : 1 }}
                 >

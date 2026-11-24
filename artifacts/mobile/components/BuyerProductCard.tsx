@@ -206,6 +206,7 @@ export function BuyerProductCard({
           <Pressable
             testID={`buyer-product-add-${id}`}
             accessibilityRole="button"
+            accessibilityHint={signedIn ? 'Adds this product to your buyer cart.' : 'Saves this product in your guest cart. Sign-in is only needed when submitting your order.'}
             accessibilityState={{ disabled: adding || added, busy: adding }}
             disabled={adding || added}
             onPress={onAddToCart}
@@ -225,7 +226,7 @@ export function BuyerProductCard({
               <Feather name={added ? 'check' : 'shopping-cart'} size={14} color={colors.buttonForeground} />
             )}
             <Text numberOfLines={1} style={{ color: colors.buttonForeground, fontSize: 11, fontWeight: '700' }}>
-              {adding ? 'Adding…' : added ? 'Added to cart' : signedIn ? 'Add to cart' : 'Sign in to add'}
+              {adding ? 'Adding…' : added ? 'Added to cart' : 'Add to cart'}
             </Text>
           </Pressable>
         </View>

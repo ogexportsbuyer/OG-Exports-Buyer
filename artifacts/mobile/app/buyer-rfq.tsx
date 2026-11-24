@@ -11,6 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { amount, first, list, record } from '@/lib/data';
 import { rowsFromResponse } from '@/lib/buyer-data';
+import { useBuyerGuestFlow } from '@/context/BuyerGuestFlowContext';
 import {
   buyerRfqDestination,
   buyerRfqDraftFromRecord,
@@ -35,9 +36,12 @@ function dateLabel(value: string) {
 export default function BuyerRfq() {
   const colors = useColors();
   const { token } = useAuth();
-  const params = useLocalSearchParams<{ mode?: string | string[]; product_id?: string | string[] }>();
+  const params = useLocalSearchParams<{ mode?: string | string[]; product_id?: string | string[]; resumeAfterAuth?: string | string[] }>();
   const requestedMode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
   const productParam = Array.isArray(params.product_id) ? params.product_id[0] : params.product_id;
+  const resumeParam = Array.isArray(params.resumeAfterAuth) ? params.resumeAfterAuth[0] : params.resumeAfterAuth;
+  const resumeAfterAuth = resumeParam === '1';
+  const guestFlow = useBuyerGuestFlow();
   const [mode, setMode] = useState<Mode>(requestedMode === 'new' || productParam ? 'new' : 'history');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | BuyerRfqStatus>('All');
@@ -65,7 +69,7 @@ export default function BuyerRfq() {
     if (requestedMode === 'new' || productParam) setMode('new');
   }, [requestedMode, productParam]);
 
-  if (!token) {
+  if (!token && mode === 'history') {
     return <BuyerAuthGate
       title="Request for quotation"
       body="Sign in to create a request and review your RFQ history."
@@ -81,13 +85,16 @@ export default function BuyerRfq() {
   }
 
   function openHistory() {
+    void guestFlow.clearRfqDraft().catch(() => undefined);
     setDraft(undefined);
     setSubmittedReference('');
     setMode('history');
   }
 
   if (mode === 'new') {
-    const initialDraft = draft ?? (productParam ? {
+    const initialDraft = draft
+      || (resumeAfterAuth && guestFlow.rfqDraft ? guestFlow.rfqDraft : undefined)
+      || (productParam ? {
       productId: productParam,
       quantity: '',
       packaging: '25 kg PP Bag',
@@ -97,12 +104,15 @@ export default function BuyerRfq() {
       paymentTerms: '',
       deliveryDate: '',
       notes: '',
-    } : undefined);
+      attachments: [],
+      } : undefined);
     return <BuyerRfqForm
       key={formRevision}
       initialDraft={initialDraft}
+      resumeAfterAuth={resumeAfterAuth}
       onCancel={openHistory}
       onSubmitted={reference => {
+        void guestFlow.clearRfqDraft().catch(() => undefined);
         setSubmittedReference(reference);
         setDraft(undefined);
         setMode('success');

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
+import { router } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { File as ExpoFile } from 'expo-file-system';
 import { Feather } from '@expo/vector-icons';
@@ -16,12 +17,12 @@ import {
   useGetIncoterms,
   useGetProducts,
 } from '@workspace/api-client-react';
-import { BuyerAuthGate } from '@/components/BuyerAuthGate';
 import { Action, Card, ErrorState, Field, LoadingCard, Screen } from '@/components/InvestorUI';
 import { BuyerRfqPicker, type BuyerRfqOption } from '@/components/BuyerRfqPicker';
 import { DateOfBirthPicker } from '@/components/DateOfBirthPicker';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { useAuth } from '@/context/AuthContext';
+import { useBuyerGuestFlow } from '@/context/BuyerGuestFlowContext';
 import { useColors } from '@/hooks/useColors';
 import { uploadInvestorFile } from '@/lib/file-upload';
 import { INVESTOR_DOCUMENT_MIME_TYPES, validateInvestorUploadFileSize } from '@/lib/upload-rules';
@@ -35,6 +36,7 @@ import {
 } from '@/lib/buyer-rfq';
 import { amount, first, messageOf, record } from '@/lib/data';
 import { rowsFromResponse } from '@/lib/buyer-data';
+import type { BuyerGuestRfqAttachment, BuyerGuestRfqDraft } from '@/lib/buyer-guest-flow';
 
 const MAX_RFQ_FILES = 5;
 const MAX_RFQ_FILE_BYTES = 10 * 1024 * 1024;
@@ -86,16 +88,19 @@ function formatFileSize(size: number) {
 
 export function BuyerRfqForm({
   initialDraft,
+  resumeAfterAuth = false,
   onCancel,
   onSubmitted,
 }: {
-  initialDraft?: BuyerRfqDraft;
+  initialDraft?: BuyerRfqDraft & { attachments?: BuyerGuestRfqAttachment[] };
+  resumeAfterAuth?: boolean;
   onCancel: () => void;
   onSubmitted: (reference: string) => void;
 }) {
   const colors = useColors();
   const queryClient = useQueryClient();
   const { ready, token, apiOrigin } = useAuth();
+  const guestFlow = useBuyerGuestFlow();
   const [productId, setProductId] = useState(initialDraft?.productId ?? '');
   const [quantity, setQuantity] = useState(initialDraft?.quantity ?? '');
   const [packaging, setPackaging] = useState(initialDraft?.packaging ?? '25 kg PP Bag');
@@ -105,12 +110,19 @@ export function BuyerRfqForm({
   const [paymentTerms, setPaymentTerms] = useState(initialDraft?.paymentTerms ?? '');
   const [deliveryDate, setDeliveryDate] = useState(initialDraft?.deliveryDate ?? '');
   const [notes, setNotes] = useState(initialDraft?.notes ?? '');
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>(() => (initialDraft?.attachments ?? []).map(attachment => ({
+    key: attachment.key,
+    source: new ExpoFile(attachment.uri),
+    name: attachment.name,
+    mime: attachment.mime,
+    size: attachment.size,
+  })));
   const [error, setError] = useState('');
   const [picking, setPicking] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
   const createRfq = useCreateBuyerRfq();
   const busy = createRfq.isPending || Boolean(uploadProgress);
+  const resumeAttempted = useRef(false);
 
   const productsQuery = useGetProducts({ per_page: 100 }, {
     query: {
@@ -121,15 +133,15 @@ export function BuyerRfqForm({
     },
   });
   const countriesQuery = useGetCountries({
-    query: { queryKey: getGetCountriesQueryKey(), enabled: ready && Boolean(token), staleTime: 300_000, retry: false },
+    query: { queryKey: getGetCountriesQueryKey(), enabled: ready && Boolean(apiOrigin), staleTime: 300_000, retry: false },
   });
   const incotermsQuery = useGetIncoterms({
-    query: { queryKey: getGetIncotermsQueryKey(), enabled: ready && Boolean(token), staleTime: 300_000, retry: false },
+    query: { queryKey: getGetIncotermsQueryKey(), enabled: ready && Boolean(apiOrigin), staleTime: 300_000, retry: false },
   });
   const portsQuery = useGetCountryPorts(Number(countryId) || 0, {
     query: {
       queryKey: getGetCountryPortsQueryKey(Number(countryId) || 0),
-      enabled: Boolean(token && countryId),
+      enabled: Boolean(apiOrigin && countryId),
       staleTime: 300_000,
       retry: false,
     },
@@ -162,14 +174,6 @@ export function BuyerRfqForm({
   }).filter(option => option.value);
   const packagingOptions: BuyerRfqOption[] = BUYER_RFQ_PACKAGING_OPTIONS.map(value => ({ value, label: value }));
   const paymentOptions: BuyerRfqOption[] = BUYER_RFQ_PAYMENT_TERMS.map(value => ({ value, label: value }));
-
-  if (!token) {
-    return <BuyerAuthGate
-      title="Request a quotation"
-      body="Sign in to send product, quantity, delivery, and payment requirements to the OG Exports trade desk."
-      returnTo="/buyer-rfq?mode=new"
-    />;
-  }
 
   async function attachFile() {
     setError('');
@@ -220,6 +224,37 @@ export function BuyerRfqForm({
     if (!paymentOptions.some(option => option.value === paymentTerms)) return setError('Select preferred payment terms.');
     if (!isFutureBuyerRfqDate(deliveryDate)) return setError('Required delivery date must be after today.');
 
+    if (!token) {
+      const draft: BuyerGuestRfqDraft = {
+        productId,
+        quantity,
+        packaging,
+        countryId,
+        portId,
+        incoterm,
+        paymentTerms,
+        deliveryDate,
+        notes,
+        attachments: attachments.map(attachment => ({
+          key: attachment.key,
+          uri: typeof attachment.source === 'string' ? attachment.source : attachment.source.uri,
+          name: attachment.name,
+          mime: attachment.mime,
+          size: attachment.size,
+        })),
+      };
+      try {
+        await guestFlow.saveRfqDraft(draft);
+        router.push({
+          pathname: '/(auth)/login',
+          params: { returnTo: '/buyer-rfq?mode=new&resumeAfterAuth=1' },
+        });
+      } catch (saveError) {
+        setError(messageOf(saveError));
+      }
+      return;
+    }
+
     try {
       const uploaded: { path: string; original_name: string; mime: string; size: number }[] = [];
       for (let index = 0; index < attachments.length; index += 1) {
@@ -256,6 +291,7 @@ export function BuyerRfqForm({
       ]);
       const responseData = record(record(response).data ?? response);
       const submittedId = responseData.id ?? responseData.reference ?? responseData.rfq_number ?? '';
+      void guestFlow.clearRfqDraft().catch(() => undefined);
       onSubmitted(formatBuyerRfqReference(String(submittedId)));
     } catch (submitError) {
       setError(messageOf(submitError));
@@ -263,6 +299,26 @@ export function BuyerRfqForm({
       setUploadProgress('');
     }
   }
+
+  useEffect(() => {
+    if (!resumeAfterAuth || !token || resumeAttempted.current) return;
+    if (productsQuery.isLoading || countriesQuery.isLoading || incotermsQuery.isLoading || (countryId && portsQuery.isLoading)) return;
+    if (productsQuery.isError || countriesQuery.isError || incotermsQuery.isError || portsQuery.isError) return;
+    resumeAttempted.current = true;
+    void submit();
+  }, [
+    resumeAfterAuth,
+    token,
+    productsQuery.isLoading,
+    productsQuery.isError,
+    countriesQuery.isLoading,
+    countriesQuery.isError,
+    incotermsQuery.isLoading,
+    incotermsQuery.isError,
+    portsQuery.isLoading,
+    portsQuery.isError,
+    countryId,
+  ]);
 
   const statusMessage = countriesQuery.isError
     ? 'Destination countries could not be loaded.'

@@ -21,6 +21,7 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import type { NotificationResponse } from 'expo-notifications';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { BuyerGuestFlowProvider } from '@/context/BuyerGuestFlowContext';
 import { AppPreferencesProvider, useAppPreferences } from '@/context/AppPreferencesContext';
 import { useColors } from '@/hooks/useColors';
 import { serializeRouteState } from '@/lib/post-auth-route';
@@ -262,11 +263,13 @@ export default function RootLayout() {
           <GestureHandlerRootView>
             <KeyboardProvider>
               <AuthProvider>
-                <AppPreferencesProvider>
-                  <MotionProvider>
-                    <RootLayoutNav />
-                  </MotionProvider>
-                </AppPreferencesProvider>
+                <BuyerGuestFlowProvider>
+                  <AppPreferencesProvider>
+                    <MotionProvider>
+                      <RootLayoutNav />
+                    </MotionProvider>
+                  </AppPreferencesProvider>
+                </BuyerGuestFlowProvider>
               </AuthProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>

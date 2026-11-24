@@ -12,7 +12,7 @@ import { useColors } from '@/hooks/useColors';
 import { useAddBuyerCartItem, useGetProductCategories, useGetProducts, getGetBuyerCartQueryKey, getGetProductCategoriesQueryKey, getGetProductsQueryKey } from '@workspace/api-client-react';
 import { amount, first, messageOf, record } from '@/lib/data';
 import { productMinimumQuantity, rowsFromResponse } from '@/lib/buyer-data';
-import { buyerCartRouteAfterProductAdd, claimPendingBuyerProduct, pendingProductAuthReturnTo } from '@/lib/buyer-auth-flow';
+import { buyerCartRouteAfterProductAdd, claimPendingBuyerProduct } from '@/lib/buyer-auth-flow';
 import {
   buyerProductFilterCount,
   emptyBuyerProductFilters,
@@ -22,11 +22,13 @@ import {
 } from '@/lib/buyer-product-filters';
 import { motionHaptic } from '@/lib/motion';
 import { useAuth } from '@/context/AuthContext';
+import { useBuyerGuestFlow } from '@/context/BuyerGuestFlowContext';
 
 export default function BuyerProducts() {
   const colors = useColors();
   const queryClient = useQueryClient();
   const { ready, token, apiOrigin, user } = useAuth();
+  const guestFlow = useBuyerGuestFlow();
   const userId = first(record(user), ['id'], 'guest');
   const favoritesKey = `buyer-product-favourites:${userId}`;
   const { category: routeCategory, search: routeSearch, pendingProduct: routePendingProduct } = useLocalSearchParams<{
@@ -114,16 +116,17 @@ export default function BuyerProducts() {
       return false;
     }
     if (!token) {
-      const returnTo = pendingProductAuthReturnTo(productId);
-      if (!returnTo) {
-        setActionError('This product ID cannot be saved while you sign in.');
+      setActionError('');
+      try {
+        await guestFlow.addGuestProduct(product);
+        setAddedId(String(productId));
+        motionHaptic('action');
+        return true;
+      } catch (error) {
+        motionHaptic('error');
+        setActionError(messageOf(error));
         return false;
       }
-      router.push({
-        pathname: '/(auth)/login',
-        params: { returnTo },
-      });
-      return false;
     }
     setActionError('');
     try {
@@ -139,7 +142,7 @@ export default function BuyerProducts() {
       setActionError(messageOf(error));
       return false;
     }
-  }, [token, addToCart, queryClient]);
+  }, [token, addToCart, queryClient, guestFlow]);
 
   const toggleFavorite = useCallback(async (productId: string) => {
     if (!token) {

@@ -55,6 +55,8 @@ export type BuyerPostAuthHref =
   | { pathname: '/(buyer-tabs)/buyer-products'; params: { pendingProduct: string } }
   | { pathname: '/buyer-orders'; params: { view: 'orders' | 'rfqs' | 'quotations' } }
   | { pathname: '/buyer-product/[id]'; params: { id: string } }
+  | { pathname: '/buyer-rfq'; params: { mode: 'new'; resumeAfterAuth?: '1'; product_id?: string } }
+  | { pathname: '/buyer-checkout'; params: { resumeAction: 'quote' | 'order' } }
   | { pathname: '/buyer-rfq/[id]'; params: { id: string } }
   | { pathname: '/buyer-order/[id]'; params: { id: string } }
   | { pathname: '/buyer-quotation/[id]'; params: { id: string } }
@@ -69,6 +71,23 @@ export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPos
   const value = Array.isArray(returnTo) ? returnTo[0] : returnTo;
   const path = value?.split('?', 1)[0] ?? '';
   const query = value?.split('?', 2)[1] ?? '';
+  if (path === '/buyer-rfq' && queryValue(query, 'mode') === 'new') {
+    const productId = queryValue(query, 'product_id');
+    return {
+      pathname: '/buyer-rfq',
+      params: {
+        mode: 'new',
+        ...(queryValue(query, 'resumeAfterAuth') === '1' ? { resumeAfterAuth: '1' as const } : {}),
+        ...(/^\d+$/.test(productId) && Number(productId) > 0 ? { product_id: productId } : {}),
+      },
+    };
+  }
+  if (path === '/buyer-checkout') {
+    const resumeAction = queryValue(query, 'resumeAction');
+    if (resumeAction === 'quote' || resumeAction === 'order') {
+      return { pathname: '/buyer-checkout', params: { resumeAction } };
+    }
+  }
   if (path === '/buyer-orders' || path === '/(buyer-tabs)/buyer-orders') {
     const view = queryValue(query, 'view');
     if (view === 'orders' || view === 'rfqs' || view === 'quotations') {
@@ -210,6 +229,8 @@ export function isBuyerRoutePublicBeforeAuth(firstSegment: string): boolean {
     '(buyer-tabs)',
     'buyer-product',
     'buyer-cart',
+    'buyer-checkout',
+    'buyer-rfq',
     'buyer-notifications',
     'onboarding',
   ]).has(firstSegment);
