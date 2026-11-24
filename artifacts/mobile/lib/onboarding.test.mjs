@@ -21,20 +21,19 @@ test('buyer onboarding has exactly three truthful buyer-focused slides', () => {
   assert.doesNotMatch(slides, /investor|investment|wallet|guaranteed|risk.free/i);
 });
 
-test('onboarding offers accessible navigation, page progress, sign-in, and account creation', () => {
+test('onboarding offers accessible navigation and finishes at the buyer home', () => {
   for (const testID of [
     'onboarding-back',
     'onboarding-page-${index + 1}',
     'onboarding-continue',
     'onboarding-finish',
-    'onboarding-sign-in',
   ]) assert.ok(onboarding.includes(testID), `missing onboarding control ${testID}`);
   assert.match(onboarding, /accessibilityRole="tablist"/);
   assert.match(onboarding, /accessibilityLabel="Previous onboarding page"/);
-  assert.match(onboarding, /finish\('\/\(auth\)\/register'\)/);
-  assert.match(onboarding, /finish\('\/\(auth\)\/login'\)/);
-  assert.match(onboarding, /useMotion\(\)/);
+  assert.match(onboarding, /router\.replace\('\/\(buyer-tabs\)\/buyer-home'\)/);
   assert.match(onboarding, /completeOnboarding\(\)/);
+  assert.doesNotMatch(onboarding, /finish\('\/\(auth\)\/(?:register|login)'\)/);
+  assert.match(onboarding, /useMotion\(\)/);
 });
 
 test('first-run splash routing honors the persisted onboarding completion state', () => {

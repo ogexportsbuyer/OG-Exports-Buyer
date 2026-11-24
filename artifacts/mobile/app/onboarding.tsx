@@ -445,11 +445,11 @@ export default function Onboarding() {
     },
   }), [reduceMotion, step, translateX]);
 
-  async function finish(destination: '/(auth)/register' | '/(auth)/login') {
+  async function finish() {
     setError('');
     try {
       await completeOnboarding();
-      router.replace(destination);
+      router.replace('/(buyer-tabs)/buyer-home');
     } catch {
       setError('Onboarding could not be saved on this device. Please try again.');
     }
@@ -534,21 +534,11 @@ export default function Onboarding() {
       </View>
       {error ? <Text accessibilityRole="alert" style={{ color: colors.destructive, marginBottom: 10 }}>{error}</Text> : null}
       <Action
-        title={step === slides.length - 1 ? 'Finish & create account' : 'Continue'}
+        title={step === slides.length - 1 ? 'Explore the marketplace' : 'Continue'}
         icon="arrow-right"
         testID={step === slides.length - 1 ? 'onboarding-finish' : 'onboarding-continue'}
-        onPress={() => step === slides.length - 1 ? void finish('/(auth)/register') : goTo(step + 1)}
+        onPress={() => step === slides.length - 1 ? void finish() : goTo(step + 1)}
       />
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Finish onboarding and sign in"
-        testID="onboarding-sign-in"
-        onPress={() => void finish('/(auth)/login')}
-        style={({ pressed }) => [styles.signIn, { paddingBottom: Platform.OS === 'web' ? 34 : 8, opacity: pressed ? 0.65 : 1 }]}
-      >
-        <Text style={{ color: colors.mutedForeground, fontSize: 13 }}>Already buying with us? </Text>
-        <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 13 }}>Sign in</Text>
-      </Pressable>
     </SafeAreaView>
   );
 }
@@ -566,5 +556,4 @@ const styles = StyleSheet.create({
   controlTopline: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 42, marginBottom: 10 },
   previousButton: { flexDirection: 'row', alignItems: 'center', gap: 7, minWidth: 66, minHeight: 42, justifyContent: 'flex-start' },
   dot: { height: 7, borderRadius: 4 },
-  signIn: { minHeight: 50, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', paddingTop: 10 },
 });
