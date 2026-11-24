@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/components/LocalizedText';
 import { useColors } from '@/hooks/useColors';
 import { MAX_BUYER_CHAT_ATTACHMENTS } from '@/lib/upload-rules';
@@ -341,8 +342,9 @@ export function BuyerSupportChatPanel({
         </>
       ) : null}
 
-      <View style={[styles.composer, { backgroundColor: 'transparent', borderColor: colors.glassBorder }]}>
-        <View style={[styles.composerContent, { paddingBottom: keyboardVisible ? 0 : Math.max(insets.bottom, 10) }]}>
+      <KeyboardStickyView style={styles.composerDock}>
+        <View style={[styles.composer, { backgroundColor: 'transparent', borderColor: colors.glassBorder }]}>
+          <View style={[styles.composerContent, { paddingBottom: keyboardVisible ? 0 : Math.max(insets.bottom, 10) }]}>
           <View style={styles.composerActions}>
           <Pressable
             testID="buyer-chat-attach"
@@ -460,8 +462,9 @@ export function BuyerSupportChatPanel({
                 : `Tap Send once to share all ${pendingMedia.length} attachments.`}
             </Text>
           ) : null}
+          </View>
         </View>
-      </View>
+      </KeyboardStickyView>
     </View>
   );
 }
@@ -469,6 +472,7 @@ export function BuyerSupportChatPanel({
 const styles = StyleSheet.create({
   container: { flex: 1, minHeight: 0 },
   list: { flex: 1 },
+  composerDock: { width: '100%', zIndex: 2 },
   listContent: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 14, flexGrow: 1, justifyContent: 'flex-end' },
   emptyList: { justifyContent: 'center' },
   messageRow: { width: '100%', marginBottom: 10, flexDirection: 'row' },

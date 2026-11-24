@@ -460,6 +460,7 @@ export function SupportMessages({
         behavior="padding"
         keyboardVerticalOffset={0}
         automaticOffset
+        enabled={!buyerMode}
       >
         {buyerMode ? <>
           {conversationQuery.isLoading ? <Card><Text style={{ color: colors.mutedForeground }}>Opening your support conversation…</Text></Card> : null}
