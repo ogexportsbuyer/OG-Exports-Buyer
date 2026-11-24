@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "OG Exports",
-    "slug": "og-exports-buyer",
+    "slug": "og-buyer",
     "owner": "og-exports-buyer",
     "version": "1.0.1",
     "orientation": "portrait",
@@ -68,7 +68,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "ece154fe-bee2-416a-8139-d269db75224c"
+        "projectId": "16a782bf-0883-4162-b058-b4ade0cb6d0e"
       }
     },
     "experiments": {
