@@ -91,6 +91,20 @@ it('stores supported voice notes only for support messages', function () {
         ->and(File::exists(public_path($path)))->toBeTrue();
 });
 
+it('accepts iPhone m4a voice notes when the upload is reported as an mp4 container', function () {
+    $response = $this->actingAs($this->user)
+        ->post('/api/uploads', [
+            'file' => UploadedFile::fake()->create('voice-note.m4a', 256, 'video/mp4'),
+            'category' => 'messages',
+        ], [
+            'Accept' => 'application/json',
+        ]);
+
+    $response->assertCreated()
+        ->assertJsonPath('data.name', 'voice-note.m4a')
+        ->assertJsonPath('data.mime', 'audio/mp4');
+});
+
 it('accepts support images and videos while keeping them in the message upload folder', function () {
     $image = $this->actingAs($this->user)
         ->post('/api/uploads', [

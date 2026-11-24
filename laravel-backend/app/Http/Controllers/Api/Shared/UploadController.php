@@ -26,8 +26,15 @@ class UploadController extends Controller
 
         $file = $request->file('file');
         $mime = (string) $file->getMimeType();
+        $clientMime = strtolower((string) $file->getClientMimeType());
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: '');
         $isImage = str_starts_with(strtolower($mime), 'image/');
-        $isAudio = str_starts_with(strtolower($mime), 'audio/');
+        $messageAudioExtensions = ['m4a', 'mp3', 'wav', 'aac', 'ogg', 'opus'];
+        $isAudio = str_starts_with(strtolower($mime), 'audio/')
+            || ($normalizedCategory === 'messages' && (
+                str_starts_with($clientMime, 'audio/')
+                || in_array($extension, $messageAudioExtensions, true)
+            ));
         $maxImageSizeKb = $normalizedCategory === 'kyc' ? 10 * 1024 : 8 * 1024;
 
         if ($isAudio && $normalizedCategory !== 'messages') {
@@ -40,7 +47,8 @@ class UploadController extends Controller
                     'required',
                     'file',
                     'max:10240',
-                    'mimes:m4a,mp3,wav,aac,ogg,opus,webm,3gp',
+                    'mimes:m4a,mp4,mp3,wav,aac,ogg,opus,webm,3gp',
+                    'extensions:m4a,mp3,wav,aac,ogg,opus,webm,3gp',
                 ],
             ]);
         } elseif ($isImage) {
@@ -69,6 +77,19 @@ class UploadController extends Controller
             isset($data['item_id']) ? (int) $data['item_id'] : null,
             $request->user(),
         );
+        if ($isAudio) {
+            $stored['mime'] = match ($extension) {
+                'm4a' => 'audio/mp4',
+                'mp3' => 'audio/mpeg',
+                'wav' => 'audio/wav',
+                'aac' => 'audio/aac',
+                'ogg' => 'audio/ogg',
+                'opus' => 'audio/opus',
+                'webm' => 'audio/webm',
+                '3gp' => 'audio/3gpp',
+                default => $mime,
+            };
+        }
 
         return response()->json([
             'data' => $stored,
