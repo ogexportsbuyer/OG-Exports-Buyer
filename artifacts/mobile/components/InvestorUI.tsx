@@ -40,7 +40,7 @@ function actionFeedback() {
   motionHaptic('action');
 }
 
-export function Screen({ title, subtitle, children, action, scrollable = true, refreshable = false, hideHeader = false }: {
+export function Screen({ title, subtitle, children, action, scrollable = true, refreshable = false, hideHeader = false, edgeToEdgeContent = false }: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
@@ -48,6 +48,7 @@ export function Screen({ title, subtitle, children, action, scrollable = true, r
   scrollable?: boolean;
   refreshable?: boolean;
   hideHeader?: boolean;
+  edgeToEdgeContent?: boolean;
 }) {
   const colors = useColors();
   const tabBarBehavior = useTabBarBehavior();
@@ -94,7 +95,7 @@ export function Screen({ title, subtitle, children, action, scrollable = true, r
         backgroundColor: 'transparent',
         paddingTop: topPadding,
         paddingBottom: Platform.OS === 'web' ? 34 : 0,
-        paddingHorizontal: 20,
+        paddingHorizontal: edgeToEdgeContent ? 0 : 20,
       }} onTouchStart={tabBarBehavior.reveal}>
         <BrandBackdrop active={screenFocused} />
         {!hideHeader ? header : null}

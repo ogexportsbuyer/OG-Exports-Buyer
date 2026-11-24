@@ -317,8 +317,9 @@ export function SupportMessages({
     subtitle="Help Center, live chat, and support tickets"
     scrollable={mode !== 'chat'}
     hideHeader={buyerMode}
+    edgeToEdgeContent={buyerMode && mode === 'chat'}
   >
-    {buyerMode ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+    {buyerMode ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14, marginHorizontal: mode === 'chat' ? 20 : 0 }}>
       {onBack ? <Pressable
         testID="buyer-support-back"
         accessibilityRole="button"

@@ -327,7 +327,7 @@ export function BuyerSupportChatPanel({
         </>
       ) : null}
 
-      <View style={[styles.composer, { backgroundColor: colors.background, borderColor: colors.border }]}>
+      <View style={[styles.composer, { backgroundColor: 'transparent', borderColor: colors.glassBorder }]}>
         <View style={[styles.composerContent, { paddingBottom: Math.max(insets.bottom, 10) }]}>
           <View style={styles.composerActions}>
           <Pressable
