@@ -172,13 +172,19 @@ export default function Messages() {
   return <SupportMessages />;
 }
 
-export function SupportMessages({ buyerMode = false }: { buyerMode?: boolean }) {
+export function SupportMessages({
+  buyerMode = false,
+  onBack,
+}: {
+  buyerMode?: boolean;
+  onBack?: () => void;
+}) {
   const params = useLocalSearchParams<{ mode?: string; subject?: string; body?: string }>();
   const { token, user } = useAuth();
   const investorId = first(record(user), ['id'], '');
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const chatBottomClearance = Platform.OS === 'android'
+  const chatBottomClearance = !buyerMode && Platform.OS === 'android'
     ? Math.max(70 + Math.max(insets.bottom - 4, 8) + 12 - insets.bottom, 0)
     : 0;
   const [mode, setMode] = useState<SupportMode>('help');
@@ -293,7 +299,40 @@ export function SupportMessages({ buyerMode = false }: { buyerMode?: boolean }) 
     }
   }
 
-  return <Screen title={buyerMode ? 'Buyer support' : 'Support'} subtitle="Help Center, live chat, and support tickets" scrollable={mode !== 'chat'}>
+  return <Screen
+    title={buyerMode ? 'Buyer support' : 'Support'}
+    subtitle="Help Center, live chat, and support tickets"
+    scrollable={mode !== 'chat'}
+    hideHeader={buyerMode}
+  >
+    {buyerMode ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+      {onBack ? <Pressable
+        testID="buyer-support-back"
+        accessibilityRole="button"
+        accessibilityLabel="Back to previous page"
+        onPress={onBack}
+        hitSlop={8}
+        style={({ pressed }) => ({
+          width: 42,
+          height: 42,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: colors.secondary,
+          opacity: pressed ? 0.72 : 1,
+        })}
+      >
+        <Feather name="arrow-left" size={18} color={colors.primary} />
+      </Pressable> : null}
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: '700' }}>Buyer support</Text>
+        <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 2 }}>
+          {mode === 'chat' ? 'Messages with OG Exports support' : 'Help Center, live chat, and tickets'}
+        </Text>
+      </View>
+    </View> : null}
     <View accessibilityRole="tablist" style={{ flexDirection: 'row', gap: 7, marginBottom: 14 }}>
       {([
         ['help', 'Help Center'],

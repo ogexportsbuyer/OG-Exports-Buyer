@@ -3,7 +3,7 @@ import { Animated, Platform, StyleSheet, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
-import { Tabs } from 'expo-router';
+import { Tabs, usePathname } from 'expo-router';
 import { NativeTabs } from 'expo-router/native-tabs';
 import { SymbolView } from 'expo-symbols';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -59,6 +59,8 @@ function NativeLayout() {
   const colors = useColors();
   const { visible } = useTabBarBehavior();
   const { preferences } = useAppPreferences();
+  const pathname = usePathname();
+  const hideForBuyerMessages = pathname.split('/').includes('buyer-messages');
   const t = (value: string) => translateUi(value, preferences.language);
   return (
     <NativeTabs
@@ -66,7 +68,7 @@ function NativeLayout() {
       iconColor={{ default: colors.mutedForeground, selected: colors.accent }}
       labelStyle={{ default: { color: colors.mutedForeground }, selected: { color: colors.accent, fontWeight: '600' } }}
       backgroundColor={colors.card}
-      hidden={!visible}
+      hidden={!visible || hideForBuyerMessages}
       minimizeBehavior="never"
     >
       <NativeTabs.Trigger name="buyer-home"><NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} /><NativeTabs.Trigger.Label>{t('Home')}</NativeTabs.Trigger.Label></NativeTabs.Trigger>
@@ -83,6 +85,8 @@ function ClassicLayout() {
   const { preferences, resolvedAppearance } = useAppPreferences();
   const insets = useSafeAreaInsets();
   const { visible } = useTabBarBehavior();
+  const pathname = usePathname();
+  const hideForBuyerMessages = pathname.split('/').includes('buyer-messages');
   const { reduceMotion } = useMotion();
   const isWeb = Platform.OS === 'web';
   const isAndroid = Platform.OS === 'android';
@@ -107,6 +111,7 @@ function ClassicLayout() {
       tabBarActiveTintColor: colors.accent,
       tabBarInactiveTintColor: colors.mutedForeground,
       tabBarStyle: {
+        display: hideForBuyerMessages ? 'none' : 'flex',
         position: 'absolute', left: 14, right: 14,
         bottom: isWeb ? 0 : isAndroid ? Math.max(insets.bottom - 4, 8) : Math.max(insets.bottom, 10),
         height: isWeb ? 84 : 70,

@@ -1,4 +1,5 @@
 import React from 'react';
+import { router } from 'expo-router';
 import { BuyerAuthGate } from '@/components/BuyerAuthGate';
 import { useAuth } from '@/context/AuthContext';
 import { SupportMessages } from '../account/messages';
@@ -14,5 +15,11 @@ export default function BuyerMessages() {
     />;
   }
 
-  return <SupportMessages buyerMode />;
+  return <SupportMessages
+    buyerMode
+    onBack={() => {
+      if (router.canGoBack()) router.back();
+      else router.replace('/(buyer-tabs)/buyer-home');
+    }}
+  />;
 }
