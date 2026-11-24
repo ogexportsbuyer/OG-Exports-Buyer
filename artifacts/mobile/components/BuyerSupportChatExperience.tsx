@@ -221,6 +221,10 @@ export function BuyerSupportChatExperience({
   async function sendMessage() {
     const body = draft.trim();
     if (!conversationId || (!body && !pendingMedia) || uploading || send.isPending || sendingRef.current) return;
+    if (pendingMedia && !pendingSource) {
+      setActionError('This attachment is no longer available. Please select it again.');
+      return;
+    }
     sendingRef.current = true;
     setActionError('');
 

@@ -68,6 +68,8 @@ function formatDuration(seconds?: number) {
   return `${Math.floor(safeSeconds / 60)}:${String(safeSeconds % 60).padStart(2, '0')}`;
 }
 
+const voiceWaveform = [6, 11, 8, 15, 9, 17, 7, 12, 18, 9, 14, 6, 16, 10, 13, 7, 17, 9, 12, 6];
+
 export function BuyerSupportChatPanel({
   messages,
   loading,
@@ -124,6 +126,7 @@ export function BuyerSupportChatPanel({
           {item.body ? <Text style={[styles.messageBody, { color: colors.foreground }]}>{item.body}</Text> : null}
           {item.attachmentUrl && item.attachmentKind === 'image' ? (
             <Pressable
+              testID="buyer-chat-open-image"
               accessibilityRole="button"
               accessibilityLabel={item.attachmentName ? `Open image ${item.attachmentName}` : 'Open image attachment'}
               onPress={() => onOpenMedia(item.attachmentUrl!)}
@@ -134,6 +137,7 @@ export function BuyerSupportChatPanel({
           ) : null}
           {item.attachmentUrl && item.attachmentKind === 'audio' ? (
             <Pressable
+              testID="buyer-chat-play-sent-audio"
               accessibilityRole="button"
               accessibilityLabel={`${isPlaying ? 'Pause' : 'Play'} voice message`}
               onPress={() => onPlayAudio(item.attachmentUrl!)}
@@ -144,11 +148,24 @@ export function BuyerSupportChatPanel({
               </View>
               <View style={styles.audioDetails}>
                 <Text style={[styles.audioTitle, { color: colors.foreground }]}>Voice message</Text>
-                <View style={[styles.progressTrack, { backgroundColor: colors.border }]}>
-                  <View style={[styles.progressFill, { backgroundColor: colors.primary, width: `${isActive ? Math.round(audioProgress * 100) : 0}%` }]} />
+                <View style={styles.messageWaveform} accessibilityLabel="Voice message playback progress">
+                  {voiceWaveform.map((height, index) => {
+                    const played = isActive && audioProgress >= (index + 1) / voiceWaveform.length;
+                    return (
+                      <View
+                        key={index}
+                        style={[
+                          styles.waveformBar,
+                          { height, backgroundColor: played ? colors.primary : colors.border, opacity: played ? 1 : 0.8 },
+                        ]}
+                      />
+                    );
+                  })}
                 </View>
               </View>
-              <Text style={[styles.audioDuration, { color: colors.mutedForeground }]}>{item.durationSeconds ? formatDuration(item.durationSeconds) : 'Audio'}</Text>
+              <Text style={[styles.audioDuration, { color: colors.mutedForeground }]}>
+                {item.durationSeconds ? formatDuration(item.durationSeconds) : 'Voice note'}
+              </Text>
             </Pressable>
           ) : null}
           {item.attachmentUrl && (item.attachmentKind === 'video' || item.attachmentKind === 'file') ? (
@@ -243,23 +260,42 @@ export function BuyerSupportChatPanel({
         <View style={[styles.pendingCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {pendingMedia.kind === 'image' ? (
             <Image source={{ uri: pendingMedia.uri }} style={styles.pendingThumb} resizeMode="cover" />
+          ) : pendingMedia.kind === 'video' ? (
+            <View style={[styles.pendingThumb, styles.pendingIcon, { backgroundColor: colors.primary }]}>
+              <Feather name="play" size={20} color={colors.primaryForeground} />
+            </View>
           ) : (
             <View style={[styles.pendingThumb, styles.pendingIcon, { backgroundColor: colors.lightGreen }]}>
-              <Feather name={pendingMedia.kind === 'video' ? 'video' : 'mic'} size={20} color={colors.primary} />
+              <Feather name="mic" size={20} color={colors.primary} />
             </View>
           )}
           <View style={styles.pendingCopy}>
-            <Text numberOfLines={1} style={[styles.pendingName, { color: colors.foreground }]}>{pendingMedia.name}</Text>
-            <Text style={[styles.pendingType, { color: colors.mutedForeground }]}>
-              {pendingMedia.kind === 'audio' ? `Voice message · ${formatDuration(pendingMedia.durationSeconds)}` : `${pendingMedia.kind} ready to send`}
+            <Text style={[styles.pendingEyebrow, { color: colors.primary }]}>READY TO SEND</Text>
+            <Text numberOfLines={1} style={[styles.pendingName, { color: colors.foreground }]}>
+              {pendingMedia.kind === 'audio' ? 'Voice note' : pendingMedia.name}
             </Text>
+            {pendingMedia.kind === 'audio' ? (
+              <View style={styles.voicePreviewRow}>
+                <Text style={[styles.pendingType, { color: colors.mutedForeground }]}>{formatDuration(pendingMedia.durationSeconds)}</Text>
+                <View style={styles.waveform} accessibilityLabel="Voice note waveform preview">
+                  {voiceWaveform.map((height, index) => (
+                    <View key={index} style={[styles.waveformBar, { height, backgroundColor: colors.primary }]} />
+                  ))}
+                </View>
+              </View>
+            ) : (
+              <Text style={[styles.pendingType, { color: colors.mutedForeground }]}>
+                {pendingMedia.kind === 'video' ? 'Video attachment' : 'Image attachment'}
+              </Text>
+            )}
           </View>
           {pendingMedia.kind === 'audio' ? (
             <Pressable
+              testID="buyer-chat-preview-audio"
               accessibilityRole="button"
               accessibilityLabel={playingAudioUrl === pendingMedia.uri && audioPlaying ? 'Pause voice note preview' : 'Play voice note preview'}
               onPress={() => onPlayAudio(pendingMedia.uri)}
-              style={[styles.removeButton, { backgroundColor: colors.lightGreen }]}
+              style={({ pressed }) => [styles.previewButton, { backgroundColor: colors.lightGreen, opacity: pressed ? 0.72 : 1 }]}
             >
               <Feather
                 name={playingAudioUrl === pendingMedia.uri && audioPlaying ? 'pause' : 'play'}
@@ -269,10 +305,12 @@ export function BuyerSupportChatPanel({
             </Pressable>
           ) : null}
           <Pressable
+            testID="buyer-chat-remove-pending"
             accessibilityRole="button"
             accessibilityLabel="Cancel and remove attachment"
             onPress={onRemovePending}
-            style={[styles.removeButton, { backgroundColor: colors.secondary }]}
+            hitSlop={6}
+            style={({ pressed }) => [styles.removeButton, { backgroundColor: colors.secondary, opacity: pressed ? 0.72 : 1 }]}
           >
             <Feather name="x" size={16} color={colors.mutedForeground} />
           </Pressable>
@@ -282,6 +320,7 @@ export function BuyerSupportChatPanel({
       <View style={[styles.composer, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.composerActions}>
           <Pressable
+            testID="buyer-chat-attach"
             accessibilityRole="button"
             accessibilityLabel="Attach a photo, video or audio file"
             onPress={onPickMedia}
@@ -305,6 +344,7 @@ export function BuyerSupportChatPanel({
           />
           {recording ? (
             <Pressable
+              testID="buyer-chat-stop-recording"
               accessibilityRole="button"
               accessibilityLabel="Stop voice recording"
               onPress={onStopRecording}
@@ -314,8 +354,9 @@ export function BuyerSupportChatPanel({
             </Pressable>
           ) : draft.trim() || pendingMedia ? (
             <Pressable
+              testID="buyer-chat-send"
               accessibilityRole="button"
-              accessibilityLabel="Send message"
+              accessibilityLabel={sending ? 'Sending message' : 'Send message'}
               accessibilityState={{ disabled: sendDisabled || sending, busy: sending }}
               disabled={sendDisabled || sending}
               onPress={onSend}
@@ -324,10 +365,12 @@ export function BuyerSupportChatPanel({
                 { backgroundColor: colors.primary, opacity: sendDisabled || sending ? 0.45 : pressed ? 0.78 : 1 },
               ]}
             >
-              {sending ? <ActivityIndicator size="small" color={colors.primaryForeground} /> : <Feather name="arrow-up" size={19} color={colors.primaryForeground} />}
+              {sending ? <ActivityIndicator size="small" color={colors.primaryForeground} /> : <Feather name="send" size={15} color={colors.primaryForeground} />}
+              <Text style={[styles.sendLabel, { color: colors.primaryForeground }]}>{sending ? 'Sending' : 'Send'}</Text>
             </Pressable>
           ) : (
             <Pressable
+              testID="buyer-chat-start-recording"
               accessibilityRole="button"
               accessibilityLabel="Start voice recording"
               onPress={onStartRecording}
@@ -345,6 +388,10 @@ export function BuyerSupportChatPanel({
             </Text>
             <Text style={[styles.recordingAction, { color: colors.primary }]}>Tap stop when ready</Text>
           </View>
+        ) : pendingMedia ? (
+          <Text style={[styles.composerFootnote, { color: colors.mutedForeground }]}>
+            Tap Send once to share this attachment.
+          </Text>
         ) : (
           <Text style={[styles.composerFootnote, { color: colors.mutedForeground }]}>
             Keep order and quote details in this private conversation.
@@ -375,13 +422,12 @@ const styles = StyleSheet.create({
   messageBody: { fontSize: 14, lineHeight: 20 },
   imagePressable: { marginTop: 7, overflow: 'hidden', borderRadius: 12 },
   messageImage: { width: '100%', height: 190, borderRadius: 12, backgroundColor: 'transparent' },
-  audioMessage: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 8, padding: 9, borderRadius: 12 },
-  audioPlay: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  audioDetails: { flex: 1, gap: 6 },
-  audioTitle: { fontSize: 11, fontWeight: '700' },
-  progressTrack: { height: 3, borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: 3 },
-  audioDuration: { fontSize: 10, fontVariant: ['tabular-nums'] },
+  audioMessage: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8, padding: 10, borderRadius: 14 },
+  audioPlay: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  audioDetails: { flex: 1, gap: 5 },
+  audioTitle: { fontSize: 12, fontWeight: '700' },
+  messageWaveform: { height: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', overflow: 'hidden' },
+  audioDuration: { fontSize: 10, fontVariant: ['tabular-nums'], maxWidth: 42, textAlign: 'right' },
   fileMessage: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 8, padding: 9, borderWidth: StyleSheet.hairlineWidth, borderRadius: 12 },
   fileIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   fileCopy: { flex: 1, minWidth: 0 },
@@ -401,19 +447,25 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 10, marginTop: 2 },
   retryButton: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7 },
   retryText: { fontSize: 11, fontWeight: '700' },
-  pendingCard: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 12, marginBottom: 8, padding: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, gap: 10 },
-  pendingThumb: { width: 42, height: 42, borderRadius: 10 },
+  pendingCard: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 12, marginBottom: 8, padding: 10, borderWidth: StyleSheet.hairlineWidth, borderRadius: 16, gap: 10 },
+  pendingThumb: { width: 56, height: 56, borderRadius: 12 },
   pendingIcon: { alignItems: 'center', justifyContent: 'center' },
   pendingCopy: { flex: 1, minWidth: 0 },
-  pendingName: { fontSize: 12, fontWeight: '700' },
-  pendingType: { fontSize: 10, marginTop: 3 },
+  pendingEyebrow: { fontSize: 8, fontWeight: '800', letterSpacing: 0.8 },
+  pendingName: { fontSize: 12, fontWeight: '700', marginTop: 2 },
+  pendingType: { fontSize: 10 },
+  voicePreviewRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  waveform: { flex: 1, height: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', overflow: 'hidden' },
+  waveformBar: { width: 2, borderRadius: 2, opacity: 0.76 },
+  previewButton: { width: 34, height: 34, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   removeButton: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  composer: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 9 },
-  composerActions: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  utilityButton: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', marginBottom: 1 },
-  input: { flex: 1, minHeight: 40, maxHeight: 104, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 9, fontSize: 13, lineHeight: 18 },
-  sendButton: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', marginBottom: 1 },
-  recordButton: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', marginBottom: 1 },
+  composer: { borderTopWidth: StyleSheet.hairlineWidth, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 9, gap: 8 },
+  composerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  utilityButton: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  input: { flex: 1, minHeight: 42, maxHeight: 104, borderRadius: 15, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 13, paddingTop: 10, paddingBottom: 9, fontSize: 13, lineHeight: 18 },
+  sendButton: { minWidth: 74, height: 42, paddingHorizontal: 12, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  sendLabel: { fontSize: 12, fontWeight: '700' },
+  recordButton: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   composerFootnote: { fontSize: 10, marginTop: 7, marginLeft: 46 },
   recordingStatus: { flexDirection: 'row', alignItems: 'center', marginTop: 8, marginLeft: 46, gap: 6 },
   recordingDot: { width: 7, height: 7, borderRadius: 4 },
