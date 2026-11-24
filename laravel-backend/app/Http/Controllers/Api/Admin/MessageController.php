@@ -12,6 +12,7 @@ use App\Support\MediaPath;
 use App\Support\NotifiesUsers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class MessageController extends Controller
 {
@@ -223,14 +224,39 @@ class MessageController extends Controller
         $conversation->touch();
 
         $recipients = $conversation->participants()->where('users.id', '!=', $admin->id)->get();
-        $preview = $data['body'] ?: ($data['attachment_name'] ?? 'Sent an attachment');
-        NotifiesUsers::notifyMany(
-            $recipients,
-            'new_message',
-            'New message from OGSupport',
-            $preview,
-            ['conversation_id' => $conversation->id, 'message_id' => $message->id]
-        );
+        $messageText = trim(strip_tags((string) ($data['body'] ?? '')));
+        $preview = $messageText !== ''
+            ? Str::limit($messageText, 200)
+            : 'A new attachment is available in your secure conversation.';
+        $notificationData = ['conversation_id' => $conversation->id, 'message_id' => $message->id];
+        $buyers = $recipients->filter(fn (User $recipient) => $recipient->hasRole('buyer'));
+        $otherRecipients = $recipients->reject(fn (User $recipient) => $recipient->hasRole('buyer'));
+
+        if ($buyers->isNotEmpty()) {
+            $buyerHref = '/buyer/messages';
+            NotifiesUsers::notifyManyAndEmail(
+                $buyers,
+                'new_message',
+                'New message from OGSupport',
+                $preview,
+                array_merge($notificationData, ['href' => $buyerHref]),
+                'buyer_admin_message',
+                [
+                    'message_preview' => $preview,
+                    'portal_url' => rtrim((string) config('app.frontend_url', config('app.url')), '/').$buyerHref,
+                ]
+            );
+        }
+
+        if ($otherRecipients->isNotEmpty()) {
+            NotifiesUsers::notifyMany(
+                $otherRecipients,
+                'new_message',
+                'New message from OGSupport',
+                $preview,
+                $notificationData
+            );
+        }
 
         return response()->json([
             'data' => $message->load('sender:id,name,email'),
