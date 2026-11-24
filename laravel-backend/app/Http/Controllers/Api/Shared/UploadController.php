@@ -22,13 +22,28 @@ class UploadController extends Controller
 
         $category = $data['category']
             ?? MediaStorage::categoryFromLegacyFolder($data['folder'] ?? null);
+        $normalizedCategory = MediaStorage::normalizeCategory($category);
 
         $file = $request->file('file');
         $mime = (string) $file->getMimeType();
         $isImage = str_starts_with(strtolower($mime), 'image/');
-        $maxImageSizeKb = $category === 'kyc' ? 10 * 1024 : 8 * 1024;
+        $isAudio = str_starts_with(strtolower($mime), 'audio/');
+        $maxImageSizeKb = $normalizedCategory === 'kyc' ? 10 * 1024 : 8 * 1024;
 
-        if ($isImage) {
+        if ($isAudio && $normalizedCategory !== 'messages') {
+            return response()->json(['message' => 'Audio files may only be uploaded as support-message attachments.'], 422);
+        }
+
+        if ($isAudio) {
+            $request->validate([
+                'file' => [
+                    'required',
+                    'file',
+                    'max:10240',
+                    'mimes:m4a,mp3,wav,aac,ogg,opus,webm,3gp',
+                ],
+            ]);
+        } elseif ($isImage) {
             $request->validate([
                 'file' => [
                     'required',

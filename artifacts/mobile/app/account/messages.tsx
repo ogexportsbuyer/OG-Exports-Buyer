@@ -13,6 +13,7 @@ import { useColors } from '@/hooks/useColors';
 import { MOTION, MotionReveal, motionHaptic, useMotion } from '@/lib/motion';
 import { GlassLayers } from '@/components/GlassSurface';
 import { hasBuyerAccount } from '@/lib/account-role';
+import { BuyerSupportChatExperience } from '@/components/BuyerSupportChatExperience';
 
 type SupportMode = 'help' | 'chat' | 'tickets';
 
@@ -385,8 +386,23 @@ export function SupportMessages({ buyerMode = false }: { buyerMode?: boolean }) 
         behavior="padding"
         keyboardVerticalOffset={0}
       >
+        {buyerMode ? <>
+          {conversationQuery.isLoading ? <Card><Text style={{ color: colors.mutedForeground }}>Opening your support conversation…</Text></Card> : null}
+          {conversationQuery.isError ? <ErrorState message="Your support conversation could not be opened." error={conversationQuery.error} onRetry={() => void conversationQuery.refetch()} /> : null}
+          {!conversationQuery.isLoading && !conversationQuery.isError && !conversationId ? <EmptyState title="Conversation unavailable" body="Use a support ticket or email instead. The support conversation could not be opened." /> : null}
+          {conversationId ? <View style={{ flex: 1, paddingBottom: insets.bottom }}>
+            <BuyerSupportChatExperience
+              conversationId={conversationId}
+              messages={messages}
+              loading={messagesQuery.isLoading}
+              error={messagesQuery.isError ? 'Messages could not be loaded.' : null}
+              onRetry={() => void messagesQuery.refetch()}
+              onSent={() => void messagesQuery.refetch()}
+            />
+          </View> : null}
+        </> : <>
         <Card>
-          <Text style={{ color: colors.foreground, fontWeight: '700' }}>{buyerMode ? 'Buyer support conversation' : 'Investor support conversation'}</Text>
+          <Text style={{ color: colors.foreground, fontWeight: '700' }}>Investor support conversation</Text>
           <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 17, marginTop: 4 }}>
             Replies refresh automatically while this screen is open.
           </Text>
@@ -440,6 +456,7 @@ export function SupportMessages({ buyerMode = false }: { buyerMode?: boolean }) 
             <Action title="Send message" icon="send" loading={send.isPending} disabled={!message.trim()} onPress={() => void sendMessage()} />
           </Card>
         </View> : null}
+        </>}
       </KeyboardAvoidingView>
     </> : null}
 

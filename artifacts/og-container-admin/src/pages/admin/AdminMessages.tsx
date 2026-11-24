@@ -337,6 +337,11 @@ export default function AdminMessages() {
                     const isMine = m.sender_id === myId
                     const fileUrl = resolveAttachmentUrl(m.attachment_path, m.attachment_url)
                     const showAsImage = fileUrl && isImageMime(m.attachment_mime, m.attachment_name)
+                    const showAsAudio = Boolean(fileUrl && m.attachment_mime?.toLowerCase().startsWith("audio/"))
+                    const showAsVideo = Boolean(fileUrl && (
+                      m.attachment_mime?.toLowerCase().startsWith("video/")
+                      || /\.(mp4|webm|mov|avi)$/i.test(m.attachment_name || "")
+                    ))
                     return (
                       <div key={m.id} className={`flex gap-3 ${isMine ? "" : "flex-row-reverse"}`}>
                         <div
@@ -367,7 +372,25 @@ export default function AdminMessages() {
                                 thumbnailClassName="max-h-40 rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
                               />
                             )}
-                            {fileUrl && !showAsImage && (
+                            {showAsVideo && (
+                              <video
+                                controls
+                                preload="metadata"
+                                src={fileUrl}
+                                aria-label={m.attachment_name || "Support video"}
+                                className="max-h-64 w-full rounded-lg bg-black"
+                              />
+                            )}
+                            {showAsAudio && (
+                              <audio
+                                controls
+                                preload="metadata"
+                                src={fileUrl}
+                                aria-label={m.attachment_name || "Support voice note"}
+                                className="w-full min-w-56"
+                              />
+                            )}
+                            {fileUrl && !showAsImage && !showAsVideo && !showAsAudio && (
                               <a
                                 href={fileUrl}
                                 target="_blank"

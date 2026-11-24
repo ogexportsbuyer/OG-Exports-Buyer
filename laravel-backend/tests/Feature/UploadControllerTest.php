@@ -72,6 +72,64 @@ it('keeps the 8mb image limit for non-kyc uploads', function () {
         ->assertStatus(422);
 });
 
+it('stores supported voice notes only for support messages', function () {
+    $file = UploadedFile::fake()->create('voice-note.m4a', 256, 'audio/mp4');
+
+    $response = $this->actingAs($this->user)
+        ->post('/api/uploads', [
+            'file' => $file,
+            'category' => 'messages',
+        ], [
+            'Accept' => 'application/json',
+        ]);
+
+    $response->assertCreated()
+        ->assertJsonStructure(['data' => ['path', 'url', 'name', 'mime', 'size']]);
+
+    $path = $response->json('data.path');
+    expect($path)->toStartWith('upload/messages/'.$this->user->id.'/')
+        ->and(File::exists(public_path($path)))->toBeTrue();
+});
+
+it('accepts support images and videos while keeping them in the message upload folder', function () {
+    $image = $this->actingAs($this->user)
+        ->post('/api/uploads', [
+            'file' => UploadedFile::fake()->image('chat-photo.jpg'),
+            'category' => 'messages',
+        ], ['Accept' => 'application/json'])
+        ->assertCreated();
+
+    $video = $this->actingAs($this->user)
+        ->post('/api/uploads', [
+            'file' => UploadedFile::fake()->create('shipment-video.mp4', 256, 'video/mp4'),
+            'category' => 'messages',
+        ], ['Accept' => 'application/json'])
+        ->assertCreated();
+
+    expect($image->json('data.path'))->toStartWith('upload/messages/'.$this->user->id.'/')
+        ->and($video->json('data.path'))->toStartWith('upload/messages/'.$this->user->id.'/');
+});
+
+it('rejects voice notes outside the messages category and above 10mb', function () {
+    $this->actingAs($this->user)
+        ->post('/api/uploads', [
+            'file' => UploadedFile::fake()->create('voice-note.m4a', 256, 'audio/mp4'),
+            'category' => 'general',
+        ], [
+            'Accept' => 'application/json',
+        ])
+        ->assertStatus(422);
+
+    $this->actingAs($this->user)
+        ->post('/api/uploads', [
+            'file' => UploadedFile::fake()->create('large-voice.m4a', 10 * 1024 + 1, 'audio/mp4'),
+            'category' => 'messages',
+        ], [
+            'Accept' => 'application/json',
+        ])
+        ->assertStatus(422);
+});
+
 it('maps legacy folder param to upload categories', function () {
     $file = UploadedFile::fake()->image('proof.jpg');
 
