@@ -11,6 +11,7 @@ export const INVESTOR_DOCUMENT_MIME_TYPES = [
 export const MAX_BUYER_CHAT_IMAGE_BYTES = 8 * 1024 * 1024;
 export const MAX_BUYER_CHAT_VIDEO_BYTES = 20 * 1024 * 1024;
 export const MAX_BUYER_CHAT_AUDIO_BYTES = 10 * 1024 * 1024;
+export const MAX_BUYER_CHAT_ATTACHMENTS = 10;
 
 export type BuyerChatMediaKind = 'image' | 'video' | 'audio';
 

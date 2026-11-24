@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   INVESTOR_DOCUMENT_MIME_TYPES,
   MAX_INVESTOR_UPLOAD_BYTES,
+  MAX_BUYER_CHAT_ATTACHMENTS,
   MAX_BUYER_CHAT_AUDIO_BYTES,
   MAX_BUYER_CHAT_IMAGE_BYTES,
   MAX_BUYER_CHAT_VIDEO_BYTES,
@@ -46,4 +47,8 @@ test('enforces separate image, video, and audio size limits for buyer chat', () 
   assert.throws(() => validateBuyerChatMediaFile('photo.jpg', 'image/jpeg', MAX_BUYER_CHAT_IMAGE_BYTES + 1), /8 MB/);
   assert.throws(() => validateBuyerChatMediaFile('clip.mp4', 'video/mp4', MAX_BUYER_CHAT_VIDEO_BYTES + 1), /20 MB/);
   assert.throws(() => validateBuyerChatMediaFile('voice.m4a', 'audio/mp4', MAX_BUYER_CHAT_AUDIO_BYTES + 1), /10 MB/);
+});
+
+test('limits one buyer chat send batch to ten attachments', () => {
+  assert.equal(MAX_BUYER_CHAT_ATTACHMENTS, 10);
 });

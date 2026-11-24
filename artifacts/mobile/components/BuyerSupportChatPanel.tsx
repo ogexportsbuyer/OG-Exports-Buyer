@@ -4,12 +4,15 @@ import {
   FlatList,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/components/LocalizedText';
 import { useColors } from '@/hooks/useColors';
+import { MAX_BUYER_CHAT_ATTACHMENTS } from '@/lib/upload-rules';
 
 export type BuyerSupportMessage = {
   id: string;
@@ -25,6 +28,7 @@ export type BuyerSupportMessage = {
 };
 
 export type BuyerSupportPendingMedia = {
+  id: string;
   uri: string;
   name: string;
   mimeType: string;
@@ -42,8 +46,8 @@ export type BuyerSupportChatPanelProps = {
   onSend: () => void;
   sendDisabled: boolean;
   sending: boolean;
-  pendingMedia: BuyerSupportPendingMedia | null;
-  onRemovePending: () => void;
+  pendingMedia: BuyerSupportPendingMedia[];
+  onRemovePending: (mediaId: string) => void;
   onPickMedia: () => void;
   recording: boolean;
   recordingSeconds: number;
@@ -54,6 +58,7 @@ export type BuyerSupportChatPanelProps = {
   playingAudioUrl: string | null;
   audioPlaying: boolean;
   audioProgress: number;
+  sendProgressLabel?: string;
 };
 
 function formatTime(value: string) {
@@ -80,7 +85,6 @@ export function BuyerSupportChatPanel({
   onSend,
   sendDisabled,
   sending,
-  pendingMedia,
   onRemovePending,
   onPickMedia,
   recording,
@@ -92,9 +96,16 @@ export function BuyerSupportChatPanel({
   playingAudioUrl,
   audioPlaying,
   audioProgress,
+  sendProgressLabel,
+  pendingMedia: pendingMediaValue,
 }: BuyerSupportChatPanelProps) {
   const colors = useColors();
   const listRef = useRef<FlatList<BuyerSupportMessage>>(null);
+  const pendingMedia = Array.isArray(pendingMediaValue) ? pendingMediaValue : [];
+  const { width: screenWidth } = useWindowDimensions();
+  const pendingCardWidth = pendingMedia.length > 1
+    ? Math.max(200, Math.min(260, screenWidth - 148))
+    : Math.max(230, screenWidth - 68);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: false }));
@@ -194,22 +205,6 @@ export function BuyerSupportChatPanel({
 
   return (
     <View style={styles.container} testID="buyer-support-chat-panel">
-      <View style={styles.heading}>
-        <View style={[styles.supportMark, { backgroundColor: colors.lightGreen }]}>
-          <Feather name="headphones" size={17} color={colors.primary} />
-        </View>
-        <View style={styles.headingCopy}>
-          <Text style={[styles.headingTitle, { color: colors.foreground }]}>OG Exports support</Text>
-          <Text style={[styles.headingSubtitle, { color: colors.mutedForeground }]}>
-            Product, order and trade assistance
-          </Text>
-        </View>
-        <View style={[styles.secureBadge, { backgroundColor: colors.secondary }]}>
-          <Feather name="message-circle" size={12} color={colors.primary} />
-          <Text style={[styles.secureText, { color: colors.primary }]}>Support</Text>
-        </View>
-      </View>
-
       {error ? (
         <View style={[styles.errorBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={[styles.errorIcon, { backgroundColor: colors.secondary }]}>
@@ -256,65 +251,91 @@ export function BuyerSupportChatPanel({
         style={styles.list}
       />
 
-      {pendingMedia ? (
-        <View style={[styles.pendingCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {pendingMedia.kind === 'image' ? (
-            <Image source={{ uri: pendingMedia.uri }} style={styles.pendingThumb} resizeMode="cover" />
-          ) : pendingMedia.kind === 'video' ? (
-            <View style={[styles.pendingThumb, styles.pendingIcon, { backgroundColor: colors.primary }]}>
-              <Feather name="play" size={20} color={colors.primaryForeground} />
-            </View>
-          ) : (
-            <View style={[styles.pendingThumb, styles.pendingIcon, { backgroundColor: colors.lightGreen }]}>
-              <Feather name="mic" size={20} color={colors.primary} />
-            </View>
-          )}
-          <View style={styles.pendingCopy}>
-            <Text style={[styles.pendingEyebrow, { color: colors.primary }]}>READY TO SEND</Text>
-            <Text numberOfLines={1} style={[styles.pendingName, { color: colors.foreground }]}>
-              {pendingMedia.kind === 'audio' ? 'Voice note' : pendingMedia.name}
-            </Text>
-            {pendingMedia.kind === 'audio' ? (
-              <View style={styles.voicePreviewRow}>
-                <Text style={[styles.pendingType, { color: colors.mutedForeground }]}>{formatDuration(pendingMedia.durationSeconds)}</Text>
-                <View style={styles.waveform} accessibilityLabel="Voice note waveform preview">
-                  {voiceWaveform.map((height, index) => (
-                    <View key={index} style={[styles.waveformBar, { height, backgroundColor: colors.primary }]} />
-                  ))}
-                </View>
-              </View>
-            ) : (
-              <Text style={[styles.pendingType, { color: colors.mutedForeground }]}>
-                {pendingMedia.kind === 'video' ? 'Video attachment' : 'Image attachment'}
+      {pendingMedia.length > 0 ? (
+        <>
+          {pendingMedia.length > 1 ? (
+            <View style={styles.pendingHeader}>
+              <Text style={[styles.pendingHeaderTitle, { color: colors.foreground }]}>Selected files</Text>
+              <Text style={[styles.pendingHeaderCount, { color: colors.mutedForeground }]}>
+                {pendingMedia.length} / {MAX_BUYER_CHAT_ATTACHMENTS}
               </Text>
-            )}
-          </View>
-          {pendingMedia.kind === 'audio' ? (
-            <Pressable
-              testID="buyer-chat-preview-audio"
-              accessibilityRole="button"
-              accessibilityLabel={playingAudioUrl === pendingMedia.uri && audioPlaying ? 'Pause voice note preview' : 'Play voice note preview'}
-              onPress={() => onPlayAudio(pendingMedia.uri)}
-              style={({ pressed }) => [styles.previewButton, { backgroundColor: colors.lightGreen, opacity: pressed ? 0.72 : 1 }]}
-            >
-              <Feather
-                name={playingAudioUrl === pendingMedia.uri && audioPlaying ? 'pause' : 'play'}
-                size={14}
-                color={colors.primary}
-              />
-            </Pressable>
+            </View>
           ) : null}
-          <Pressable
-            testID="buyer-chat-remove-pending"
-            accessibilityRole="button"
-            accessibilityLabel="Cancel and remove attachment"
-            onPress={onRemovePending}
-            hitSlop={6}
-            style={({ pressed }) => [styles.removeButton, { backgroundColor: colors.secondary, opacity: pressed ? 0.72 : 1 }]}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.pendingList}
           >
-            <Feather name="x" size={16} color={colors.mutedForeground} />
-          </Pressable>
-        </View>
+            {pendingMedia.map((media) => {
+              const previewPlaying = playingAudioUrl === media.uri && audioPlaying;
+              return (
+                <View
+                  key={media.id}
+                  style={[
+                    styles.pendingCard,
+                    { width: pendingCardWidth, backgroundColor: colors.card, borderColor: colors.border },
+                  ]}
+                >
+                  {media.kind === 'image' ? (
+                    <Image source={{ uri: media.uri }} style={styles.pendingThumb} resizeMode="cover" />
+                  ) : media.kind === 'video' ? (
+                    <View style={[styles.pendingThumb, styles.pendingIcon, { backgroundColor: colors.primary }]}>
+                      <Feather name="play" size={20} color={colors.primaryForeground} />
+                    </View>
+                  ) : (
+                    <View style={[styles.pendingThumb, styles.pendingIcon, { backgroundColor: colors.lightGreen }]}>
+                      <Feather name="mic" size={20} color={colors.primary} />
+                    </View>
+                  )}
+                  <View style={styles.pendingCopy}>
+                    <Text style={[styles.pendingEyebrow, { color: colors.primary }]}>READY TO SEND</Text>
+                    <Text numberOfLines={1} style={[styles.pendingName, { color: colors.foreground }]}>
+                      {media.kind === 'audio' ? 'Voice note' : media.name}
+                    </Text>
+                    {media.kind === 'audio' ? (
+                      <View style={styles.voicePreviewRow}>
+                        <Text style={[styles.pendingType, { color: colors.mutedForeground }]}>{formatDuration(media.durationSeconds)}</Text>
+                        <View style={styles.waveform} accessibilityLabel="Voice note waveform preview">
+                          {voiceWaveform.map((height, index) => (
+                            <View key={index} style={[styles.waveformBar, { height, backgroundColor: colors.primary }]} />
+                          ))}
+                        </View>
+                      </View>
+                    ) : (
+                      <Text style={[styles.pendingType, { color: colors.mutedForeground }]}>
+                        {media.kind === 'video' ? 'Video attachment' : 'Image attachment'}
+                      </Text>
+                    )}
+                  </View>
+                  {media.kind === 'audio' ? (
+                    <Pressable
+                      testID={`buyer-chat-preview-audio-${media.id}`}
+                      accessibilityRole="button"
+                      accessibilityLabel={previewPlaying ? 'Pause voice note preview' : 'Play voice note preview'}
+                    disabled={sending}
+                      onPress={() => onPlayAudio(media.uri)}
+                    style={({ pressed }) => [styles.previewButton, { backgroundColor: colors.lightGreen, opacity: sending ? 0.5 : pressed ? 0.72 : 1 }]}
+                    >
+                      <Feather name={previewPlaying ? 'pause' : 'play'} size={14} color={colors.primary} />
+                    </Pressable>
+                  ) : null}
+                  <Pressable
+                    testID={`buyer-chat-remove-pending-${media.id}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${media.kind === 'audio' ? 'voice note' : media.kind} attachment`}
+                    disabled={sending}
+                    onPress={() => onRemovePending(media.id)}
+                    hitSlop={6}
+                    style={({ pressed }) => [styles.removeButton, { backgroundColor: colors.secondary, opacity: sending ? 0.5 : pressed ? 0.72 : 1 }]}
+                  >
+                    <Feather name="x" size={16} color={colors.mutedForeground} />
+                  </Pressable>
+                </View>
+              );
+            })}
+          </ScrollView>
+        </>
       ) : null}
 
       <View style={[styles.composer, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -323,8 +344,9 @@ export function BuyerSupportChatPanel({
             testID="buyer-chat-attach"
             accessibilityRole="button"
             accessibilityLabel="Attach a photo, video or audio file"
+            disabled={sending || recording}
             onPress={onPickMedia}
-            style={({ pressed }) => [styles.utilityButton, { backgroundColor: colors.secondary, opacity: pressed ? 0.72 : 1 }]}
+            style={({ pressed }) => [styles.utilityButton, { backgroundColor: colors.secondary, opacity: sending || recording ? 0.5 : pressed ? 0.72 : 1 }]}
           >
             <Feather name="paperclip" size={17} color={colors.primary} />
           </Pressable>
@@ -352,7 +374,7 @@ export function BuyerSupportChatPanel({
             >
               <Feather name="square" size={15} color={colors.destructiveForeground} />
             </Pressable>
-          ) : draft.trim() || pendingMedia ? (
+          ) : draft.trim() || pendingMedia.length > 0 ? (
             <Pressable
               testID="buyer-chat-send"
               accessibilityRole="button"
@@ -366,7 +388,7 @@ export function BuyerSupportChatPanel({
               ]}
             >
               {sending ? <ActivityIndicator size="small" color={colors.primaryForeground} /> : <Feather name="send" size={15} color={colors.primaryForeground} />}
-              <Text style={[styles.sendLabel, { color: colors.primaryForeground }]}>{sending ? 'Sending' : 'Send'}</Text>
+              <Text style={[styles.sendLabel, { color: colors.primaryForeground }]}>{sending ? sendProgressLabel || 'Sending' : 'Send'}</Text>
             </Pressable>
           ) : (
             <Pressable
@@ -388,9 +410,11 @@ export function BuyerSupportChatPanel({
             </Text>
             <Text style={[styles.recordingAction, { color: colors.primary }]}>Tap stop when ready</Text>
           </View>
-        ) : pendingMedia ? (
+        ) : pendingMedia.length > 0 ? (
           <Text style={[styles.composerFootnote, { color: colors.mutedForeground }]}>
-            Tap Send once to share this attachment.
+            {pendingMedia.length === 1
+              ? 'Tap Send once to share this attachment.'
+              : `Tap Send once to share all ${pendingMedia.length} attachments.`}
           </Text>
         ) : (
           <Text style={[styles.composerFootnote, { color: colors.mutedForeground }]}>
@@ -404,13 +428,6 @@ export function BuyerSupportChatPanel({
 
 const styles = StyleSheet.create({
   container: { flex: 1, minHeight: 0 },
-  heading: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, gap: 10 },
-  supportMark: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  headingCopy: { flex: 1, minWidth: 0 },
-  headingTitle: { fontSize: 14, fontWeight: '700', letterSpacing: 0.1 },
-  headingSubtitle: { fontSize: 11, marginTop: 2 },
-  secureBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 20, paddingHorizontal: 9, paddingVertical: 6 },
-  secureText: { fontSize: 10, fontWeight: '700' },
   list: { flex: 1 },
   listContent: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 14, flexGrow: 1, justifyContent: 'flex-end' },
   emptyList: { justifyContent: 'center' },
@@ -447,7 +464,11 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 10, marginTop: 2 },
   retryButton: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7 },
   retryText: { fontSize: 11, fontWeight: '700' },
-  pendingCard: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 12, marginBottom: 8, padding: 10, borderWidth: StyleSheet.hairlineWidth, borderRadius: 16, gap: 10 },
+  pendingHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 12, marginBottom: 6 },
+  pendingHeaderTitle: { fontSize: 11, fontWeight: '700' },
+  pendingHeaderCount: { fontSize: 10, fontVariant: ['tabular-nums'] },
+  pendingList: { paddingHorizontal: 12, paddingBottom: 8, gap: 8 },
+  pendingCard: { flexDirection: 'row', alignItems: 'center', padding: 10, borderWidth: StyleSheet.hairlineWidth, borderRadius: 16, gap: 8 },
   pendingThumb: { width: 56, height: 56, borderRadius: 12 },
   pendingIcon: { alignItems: 'center', justifyContent: 'center' },
   pendingCopy: { flex: 1, minWidth: 0 },

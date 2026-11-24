@@ -13,7 +13,11 @@ import {
 } from 'expo-audio';
 import { useSendInvestorConversationMessage } from '@workspace/api-client-react';
 import { useAuth } from '@/context/AuthContext';
-import { buyerChatMediaKind, validateBuyerChatMediaFile } from '@/lib/upload-rules';
+import {
+  buyerChatMediaKind,
+  MAX_BUYER_CHAT_ATTACHMENTS,
+  validateBuyerChatMediaFile,
+} from '@/lib/upload-rules';
 import { uploadBuyerChatMedia } from '@/lib/file-upload';
 import { resolveBuyerProductImageUrl } from '@/lib/buyer-product-data';
 import { first, messageOf, record, type Json } from '@/lib/data';
@@ -34,6 +38,11 @@ type BuyerSupportChatExperienceProps = {
 };
 
 type PendingMediaSource = string | ExpoFile | Blob;
+type QueuedBuyerMedia = BuyerSupportPendingMedia & { source: PendingMediaSource };
+
+function createMediaId() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 function mediaExtension(mimeType: string, kind: 'image' | 'video' | 'audio') {
   const mime = mimeType.toLowerCase();
@@ -106,10 +115,11 @@ export function BuyerSupportChatExperience({
   const ownId = first(record(user), ['id'], '');
   const send = useSendInvestorConversationMessage();
   const [draft, setDraft] = useState('');
-  const [pendingMedia, setPendingMedia] = useState<BuyerSupportPendingMedia | null>(null);
-  const [pendingSource, setPendingSource] = useState<PendingMediaSource | null>(null);
+  const [pendingMedia, setPendingMedia] = useState<QueuedBuyerMedia[]>([]);
+  const queuedPendingMedia = Array.isArray(pendingMedia) ? pendingMedia : [];
   const [uploading, setUploading] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [sendProgress, setSendProgress] = useState<{ current: number; total: number } | null>(null);
   const sendingRef = useRef(false);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder, 250);
@@ -127,29 +137,48 @@ export function BuyerSupportChatExperience({
       setActionError('Stop the voice recording before attaching other media.');
       return;
     }
+    const availableSlots = MAX_BUYER_CHAT_ATTACHMENTS - queuedPendingMedia.length;
+    if (availableSlots <= 0) {
+      setActionError(`You can send up to ${MAX_BUYER_CHAT_ATTACHMENTS} attachments at a time. Send or remove selected files first.`);
+      return;
+    }
     setActionError('');
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images', 'videos'],
         allowsEditing: false,
-        allowsMultipleSelection: false,
+        allowsMultipleSelection: true,
+        selectionLimit: availableSlots,
+        orderedSelection: true,
         quality: 0.9,
         preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
       });
-      if (result.canceled || !result.assets[0]) return;
+      if (result.canceled || result.assets.length === 0) return;
 
-      const asset = result.assets[0];
-      const kind = asset.type === 'video' || asset.mimeType?.startsWith('video/') ? 'video' : 'image';
-      const mimeType = asset.mimeType || (kind === 'video' ? 'video/mp4' : 'image/jpeg');
-      const name = normalizedName(asset.fileName, mimeType, kind);
-      const size = asset.fileSize ?? asset.file?.size ?? (Platform.OS === 'web' ? 0 : new ExpoFile(asset.uri).size);
+      const selected = result.assets.slice(0, availableSlots).map((asset) => {
+        const kind = asset.type === 'video' || asset.mimeType?.startsWith('video/') ? 'video' : 'image';
+        const mimeType = asset.mimeType || (kind === 'video' ? 'video/mp4' : 'image/jpeg');
+        const name = normalizedName(asset.fileName, mimeType, kind);
+        const size = asset.fileSize ?? asset.file?.size ?? (Platform.OS === 'web' ? 0 : new ExpoFile(asset.uri).size);
 
-      if (size > 0) validateBuyerChatMediaFile(name, mimeType, size, kind);
-      const durationSeconds = kind === 'video' && asset.duration != null
-        ? Math.max(1, Math.round(asset.duration / 1000))
-        : undefined;
-      setPendingMedia({ uri: asset.uri, name, mimeType, kind, durationSeconds });
-      setPendingSource(asset.file ?? asset.uri);
+        if (size > 0) validateBuyerChatMediaFile(name, mimeType, size, kind);
+        const durationSeconds = kind === 'video' && asset.duration != null
+          ? Math.max(1, Math.round(asset.duration / 1000))
+          : undefined;
+        return {
+          id: createMediaId(),
+          uri: asset.uri,
+          name,
+          mimeType,
+          kind,
+          durationSeconds,
+          source: asset.file ?? asset.uri,
+        } satisfies QueuedBuyerMedia;
+      });
+      setPendingMedia((current) => [
+        ...(Array.isArray(current) ? current : []),
+        ...selected,
+      ].slice(0, MAX_BUYER_CHAT_ATTACHMENTS));
     } catch (err) {
       setActionError(messageOf(err));
       motionHaptic('error');
@@ -157,6 +186,10 @@ export function BuyerSupportChatExperience({
   }
 
   async function startRecording() {
+    if (queuedPendingMedia.length >= MAX_BUYER_CHAT_ATTACHMENTS) {
+      setActionError(`You can send up to ${MAX_BUYER_CHAT_ATTACHMENTS} attachments at a time. Send or remove selected files first.`);
+      return;
+    }
     setActionError('');
     try {
       const permission = await requestRecordingPermissionsAsync();
@@ -201,66 +234,86 @@ export function BuyerSupportChatExperience({
       );
       const durationSeconds = Math.max(1, Math.round((status.durationMillis || recorderState.durationMillis) / 1000));
       if (status.fileSize > 0) validateBuyerChatMediaFile(name, mimeType, status.fileSize, kind);
-      setPendingMedia({ uri, name, mimeType, kind, durationSeconds });
-      setPendingSource(uri);
+      setPendingMedia((current) => [
+        ...(Array.isArray(current) ? current : []),
+        { id: createMediaId(), uri, name, mimeType, kind, durationSeconds, source: uri },
+      ]);
     } catch (err) {
       setActionError(messageOf(err));
       motionHaptic('error');
     }
   }
 
-  function removePendingMedia() {
-    if (pendingMedia?.kind === 'audio' && playingAudioUrl === pendingMedia.uri) {
+  function removePendingMedia(mediaId: string) {
+    const removed = queuedPendingMedia.find((media) => media.id === mediaId);
+    if (removed?.kind === 'audio' && playingAudioUrl === removed.uri) {
       player.pause();
       setPlayingAudioUrl(null);
     }
-    setPendingMedia(null);
-    setPendingSource(null);
+    setPendingMedia((current) => (Array.isArray(current) ? current : []).filter((media) => media.id !== mediaId));
   }
 
   async function sendMessage() {
     const body = draft.trim();
-    if (!conversationId || (!body && !pendingMedia) || uploading || send.isPending || sendingRef.current) return;
-    if (pendingMedia && !pendingSource) {
-      setActionError('This attachment is no longer available. Please select it again.');
+    const queuedMedia = [...queuedPendingMedia];
+    if (!conversationId || (!body && queuedMedia.length === 0) || uploading || send.isPending || sendingRef.current) return;
+    if (queuedMedia.some((media) => !media.source)) {
+      setActionError('One of the selected attachments is no longer available. Please select it again.');
       return;
     }
     sendingRef.current = true;
     setActionError('');
+    setSendProgress(null);
+    let sentMessages = 0;
 
     try {
-      let attachment: Record<string, string> = {};
-      if (pendingMedia && pendingSource) {
+      if (queuedMedia.length > 0) {
         setUploading(true);
-        const uploaded = await uploadBuyerChatMedia(
-          pendingSource,
-          pendingMedia.name,
-          pendingMedia.mimeType,
-          pendingMedia.kind,
-          apiOrigin,
-        );
-        attachment = {
-          attachment_path: uploaded.path,
-          attachment_url: uploaded.url,
-          attachment_name: uploaded.name,
-          attachment_mime: uploaded.mime,
-        };
+        for (let index = 0; index < queuedMedia.length; index += 1) {
+          const media = queuedMedia[index];
+          setSendProgress({ current: index + 1, total: queuedMedia.length });
+          const uploaded = await uploadBuyerChatMedia(
+            media.source,
+            media.name,
+            media.mimeType,
+            media.kind,
+            apiOrigin,
+          );
+          await send.mutateAsync({
+            conversation: conversationId,
+            data: {
+              body: index === 0 ? body : '',
+              attachment_path: uploaded.path,
+              attachment_url: uploaded.url,
+              attachment_name: uploaded.name,
+              attachment_mime: uploaded.mime,
+            },
+          });
+          sentMessages += 1;
+          setPendingMedia((current) => (Array.isArray(current) ? current : []).filter((item) => item.id !== media.id));
+          if (media.kind === 'audio' && playingAudioUrl === media.uri) {
+            player.pause();
+            setPlayingAudioUrl(null);
+          }
+          if (index === 0 && body) setDraft('');
+        }
+      } else {
+        await send.mutateAsync({
+          conversation: conversationId,
+          data: { body },
+        });
+        sentMessages += 1;
+        setDraft('');
       }
-
-      await send.mutateAsync({
-        conversation: conversationId,
-        data: { body, ...attachment },
-      });
       motionHaptic('success');
-      setDraft('');
-      removePendingMedia();
-      onSent();
     } catch (err) {
       motionHaptic('error');
       setActionError(messageOf(err));
     } finally {
+      if (sentMessages > 0) onSent();
       sendingRef.current = false;
       setUploading(false);
+      setSendProgress(null);
     }
   }
 
@@ -307,9 +360,9 @@ export function BuyerSupportChatExperience({
       draft={draft}
       onDraftChange={setDraft}
       onSend={() => void sendMessage()}
-      sendDisabled={!draft.trim() && !pendingMedia}
+      sendDisabled={!draft.trim() && queuedPendingMedia.length === 0}
       sending={uploading || send.isPending}
-      pendingMedia={pendingMedia}
+      pendingMedia={queuedPendingMedia.map(({ source: _source, ...media }) => media)}
       onRemovePending={removePendingMedia}
       onPickMedia={() => void pickMedia()}
       recording={recorderState.isRecording}
@@ -321,6 +374,7 @@ export function BuyerSupportChatExperience({
       playingAudioUrl={playingAudioUrl}
       audioPlaying={Boolean(playingAudioUrl && playerStatus.playing)}
       audioProgress={progress}
+      sendProgressLabel={sendProgress ? `Sending ${sendProgress.current}/${sendProgress.total}` : undefined}
     />
   );
 }
