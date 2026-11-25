@@ -123,6 +123,17 @@ test('routes first-time guests through onboarding and returning guests to the bu
   const entry = readFileSync(new URL('../app/index.tsx', import.meta.url), 'utf8');
   assert.match(entry, /buyerEntryDestination\(onboardingComplete\)/);
 });
+
+test('saved non-buyer sessions are cleared and continue to onboarding or the public buyer home', () => {
+  const entry = readFileSync(new URL('../app/index.tsx', import.meta.url), 'utf8');
+  const handoff = readFileSync(new URL('../components/BuyerSessionHandoff.tsx', import.meta.url), 'utf8');
+  assert.match(entry, /token && hasBuyerAccount\(user\)/);
+  assert.match(handoff, /logout\.mutateAsync\(undefined\)/);
+  assert.match(handoff, /await signOut\(\)/);
+  assert.match(handoff, /router\.replace\(buyerEntryDestination\(onboardingComplete\)\)/);
+  assert.doesNotMatch(handoff, /Buyer account required|Sign out and continue|buyer-only-signout/);
+});
+
 test('buyer login and email verification keep the selected product through cart', () => {
   const returnTo = pendingProductAuthReturnTo(42);
   assert.equal(returnTo, '/buyer-products?pendingProduct=42');

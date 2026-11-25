@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BrandMark } from '@/components/BrandMark';
 import { useAuth } from '@/context/AuthContext';
-import { homeRouteForAccount } from '@/lib/account-role';
+import { hasBuyerAccount, homeRouteForAccount } from '@/lib/account-role';
 import { buyerEntryDestination } from '@/lib/post-auth-route';
 import { OFFICIAL_MARK_ASPECT } from '@/lib/official-mark-svg';
 import { useColors } from '@/hooks/useColors';
@@ -70,7 +70,7 @@ export default function Entry() {
   useEffect(() => {
     if (!ready || !motionSettingsReady) return;
     if (!introDurationElapsed) return;
-    const destination = token
+    const destination = token && hasBuyerAccount(user)
       ? appUnlocked ? homeRouteForAccount(user) : '/lock'
       : buyerEntryDestination(onboardingComplete);
     router.replace(destination);

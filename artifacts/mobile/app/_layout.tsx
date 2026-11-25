@@ -32,7 +32,7 @@ import { MOTION, MotionProvider, useMotion } from '@/lib/motion';
 import { goBackOrReplace } from '@/lib/safe-navigation';
 import { homeRouteForAccount, hasBuyerAccount } from '@/lib/account-role';
 import { isBuyerAppRoute, isBuyerRoutePublicBeforeAuth } from '@/lib/post-auth-route';
-import { BuyerAccountRequired } from '@/components/BuyerAccountRequired';
+import { BuyerSessionHandoff } from '@/components/BuyerSessionHandoff';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -154,7 +154,7 @@ function RootLayoutNav() {
     </>;
   }
   if (ready && token && !hasBuyerAccount(user)) {
-    return <>{systemBars}<BuyerAccountRequired /></>;
+    return <>{systemBars}<BuyerSessionHandoff /></>;
   }
   if (ready && (!routeAllowed || (!token && !isBuyerRoutePublicBeforeAuth(firstSegment)))) {
     return <Redirect href={token
