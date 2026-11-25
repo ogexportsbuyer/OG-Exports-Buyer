@@ -37,6 +37,16 @@ export function nextBuyerCartQuantity(currentQuantity: number, delta: number, mi
   return Math.max(minimum, current + step);
 }
 
+export function parseBuyerCartQuantityInput(value: string, minimumQuantity: number): number {
+  const minimum = Number.isFinite(minimumQuantity) && minimumQuantity > 0
+    ? Math.max(1, Math.ceil(minimumQuantity))
+    : 1;
+  const normalized = value.trim();
+  if (!/^\d+$/.test(normalized)) return minimum;
+  const parsed = Number(normalized);
+  return Number.isSafeInteger(parsed) ? Math.max(minimum, parsed) : minimum;
+}
+
 export function formatBuyerDeliveryDateInput(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 8);
   if (digits.length <= 4) return digits;

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Image, Pressable, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { Image, Pressable, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
@@ -10,7 +10,7 @@ import { useBuyerGuestFlow } from '@/context/BuyerGuestFlowContext';
 import { useColors } from '@/hooks/useColors';
 import { useGetBuyerCart, useRemoveBuyerCartItem, useUpdateBuyerCartItem, getGetBuyerCartQueryKey } from '@workspace/api-client-react';
 import { amount, first, list, messageOf, record } from '@/lib/data';
-import { buyerCartItemMinimumQuantity, nextBuyerCartQuantity } from '@/lib/buyer-cart-flow';
+import { buyerCartItemMinimumQuantity, nextBuyerCartQuantity, parseBuyerCartQuantityInput } from '@/lib/buyer-cart-flow';
 import { buyerGuestCartRow } from '@/lib/buyer-guest-flow';
 import { resolveBuyerProductImageUrl } from '@/lib/buyer-product-data';
 import { formatFobPrice } from '@/lib/format-fob-price';
@@ -32,6 +32,106 @@ function CartThumbnail({ uri, label }: { uri: string; label: string }) {
       ) : (
         <Feather name="package" size={25} color={colors.primary} />
       )}
+    </View>
+  );
+}
+
+function CartQuantityControl({
+  itemId,
+  name,
+  quantity,
+  minimumQuantity,
+  disabled,
+  colors,
+  onChangeQuantity,
+}: {
+  itemId: string;
+  name: string;
+  quantity: number;
+  minimumQuantity: number;
+  disabled: boolean;
+  colors: ReturnType<typeof useColors>;
+  onChangeQuantity: (nextQuantity: number) => Promise<boolean>;
+}) {
+  const [draft, setDraft] = useState(String(quantity));
+  const lastSubmitted = useRef(String(quantity));
+  const committing = useRef(false);
+
+  async function commitQuantity(value: string) {
+    const nextQuantity = parseBuyerCartQuantityInput(value, minimumQuantity);
+    const normalized = String(nextQuantity);
+    setDraft(normalized);
+    if (normalized === lastSubmitted.current || committing.current) return;
+
+    lastSubmitted.current = normalized;
+    committing.current = true;
+    const saved = await onChangeQuantity(nextQuantity);
+    committing.current = false;
+    if (!saved) {
+      lastSubmitted.current = String(quantity);
+      setDraft(String(quantity));
+    }
+  }
+
+  function stepQuantity(delta: number) {
+    if (disabled || committing.current) return;
+    const currentDraft = parseBuyerCartQuantityInput(draft, minimumQuantity);
+    const nextQuantity = nextBuyerCartQuantity(currentDraft, delta, minimumQuantity);
+    void commitQuantity(String(nextQuantity));
+  }
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <Pressable
+        testID={`buyer-cart-decrease-${itemId}`}
+        accessibilityRole="button"
+        accessibilityLabel={`Decrease ${name} quantity`}
+        disabled={disabled || quantity <= minimumQuantity}
+        onPress={() => stepQuantity(-1)}
+        style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: disabled || quantity <= minimumQuantity ? 0.45 : 1 }}
+      >
+        <Feather name="minus" size={14} color={colors.foreground} />
+      </Pressable>
+      <TextInput
+        testID={`buyer-cart-quantity-input-${itemId}`}
+        accessibilityLabel={`${name} quantity`}
+        accessibilityHint={`Minimum order quantity is ${minimumQuantity}.`}
+        value={draft}
+        onChangeText={value => {
+          if (value === '' || /^\d+$/.test(value)) setDraft(value);
+        }}
+        onBlur={() => void commitQuantity(draft)}
+        onSubmitEditing={() => void commitQuantity(draft)}
+        keyboardType="number-pad"
+        returnKeyType="done"
+        selectTextOnFocus
+        maxLength={9}
+        editable={!disabled}
+        style={{
+          width: 48,
+          height: 36,
+          paddingVertical: 0,
+          paddingHorizontal: 4,
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderRadius: 10,
+          backgroundColor: colors.secondary,
+          color: colors.foreground,
+          fontSize: 13,
+          fontWeight: '700',
+          textAlign: 'center',
+        }}
+      />
+      <Pressable
+        testID={`buyer-cart-increase-${itemId}`}
+        accessibilityRole="button"
+        accessibilityLabel={`Increase ${name} quantity`}
+        disabled={disabled}
+        onPress={() => stepQuantity(1)}
+        style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.5 : 1 }}
+      >
+        <Feather name="plus" size={14} color={colors.foreground} />
+      </Pressable>
     </View>
   );
 }
@@ -73,28 +173,30 @@ export default function BuyerCartScreen() {
   }, 0);
   const mutationPending = updateItem.isPending || removeItem.isPending || clearingAll || guestFlow.isMergingCart;
 
-  async function changeQuantity(item: ReturnType<typeof record>, delta: number) {
+  async function changeQuantity(item: ReturnType<typeof record>, requestedQuantity: number): Promise<boolean> {
     const id = amount(item, ['id']);
     const minimumQuantity = buyerCartItemMinimumQuantity(item);
-    const currentQuantity = amount(item, ['qty']) ?? minimumQuantity;
-    const nextQuantity = nextBuyerCartQuantity(currentQuantity, delta, minimumQuantity);
+    const nextQuantity = nextBuyerCartQuantity(requestedQuantity, 0, minimumQuantity);
     setActionError('');
     if (!token || String(item.id).startsWith('guest-')) {
       const productId = amount(item, ['product_id']);
-      if (!productId) return;
+      if (!productId) return false;
       try {
         await guestFlow.setGuestQuantity(productId, nextQuantity);
+        return true;
       } catch (error) {
         setActionError(messageOf(error));
+        return false;
       }
-      return;
     }
-    if (!id) return;
+    if (!id) return false;
     try {
       await updateItem.mutateAsync({ item: id, data: { qty: nextQuantity } });
       await queryClient.invalidateQueries({ queryKey: getGetBuyerCartQueryKey() });
+      return true;
     } catch (error) {
       setActionError(messageOf(error));
+      return false;
     }
   }
 
@@ -213,28 +315,17 @@ export default function BuyerCartScreen() {
               </View>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <Pressable
-                  testID={`buyer-cart-decrease-${itemId}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Decrease ${name} quantity`}
-                  disabled={mutationPending || Boolean(guestFlow.mergeError) || quantity <= minimumQuantity}
-                  onPress={() => void changeQuantity(item, -1)}
-                  style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: quantity <= minimumQuantity ? 0.45 : 1 }}
-                >
-                  <Feather name="minus" size={14} color={colors.foreground} />
-                </Pressable>
-                <Text style={{ color: colors.foreground, minWidth: 20, textAlign: 'center', fontWeight: '700' }}>{quantity}</Text>
-                <Pressable
-                  testID={`buyer-cart-increase-${itemId}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Increase ${name} quantity`}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+                <CartQuantityControl
+                  key={`${itemId}:${quantity}`}
+                  itemId={itemId}
+                  name={name}
+                  quantity={quantity}
+                  minimumQuantity={minimumQuantity}
                   disabled={mutationPending || Boolean(guestFlow.mergeError)}
-                  onPress={() => void changeQuantity(item, 1)}
-                  style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: mutationPending ? 0.5 : 1 }}
-                >
-                  <Feather name="plus" size={14} color={colors.foreground} />
-                </Pressable>
+                  colors={colors}
+                  onChangeQuantity={nextQuantity => changeQuantity(item, nextQuantity)}
+                />
                 <Text style={{ color: colors.mutedForeground, fontSize: 9, marginLeft: 2 }}>MOQ {minimumQuantity}</Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>

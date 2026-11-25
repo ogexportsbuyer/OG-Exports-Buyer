@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   buildBuyerOrderNotes,
@@ -6,7 +7,10 @@ import {
   formatBuyerDeliveryDateInput,
   isFutureBuyerDeliveryDate,
   nextBuyerCartQuantity,
+  parseBuyerCartQuantityInput,
 } from './buyer-cart-flow.ts';
+
+const cartScreen = readFileSync(new URL('../components/BuyerCartScreen.tsx', import.meta.url), 'utf8');
 
 test('buyer cart quantity never drops below the product minimum order', () => {
   assert.equal(nextBuyerCartQuantity(20, -1, 20), 20);
@@ -18,6 +22,23 @@ test('buyer cart quantity increases in whole units and normalizes invalid values
   assert.equal(nextBuyerCartQuantity(20, 1, 20), 21);
   assert.equal(nextBuyerCartQuantity(20.8, 1.5, 20.2), 21);
   assert.equal(nextBuyerCartQuantity(Number.NaN, Number.NaN, Number.NaN), 1);
+});
+
+test('typed cart quantity accepts whole numbers and clamps to the product MOQ', () => {
+  assert.equal(parseBuyerCartQuantityInput('25', 10), 25);
+  assert.equal(parseBuyerCartQuantityInput('3', 10), 10);
+  assert.equal(parseBuyerCartQuantityInput('', 10), 10);
+  assert.equal(parseBuyerCartQuantityInput('5.5', 1), 1);
+  assert.equal(parseBuyerCartQuantityInput('9007199254740992', 1), 1);
+});
+
+test('cart keeps both step buttons around an editable numeric quantity input', () => {
+  assert.match(cartScreen, /testID=\{`buyer-cart-decrease-\$\{itemId\}`\}/);
+  assert.match(cartScreen, /testID=\{`buyer-cart-quantity-input-\$\{itemId\}`\}/);
+  assert.match(cartScreen, /keyboardType="number-pad"/);
+  assert.match(cartScreen, /onBlur=\{\(\) => void commitQuantity\(draft\)\}/);
+  assert.match(cartScreen, /testID=\{`buyer-cart-increase-\$\{itemId\}`\}/);
+  assert.match(cartScreen, /parseBuyerCartQuantityInput\(value, minimumQuantity\)/);
 });
 
 test('cart minimum order uses the product value and falls back to the cart item', () => {
