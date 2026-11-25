@@ -10407,6 +10407,95 @@ export function useGetBuyerSupportTranslationLanguages<TData = Awaited<ReturnTyp
 
 
 
+export const getUpdateBuyerSupportLanguageUrl = (conversation: string,) => {
+
+
+
+
+  return `/api/conversations/${conversation}/preferences`
+}
+
+/**
+ * @summary Save the buyer language for support replies
+ */
+export const updateBuyerSupportLanguage = async (conversation: string,
+    jsonObject: JsonObject, options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<JsonObject>(getUpdateBuyerSupportLanguageUrl(conversation),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(jsonObject)
+  }
+);}
+
+
+
+
+
+export const getUpdateBuyerSupportLanguageMutationKey = () => ['updateBuyerSupportLanguage'] as const;
+
+export const getUpdateBuyerSupportLanguageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBuyerSupportLanguage>>, TError,UpdateBuyerSupportLanguageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateBuyerSupportLanguage>>, TError,UpdateBuyerSupportLanguageMutationVariables, TContext> => {
+
+const mutationKey = getUpdateBuyerSupportLanguageMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateBuyerSupportLanguage>>, UpdateBuyerSupportLanguageMutationVariables> = (props) => {
+          const {conversation,data} = props ?? {};
+
+          return  updateBuyerSupportLanguage(conversation,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateBuyerSupportLanguageMutationResult = NonNullable<Awaited<ReturnType<typeof updateBuyerSupportLanguage>>>
+    export type UpdateBuyerSupportLanguageMutationBody = BodyType<JsonObject>
+    export type UpdateBuyerSupportLanguageMutationError = ErrorType<unknown>
+    export type UpdateBuyerSupportLanguageMutationVariables = {conversation: string;data: BodyType<JsonObject>}
+
+    /**
+ * @summary Save the buyer language for support replies
+ */
+export const useUpdateBuyerSupportLanguage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBuyerSupportLanguage>>, TError,UpdateBuyerSupportLanguageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateBuyerSupportLanguage>>,
+        TError,
+        UpdateBuyerSupportLanguageMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateBuyerSupportLanguageMutationOptions(options));
+    }
+
 export const getGetInvestorConversationMessagesUrl = (conversation: string,) => {
 
 

@@ -178,6 +178,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/conversations/with-admin', [MessageController::class, 'withAdmin']);
     Route::get('/conversations', [MessageController::class, 'conversations']);
     Route::post('/conversations', [MessageController::class, 'storeConversation']);
+    Route::patch('/conversations/{conversation}/preferences', [MessageController::class, 'updateBuyerLanguage']);
     Route::get('/conversations/{conversation}/messages', [MessageController::class, 'messages']);
     Route::post('/conversations/{conversation}/messages', [MessageController::class, 'storeMessage']);
     Route::post('/conversations/{conversation}/read', [MessageController::class, 'markRead']);

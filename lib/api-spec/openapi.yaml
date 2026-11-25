@@ -1593,6 +1593,21 @@ paths:
       security: [{ BearerAuth: [] }]
       responses:
         "200": { description: Supported translation languages, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /conversations/{conversation}/preferences:
+    patch:
+      operationId: updateBuyerSupportLanguage
+      tags: [communication]
+      summary: Save the buyer language for support replies
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: conversation, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JsonObject" }
+      responses:
+        "200": { description: Saved buyer support language, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
   /conversations/{conversation}/messages:
     get:
       operationId: getInvestorConversationMessages

@@ -469,6 +469,7 @@ export function SupportMessages({
           {conversationId ? <View style={{ flex: 1 }}>
             <BuyerSupportChatExperience
               conversationId={conversationId}
+              savedBuyerLanguage={first(conversation, ['buyer_language'], '')}
               messages={messages}
               loading={messagesQuery.isLoading}
               error={messagesQuery.isError ? 'Messages could not be loaded.' : null}

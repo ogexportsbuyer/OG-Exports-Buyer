@@ -106,3 +106,48 @@ it('serves safe common-language choices without contacting Google while translat
 
     Http::assertNothingSent();
 });
+
+it('loads Google supported languages only after translation is explicitly enabled', function () {
+    config([
+        'services.google_cloud.translation_api_key' => 'test-key',
+        'services.google_cloud.translation_enabled' => true,
+    ]);
+    Http::fake([
+        'translation.googleapis.com/language/translate/v2/languages*' => Http::response([
+            'data' => ['languages' => [
+                ['language' => 'fr', 'name' => 'French'],
+                ['language' => 'ur', 'name' => 'Urdu'],
+            ]],
+        ]),
+    ]);
+
+    expect($this->service->supportedLanguages())->toBe([
+        ['code' => 'fr', 'name' => 'French'],
+        ['code' => 'ur', 'name' => 'Urdu'],
+    ]);
+});
+
+it('lets only the conversation owner save the support reply language', function () {
+    $buyer = User::factory()->create();
+    $otherBuyer = User::factory()->create();
+    $conversation = \App\Models\Conversation::query()->create([
+        'subject' => 'Support',
+        'created_by' => $buyer->id,
+    ]);
+    $conversation->participants()->attach([$buyer->id, $otherBuyer->id]);
+
+    $this->actingAs($buyer)
+        ->patchJson("/api/conversations/{$conversation->id}/preferences", [
+            'buyer_language' => 'fr-CA',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.buyer_language', 'fr-CA');
+
+    $this->actingAs($otherBuyer)
+        ->patchJson("/api/conversations/{$conversation->id}/preferences", [
+            'buyer_language' => 'ar',
+        ])
+        ->assertForbidden();
+
+    expect($conversation->fresh()->buyer_language)->toBe('fr-CA');
+});

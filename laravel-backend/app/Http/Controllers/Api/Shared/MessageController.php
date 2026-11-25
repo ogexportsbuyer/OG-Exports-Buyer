@@ -25,6 +25,25 @@ class MessageController extends Controller
         ]);
     }
 
+    public function updateBuyerLanguage(Request $request, Conversation $conversation): JsonResponse
+    {
+        abort_unless((int) $conversation->created_by === (int) $request->user()->id, 403);
+
+        $data = $request->validate([
+            'buyer_language' => ['required', 'string', 'regex:/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/'],
+        ]);
+
+        $conversation->forceFill([
+            'buyer_language' => $data['buyer_language'],
+        ])->save();
+
+        return response()->json([
+            'data' => [
+                'buyer_language' => $conversation->buyer_language,
+            ],
+        ]);
+    }
+
     public function conversations(Request $request): JsonResponse
     {
         $user = $request->user();

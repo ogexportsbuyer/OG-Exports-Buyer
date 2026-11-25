@@ -12,7 +12,11 @@ import {
   useAudioRecorder,
   useAudioRecorderState,
 } from 'expo-audio';
-import { useGetBuyerSupportTranslationLanguages, useSendInvestorConversationMessage } from '@workspace/api-client-react';
+import {
+  useGetBuyerSupportTranslationLanguages,
+  useSendInvestorConversationMessage,
+  useUpdateBuyerSupportLanguage,
+} from '@workspace/api-client-react';
 import { useAuth } from '@/context/AuthContext';
 import {
   buyerChatMediaKind,
@@ -36,6 +40,7 @@ import {
 
 type BuyerSupportChatExperienceProps = {
   conversationId: string;
+  savedBuyerLanguage: string;
   messages: Json[];
   loading: boolean;
   error: string | null;
@@ -115,6 +120,7 @@ function normalizedMessages(rawMessages: Json[], ownId: string, apiOrigin: strin
 
 export function BuyerSupportChatExperience({
   conversationId,
+  savedBuyerLanguage,
   messages,
   loading,
   error,
@@ -146,6 +152,7 @@ export function BuyerSupportChatExperience({
     [languagesQuery.data],
   );
   const [buyerLanguage, setBuyerLanguage] = useState(defaultBuyerLanguage);
+  const updateBuyerLanguage = useUpdateBuyerSupportLanguage();
   const send = useSendInvestorConversationMessage();
   const [draft, setDraft] = useState('');
   const [pendingMedia, setPendingMedia] = useState<QueuedBuyerMedia[]>([]);
@@ -165,7 +172,10 @@ export function BuyerSupportChatExperience({
   useEffect(() => {
     let active = true;
     void AsyncStorage.getItem(languageStorageKey).then((savedLanguage) => {
-      if (active && savedLanguage && /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(savedLanguage)) {
+      if (active && savedBuyerLanguage && /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(savedBuyerLanguage)) {
+        setBuyerLanguage(savedBuyerLanguage);
+        void AsyncStorage.setItem(languageStorageKey, savedBuyerLanguage).catch(() => undefined);
+      } else if (active && savedLanguage && /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(savedLanguage)) {
         setBuyerLanguage(savedLanguage);
       } else if (active) {
         setBuyerLanguage(defaultBuyerLanguage);
@@ -174,7 +184,7 @@ export function BuyerSupportChatExperience({
       if (active) setBuyerLanguage(defaultBuyerLanguage);
     });
     return () => { active = false; };
-  }, [defaultBuyerLanguage, languageStorageKey]);
+  }, [defaultBuyerLanguage, languageStorageKey, savedBuyerLanguage]);
 
   useEffect(() => {
     if (playerStatus.didJustFinish) setPlayingAudioUrl(null);
@@ -490,6 +500,15 @@ export function BuyerSupportChatExperience({
     await AsyncStorage.setItem(languageStorageKey, language).catch(() => {
       setActionError('Your reply language could not be saved on this device.');
     });
+    try {
+      await updateBuyerLanguage.mutateAsync({
+        conversation: conversationId,
+        data: { buyer_language: language },
+      });
+      onSent();
+    } catch {
+      setActionError('Your language is saved on this device, but could not sync to your account.');
+    }
   }
 
   const progress = playerStatus.duration > 0
