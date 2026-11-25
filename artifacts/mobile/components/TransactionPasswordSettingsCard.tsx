@@ -9,11 +9,12 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { messageOf, unwrap } from '@/lib/data';
 import { useColors } from '@/hooks/useColors';
-import { localizedAlert as Alert } from '@/lib/strings';
+import { useBrandedAlert } from '@/components/BrandedAlertProvider';
 
 export function TransactionPasswordSettingsCard() {
   const { token } = useAuth();
   const colors = useColors();
+  const { showAlert } = useBrandedAlert();
   const transactionPasswordQuery = useGetInvestorTransactionPasswordStatus({
     query: { queryKey: ['investor-transaction-password-status'], enabled: !!token },
   });
@@ -52,7 +53,12 @@ export function TransactionPasswordSettingsCard() {
       setNewPassword('');
       setConfirmPassword('');
       await transactionPasswordQuery.refetch();
-      Alert.alert('Transaction password updated', 'You can use it to confirm withdrawals.');
+      showAlert({
+        title: 'Transaction password updated',
+        message: 'You can use it to confirm withdrawals.',
+        tone: 'success',
+        buttons: [{ label: 'Continue' }],
+      });
     } catch (err) {
       setError(messageOf(err));
     }

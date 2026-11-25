@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, Linking, Platform, Pressable, Switch, View } from 'react-native';
+import { Linking, Platform, Pressable, Switch, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { isRunningInExpoGo } from 'expo';
@@ -10,6 +10,7 @@ import { useRegisterBuyerPushToken, useRevokeBuyerPushToken } from '@workspace/a
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Card } from '@/components/InvestorUI';
 import { useColors } from '@/hooks/useColors';
+import { useBrandedAlert } from '@/components/BrandedAlertProvider';
 import { buyerPushEnabledStorageKey } from '@/lib/buyer-push-settings';
 import { buyerPushTokenSecureStoreKey } from '@/lib/push-token-key';
 import { messageOf } from '@/lib/data';
@@ -22,6 +23,7 @@ export function BuyerPushNotificationSettings({
   onStatus: (message: string) => void;
 }) {
   const colors = useColors();
+  const { showAlert } = useBrandedAlert();
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -92,10 +94,15 @@ export function BuyerPushNotificationSettings({
       if (!permission.granted) permission = await notifications.requestPermissionsAsync();
       if (!permission.granted) {
         if (permission.status === 'denied' && !permission.canAskAgain) {
-          Alert.alert('Notifications are blocked', 'Allow notifications in your device settings to receive buyer updates.', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Open Settings', onPress: () => void Linking.openSettings().catch(() => setError('Device settings could not be opened.')) },
-          ]);
+          showAlert({
+            title: 'Notifications are blocked',
+            message: 'Allow notifications in your device settings to receive buyer updates.',
+            tone: 'warning',
+            buttons: [
+              { label: 'Cancel', style: 'cancel' },
+              { label: 'Open Settings', onPress: () => void Linking.openSettings().catch(() => setError('Device settings could not be opened.')) },
+            ],
+          });
         }
         return;
       }

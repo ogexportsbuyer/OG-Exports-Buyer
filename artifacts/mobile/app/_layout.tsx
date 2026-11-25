@@ -33,6 +33,7 @@ import { goBackOrReplace } from '@/lib/safe-navigation';
 import { homeRouteForAccount, hasBuyerAccount } from '@/lib/account-role';
 import { isBuyerAppRoute, isBuyerRoutePublicBeforeAuth } from '@/lib/post-auth-route';
 import { BuyerSessionHandoff } from '@/components/BuyerSessionHandoff';
+import { BrandedAlertProvider } from '@/components/BrandedAlertProvider';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -266,7 +267,9 @@ export default function RootLayout() {
                 <BuyerGuestFlowProvider>
                   <AppPreferencesProvider>
                     <MotionProvider>
-                      <RootLayoutNav />
+                      <BrandedAlertProvider>
+                        <RootLayoutNav />
+                      </BrandedAlertProvider>
                     </MotionProvider>
                   </AppPreferencesProvider>
                 </BuyerGuestFlowProvider>

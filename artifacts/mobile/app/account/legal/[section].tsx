@@ -9,9 +9,11 @@ import { useColors } from '@/hooks/useColors';
 import { useAppPreferences } from '@/context/AppPreferencesContext';
 import { LEGAL_DOCUMENTS, legalDocumentFilename, legalDocumentFileContent } from '@/lib/legal-content';
 import { getLegalDocumentForPreference } from '@/lib/legal-content-translations';
-import { localizedAlert as Alert, translateUi } from '@/lib/strings';
+import { translateUi } from '@/lib/strings';
+import { useBrandedAlert } from '@/components/BrandedAlertProvider';
 
 export default function LegalContent() {
+  const { showAlert } = useBrandedAlert();
   const { section: raw } = useLocalSearchParams<{ section: string }>();
   const sectionName = String(raw ?? '').toLowerCase();
   const sourceDocument = LEGAL_DOCUMENTS[sectionName];
@@ -66,7 +68,12 @@ export default function LegalContent() {
           UTI: 'public.plain-text',
         });
       }
-      Alert.alert('Legal page ready', 'The legal page is ready to save or share.');
+      showAlert({
+        title: 'Legal page ready',
+        message: 'The legal page is ready to save or share.',
+        tone: 'success',
+        buttons: [{ label: 'Continue' }],
+      });
     } catch (error) {
       setSaveError(translateUi(error instanceof Error ? error.message : 'The legal page could not be saved.', language));
     } finally {

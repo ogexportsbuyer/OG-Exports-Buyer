@@ -7,7 +7,7 @@ import { amount as readAmount, displayCurrencyCode, first, list, messageOf, mone
 import { shareInvestorFile } from '@/lib/file-download';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
-import { localizedAlert as Alert } from '@/lib/strings';
+import { useBrandedAlert } from '@/components/BrandedAlertProvider';
 
 const reportTypes = ['portfolio', 'profit', 'monthly', 'annual'];
 
@@ -29,6 +29,7 @@ function monthLabel(value: string) {
 export default function Reports() {
   const { token, apiOrigin } = useAuth();
   const colors = useColors();
+  const { showAlert } = useBrandedAlert();
   const query = useGetInvestorReports({ query: { queryKey: ['investor-reports'], enabled: !!token, staleTime: 30_000 } });
   const [selectedMonth, setSelectedMonth] = useState('');
   const statementQuery = useGetInvestorStatement(selectedMonth ? { month: selectedMonth } : {}, {
@@ -63,7 +64,12 @@ export default function Reports() {
       const url = first(payload, ['download_url']);
       if (!url) throw new Error('The report was created, but the server did not return its download address.');
       await shareInvestorFile(url, first(report, ['name'], 'OG Exports investor report'), apiOrigin, 'application/pdf', 'pdf');
-      Alert.alert('Report ready', 'Your report is available to save or share.');
+      showAlert({
+        title: 'Report ready',
+        message: 'Your report is available to save or share.',
+        tone: 'success',
+        buttons: [{ label: 'Continue' }],
+      });
       void query.refetch();
     } catch (err) { setError(messageOf(err)); }
   }

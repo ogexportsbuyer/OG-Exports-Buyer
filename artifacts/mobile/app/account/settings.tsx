@@ -24,7 +24,8 @@ import { first, list, messageOf, record, unwrap, type Json } from '@/lib/data';
 import { countryForApi, profileUserCountry } from '@/lib/countries';
 import { useColors } from '@/hooks/useColors';
 import { useAppPreferences, type AppearancePreference, type DisplayCurrency } from '@/context/AppPreferencesContext';
-import { localizedAlert as Alert, translateUi } from '@/lib/strings';
+import { translateUi } from '@/lib/strings';
+import { useBrandedAlert } from '@/components/BrandedAlertProvider';
 import { pushTokenSecureStoreKey } from '@/lib/push-token-key';
 import {
   NOTIFICATION_CATEGORIES,
@@ -40,6 +41,7 @@ export default function Settings() {
   const appPreferences = useAppPreferences();
   const motion = useMotion();
   const colors = useColors();
+  const { showAlert } = useBrandedAlert();
   const queryClient = useQueryClient();
   const userId = first(record(user), ['id']);
   const profileQuery = useGetInvestorProfile({ query: { queryKey: ['investor-profile'], enabled: !!token } });
@@ -131,13 +133,14 @@ export default function Settings() {
       if (!permission.granted) permission = await notifications.requestPermissionsAsync();
       if (!permission.granted) {
         if (permission.status === 'denied' && !permission.canAskAgain) {
-          Alert.alert(
-            'Notifications are blocked',
-            'Allow notifications in your device settings to enable investor updates.',
-            [
-              { text: 'Cancel', style: 'cancel' },
+          showAlert({
+            title: 'Notifications are blocked',
+            message: 'Allow notifications in your device settings to enable investor updates.',
+            tone: 'warning',
+            buttons: [
+              { label: 'Cancel', style: 'cancel' },
               {
-                text: 'Open Settings',
+                label: 'Open Settings',
                 onPress: () => {
                   if (Platform.OS !== 'web') {
                     void Linking.openSettings().catch(() => {
@@ -147,7 +150,7 @@ export default function Settings() {
                 },
               },
             ],
-          );
+          });
         }
         return;
       }
@@ -175,7 +178,12 @@ export default function Settings() {
         throw registrationError;
       }
       setPushEnabled(true);
-      Alert.alert('Notifications enabled', 'This device is registered for investor push updates.');
+      showAlert({
+        title: 'Notifications enabled',
+        message: 'This device is registered for investor push updates.',
+        tone: 'success',
+        buttons: [{ label: 'Continue' }],
+      });
     } catch (pushRegistrationError) {
       setPushError(messageOf(pushRegistrationError));
     } finally {
@@ -236,7 +244,12 @@ export default function Settings() {
       if (!first(savedUser, ['id'])) throw new Error('The server did not return the updated profile.');
       await updateUser(savedUser as Json);
 
-      Alert.alert('Profile updated', 'Your profile details have been saved.');
+      showAlert({
+        title: 'Profile updated',
+        message: 'Your profile details have been saved.',
+        tone: 'success',
+        buttons: [{ label: 'Continue' }],
+      });
       void profileQuery.refetch();
     } catch (err) { setError(messageOf(err)); }
   }
@@ -252,7 +265,12 @@ export default function Settings() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      Alert.alert('Password updated', 'Your sign-in password has been changed.');
+      showAlert({
+        title: 'Password updated',
+        message: 'Your sign-in password has been changed.',
+        tone: 'success',
+        buttons: [{ label: 'Continue' }],
+      });
     } catch (err) { setError(messageOf(err)); }
   }
 

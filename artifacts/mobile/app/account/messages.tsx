@@ -12,6 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { MOTION, MotionReveal, motionHaptic, useMotion } from '@/lib/motion';
 import { GlassLayers } from '@/components/GlassSurface';
+import { GlassPopupSurface } from '@/components/GlassPopupSurface';
 import { hasBuyerAccount } from '@/lib/account-role';
 import { BuyerSupportChatExperience } from '@/components/BuyerSupportChatExperience';
 
@@ -601,46 +602,50 @@ export function SupportMessages({
               styles.supportPopover,
               {
                 top: insets.top + 60,
-                backgroundColor: colors.glassFill,
-                borderColor: colors.glassBorder,
+                shadowColor: colors.shadowColor,
               },
             ]}
           >
-            <Text style={{ color: colors.mutedForeground, fontSize: 10, fontWeight: '800', letterSpacing: 1, paddingHorizontal: 9, paddingTop: 4, paddingBottom: 8 }}>
-              SUPPORT OPTIONS
-            </Text>
-            {([
-              ['chat', 'Live chat', 'Message our support team', 'message-circle'],
-              ['help', 'Help Center', 'Guides and account help', 'help-circle'],
-              ['tickets', 'Tickets', 'Requests and status updates', 'file-text'],
-            ] as const).map(([value, label, description, icon]) => {
-              const active = mode === value;
-              return (
-                <Pressable
-                  key={value}
-                  testID={`support-tab-${value}`}
-                  accessibilityRole="menuitem"
-                  accessibilityState={{ selected: active }}
-                  onPress={() => selectSupportMode(value)}
-                  style={({ pressed }) => [
-                    styles.supportMenuItem,
-                    {
-                      backgroundColor: active ? colors.lightGreen : 'transparent',
-                      opacity: pressed ? 0.74 : 1,
-                    },
-                  ]}
-                >
-                  <View style={[styles.supportMenuIcon, { backgroundColor: active ? colors.card : colors.secondary }]}>
-                    <Feather name={icon} size={16} color={colors.primary} />
-                  </View>
-                  <View style={styles.supportMenuCopy}>
-                    <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '700' }}>{label}</Text>
-                    <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 2 }}>{description}</Text>
-                  </View>
-                  {active ? <Feather name="check" size={16} color={colors.primary} /> : null}
-                </Pressable>
-              );
-            })}
+            <GlassPopupSurface
+              accessibilityViewIsModal
+              style={[styles.supportPopoverSurface, { borderColor: colors.glassBorder }]}
+            >
+              <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '900', letterSpacing: 1.15, paddingHorizontal: 9, paddingTop: 4, paddingBottom: 8 }}>
+                OG EXPORTS · SUPPORT
+              </Text>
+              {([
+                ['chat', 'Live chat', 'Message our support team', 'message-circle'],
+                ['help', 'Help Center', 'Guides and account help', 'help-circle'],
+                ['tickets', 'Tickets', 'Requests and status updates', 'file-text'],
+              ] as const).map(([value, label, description, icon]) => {
+                const active = mode === value;
+                return (
+                  <Pressable
+                    key={value}
+                    testID={`support-tab-${value}`}
+                    accessibilityRole="menuitem"
+                    accessibilityState={{ selected: active }}
+                    onPress={() => selectSupportMode(value)}
+                    style={({ pressed }) => [
+                      styles.supportMenuItem,
+                      {
+                        backgroundColor: active ? colors.lightGreen : 'transparent',
+                        opacity: pressed ? 0.74 : 1,
+                      },
+                    ]}
+                  >
+                    <View style={[styles.supportMenuIcon, { backgroundColor: active ? colors.card : colors.secondary }]}>
+                      <Feather name={icon} size={16} color={colors.primary} />
+                    </View>
+                    <View style={styles.supportMenuCopy}>
+                      <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '700' }}>{label}</Text>
+                      <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 2 }}>{description}</Text>
+                    </View>
+                    {active ? <Feather name="check" size={16} color={colors.primary} /> : null}
+                  </Pressable>
+                );
+              })}
+            </GlassPopupSurface>
           </View>
         </View>
       </Modal>
@@ -654,14 +659,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 14,
     width: 276,
-    padding: 9,
-    borderRadius: 21,
-    borderWidth: 1,
-    shadowColor: '#102923',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.17,
     shadowRadius: 22,
     elevation: 14,
+  },
+  supportPopoverSurface: {
+    padding: 9,
+    borderRadius: 21,
+    borderWidth: 1,
   },
   supportMenuItem: {
     minHeight: 58,

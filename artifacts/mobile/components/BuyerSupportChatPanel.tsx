@@ -16,6 +16,7 @@ import { Feather } from '@expo/vector-icons';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/components/LocalizedText';
 import { useColors } from '@/hooks/useColors';
+import { GlassPopupSurface } from '@/components/GlassPopupSurface';
 import { MAX_BUYER_CHAT_ATTACHMENTS } from '@/lib/upload-rules';
 import { supportTextForSelectedLanguage } from '@/lib/buyer-support-chat-language';
 
@@ -593,15 +594,30 @@ export function BuyerSupportChatPanel({
         onRequestClose={() => setLanguagePickerOpen(false)}
       >
         <View style={styles.languageModalBackdrop}>
-          <View style={[styles.languageModal, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close language selector"
+            onPress={() => setLanguagePickerOpen(false)}
+            style={StyleSheet.absoluteFill}
+          />
+          <GlassPopupSurface
+            accessibilityViewIsModal
+            style={[styles.languageModal, { borderColor: colors.glassBorder }]}
+          >
             <View style={styles.languageModalHeader}>
               <View style={styles.languageModalTitleGroup}>
+                <Text style={[styles.languageModalEyebrow, { color: colors.accent }]}>OG EXPORTS · CHAT</Text>
                 <Text style={[styles.languageModalTitle, { color: colors.foreground }]}>Chat language</Text>
                 <Text style={[styles.languageModalSubtitle, { color: colors.mutedForeground }]}>
                   Support replies will be translated into this language.
                 </Text>
               </View>
-              <Pressable accessibilityRole="button" accessibilityLabel="Close language selector" onPress={() => setLanguagePickerOpen(false)}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Close language selector"
+                onPress={() => setLanguagePickerOpen(false)}
+                style={[styles.languageModalClose, { backgroundColor: colors.secondary }]}
+              >
                 <Feather name="x" size={19} color={colors.mutedForeground} />
               </Pressable>
             </View>
@@ -643,7 +659,7 @@ export function BuyerSupportChatPanel({
                 <Text style={[styles.noLanguages, { color: colors.mutedForeground }]}>No language matches that search.</Text>
               ) : null}
             </ScrollView>
-          </View>
+          </GlassPopupSurface>
         </View>
       </Modal>
 
@@ -906,12 +922,14 @@ const styles = StyleSheet.create({
   languageLabel: { fontSize: 11, fontWeight: '600' },
   languageButton: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 7, maxWidth: '55%' },
   languageButtonText: { fontSize: 11, fontWeight: '700', flexShrink: 1 },
-  languageModalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.46)', justifyContent: 'center', padding: 20 },
-  languageModal: { maxHeight: '78%', borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, padding: 16 },
+  languageModalBackdrop: { flex: 1, backgroundColor: 'rgba(8,18,13,0.44)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  languageModal: { width: '100%', maxWidth: 420, maxHeight: '78%', overflow: 'hidden', borderRadius: 24, borderWidth: 1, padding: 16 },
   languageModalHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 },
   languageModalTitleGroup: { flex: 1, gap: 4 },
+  languageModalEyebrow: { fontSize: 9, fontWeight: '800', letterSpacing: 1.1, marginBottom: 2 },
   languageModalTitle: { fontSize: 17, fontWeight: '700' },
   languageModalSubtitle: { fontSize: 12, lineHeight: 17 },
+  languageModalClose: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 19 },
   languageSearch: { minHeight: 42, borderWidth: StyleSheet.hairlineWidth, borderRadius: 13, paddingHorizontal: 12, fontSize: 14, marginBottom: 8 },
   languageList: { flexGrow: 0 },
   languageOption: { minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth, paddingHorizontal: 8 },

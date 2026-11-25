@@ -3,14 +3,14 @@
     "name": "OG Exports Buyer",
     "slug": "og-buyer",
     "owner": "og-exports-buyer",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/og-app-icon.png",
     "scheme": "mobile",
     "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "com.ogexports.buyer",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "buildNumber": "4",
       "supportsTablet": false,
       "icon": "./assets/images/og-app-icon.png"
@@ -18,7 +18,7 @@
     "android": {
       "package": "com.ogexports.buyer",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 1,
+      "versionCode": 2,
       "icon": "./assets/images/og-app-icon.png",
       "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {

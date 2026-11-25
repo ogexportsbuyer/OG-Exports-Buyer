@@ -1,5 +1,3 @@
-import { Alert as NativeAlert } from 'react-native';
-
 export type AppLanguage = 'en' | 'ur' | 'ar';
 
 let activeUiLanguage: AppLanguage = 'en';
@@ -11,23 +9,6 @@ export function configureUiLanguage(language: AppLanguage) {
 export function getUiLanguage(): AppLanguage {
   return activeUiLanguage;
 }
-
-type AlertArgs = Parameters<typeof NativeAlert.alert>;
-
-export const localizedAlert = {
-  alert(...args: AlertArgs) {
-    const [title, message, buttons, options] = args;
-    return NativeAlert.alert(
-      title == null ? title : translateUi(title, activeUiLanguage),
-      message ? translateUi(message, activeUiLanguage) : message,
-      buttons?.map(button => ({
-        ...button,
-        text: button.text ? translateUi(button.text, activeUiLanguage) : button.text,
-      })),
-      options,
-    );
-  },
-};
 
 const phrases: ReadonlyArray<readonly [string, string, string]> = [
   ["01 · Set your amount","01 · اپنی رقم مقرر کریں","01 · حدد المبلغ"],

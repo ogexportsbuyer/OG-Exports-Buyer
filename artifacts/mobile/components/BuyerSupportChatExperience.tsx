@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Linking, Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { File as ExpoFile } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
@@ -45,6 +45,7 @@ import {
   type BuyerSupportMessage,
   type BuyerSupportPendingMedia,
 } from '@/components/BuyerSupportChatPanel';
+import { useBrandedAlert } from '@/components/BrandedAlertProvider';
 
 type BuyerSupportChatExperienceProps = {
   conversationId: string;
@@ -184,6 +185,7 @@ export function BuyerSupportChatExperience({
   onRetry,
   onSent,
 }: BuyerSupportChatExperienceProps) {
+  const { showAlert } = useBrandedAlert();
   const { apiOrigin, user } = useAuth();
   const ownId = first(record(user), ['id'], '');
   const userProfile = record(record(user).profile);
@@ -280,9 +282,14 @@ export function BuyerSupportChatExperience({
 
     autoStopRequested.current = true;
     void stopRecording().then(() => {
-      Alert.alert('Voice note limit reached', 'Voice translation supports recordings up to one minute. The recording has been stopped and is ready to send.');
+      showAlert({
+        title: 'Voice note limit reached',
+        message: 'Voice translation supports recordings up to one minute. The recording has been stopped and is ready to send.',
+        tone: 'warning',
+        buttons: [{ label: 'OK' }],
+      });
     });
-  }, [recorderState.durationMillis, recorderState.isRecording]);
+  }, [recorderState.durationMillis, recorderState.isRecording, showAlert]);
 
   async function pickMedia() {
     if (recorderState.isRecording) {
@@ -358,10 +365,15 @@ export function BuyerSupportChatExperience({
             : 'Enable camera access in your device settings to record a support video.';
           setActionError(detail);
           if (!cameraPermission.canAskAgain) {
-            Alert.alert('Camera access is off', detail, [
-              { text: 'Not now', style: 'cancel' },
-              { text: 'Open settings', onPress: () => void Linking.openSettings() },
-            ]);
+            showAlert({
+              title: 'Camera access is off',
+              message: detail,
+              tone: 'warning',
+              buttons: [
+                { label: 'Not now', style: 'cancel' },
+                { label: 'Open settings', onPress: () => void Linking.openSettings() },
+              ],
+            });
           }
           return;
         }
@@ -373,10 +385,15 @@ export function BuyerSupportChatExperience({
             : 'Enable microphone access in your device settings so support videos include sound.';
           setActionError(detail);
           if (!microphonePermission.canAskAgain) {
-            Alert.alert('Microphone access is off', detail, [
-              { text: 'Not now', style: 'cancel' },
-              { text: 'Open settings', onPress: () => void Linking.openSettings() },
-            ]);
+            showAlert({
+              title: 'Microphone access is off',
+              message: detail,
+              tone: 'warning',
+              buttons: [
+                { label: 'Not now', style: 'cancel' },
+                { label: 'Open settings', onPress: () => void Linking.openSettings() },
+              ],
+            });
           }
           return;
         }
@@ -443,10 +460,15 @@ export function BuyerSupportChatExperience({
           : 'Enable microphone access in your device settings to record a voice note.';
         setActionError(detail);
         if (!permission.canAskAgain) {
-          Alert.alert('Microphone access is off', detail, [
-            { text: 'Not now', style: 'cancel' },
-            { text: 'Open settings', onPress: () => void Linking.openSettings() },
-          ]);
+          showAlert({
+            title: 'Microphone access is off',
+            message: detail,
+            tone: 'warning',
+            buttons: [
+              { label: 'Not now', style: 'cancel' },
+              { label: 'Open settings', onPress: () => void Linking.openSettings() },
+            ],
+          });
         }
         return;
       }
