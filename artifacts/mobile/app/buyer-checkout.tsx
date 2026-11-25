@@ -6,6 +6,7 @@ import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Action, Card, EmptyState, ErrorState, Field, LoadingCard, Screen } from '@/components/InvestorUI';
 import { BuyerRfqPicker, type BuyerRfqOption } from '@/components/BuyerRfqPicker';
+import { BuyerDeliveryDatePicker } from '@/components/BuyerDeliveryDatePicker';
 import { useAuth } from '@/context/AuthContext';
 import { useBuyerGuestFlow } from '@/context/BuyerGuestFlowContext';
 import { useColors } from '@/hooks/useColors';
@@ -32,7 +33,7 @@ import { rowsFromResponse } from '@/lib/buyer-data';
 import { formatFobPrice } from '@/lib/format-fob-price';
 import {
   buildBuyerOrderNotes,
-  formatBuyerDeliveryDateInput,
+  formatBuyerDeliveryDateLabel,
   isFutureBuyerDeliveryDate,
 } from '@/lib/buyer-cart-flow';
 import { buyerGuestCartRow, type BuyerGuestCheckoutDraft } from '@/lib/buyer-guest-flow';
@@ -145,13 +146,26 @@ export default function BuyerCheckout() {
   const cartCurrency = first(cart, ['currency', 'currency_code'], 'USD').toUpperCase();
   const countries = rowsFromResponse(countriesQuery.data).filter(country => (amount(country, ['ports_count']) ?? 0) > 0);
   const ports = rowsFromResponse(portsQuery.data);
-  const visiblePorts = ports.filter(port => `${first(port, ['name'])} ${first(port, ['unlocode'])}`.toLowerCase().includes(portSearch.trim().toLowerCase())).slice(0, 8);
   const countryOptions: BuyerRfqOption[] = countries.map(country => ({
     value: first(country, ['id']),
     label: first(country, ['name'], 'Country'),
     keywords: `${first(country, ['code'])} ${first(country, ['iso2'])}`,
   }));
+  const portOptions: BuyerRfqOption[] = ports
+    .map(port => ({
+      value: first(port, ['id']),
+      label: first(port, ['name'], 'Port'),
+      keywords: first(port, ['unlocode']),
+    }))
+    .filter(option => Boolean(option.value));
   const incoterms = rowsFromResponse(incotermsQuery.data);
+  const incotermOptions: BuyerRfqOption[] = incoterms
+    .map(term => {
+      const code = first(term, ['code', 'name']);
+      const label = first(term, ['label']);
+      return { value: code, label: label ? `${code} · ${label}` : code, keywords: first(term, ['name']) };
+    })
+    .filter(option => Boolean(option.value));
   const paymentMethods = rowsFromResponse(paymentMethodsQuery.data);
   const bankAccounts = rowsFromResponse(bankAccountsQuery.data);
   const selectedCountry = countries.find(country => amount(country, ['id']) === countryId);
@@ -211,9 +225,13 @@ export default function BuyerCheckout() {
     setError('');
   }
 
-  function updatePortSearch(value: string) {
-    setPortSearch(value);
-    if (selectedPort && value.trim().toLowerCase() !== first(selectedPort, ['name']).toLowerCase()) setPortId(null);
+  function selectPort(portIdValue: string) {
+    const port = ports.find(option => first(option, ['id']) === portIdValue);
+    if (!port) return;
+    const id = amount(port, ['id']);
+    if (id === null) return;
+    setPortId(id);
+    setPortSearch(first(port, ['name']));
     setError('');
   }
 
@@ -564,34 +582,19 @@ export default function BuyerCheckout() {
 
                 {countryId !== null ? (
                   <>
-                    <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '700', marginTop: 16, marginBottom: 8 }}>Destination port</Text>
                     {portsQuery.isLoading ? <LoadingCard label="Loading ports…" lines={2} /> : null}
                     {portsQuery.isError ? <ErrorState message="Ports for this country could not be loaded." error={portsQuery.error} onRetry={() => void portsQuery.refetch()} /> : null}
                     {!portsQuery.isLoading && !portsQuery.isError && ports.length === 0 ? <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>No ports are listed for this country.</Text> : null}
-                    {!portsQuery.isLoading && !portsQuery.isError && ports.length > 0 ? (
-                      <>
-                      <Field label="Search port" value={portSearch} onChangeText={updatePortSearch} placeholder="Type a port name or code" autoCapitalize="words" />
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
-                        {visiblePorts.map(port => {
-                          const id = amount(port, ['id']);
-                          const selected = id !== null && id === portId;
-                          return (
-                            <Pressable
-                              key={String(id)}
-                              testID={`buyer-checkout-port-${id}`}
-                              accessibilityRole="button"
-                              accessibilityState={{ selected }}
-                              onPress={() => { setPortId(id); setPortSearch(first(port, ['name'])); setError(''); }}
-                              style={{ minHeight: 38, paddingHorizontal: 12, borderRadius: 19, borderWidth: 1, borderColor: selected ? colors.accent : colors.border, backgroundColor: selected ? colors.lightGreen : colors.secondary, alignItems: 'center', justifyContent: 'center' }}
-                            >
-                              <Text style={{ color: selected ? colors.foreground : colors.mutedForeground, fontSize: 11, fontWeight: selected ? '800' : '600' }}>{first(port, ['name'], 'Port')}</Text>
-                            </Pressable>
-                          );
-                        })}
-                        {portSearch.trim() && visiblePorts.length === 0 ? <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>No matching port. Search by name or UN/LOCODE.</Text> : null}
-                      </View>
-                      {!portSearch.trim() ? <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 6 }}>Search by port name or code if it is not shown.</Text> : null}
-                      </>
+                    {!portsQuery.isLoading && !portsQuery.isError && portOptions.length > 0 ? (
+                      <BuyerRfqPicker
+                        label="Destination port"
+                        value={portId === null ? '' : String(portId)}
+                        options={portOptions}
+                        placeholder="Search and select a port"
+                        testID="buyer-checkout-port"
+                        emptyMessage="No port found. Search by name or UN/LOCODE."
+                        onSelect={selectPort}
+                      />
                     ) : null}
                   </>
                 ) : null}
@@ -599,39 +602,25 @@ export default function BuyerCheckout() {
                 <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '700', marginTop: 16, marginBottom: 8 }}>Delivery term</Text>
                 {incotermsQuery.isLoading ? <LoadingCard label="Loading delivery terms…" lines={2} /> : null}
                 {incotermsQuery.isError ? <ErrorState message="Delivery terms could not be loaded." error={incotermsQuery.error} onRetry={() => void incotermsQuery.refetch()} /> : null}
-                {!incotermsQuery.isLoading && !incotermsQuery.isError ? (
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
-                    {incoterms.map(term => {
-                      const code = first(term, ['code', 'name']);
-                      const selected = incoterm === code;
-                      return (
-                        <Pressable
-                          key={code}
-                          testID={`buyer-checkout-incoterm-${code.toLowerCase()}`}
-                          accessibilityRole="button"
-                          accessibilityState={{ selected }}
-                          onPress={() => { setIncoterm(code); setError(''); }}
-                          style={{ minHeight: 38, paddingHorizontal: 13, borderRadius: 19, borderWidth: 1, borderColor: selected ? colors.accent : colors.border, backgroundColor: selected ? colors.lightGreen : colors.secondary, justifyContent: 'center' }}
-                        >
-                          <Text style={{ color: selected ? colors.foreground : colors.mutedForeground, fontSize: 11, fontWeight: '800' }}>
-                            {code}{first(term, ['label']) ? ` · ${first(term, ['label'])}` : ''}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
+                {!incotermsQuery.isLoading && !incotermsQuery.isError && incotermOptions.length > 0 ? (
+                  <BuyerRfqPicker
+                    label="Delivery term"
+                    value={incoterm}
+                    options={incotermOptions}
+                    placeholder="Search and select a delivery term"
+                    testID="buyer-checkout-incoterm"
+                    emptyMessage="No delivery term found."
+                    onSelect={value => { setIncoterm(value); setError(''); }}
+                  />
                 ) : null}
 
-                <Field
+                <BuyerDeliveryDatePicker
                   label="Required delivery date"
                   value={deliveryDate}
-                  onChangeText={value => { setDeliveryDate(formatBuyerDeliveryDateInput(value)); setError(''); }}
-                  placeholder="YYYY-MM-DD"
-                  keyboardType="numeric"
-                  autoCapitalize="none"
-                  maxLength={10}
+                  testID="buyer-checkout-delivery-date"
+                  onSelect={value => { setDeliveryDate(value); setError(''); }}
                 />
-                <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: -8, marginBottom: 12 }}>Enter a date after today. The date is checked before submission.</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: -8, marginBottom: 12 }}>Delivery dates must be after today and are checked before submission.</Text>
                 <Field
                   label="Notes for OG Exports (optional)"
                   value={notes}
@@ -802,7 +791,7 @@ export default function BuyerCheckout() {
                   <SummaryRow label="Destination" value={first(selectedCountry ?? {}, ['name'])} />
                   <SummaryRow label="Port" value={first(selectedPort ?? {}, ['name'])} />
                   <SummaryRow label="Delivery term" value={incoterm} />
-                  <SummaryRow label="Required by" value={deliveryDate} />
+                  <SummaryRow label="Required by" value={formatBuyerDeliveryDateLabel(deliveryDate)} />
                 </View>
                 {notes.trim() ? <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 17, marginTop: 12 }}>Your notes: {notes.trim()}</Text> : null}
               </Card>
@@ -846,7 +835,7 @@ export default function BuyerCheckout() {
                 <SummaryRow label="Country" value={first(selectedCountry ?? {}, ['name'])} />
                 <SummaryRow label="Port" value={first(selectedPort ?? {}, ['name'])} />
                 <SummaryRow label="Delivery term" value={incoterm} />
-                <SummaryRow label="Required by" value={deliveryDate} />
+                <SummaryRow label="Required by" value={formatBuyerDeliveryDateLabel(deliveryDate)} />
               </Card>
 
               <Card style={{ padding: 16, marginBottom: 12 }}>

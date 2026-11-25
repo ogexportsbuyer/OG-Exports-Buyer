@@ -54,18 +54,45 @@ export function formatBuyerDeliveryDateInput(value: string): string {
   return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
 }
 
-export function isFutureBuyerDeliveryDate(value: string, now = new Date()): boolean {
+export function buyerDeliveryCalendarDays(year: number, monthIndex: number): Array<number | null> {
+  if (!Number.isInteger(year) || !Number.isInteger(monthIndex) || monthIndex < 0 || monthIndex > 11) return [];
+  const offset = new Date(year, monthIndex, 1).getDay();
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+  return [
+    ...Array.from({ length: offset }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, index) => index + 1),
+  ];
+}
+
+export function buyerDeliveryDateKey(year: number, monthIndex: number, day: number): string {
+  return `${String(year).padStart(4, '0')}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+export function parseBuyerDeliveryDate(value: string): Date | null {
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return false;
+  if (!match) return null;
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
-  const selected = new Date(year, month - 1, day);
+  const parsed = new Date(year, month - 1, day);
   if (
-    selected.getFullYear() !== year
-    || selected.getMonth() !== month - 1
-    || selected.getDate() !== day
-  ) return false;
+    parsed.getFullYear() !== year
+    || parsed.getMonth() !== month - 1
+    || parsed.getDate() !== day
+  ) return null;
+  return parsed;
+}
+
+export function formatBuyerDeliveryDateLabel(value: string): string {
+  const date = parseBuyerDeliveryDate(value);
+  return date
+    ? new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).format(date)
+    : '';
+}
+
+export function isFutureBuyerDeliveryDate(value: string, now = new Date()): boolean {
+  const selected = parseBuyerDeliveryDate(value);
+  if (!selected) return false;
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   return selected.getTime() > today.getTime();
 }
