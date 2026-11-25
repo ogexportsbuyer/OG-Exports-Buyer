@@ -102,6 +102,7 @@ function pngDimensions(relativePath) {
 
 test('official mobile launcher assets use properly sized approved-logo PNGs', () => {
   const config = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8')).expo;
+  assert.equal(config.name, 'OG Exports Buyer');
   assert.equal(config.icon, './assets/images/og-app-icon.png');
   assert.equal(config.ios.icon, config.icon);
   assert.equal(config.android.icon, config.icon);
