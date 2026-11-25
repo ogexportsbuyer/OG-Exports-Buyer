@@ -4,33 +4,26 @@
     <meta charset="utf-8">
     <title>Investor statement — {{ $statement['month_label'] }}</title>
     <style>
-        @page { margin: 34px 38px; }
-        body { font-family: DejaVu Sans, sans-serif; color: #102c27; font-size: 10px; }
-        .brand { color: #08775c; font-size: 11px; font-weight: bold; letter-spacing: 1.5px; }
-        h1 { font-size: 22px; margin: 8px 0 4px; }
-        .muted { color: #62736e; }
-        .meta { margin: 0 0 20px; line-height: 1.7; }
-        table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; }
-        th { background: #edf5f1; color: #31574d; text-align: left; font-size: 9px; }
-        th, td { border-bottom: 1px solid #dce7e2; padding: 8px 7px; }
+        @include('pdf.partials.brand-styles')
+        .balance { font-weight: bold; background: #f1f6f2; }
+        .section { margin: 18px 0 8px; color: #0a3637; font-size: 10px; font-weight: bold; letter-spacing: .65px; text-transform: uppercase; }
+        .statement-table th { padding: 7px; border-bottom: 2px solid #b08d57; background: #eaf2ee; color: #284c42; font-size: 7px; text-align: left; }
+        .statement-table td { padding: 7px; border-bottom: 1px solid #dce7e2; color: #183b36; font-size: 8px; vertical-align: top; }
         .amount { text-align: right; white-space: nowrap; }
-        .balance { font-weight: bold; background: #f6faf8; }
-        .section { color: #08775c; font-size: 12px; margin: 22px 0 8px; }
-        .footer { margin-top: 22px; color: #62736e; font-size: 8px; }
+        .summary-table td { padding: 8px 9px; border: 1px solid #dce7e2; }
     </style>
 </head>
 <body>
-    <div class="brand">OG EXPORTS</div>
-    <h1>Investor wallet statement</h1>
-    <div class="meta muted">
-        <strong>{{ $statement['month_label'] }}</strong><br>
-        Account holder: {{ $investor->name }}<br>
-        Currency: {{ $statement['currency'] }}<br>
-        Generated: {{ \Illuminate\Support\Carbon::parse($statement['generated_at'])->format('M j, Y g:i A') }}
-    </div>
+    @include('pdf.partials.brand-header', [
+        'documentKind' => 'Monthly account statement',
+        'documentTitle' => 'Investor Wallet Statement',
+        'documentReference' => $statement['month'],
+        'generatedAt' => \Illuminate\Support\Carbon::parse($statement['generated_at'])->format('M j, Y g:i A'),
+        'documentSubtitle' => $statement['month_label'].' · '.$investor->name.' · '.$statement['currency'],
+    ])
 
     <div class="section">Monthly balance summary</div>
-    <table>
+    <table class="summary-table">
         <tbody>
             <tr class="balance"><td>Opening balance</td><td class="amount">{{ $statement['currency'] }} {{ number_format($statement['opening_balance'], 2) }}</td></tr>
             <tr><td>Deposits</td><td class="amount">{{ $statement['currency'] }} {{ number_format($statement['deposits'], 2) }}</td></tr>
@@ -46,7 +39,7 @@
     </table>
 
     <div class="section">Posted wallet transactions</div>
-    <table>
+    <table class="statement-table">
         <thead>
             <tr>
                 <th>Date</th>
@@ -113,6 +106,9 @@
             @endforelse
         </tbody>
     </table>
-    <div class="footer">This statement is generated from OG Exports wallet transaction records. Balances include available and reserved pending wallet funds; pending requests are not included in posted monthly totals.</div>
+    @include('pdf.partials.brand-footer', [
+        'generatedAt' => \Illuminate\Support\Carbon::parse($statement['generated_at'])->format('M j, Y g:i A'),
+        'footerNote' => 'This statement is generated from OG Exports wallet transaction records. Balances include available and reserved pending wallet funds; pending requests are not included in posted monthly totals.',
+    ])
 </body>
 </html>

@@ -21,30 +21,38 @@ export function brandedPdfHtml(sourceHtml: string, title: string, logoUri: strin
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <title>${escapeHtml(title)}</title><style>
     ${existingStyles}
-    @page{size:A4;margin:16mm 14mm}
+    @page{size:A4;margin:18mm 14mm 20mm}
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    body{margin:0;color:#153328;background:#fff;font:12px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+    body{margin:0;color:#183b36;background:#fff;font:11px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
     .og-pdf{position:relative;z-index:1;max-width:800px;margin:0 auto}
     .og-pdf-watermark{position:fixed;inset:0;z-index:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
-    .og-pdf-watermark img{display:block;width:68vw;max-width:420px;height:auto;object-fit:contain;opacity:.065}
-    .og-pdf-brand{display:flex;align-items:center;gap:14px;padding:0 0 16px;border-bottom:2px solid #0A3637;margin-bottom:22px}
-    .og-pdf-brand img{width:94px;height:66px;object-fit:contain;flex-shrink:0}
-    .og-pdf-kicker{color:#0A3637;font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}
-    .og-pdf-brand h1{font-size:22px;line-height:1.25;margin:4px 0;color:#143a2b}
-    .og-pdf-brand p{margin:0;color:#62746b;font-size:10px}
+    .og-pdf-watermark img{display:block;width:62vw;max-width:390px;height:auto;object-fit:contain;opacity:.045}
+    .og-pdf-brand{display:flex;align-items:center;gap:14px;padding:11px 0 15px;border-top:3px solid #B08D57;border-bottom:2px solid #0A3637;margin-bottom:21px}
+    .og-pdf-brand img{width:76px;height:56px;object-fit:contain;flex-shrink:0}
+    .og-pdf-kicker{color:#8A672A;font-size:8px;font-weight:800;letter-spacing:1.35px;text-transform:uppercase}
+    .og-pdf-brand h1{font-size:21px;line-height:1.25;margin:4px 0;color:#0A3637}
+    .og-pdf-brand p{margin:0;color:#62746b;font-size:9px}
     .og-pdf-content{overflow-wrap:anywhere}
     table{width:100%;border-collapse:collapse}
-    th,td{padding:9px 8px;border-bottom:1px solid #e5ede8;text-align:left;vertical-align:top}
-    th{color:#61746a;font-weight:600}
+    th,td{padding:9px 8px;border-bottom:1px solid #e2eae5;text-align:left;vertical-align:top}
+    th{color:#61746a;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
     td{color:#173b2c}
-    .og-pdf-footer{border-top:1px solid #dce7e0;margin-top:24px;padding-top:10px;color:#6e7d75;font-size:9px}
+    .og-pdf-footer{border-top:1px solid #d8e3dd;margin-top:24px;padding-top:10px;color:#6e7d75;font-size:8px}
+    .receipt-summary{width:100%;margin:0 0 17px;border-collapse:separate;border-spacing:8px 0}
+    .receipt-summary td{width:50%;padding:12px;border:1px solid #d9e5df;border-left:3px solid #B08D57;border-radius:7px;background:#F5F8F5}
+    .receipt-summary-label{display:block;margin-bottom:4px;color:#6a7a73;font-size:8px;font-weight:800;letter-spacing:.8px;text-transform:uppercase}
+    .receipt-summary-value{display:block;color:#0A3637;font-size:15px;font-weight:800}
+    .receipt-status-value{display:block;color:#0A5147;font-size:11px;font-weight:800;text-transform:capitalize}
+    .receipt-section-title{margin:15px 0 5px;color:#0A3637;font-size:10px;font-weight:800;letter-spacing:.7px;text-transform:uppercase}
+    .receipt-note{margin-top:12px;color:#718078;font-size:8px;line-height:1.55}
+    .receipt-status-note{margin-top:12px;padding:10px 12px;border:1px solid #B7CFCD;border-radius:8px;background:#EAF2F1;color:#0A3637;font-size:9px}
     tr,.receipt-card,.section{break-inside:avoid;page-break-inside:avoid}
     </style></head><body><div class="og-pdf-watermark" aria-hidden="true"><img src="${escapeHtml(logoUri)}" alt=""></div><main class="og-pdf">
     <header class="og-pdf-brand"><img src="${escapeHtml(logoUri)}" alt="OG Exports logo"><div>
-      <div class="og-pdf-kicker">Official investor document</div><h1>${escapeHtml(title)}</h1>
-      <p>OG Exports · Global Trade. Digital Investment.</p>
+      <div class="og-pdf-kicker">Official account document</div><h1>${escapeHtml(title)}</h1>
+      <p>OG Exports · Global Trade · Secure Account Record</p>
     </div></header>
     <section class="og-pdf-content">${body}</section>
-    <footer class="og-pdf-footer">Generated ${escapeHtml(generatedAt)} from OG Exports investor records. This document reflects the information available in your account when it was created.</footer>
+    <footer class="og-pdf-footer">Generated ${escapeHtml(generatedAt)} from OG Exports account records. This document reflects the information available in your account when it was created.</footer>
     </main></body></html>`;
 }

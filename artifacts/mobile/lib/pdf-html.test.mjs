@@ -12,9 +12,9 @@ test('branded PDF preserves report rows and embeds the official OG Exports logo'
   assert.equal((html.match(/src="data:image\/png;base64,logo-data"/g) ?? []).length, 2);
   assert.match(html, /class="og-pdf-watermark" aria-hidden="true"/);
   assert.match(html, /\.og-pdf-watermark\{position:fixed;inset:0;z-index:0;display:flex;align-items:center;justify-content:center;pointer-events:none\}/);
-  assert.match(html, /\.og-pdf-watermark img\{[^}]*opacity:\.065\}/);
+  assert.match(html, /\.og-pdf-watermark img\{[^}]*opacity:\.045\}/);
   assert.match(html, /\.og-pdf\{position:relative;z-index:1/);
-  assert.match(html, /OG Exports · Global Trade\. Digital Investment\./);
+  assert.match(html, /OG Exports · Global Trade · Secure Account Record/);
   assert.match(html, /@page\{size:A4/);
   assert.match(html, /Deposit ID/);
   assert.match(html, /10000042/);

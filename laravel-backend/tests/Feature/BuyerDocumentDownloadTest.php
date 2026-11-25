@@ -116,3 +116,25 @@ it('allows download of an order-linked document owned via the order relation', f
         ->assertJsonPath('data.trade_documents.0.status', 'available')
         ->assertJsonPath('data.trade_documents.0.download_url', "/api/buyer/documents/{$doc->id}/download");
 });
+
+it('downloads a branded PDF order summary for the buyer', function () {
+    $order = Order::query()->create([
+        'order_number' => 'PO-PDF-001',
+        'buyer_id' => $this->buyer->id,
+        'status' => 'confirmed',
+        'payment_status' => 'unpaid',
+        'total_value' => 3100,
+        'currency' => 'USD',
+        'destination' => 'Rotterdam',
+        'placed_at' => now(),
+    ]);
+
+    $response = $this->actingAs($this->buyer)
+        ->get("/api/buyer/orders/{$order->id}/pdf");
+
+    $response->assertOk()
+        ->assertHeader('content-type', 'application/pdf')
+        ->assertHeader('content-disposition');
+
+    expect($response->getContent())->toStartWith('%PDF-');
+});

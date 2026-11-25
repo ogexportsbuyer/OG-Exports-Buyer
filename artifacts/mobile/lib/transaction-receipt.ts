@@ -166,15 +166,9 @@ function escapeHtml(value: string): string {
 }
 
 function receiptRows(receipt: TransactionReceipt): Array<[string, string]> {
-  const amount = receipt.amount !== ''
-    ? `${receipt.amount}${receipt.currency ? ` ${receipt.currency}` : ' (currency not provided)'}`
-    : 'Not provided';
   return [
-    ['Transaction type', receipt.title],
     ['Server reference', receipt.reference || 'Not provided'],
     ['Record ID', receipt.recordId || 'Not provided'],
-    ['Amount returned by OG Exports', amount],
-    ['Server status', receipt.status || 'Not provided'],
     ['Date returned by OG Exports', receipt.submittedAt || 'Not provided'],
     ['Settlement date returned by OG Exports', receipt.settlementAt || 'Not provided'],
     ...(receipt.kind === 'withdrawal' ? [
@@ -197,6 +191,9 @@ export function transactionReceiptHtml(receipt: TransactionReceipt): string {
   const rows = [...receiptRows(receipt), ...receipt.details].map(([label, value]) =>
     `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`,
   ).join('');
+  const amount = receipt.amount
+    ? `${receipt.amount}${receipt.currency ? ` ${receipt.currency}` : ''}`
+    : 'Not provided';
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -204,15 +201,29 @@ export function transactionReceiptHtml(receipt: TransactionReceipt): string {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(receipt.title)}</title>
   <style>
-    main{padding:0}table{width:100%;border-collapse:collapse}th,td{padding:11px 8px;border-bottom:1px solid #edf1ee;text-align:left;vertical-align:top;overflow-wrap:anywhere}
-    th{width:42%;color:#607168;font-size:11px;font-weight:600}td{text-align:right;font-weight:650}
-    aside{margin-top:18px;padding:13px 15px;border:1px solid #B7CFCD;border-radius:10px;background:#EAF2F1;color:#0A3637;font-size:11px}
-    .receipt-note{margin-top:12px;color:#718078;font-size:9px;line-height:1.5}
+    main{padding:0}
+    .receipt-summary{width:100%;margin:0 0 16px;border-collapse:separate;border-spacing:8px 0}
+    .receipt-summary td{width:50%;padding:12px;border:1px solid #d9e5df;border-left:3px solid #B08D57;border-radius:8px;background:#F5F8F5}
+    .receipt-summary-label{display:block;margin-bottom:4px;color:#6a7a73;font-size:8px;font-weight:800;letter-spacing:.8px;text-transform:uppercase}
+    .receipt-summary-value{display:block;color:#0A3637;font-size:15px;font-weight:800}
+    .receipt-status-value{display:block;color:#0A5147;font-size:11px;font-weight:800;text-transform:capitalize}
+    .receipt-section-title{margin:15px 0 5px;color:#0A3637;font-size:9px;font-weight:800;letter-spacing:.8px;text-transform:uppercase}
+    .receipt-details{width:100%;border-collapse:collapse}
+    .receipt-details th,.receipt-details td{padding:8px 7px;border-bottom:1px solid #e2eae5;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+    .receipt-details th{width:42%;color:#607168;font-size:8px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+    .receipt-details td{text-align:right;color:#183b36;font-size:9px;font-weight:650}
+    .receipt-status-note{margin-top:12px;padding:10px 12px;border:1px solid #B7CFCD;border-radius:8px;background:#EAF2F1;color:#0A3637;font-size:9px}
+    .receipt-note{margin-top:10px;color:#718078;font-size:8px;line-height:1.5}
   </style>
 </head>
 <body><main>
-  <table><tbody>${rows}</tbody></table>
-  <aside>${escapeHtml(receipt.statusNote)}</aside>
+  <table class="receipt-summary"><tbody><tr>
+    <td><span class="receipt-summary-label">Recorded amount</span><span class="receipt-summary-value">${escapeHtml(amount)}</span></td>
+    <td><span class="receipt-summary-label">Server status</span><span class="receipt-status-value">${escapeHtml(receipt.status || 'Not provided')}</span></td>
+  </tr></tbody></table>
+  <div class="receipt-section-title">Transaction details</div>
+  <table class="receipt-details"><tbody>${rows}</tbody></table>
+  <div class="receipt-status-note">${escapeHtml(receipt.statusNote)}</div>
   <p class="receipt-note">Values on this receipt are limited to information returned by OG Exports. “Not provided” means that field was not available in the server record.</p>
 </main></body></html>`;
 }

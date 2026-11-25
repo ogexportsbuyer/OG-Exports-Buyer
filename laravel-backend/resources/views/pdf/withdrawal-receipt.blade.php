@@ -4,16 +4,7 @@
   <meta charset="utf-8">
   <title>Withdrawal {{ $withdrawal->reference ?? $withdrawal->id }}</title>
   <style>
-    body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #1f2933; margin: 32px; }
-    h1 { font-size: 22px; margin: 0 0 4px; color: #0F3D2E; }
-    .muted { color: #6b7280; font-size: 11px; }
-    .header { border-bottom: 2px solid #0F3D2E; padding-bottom: 12px; margin-bottom: 20px; }
-    .brand { font-size: 14px; font-weight: bold; color: #D4A012; letter-spacing: 0.5px; }
-    .grid { width: 100%; margin-bottom: 18px; }
-    .grid td { vertical-align: top; padding: 8px 8px 8px 0; }
-    .label { color: #6b7280; font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; }
-    .value { font-weight: bold; font-size: 12px; }
-    .footer { margin-top: 36px; border-top: 1px solid #e5e7eb; padding-top: 10px; font-size: 10px; color: #9ca3af; }
+    @include('pdf.partials.brand-styles')
   </style>
 </head>
 <body>
@@ -24,76 +15,92 @@
     $iban = $bank['iban'] ?? $bank['account_number'] ?? '—';
   @endphp
 
-  <div class="header">
-    <div class="brand">OG EXPORTS</div>
-    <h1>Withdrawal Receipt</h1>
-    <div class="muted">Generated {{ $generatedAt }}</div>
-  </div>
+  @include('pdf.partials.brand-header', [
+    'documentKind' => 'Transaction receipt',
+    'documentTitle' => 'Withdrawal Receipt',
+    'documentReference' => $withdrawal->reference ?: ('WDR-'.$withdrawal->id),
+    'generatedAt' => $generatedAt,
+    'documentSubtitle' => 'Record of the withdrawal request and payout details saved in your account.',
+  ])
+
+  <table class="pdf-card">
+    <tr>
+      <td width="62%">
+        <div class="pdf-card-title">Requested bank payout</div>
+        <div class="pdf-card-value">{{ $withdrawalBreakdown['currency'] ? $withdrawalBreakdown['currency'].' ' : '' }}{{ number_format((float) $withdrawalBreakdown['payout_amount'], 2) }}</div>
+      </td>
+      <td>
+        <div class="pdf-card-title">Account status</div>
+        <span class="pdf-status">{{ ucfirst((string) $withdrawal->status) }}</span>
+      </td>
+    </tr>
+  </table>
 
   <table class="grid">
     <tr>
       <td width="50%">
-        <div class="label">Withdrawal ID</div>
+        <div class="pdf-label">Withdrawal ID</div>
         <div class="value">{{ $withdrawal->id }}</div>
       </td>
       <td width="50%">
-        <div class="label">Reference</div>
+        <div class="pdf-label">Reference</div>
         <div class="value">{{ $withdrawal->reference ?: ('WDR-'.$withdrawal->id) }}</div>
       </td>
     </tr>
     <tr>
       <td>
-        <div class="label">Investor</div>
+        <div class="pdf-label">Account holder</div>
         <div class="value">{{ $user->name ?? '—' }}</div>
         <div class="muted">{{ $user->email ?? '' }}</div>
       </td>
       <td>
-        <div class="label">Date</div>
+        <div class="pdf-label">Submitted</div>
         <div class="value">{{ optional($withdrawal->created_at)->format('d M Y H:i') ?? '—' }}</div>
       </td>
     </tr>
     <tr>
       <td>
-        <div class="label">Requested bank payout</div>
+        <div class="pdf-label">Requested bank payout</div>
         <div class="value">{{ $withdrawalBreakdown['currency'] ? $withdrawalBreakdown['currency'].' ' : '' }}{{ number_format((float) $withdrawalBreakdown['payout_amount'], 2) }}</div>
         @if($withdrawalBreakdown['currency'] !== 'USD' && $withdrawalBreakdown['payout_amount_usd'] !== null)
           <div class="muted">USD {{ number_format((float) $withdrawalBreakdown['payout_amount_usd'], 2) }}</div>
         @endif
       </td>
       <td>
-        <div class="label">Status</div>
+        <div class="pdf-label">Payout status</div>
         <div class="value">{{ ucfirst((string) $withdrawal->status) }}</div>
       </td>
     </tr>
     @include('pdf.partials.withdrawal-breakdown', ['withdrawalBreakdown' => $withdrawalBreakdown, 'showPayout' => false])
     <tr>
       <td>
-        <div class="label">Bank</div>
+        <div class="pdf-label">Bank</div>
         <div class="value">{{ $bankName }}</div>
       </td>
       <td>
-        <div class="label">Account Holder</div>
+        <div class="pdf-label">Account holder</div>
         <div class="value">{{ $accountHolder }}</div>
       </td>
     </tr>
     <tr>
       <td colspan="2">
-        <div class="label">Account / IBAN</div>
+        <div class="pdf-label">Account / IBAN</div>
         <div class="value">{{ $iban }}</div>
       </td>
     </tr>
     @if($withdrawal->note)
     <tr>
       <td colspan="2">
-        <div class="label">Note</div>
+        <div class="pdf-label">Note</div>
         <div class="value">{{ $withdrawal->note }}</div>
       </td>
     </tr>
     @endif
   </table>
 
-  <div class="footer">
-    OG Exports (Pvt) Ltd · Investor withdrawal receipt · This document was generated from the investor portal.
-  </div>
+  @include('pdf.partials.brand-footer', [
+    'generatedAt' => $generatedAt,
+    'footerNote' => 'This receipt records the withdrawal status reported by OG Exports. An approved or completed status does not independently verify receipt of funds by the external bank.',
+  ])
 </body>
 </html>

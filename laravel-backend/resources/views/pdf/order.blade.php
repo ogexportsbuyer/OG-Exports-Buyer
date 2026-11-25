@@ -4,83 +4,71 @@
   <meta charset="utf-8">
   <title>Order {{ $order->order_number ?? $order->id }}</title>
   <style>
-    body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #1f2933; margin: 32px; }
-    h1 { font-size: 22px; margin: 0 0 4px; color: #0F3D2E; }
-    .muted { color: #6b7280; font-size: 11px; }
-    .header { border-bottom: 2px solid #0F3D2E; padding-bottom: 12px; margin-bottom: 20px; }
-    .brand { font-size: 14px; font-weight: bold; color: #D4A012; letter-spacing: 0.5px; }
-    .grid { width: 100%; margin-bottom: 18px; }
-    .grid td { vertical-align: top; padding: 4px 8px 4px 0; }
-    .label { color: #6b7280; font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; }
-    .value { font-weight: bold; font-size: 12px; }
-    table.items { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    table.items th { background: #0F3D2E; color: #fff; text-align: left; padding: 8px; font-size: 11px; }
-    table.items td { border-bottom: 1px solid #e5e7eb; padding: 8px; }
-    .total { text-align: right; margin-top: 16px; font-size: 14px; }
-    .total strong { color: #0F3D2E; font-size: 16px; }
-    .footer { margin-top: 36px; border-top: 1px solid #e5e7eb; padding-top: 10px; font-size: 10px; color: #9ca3af; }
+    @include('pdf.partials.brand-styles')
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="brand">OG EXPORTS</div>
-    <h1>Order Confirmation</h1>
-    <div class="muted">Generated {{ $generatedAt }}</div>
-  </div>
+  @include('pdf.partials.brand-header', [
+    'documentKind' => 'Buyer order summary',
+    'documentTitle' => 'Order Confirmation',
+    'documentReference' => $order->order_number ?? ('ORD-'.$order->id),
+    'generatedAt' => $generatedAt,
+    'documentSubtitle' => ucwords(str_replace('_', ' ', (string) $order->status)).' · '.($order->destination ?: ($order->quotation->destination ?? 'Destination not provided')),
+  ])
 
   <table class="grid">
     <tr>
       <td width="50%">
-        <div class="label">Order Number</div>
+        <div class="pdf-label">Order number</div>
         <div class="value">{{ $order->order_number ?? ('ORD-'.$order->id) }}</div>
       </td>
       <td width="50%">
-        <div class="label">Status</div>
-        <div class="value">{{ ucwords(str_replace('_', ' ', (string) $order->status)) }}</div>
+        <div class="pdf-label">Order status</div>
+        <div class="value"><span class="pdf-status">{{ ucwords(str_replace('_', ' ', (string) $order->status)) }}</span></div>
       </td>
     </tr>
     <tr>
       <td>
-        <div class="label">Buyer</div>
+        <div class="pdf-label">Buyer</div>
         <div class="value">{{ $order->buyer->name ?? '—' }}</div>
         <div class="muted">{{ $order->buyer->email ?? '' }}</div>
       </td>
       <td>
-        <div class="label">Placed</div>
+        <div class="pdf-label">Order date</div>
         <div class="value">{{ optional($order->placed_at ?? $order->created_at)->format('d M Y') ?? '—' }}</div>
       </td>
     </tr>
     <tr>
       <td>
-        <div class="label">Destination</div>
+        <div class="pdf-label">Destination</div>
         <div class="value">{{ $order->destination ?: ($order->quotation->destination ?? '—') }}</div>
       </td>
       <td>
-        <div class="label">Port</div>
+        <div class="pdf-label">Destination port</div>
         <div class="value">{{ $order->destination_port ?: ($order->port->name ?? '—') }}</div>
       </td>
     </tr>
     <tr>
       <td>
-        <div class="label">Incoterm</div>
+        <div class="pdf-label">Delivery term</div>
         <div class="value">{{ $order->incoterm ?: ($order->quotation->incoterm ?? '—') }}</div>
       </td>
       <td>
-        <div class="label">Payment</div>
+        <div class="pdf-label">Payment terms</div>
         <div class="value">{{ $order->quotation->payment_terms ?? ($order->payment_method ?: ($order->payment_status ?? '—')) }}</div>
       </td>
     </tr>
     @if($order->required_delivery_date)
     <tr>
       <td colspan="2">
-        <div class="label">Required Delivery</div>
+        <div class="pdf-label">Required delivery date</div>
         <div class="value">{{ optional($order->required_delivery_date)->format('d M Y') }}</div>
       </td>
     </tr>
     @endif
   </table>
 
-  <div class="label">Line Items</div>
+  <div class="pdf-label">Order items</div>
   <table class="items">
     <thead>
       <tr>
@@ -126,11 +114,12 @@
   </div>
 
   @if($order->notes)
-    <p style="margin-top: 20px;"><span class="label">Notes</span><br>{{ $order->notes }}</p>
+    <p style="margin-top: 20px;"><span class="pdf-label">Notes</span><br>{{ $order->notes }}</p>
   @endif
 
-  <div class="footer">
-    OG Exports (Pvt) Ltd · Premium Pakistan Agricultural Exports · This document was generated from the buyer portal.
-  </div>
+  @include('pdf.partials.brand-footer', [
+    'generatedAt' => $generatedAt,
+    'footerNote' => 'This is an order summary generated from the buyer account. It is not an invoice, proof of payment, or confirmation that funds have been received.',
+  ])
 </body>
 </html>
