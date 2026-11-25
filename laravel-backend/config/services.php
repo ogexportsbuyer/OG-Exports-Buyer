@@ -46,6 +46,10 @@ return [
         'translation_api_key' => env('GOOGLE_CLOUD_TRANSLATION_API_KEY'),
         'translation_enabled' => filter_var(env('GOOGLE_CLOUD_TRANSLATION_ENABLED', false), FILTER_VALIDATE_BOOL),
         'translation_monthly_character_limit' => (int) env('GOOGLE_CLOUD_TRANSLATION_MONTHLY_CHARACTER_LIMIT', 400000),
+        'speech_api_key' => env('GOOGLE_CLOUD_SPEECH_API_KEY'),
+        'speech_enabled' => filter_var(env('GOOGLE_CLOUD_SPEECH_ENABLED', false), FILTER_VALIDATE_BOOL),
+        'speech_monthly_minutes' => (int) env('GOOGLE_CLOUD_SPEECH_MONTHLY_MINUTES', 50),
+        'tts_monthly_character_limit' => (int) env('GOOGLE_CLOUD_TTS_MONTHLY_CHARACTER_LIMIT', 300000),
     ],
 
 ];
