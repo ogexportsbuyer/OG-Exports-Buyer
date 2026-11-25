@@ -73,6 +73,109 @@ class GoogleCloudTranslationService
         }
     }
 
+    /**
+     * @param  list<string>  $texts
+     * @return list<array{translated_body:?string, source_language:?string, target_language:string, translation_status:string}>
+     */
+    public function translateMany(array $texts, string $targetLanguage): array
+    {
+        $targetLanguage = $this->normalizeLanguageCode($targetLanguage) ?? 'ur';
+        $results = [];
+        $pending = [];
+
+        foreach (array_values($texts) as $index => $rawText) {
+            $text = trim($rawText);
+            $results[$index] = $this->result(null, null, $targetLanguage, 'not_needed');
+            if ($text !== '') {
+                $pending[$index] = $text;
+            }
+        }
+
+        if ($pending === []) {
+            return array_values($results);
+        }
+
+        $apiKey = (string) config('services.google_cloud.translation_api_key', '');
+        $unavailableStatus = $apiKey === ''
+            ? 'not_configured'
+            : (! config('services.google_cloud.translation_enabled', false) ? 'disabled' : null);
+        if ($unavailableStatus !== null) {
+            foreach (array_keys($pending) as $index) {
+                $results[$index] = $this->result(null, null, $targetLanguage, $unavailableStatus);
+            }
+
+            return array_values($results);
+        }
+
+        $chunks = [];
+        $currentChunk = [];
+        $currentCharacters = 0;
+        foreach ($pending as $index => $text) {
+            $length = mb_strlen($text, 'UTF-8');
+            if ($currentChunk !== [] && (count($currentChunk) >= 50 || $currentCharacters + $length > 20000)) {
+                $chunks[] = [$currentChunk, $currentCharacters];
+                $currentChunk = [];
+                $currentCharacters = 0;
+            }
+            $currentChunk[$index] = $text;
+            $currentCharacters += $length;
+        }
+        if ($currentChunk !== []) {
+            $chunks[] = [$currentChunk, $currentCharacters];
+        }
+
+        foreach ($chunks as [$chunk, $characterCount]) {
+            if (! $this->reserveMonthlyCharacters($characterCount)) {
+                foreach (array_keys($chunk) as $index) {
+                    $results[$index] = $this->result(null, null, $targetLanguage, 'quota_exceeded');
+                }
+                continue;
+            }
+
+            try {
+                $response = Http::timeout(15)->post(self::ENDPOINT.'?key='.urlencode($apiKey), [
+                    'q' => array_values($chunk),
+                    'target' => $targetLanguage,
+                    'format' => 'text',
+                ]);
+                $translations = $response->json('data.translations', []);
+                if (! $response->successful() || ! is_array($translations) || count($translations) !== count($chunk)) {
+                    foreach (array_keys($chunk) as $index) {
+                        $results[$index] = $this->result(null, null, $targetLanguage, 'failed');
+                    }
+                    continue;
+                }
+
+                foreach (array_keys($chunk) as $chunkIndex => $resultIndex) {
+                    $translation = $translations[$chunkIndex] ?? [];
+                    $translatedText = is_array($translation) ? ($translation['translatedText'] ?? null) : null;
+                    if (! is_string($translatedText) || trim($translatedText) === '') {
+                        $results[$resultIndex] = $this->result(null, null, $targetLanguage, 'failed');
+                        continue;
+                    }
+
+                    $sourceLanguage = $this->normalizeLanguageCode($translation['detectedSourceLanguage'] ?? null);
+                    $results[$resultIndex] = $sourceLanguage === $targetLanguage
+                        ? $this->result(null, $sourceLanguage, $targetLanguage, 'not_needed')
+                        : $this->result(
+                            html_entity_decode($translatedText, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                            $sourceLanguage,
+                            $targetLanguage,
+                            'translated'
+                        );
+                }
+            } catch (Throwable) {
+                foreach (array_keys($chunk) as $index) {
+                    $results[$index] = $this->result(null, null, $targetLanguage, 'failed');
+                }
+            }
+        }
+
+        ksort($results);
+
+        return array_values($results);
+    }
+
     public function buyerLanguage(User $buyer, ?string $requestedLanguage = null): string
     {
         $requested = $this->normalizeLanguageCode($requestedLanguage);

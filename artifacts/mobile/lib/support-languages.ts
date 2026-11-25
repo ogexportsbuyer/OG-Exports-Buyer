@@ -3,6 +3,33 @@ export type SupportLanguage = {
   name: string;
 };
 
+const supportSpeechLocales: Record<string, string> = {
+  ar: 'ar-SA',
+  bn: 'bn-BD',
+  'zh-cn': 'zh-CN',
+  'zh-tw': 'zh-TW',
+  nl: 'nl-NL',
+  en: 'en-US',
+  fr: 'fr-FR',
+  de: 'de-DE',
+  hi: 'hi-IN',
+  id: 'id-ID',
+  it: 'it-IT',
+  ja: 'ja-JP',
+  ko: 'ko-KR',
+  ms: 'ms-MY',
+  fa: 'fa-IR',
+  pl: 'pl-PL',
+  pt: 'pt-BR',
+  ru: 'ru-RU',
+  es: 'es-ES',
+  th: 'th-TH',
+  tr: 'tr-TR',
+  ur: 'ur-PK',
+  vi: 'vi-VN',
+  uk: 'uk-UA',
+};
+
 export const FALLBACK_SUPPORT_LANGUAGES: SupportLanguage[] = [
   { code: 'ar', name: 'Arabic' },
   { code: 'bn', name: 'Bengali' },
@@ -28,6 +55,25 @@ export const FALLBACK_SUPPORT_LANGUAGES: SupportLanguage[] = [
   { code: 'ur', name: 'Urdu' },
   { code: 'vi', name: 'Vietnamese' },
 ];
+
+export function supportSpeechLocale(languageCode: string): string {
+  const normalized = languageCode.trim().replaceAll('_', '-');
+  if (!normalized) return 'en-US';
+  if (normalized.includes('-')) return normalized;
+  return supportSpeechLocales[normalized.toLocaleLowerCase()] ?? normalized;
+}
+
+export function matchSupportSpeechVoice<T extends { language: string }>(
+  voices: readonly T[],
+  languageCode: string,
+): T | undefined {
+  const locale = supportSpeechLocale(languageCode).toLocaleLowerCase();
+  const exact = voices.find((voice) => voice.language.replaceAll('_', '-').toLocaleLowerCase() === locale);
+  if (exact) return exact;
+
+  const baseLanguage = locale.split('-')[0];
+  return voices.find((voice) => voice.language.replaceAll('_', '-').toLocaleLowerCase().split('-')[0] === baseLanguage);
+}
 
 export function defaultSupportLanguageForCountry(countryValue: string): string {
   const country = countryValue.trim().toLocaleLowerCase();

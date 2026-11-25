@@ -190,18 +190,29 @@ it('transcribes an opted-in voice note, translates it to Urdu, and enforces the 
         ->assertOk()
         ->assertJsonPath('data.transcription_body', 'Hello, please send the quotation.')
         ->assertJsonPath('data.transcription_translated_body', 'براہ کرم قیمت بھیجیں۔')
+        ->assertJsonPath('data.transcription_buyer_body', 'Hello, please send the quotation.')
+        ->assertJsonPath('data.transcription_buyer_language', 'en')
+        ->assertJsonPath('data.transcription_buyer_status', 'transcribed')
         ->assertJsonPath('data.transcription_status', 'translated');
 
     $this->postJson("/api/conversations/{$conversation->id}/messages/{$secondMessage->id}/transcription")
         ->assertOk()
         ->assertJsonPath('data.transcription_status', 'quota_exceeded');
 
-    Http::assertSentCount(2);
+    Http::assertSentCount(3);
     Http::assertSent(fn ($request) =>
         str_contains($request->url(), 'key=test-speech-key')
         && $request['config']['encoding'] === 'LINEAR16'
         && $request['config']['sampleRateHertz'] === 16000
         && $request['config']['languageCode'] === 'en-US'
+    );
+    Http::assertSent(fn ($request) =>
+        str_contains($request->url(), 'translation.googleapis.com')
+        && $request['target'] === 'ur'
+    );
+    Http::assertSent(fn ($request) =>
+        str_contains($request->url(), 'translation.googleapis.com')
+        && $request['target'] === 'en'
     );
     expect(DB::table('google_speech_monthly_usage')->value('speech_seconds_reserved'))->toBe(60);
 });

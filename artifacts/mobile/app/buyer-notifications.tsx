@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -19,7 +19,6 @@ import { first, list, messageOf, record } from '@/lib/data';
 import { notificationHref } from '@/lib/notification-routing';
 import { BUYER_NOTIFICATION_CATEGORIES, notificationCategory, notificationCategoryLabel, type NotificationCategoryFilter } from '@/lib/notification-categories';
 import { formatNotificationTimestamp, isInvestorNotificationUnread } from '@/lib/notification-utils';
-import { goBackOrReplace } from '@/lib/safe-navigation';
 
 export default function BuyerNotifications() {
   const colors = useColors();
@@ -84,18 +83,56 @@ export default function BuyerNotifications() {
       title="Notifications"
       subtitle="Important updates for your buyer account"
       refreshable
+      safeAreaTop
+      headerLeading={(
+        <Pressable
+          testID="buyer-notifications-back"
+          accessibilityRole="button"
+          accessibilityLabel="Back to home"
+          onPress={() => router.replace('/(buyer-tabs)/buyer-home')}
+          style={{
+            minHeight: 42,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            paddingHorizontal: 14,
+            borderRadius: 15,
+            borderWidth: 1,
+            borderColor: colors.glassBorder,
+            backgroundColor: colors.secondary,
+          }}
+        >
+          <Feather name="home" size={15} color={colors.primary} />
+          <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '800' }}>Back to Home</Text>
+        </Pressable>
+      )}
       action={(
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Pressable testID="buyer-notifications-back" accessibilityRole="button" accessibilityLabel="Back to home" onPress={() => goBackOrReplace('/(buyer-tabs)/buyer-home')} style={{ minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 3 }}>
-            <Feather name="arrow-left" size={14} color={colors.primary} />
-            <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>Back</Text>
+        unreadCount ? (
+          <Pressable
+            testID="buyer-notifications-mark-all"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: markAll.isPending, busy: markAll.isPending }}
+            disabled={markAll.isPending}
+            onPress={() => void markAllRead()}
+            style={{
+              minHeight: 42,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              paddingHorizontal: 12,
+              borderRadius: 15,
+              borderWidth: 1,
+              borderColor: colors.glassBorder,
+              backgroundColor: colors.glassFill,
+              opacity: markAll.isPending ? 0.65 : 1,
+            }}
+          >
+            <Feather name="check-circle" size={14} color={colors.primary} />
+            <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '800' }}>{markAll.isPending ? 'Saving…' : 'Mark all read'}</Text>
           </Pressable>
-          {unreadCount ? (
-            <Pressable testID="buyer-notifications-mark-all" accessibilityRole="button" disabled={markAll.isPending} onPress={() => void markAllRead()} style={{ minHeight: 36, justifyContent: 'center', paddingHorizontal: 5 }}>
-              <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '800' }}>{markAll.isPending ? 'Saving…' : 'Mark all read'}</Text>
-            </Pressable>
-          ) : null}
-        </View>
+        ) : null
       )}
     >
       {query.isLoading ? <LoadingCard label="Loading notifications…" lines={3} /> : null}
@@ -114,7 +151,7 @@ export default function BuyerNotifications() {
               <Text style={{ color: unreadCount ? colors.primary : colors.foreground, fontSize: 20, fontWeight: '800', marginTop: 3 }}>{unreadCount}</Text>
             </Card>
           </View>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 13 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingBottom: 2 }} style={{ marginBottom: 13 }}>
             {(['All', ...BUYER_NOTIFICATION_CATEGORIES.map(category => category.label)] as NotificationCategoryFilter[]).map(category => {
               const selected = selectedCategory === category;
               return (
@@ -124,13 +161,13 @@ export default function BuyerNotifications() {
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
                   onPress={() => setSelectedCategory(category)}
-                  style={{ minHeight: 32, borderRadius: 18, paddingHorizontal: 11, justifyContent: 'center', borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.secondary : colors.card }}
+                  style={{ minHeight: 36, borderRadius: 18, paddingHorizontal: 13, justifyContent: 'center', borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.secondary : colors.card }}
                 >
-                  <Text style={{ color: selected ? colors.primary : colors.mutedForeground, fontSize: 10, fontWeight: selected ? '800' : '600' }}>{category}</Text>
+                  <Text style={{ color: selected ? colors.primary : colors.mutedForeground, fontSize: 11, fontWeight: selected ? '800' : '600' }}>{category}</Text>
                 </Pressable>
               );
             })}
-          </View>
+          </ScrollView>
           {visibleNotifications.length === 0 ? <EmptyState title={`No ${selectedCategory} updates`} body="Updates in this category will appear here when available." icon="bell" /> : null}
         </>
       ) : null}
@@ -161,7 +198,10 @@ export default function BuyerNotifications() {
                   </Text>
                   {createdAt ? <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 8 }}>{createdAt}</Text> : null}
                 </View>
-                <Feather name="chevron-right" size={16} color={colors.mutedForeground} style={{ marginTop: 2 }} />
+                <View style={{ alignItems: 'center', gap: 6, marginTop: 2 }}>
+                  {unread ? <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: colors.accent }} /> : null}
+                  <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+                </View>
               </View>
             </Card>
           </Pressable>

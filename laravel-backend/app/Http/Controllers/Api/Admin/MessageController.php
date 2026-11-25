@@ -219,6 +219,11 @@ class MessageController extends Controller
             'target_language' => null,
             'translation_status' => 'not_needed',
         ];
+        $buyerTranslation = [
+            'buyer_translated_body' => null,
+            'buyer_translation_language' => null,
+            'buyer_translation_status' => 'not_needed',
+        ];
         $buyer = $conversation->participants()->with('profile')->get()
             ->first(fn (User $participant) => $participant->hasRole('buyer'));
         if ($buyer && ! empty($data['body'])) {
@@ -226,6 +231,13 @@ class MessageController extends Controller
             $targetLanguage = $translator->buyerLanguage($buyer, $conversation->buyer_language);
             $conversation->forceFill(['buyer_language' => $targetLanguage])->save();
             $translation = $translator->translate($data['body'], $targetLanguage);
+            $buyerTranslation = [
+                'buyer_translated_body' => $translation['translation_status'] === 'not_needed'
+                    ? $data['body']
+                    : $translation['translated_body'],
+                'buyer_translation_language' => $targetLanguage,
+                'buyer_translation_status' => $translation['translation_status'],
+            ];
         }
 
         $message = Message::create([
@@ -233,6 +245,7 @@ class MessageController extends Controller
             'sender_id' => $admin->id,
             'body' => $data['body'] ?? '',
             ...$translation,
+            ...$buyerTranslation,
             'attachment_path' => $data['attachment_path'] ?? null,
             'attachment_url' => $data['attachment_url'] ?? null,
             'attachment_name' => $data['attachment_name'] ?? null,

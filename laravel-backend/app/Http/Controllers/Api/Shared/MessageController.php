@@ -35,9 +35,16 @@ class MessageController extends Controller
             'buyer_language' => ['required', 'string', 'regex:/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/'],
         ]);
 
+        $translator = app(GoogleCloudTranslationService::class);
+        $buyerLanguage = $translator->buyerLanguage(
+            $request->user()->loadMissing('profile'),
+            $data['buyer_language']
+        );
         $conversation->forceFill([
-            'buyer_language' => $data['buyer_language'],
+            'buyer_language' => $buyerLanguage,
         ])->save();
+
+        $this->refreshBuyerLanguageTranslations($conversation, $buyerLanguage, $translator);
 
         return response()->json([
             'data' => [
@@ -236,14 +243,30 @@ class MessageController extends Controller
             'target_language' => null,
             'translation_status' => 'not_needed',
         ];
+        $buyerTranslation = [
+            'buyer_translated_body' => null,
+            'buyer_translation_language' => null,
+            'buyer_translation_status' => 'not_needed',
+        ];
         if ($user->hasRole('buyer')) {
-            $buyerLanguage = app(GoogleCloudTranslationService::class)->buyerLanguage(
+            $translator = app(GoogleCloudTranslationService::class);
+            $buyerLanguage = $translator->buyerLanguage(
                 $user->loadMissing('profile'),
                 $data['buyer_language'] ?? $conversation->buyer_language
             );
             $conversation->forceFill(['buyer_language' => $buyerLanguage])->save();
             if (! empty($data['body'])) {
-                $translation = app(GoogleCloudTranslationService::class)->translate($data['body'], 'ur');
+                $translation = $translator->translate($data['body'], 'ur');
+                $buyerTranslationResult = $buyerLanguage === 'ur'
+                    ? $translation
+                    : $translator->translate($data['body'], $buyerLanguage);
+                $buyerTranslation = [
+                    'buyer_translated_body' => $buyerTranslationResult['translation_status'] === 'not_needed'
+                        ? $data['body']
+                        : $buyerTranslationResult['translated_body'],
+                    'buyer_translation_language' => $buyerLanguage,
+                    'buyer_translation_status' => $buyerTranslationResult['translation_status'],
+                ];
             }
         }
 
@@ -252,6 +275,7 @@ class MessageController extends Controller
             'sender_id' => $user->id,
             'body' => $data['body'] ?? '',
             ...$translation,
+            ...$buyerTranslation,
             'attachment_path' => $data['attachment_path'] ?? null,
             'attachment_url' => $data['attachment_url'] ?? null,
             'attachment_name' => $data['attachment_name'] ?? null,
@@ -366,5 +390,108 @@ class MessageController extends Controller
         return response()->json([
             'data' => ['unread_count' => $count],
         ]);
+    }
+
+    private function refreshBuyerLanguageTranslations(
+        Conversation $conversation,
+        string $buyerLanguage,
+        GoogleCloudTranslationService $translator,
+    ): void {
+        $messages = $conversation->messages()->orderBy('id')->get();
+        $texts = [];
+
+        foreach ($messages as $message) {
+            $hasCurrentBuyerText = $message->buyer_translation_language === $buyerLanguage
+                && $message->buyer_translated_body !== null;
+            $canReuseUrduText = $buyerLanguage === 'ur'
+                && (int) $message->sender_id === (int) $conversation->created_by
+                && ($message->translated_body !== null || $message->translation_status === 'not_needed');
+            if (filled($message->body) && ! $hasCurrentBuyerText && ! $canReuseUrduText) {
+                $texts[] = (string) $message->body;
+            }
+
+            $hasCurrentBuyerTranscript = $message->transcription_buyer_language === $buyerLanguage
+                && $message->transcription_buyer_body !== null;
+            $canReuseStaffTranscript = $buyerLanguage === 'ur'
+                && filled($message->transcription_translated_body);
+            if (filled($message->transcription_body) && ! $hasCurrentBuyerTranscript && ! $canReuseStaffTranscript) {
+                $texts[] = (string) $message->transcription_body;
+            }
+        }
+
+        $uniqueTexts = array_values(array_unique($texts));
+        $translated = $uniqueTexts === [] ? [] : $translator->translateMany($uniqueTexts, $buyerLanguage);
+        $translationByText = $uniqueTexts === [] ? [] : array_combine($uniqueTexts, $translated);
+
+        foreach ($messages as $message) {
+            $updates = [];
+
+            if (filled($message->body)) {
+                $hasCurrentBuyerText = $message->buyer_translation_language === $buyerLanguage
+                    && $message->buyer_translated_body !== null;
+                $canReuseUrduText = $buyerLanguage === 'ur'
+                    && (int) $message->sender_id === (int) $conversation->created_by
+                    && ($message->translated_body !== null || $message->translation_status === 'not_needed');
+                if ($hasCurrentBuyerText) {
+                    $buyerBody = $message->buyer_translated_body;
+                    $buyerStatus = $message->buyer_translation_status;
+                    $sourceLanguage = $message->source_language;
+                } elseif ($canReuseUrduText) {
+                    $buyerBody = $message->translated_body ?? $message->body;
+                    $buyerStatus = $message->translation_status;
+                    $sourceLanguage = $message->source_language;
+                } else {
+                    $result = $translationByText[(string) $message->body]
+                        ?? $translator->translate((string) $message->body, $buyerLanguage);
+                    $buyerBody = $result['translation_status'] === 'not_needed'
+                        ? $message->body
+                        : $result['translated_body'];
+                    $buyerStatus = $result['translation_status'];
+                    $sourceLanguage = $result['source_language'];
+                }
+
+                $updates['buyer_translated_body'] = $buyerBody;
+                $updates['buyer_translation_language'] = $buyerLanguage;
+                $updates['buyer_translation_status'] = $buyerStatus;
+
+                if ((int) $message->sender_id !== (int) $conversation->created_by) {
+                    $updates['translated_body'] = $buyerStatus === 'not_needed' ? null : $buyerBody;
+                    $updates['source_language'] = $sourceLanguage;
+                    $updates['target_language'] = $buyerLanguage;
+                    $updates['translation_status'] = $buyerStatus;
+                }
+            }
+
+            if (filled($message->transcription_body)) {
+                $hasCurrentBuyerTranscript = $message->transcription_buyer_language === $buyerLanguage
+                    && $message->transcription_buyer_body !== null;
+                $canReuseStaffTranscript = $buyerLanguage === 'ur'
+                    && filled($message->transcription_translated_body);
+                if ($hasCurrentBuyerTranscript) {
+                    $transcriptBody = $message->transcription_buyer_body;
+                    $transcriptStatus = $message->transcription_buyer_status;
+                } elseif ($canReuseStaffTranscript) {
+                    $transcriptBody = $message->transcription_translated_body;
+                    $transcriptStatus = 'translated';
+                } else {
+                    $result = $translationByText[(string) $message->transcription_body]
+                        ?? $translator->translate((string) $message->transcription_body, $buyerLanguage);
+                    $transcriptBody = $result['translation_status'] === 'not_needed'
+                        ? $message->transcription_body
+                        : $result['translated_body'];
+                    $transcriptStatus = $result['translation_status'] === 'not_needed'
+                        ? 'transcribed'
+                        : $result['translation_status'];
+                }
+
+                $updates['transcription_buyer_body'] = $transcriptBody;
+                $updates['transcription_buyer_language'] = $buyerLanguage;
+                $updates['transcription_buyer_status'] = $transcriptStatus;
+            }
+
+            if ($updates !== []) {
+                $message->forceFill($updates)->save();
+            }
+        }
     }
 }

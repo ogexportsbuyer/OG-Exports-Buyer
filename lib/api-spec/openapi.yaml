@@ -1597,7 +1597,7 @@ paths:
     patch:
       operationId: updateBuyerSupportLanguage
       tags: [communication]
-      summary: Save the buyer language for support replies
+      summary: Set the buyer language for support messages and voice transcripts
       security: [{ BearerAuth: [] }]
       parameters:
         - { name: conversation, in: path, required: true, schema: { type: string } }

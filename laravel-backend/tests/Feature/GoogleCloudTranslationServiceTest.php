@@ -83,6 +83,36 @@ it('stops before calling Google after the local monthly character limit is reach
     Http::assertSentCount(1);
 });
 
+it('translates a batch once and reserves its combined character count', function () {
+    config([
+        'services.google_cloud.translation_api_key' => 'test-key',
+        'services.google_cloud.translation_enabled' => true,
+        'services.google_cloud.translation_monthly_character_limit' => 400000,
+    ]);
+    Http::fake([
+        'translation.googleapis.com/language/translate/v2*' => Http::response([
+            'data' => [
+                'translations' => [
+                    ['translatedText' => 'مرحبا', 'detectedSourceLanguage' => 'en'],
+                    ['translatedText' => 'شكرا', 'detectedSourceLanguage' => 'en'],
+                ],
+            ],
+        ]),
+    ]);
+
+    $results = $this->service->translateMany(['Hello', 'Thank you'], 'ar');
+
+    expect($results)->toHaveCount(2)
+        ->and($results[0]['translated_body'])->toBe('مرحبا')
+        ->and($results[1]['translated_body'])->toBe('شكرا')
+        ->and(DB::table('google_translation_monthly_usage')->value('characters'))->toBe(14);
+    Http::assertSentCount(1);
+    Http::assertSent(fn ($request) =>
+        $request['q'] === ['Hello', 'Thank you']
+        && $request['target'] === 'ar'
+    );
+});
+
 it('defaults buyer chat language from the buyer country and allows a valid override', function () {
     $buyer = new User();
     $buyer->setRelation('profile', (object) ['country' => 'Pakistan', 'meta' => []]);
@@ -154,7 +184,7 @@ it('does not reuse a stale language fallback cached for another Google key', fun
     Http::assertSentCount(1);
 });
 
-it('lets only the conversation owner save the support reply language', function () {
+it('lets only the owner change chat language and refreshes stored chat and voice translations', function () {
     $buyer = User::factory()->create();
     $otherBuyer = User::factory()->create();
     $conversation = \App\Models\Conversation::query()->create([
@@ -162,6 +192,49 @@ it('lets only the conversation owner save the support reply language', function 
         'created_by' => $buyer->id,
     ]);
     $conversation->participants()->attach([$buyer->id, $otherBuyer->id]);
+    $buyerMessage = \App\Models\Message::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $buyer->id,
+        'body' => 'مرحبا',
+        'translated_body' => 'سلام',
+        'target_language' => 'ur',
+        'translation_status' => 'translated',
+    ]);
+    $adminMessage = \App\Models\Message::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $otherBuyer->id,
+        'body' => 'Hello',
+        'translated_body' => 'مرحبا',
+        'target_language' => 'ar',
+        'translation_status' => 'translated',
+    ]);
+    $voiceMessage = \App\Models\Message::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $buyer->id,
+        'body' => '',
+        'transcription_body' => 'Please send the price list.',
+        'transcription_translated_body' => 'براہ کرم قیمت بھیجیں۔',
+        'transcription_target_language' => 'ur',
+        'transcription_status' => 'translated',
+    ]);
+    config([
+        'services.google_cloud.translation_api_key' => 'test-key',
+        'services.google_cloud.translation_enabled' => true,
+        'services.google_cloud.translation_monthly_character_limit' => 400000,
+    ]);
+    Http::fake(function ($request) {
+        $translations = collect($request['q'])->map(fn ($text) => [
+            'translatedText' => match ($text) {
+                'مرحبا' => 'Bonjour',
+                'Hello' => 'Bonjour',
+                'Please send the price list.' => 'Veuillez envoyer la liste des prix.',
+                default => 'Bonjour',
+            },
+            'detectedSourceLanguage' => $text === 'مرحبا' ? 'ar' : 'en',
+        ])->all();
+
+        return Http::response(['data' => ['translations' => $translations]]);
+    });
 
     $this->actingAs($buyer)
         ->patchJson("/api/conversations/{$conversation->id}/preferences", [
@@ -177,4 +250,13 @@ it('lets only the conversation owner save the support reply language', function 
         ->assertForbidden();
 
     expect($conversation->fresh()->buyer_language)->toBe('fr-CA');
+    expect($buyerMessage->fresh()->translated_body)->toBe('سلام')
+        ->and($buyerMessage->fresh()->buyer_translated_body)->toBe('Bonjour')
+        ->and($buyerMessage->fresh()->buyer_translation_language)->toBe('fr-CA')
+        ->and($adminMessage->fresh()->translated_body)->toBe('Bonjour')
+        ->and($adminMessage->fresh()->target_language)->toBe('fr-CA')
+        ->and($voiceMessage->fresh()->transcription_translated_body)->toBe('براہ کرم قیمت بھیجیں۔')
+        ->and($voiceMessage->fresh()->transcription_buyer_body)->toBe('Veuillez envoyer la liste des prix.')
+        ->and($voiceMessage->fresh()->transcription_buyer_language)->toBe('fr-CA');
+    Http::assertSentCount(1);
 });

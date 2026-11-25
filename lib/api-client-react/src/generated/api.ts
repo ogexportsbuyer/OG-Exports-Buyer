@@ -10417,7 +10417,7 @@ export const getUpdateBuyerSupportLanguageUrl = (conversation: string,) => {
 }
 
 /**
- * @summary Save the buyer language for support replies
+ * @summary Set the buyer language for support messages and voice transcripts
  */
 export const updateBuyerSupportLanguage = async (conversation: string,
     jsonObject: JsonObject, options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
@@ -10484,7 +10484,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateBuyerSupportLanguageMutationVariables = {conversation: string;data: BodyType<JsonObject>}
 
     /**
- * @summary Save the buyer language for support replies
+ * @summary Set the buyer language for support messages and voice transcripts
  */
 export const useUpdateBuyerSupportLanguage = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBuyerSupportLanguage>>, TError,UpdateBuyerSupportLanguageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}

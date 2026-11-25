@@ -81,7 +81,10 @@ it('translates new buyer and support messages toward each recipient language', f
         ->assertJsonPath('data.translated_body', 'اردو ترجمہ')
         ->assertJsonPath('data.source_language', 'ar')
         ->assertJsonPath('data.target_language', 'ur')
-        ->assertJsonPath('data.translation_status', 'translated');
+        ->assertJsonPath('data.translation_status', 'translated')
+        ->assertJsonPath('data.buyer_translated_body', 'Bonjour')
+        ->assertJsonPath('data.buyer_translation_language', 'fr')
+        ->assertJsonPath('data.buyer_translation_status', 'translated');
 
     expect($this->conversation->fresh()->buyer_language)->toBe('fr');
 
@@ -94,7 +97,10 @@ it('translates new buyer and support messages toward each recipient language', f
         ->assertJsonPath('data.translated_body', 'Bonjour')
         ->assertJsonPath('data.source_language', 'ur')
         ->assertJsonPath('data.target_language', 'fr')
-        ->assertJsonPath('data.translation_status', 'translated');
+        ->assertJsonPath('data.translation_status', 'translated')
+        ->assertJsonPath('data.buyer_translated_body', 'Bonjour')
+        ->assertJsonPath('data.buyer_translation_language', 'fr')
+        ->assertJsonPath('data.buyer_translation_status', 'translated');
 
     expect(Message::query()->where('id', $buyerMessage->json('data.id'))->value('body'))
         ->toBe('مرحبا، أحتاج إلى عرض سعر.')

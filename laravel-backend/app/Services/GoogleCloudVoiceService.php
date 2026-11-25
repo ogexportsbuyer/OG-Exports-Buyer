@@ -23,6 +23,9 @@ class GoogleCloudVoiceService
      *   transcription_translated_body:?string,
      *   transcription_source_language:?string,
      *   transcription_target_language:?string,
+     *   transcription_buyer_body:?string,
+     *   transcription_buyer_language:?string,
+     *   transcription_buyer_status:string,
      *   transcription_status:string
      * }
      */
@@ -64,22 +67,22 @@ class GoogleCloudVoiceService
             return $this->transcriptionResult(null, null, null, null, 'buyer_unavailable');
         }
 
-        $sourceLanguage = $translator->buyerLanguage($buyer, $conversation->buyer_language);
-        $sourceLocale = $this->speechLocale($sourceLanguage);
+        $buyerLanguage = $translator->buyerLanguage($buyer, $conversation->buyer_language);
+        $sourceLocale = $this->speechLocale($buyerLanguage);
         if (! $sourceLocale) {
-            return $this->transcriptionResult(null, null, $sourceLanguage, 'ur', 'unsupported_language');
+            return $this->transcriptionResult(null, null, $buyerLanguage, 'ur', 'unsupported_language', $buyerLanguage);
         }
 
         $durationSeconds = $this->audioDurationSeconds($audio, $format['encoding']);
         if ($durationSeconds === null) {
-            return $this->transcriptionResult(null, null, $sourceLanguage, 'ur', 'unsupported_audio_format');
+            return $this->transcriptionResult(null, null, $buyerLanguage, 'ur', 'unsupported_audio_format', $buyerLanguage);
         }
         if ($durationSeconds <= 0 || $durationSeconds > self::MAX_SYNC_AUDIO_SECONDS) {
-            return $this->transcriptionResult(null, null, $sourceLanguage, 'ur', 'audio_too_long');
+            return $this->transcriptionResult(null, null, $buyerLanguage, 'ur', 'audio_too_long', $buyerLanguage);
         }
 
         if (! $this->reserveSpeechSeconds((int) ceil($durationSeconds))) {
-            return $this->transcriptionResult(null, null, $sourceLanguage, 'ur', 'quota_exceeded');
+            return $this->transcriptionResult(null, null, $buyerLanguage, 'ur', 'quota_exceeded', $buyerLanguage);
         }
 
         try {
@@ -97,7 +100,7 @@ class GoogleCloudVoiceService
             ]);
 
             if (! $response->successful()) {
-                return $this->transcriptionResult(null, null, $sourceLanguage, 'ur', 'failed');
+                return $this->transcriptionResult(null, null, $buyerLanguage, 'ur', 'failed', $buyerLanguage);
             }
 
             $transcript = collect($response->json('results', []))
@@ -106,22 +109,45 @@ class GoogleCloudVoiceService
                 ->implode(' ');
 
             if ($transcript === '') {
-                return $this->transcriptionResult(null, null, $sourceLanguage, 'ur', 'no_speech_detected');
+                return $this->transcriptionResult(null, null, $buyerLanguage, 'ur', 'no_speech_detected', $buyerLanguage);
             }
 
-            $translation = $translator->translate($transcript, 'ur');
+            $staffTranslation = $translator->translate($transcript, 'ur');
+            $buyerTranslation = $buyerLanguage === 'ur'
+                ? $staffTranslation
+                : $translator->translate($transcript, $buyerLanguage);
 
-            return $this->transcriptionResult(
-                $transcript,
-                $translation['translated_body'],
-                $sourceLanguage,
-                'ur',
-                $translation['translation_status'] === 'translated'
+            $staffBody = $staffTranslation['translation_status'] === 'not_needed'
+                ? $transcript
+                : $staffTranslation['translated_body'];
+            $buyerBody = $buyerTranslation['translation_status'] === 'not_needed'
+                ? $transcript
+                : $buyerTranslation['translated_body'];
+            $staffStatus = $staffTranslation['translation_status'] === 'not_needed'
+                ? 'transcribed'
+                : $staffTranslation['translation_status'];
+            $buyerStatus = $buyerTranslation['translation_status'] === 'not_needed'
+                ? 'transcribed'
+                : $buyerTranslation['translation_status'];
+
+            return [
+                ...$this->transcriptionResult(
+                    $transcript,
+                    $staffBody,
+                    $buyerLanguage,
+                    'ur',
+                    $staffStatus,
+                    $buyerLanguage
+                ),
+                'transcription_buyer_body' => $buyerBody,
+                'transcription_buyer_language' => $buyerLanguage,
+                'transcription_buyer_status' => $buyerStatus,
+                'transcription_status' => $staffStatus === 'translated' || $buyerStatus === 'translated'
                     ? 'translated'
-                    : ($translation['translation_status'] === 'not_needed' ? 'transcribed' : $translation['translation_status'])
-            );
+                    : 'transcribed',
+            ];
         } catch (Throwable) {
-            return $this->transcriptionResult(null, null, $sourceLanguage, 'ur', 'failed');
+            return $this->transcriptionResult(null, null, $buyerLanguage, 'ur', 'failed', $buyerLanguage);
         }
     }
 
@@ -130,13 +156,17 @@ class GoogleCloudVoiceService
         ?string $translatedText,
         ?string $sourceLanguage,
         ?string $targetLanguage,
-        string $status
+        string $status,
+        ?string $buyerLanguage = null
     ): array {
         return [
             'transcription_body' => $sourceText,
             'transcription_translated_body' => $translatedText,
             'transcription_source_language' => $sourceLanguage,
             'transcription_target_language' => $targetLanguage,
+            'transcription_buyer_body' => null,
+            'transcription_buyer_language' => $buyerLanguage,
+            'transcription_buyer_status' => $status,
             'transcription_status' => $status,
         ];
     }

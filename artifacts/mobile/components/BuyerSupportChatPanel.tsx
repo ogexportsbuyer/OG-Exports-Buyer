@@ -17,6 +17,7 @@ import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/components/LocalizedText';
 import { useColors } from '@/hooks/useColors';
 import { MAX_BUYER_CHAT_ATTACHMENTS } from '@/lib/upload-rules';
+import { supportTextForSelectedLanguage } from '@/lib/buyer-support-chat-language';
 
 export type BuyerSupportMessage = {
   id: string;
@@ -33,8 +34,16 @@ export type BuyerSupportMessage = {
   sourceLanguage?: string;
   targetLanguage?: string;
   translationStatus?: string;
+  buyerTranslatedBody?: string;
+  buyerTranslationLanguage?: string;
+  buyerTranslationStatus?: string;
   transcriptionBody?: string;
   transcriptionTranslatedBody?: string;
+  transcriptionSourceLanguage?: string;
+  transcriptionTargetLanguage?: string;
+  transcriptionBuyerBody?: string;
+  transcriptionBuyerLanguage?: string;
+  transcriptionBuyerStatus?: string;
   transcriptionStatus?: string;
 };
 
@@ -69,11 +78,14 @@ export type BuyerSupportChatPanelProps = {
   onStartRecording: () => void;
   onStopRecording: () => void;
   onPlayAudio: (url: string) => void;
+  onSpeakText: (text: string, language: string, messageKey: string) => void;
+  speakingMessageKey: string | null;
   onOpenMedia: (url: string) => void;
   playingAudioUrl: string | null;
   audioPlaying: boolean;
   audioProgress: number;
   buyerLanguage: string;
+  languageUpdating: boolean;
   buyerLanguages: BuyerSupportLanguage[];
   onBuyerLanguageChange: (language: string) => void;
   voiceTranslationEnabled: boolean;
@@ -117,11 +129,14 @@ export function BuyerSupportChatPanel({
   onStartRecording,
   onStopRecording,
   onPlayAudio,
+  onSpeakText,
+  speakingMessageKey,
   onOpenMedia,
   playingAudioUrl,
   audioPlaying,
   audioProgress,
   buyerLanguage,
+  languageUpdating,
   buyerLanguages,
   onBuyerLanguageChange,
   voiceTranslationEnabled,
@@ -164,6 +179,38 @@ export function BuyerSupportChatPanel({
     const own = item.own;
     const isActive = Boolean(item.attachmentUrl && playingAudioUrl === item.attachmentUrl);
     const isPlaying = isActive && audioPlaying;
+    const selectedBody = supportTextForSelectedLanguage({
+      original: item.body,
+      selectedTranslation: item.buyerTranslatedBody,
+      selectedLanguage: item.buyerTranslationLanguage,
+      legacyTranslation: item.translatedBody,
+      legacyLanguage: item.targetLanguage,
+      language: buyerLanguage,
+    });
+    const translatedBody = selectedBody && selectedBody !== item.body ? selectedBody : undefined;
+    const selectedTranscript = supportTextForSelectedLanguage({
+      original: item.transcriptionBody,
+      selectedTranslation: item.transcriptionBuyerBody,
+      selectedLanguage: item.transcriptionBuyerLanguage,
+      legacyTranslation: item.transcriptionTranslatedBody,
+      legacyLanguage: item.transcriptionTargetLanguage,
+      language: buyerLanguage,
+    });
+    const translatedTranscript = selectedTranscript && selectedTranscript !== item.transcriptionBody
+      ? selectedTranscript
+      : undefined;
+    const transcript = selectedTranscript || item.transcriptionBody;
+    const transcriptLanguage = translatedTranscript
+      ? buyerLanguage
+      : item.transcriptionSourceLanguage || item.sourceLanguage || buyerLanguage;
+    const translatedMessageKey = `message:${item.id}`;
+    const transcriptMessageKey = `transcript:${item.id}`;
+    const languageName = (code: string) => {
+      const normalizedCode = code.toLowerCase();
+      return buyerLanguages.find((language) => language.code.toLowerCase() === normalizedCode)?.name
+        ?? buyerLanguages.find((language) => language.code.toLowerCase() === normalizedCode.split('-')[0])?.name
+        ?? code.toUpperCase();
+    };
     const bubbleColor = own ? colors.lightGreen : colors.card;
     return (
       <View style={[styles.messageRow, { justifyContent: own ? 'flex-end' : 'flex-start' }]}>
@@ -185,18 +232,39 @@ export function BuyerSupportChatPanel({
           {item.body ? (
             <>
               <Text style={[styles.messageBody, { color: colors.foreground }]}>
-                {!own && item.translatedBody ? item.translatedBody : item.body}
+                {translatedBody || item.body}
               </Text>
-              {!own && item.translatedBody && item.body !== item.translatedBody ? (
-                <Text style={[styles.originalBody, { color: colors.mutedForeground }]}>
-                  Original · {item.body}
-                </Text>
+              {translatedBody && item.body !== translatedBody ? (
+                <>
+                  <Text style={[styles.originalBody, { color: colors.mutedForeground }]}>
+                    Original · {item.body}
+                  </Text>
+                  <Pressable
+                    testID={`buyer-chat-speak-message-${item.id}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={speakingMessageKey === translatedMessageKey
+                      ? 'Stop translated reply audio'
+                      : `Listen to translated reply in ${languageName(buyerLanguage)}`}
+                    accessibilityState={{ selected: speakingMessageKey === translatedMessageKey }}
+                    onPress={() => onSpeakText(translatedBody, buyerLanguage, translatedMessageKey)}
+                    style={styles.speechButton}
+                  >
+                    <Feather
+                      name={speakingMessageKey === translatedMessageKey ? 'volume-x' : 'volume-2'}
+                      size={14}
+                      color={colors.primary}
+                    />
+                    <Text style={[styles.speechButtonText, { color: colors.primary }]}>
+                      {speakingMessageKey === translatedMessageKey ? 'Stop audio' : 'Listen'}
+                    </Text>
+                  </Pressable>
+                </>
               ) : null}
-              {!own && !item.translatedBody && item.translationStatus && !['not_needed', 'translated'].includes(item.translationStatus) ? (
+              {!translatedBody && (item.buyerTranslationStatus || item.translationStatus) && !['not_needed', 'translated'].includes(item.buyerTranslationStatus || item.translationStatus || '') ? (
                 <Text style={[styles.translationStatus, { color: colors.mutedForeground }]}>
-                  {item.translationStatus === 'quota_exceeded'
+                  {(item.buyerTranslationStatus || item.translationStatus) === 'quota_exceeded'
                     ? 'Monthly translation limit reached; showing original.'
-                    : item.translationStatus === 'disabled' || item.translationStatus === 'not_configured'
+                    : (item.buyerTranslationStatus || item.translationStatus) === 'disabled' || (item.buyerTranslationStatus || item.translationStatus) === 'not_configured'
                       ? 'Translation setup is pending; showing original.'
                       : 'Translation unavailable; showing original.'}
                 </Text>
@@ -259,21 +327,53 @@ export function BuyerSupportChatPanel({
                   {item.transcriptionBody ? (
                     <>
                       <Text style={{ color: colors.primary, fontSize: 10, fontWeight: '700', letterSpacing: 0.6 }}>
-                        {item.transcriptionTranslatedBody ? 'URDU TRANSLATION' : 'VOICE TRANSCRIPT'}
+                        {translatedTranscript
+                          ? `${languageName(buyerLanguage).toLocaleUpperCase()} VOICE TRANSCRIPT`
+                          : 'VOICE TRANSCRIPT'}
                       </Text>
                       <Text style={{ color: colors.foreground, fontSize: 12, lineHeight: 18, marginTop: 4 }}>
-                        {item.transcriptionTranslatedBody || item.transcriptionBody}
+                        {transcript}
                       </Text>
-                      {item.transcriptionTranslatedBody && item.transcriptionTranslatedBody !== item.transcriptionBody ? (
+                      {transcript ? (
+                        <Pressable
+                          testID={`buyer-chat-speak-transcript-${item.id}`}
+                          accessibilityRole="button"
+                          accessibilityLabel={speakingMessageKey === transcriptMessageKey
+                            ? 'Stop transcript audio'
+                            : `Listen to transcript in ${languageName(transcriptLanguage)}`}
+                          accessibilityState={{ selected: speakingMessageKey === transcriptMessageKey }}
+                          onPress={() => onSpeakText(transcript, transcriptLanguage, transcriptMessageKey)}
+                          style={styles.speechButton}
+                        >
+                          <Feather
+                            name={speakingMessageKey === transcriptMessageKey ? 'volume-x' : 'volume-2'}
+                            size={14}
+                            color={colors.primary}
+                          />
+                          <Text style={[styles.speechButtonText, { color: colors.primary }]}>
+                            {speakingMessageKey === transcriptMessageKey ? 'Stop audio' : 'Listen'}
+                          </Text>
+                        </Pressable>
+                      ) : null}
+                      {translatedTranscript && translatedTranscript !== item.transcriptionBody ? (
                         <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginTop: 5 }}>
                           Original · {item.transcriptionBody}
+                        </Text>
+                      ) : null}
+                      {!translatedTranscript && item.transcriptionBuyerStatus && !['not_needed', 'transcribed', 'translated'].includes(item.transcriptionBuyerStatus) ? (
+                        <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginTop: 5 }}>
+                          {item.transcriptionBuyerStatus === 'quota_exceeded'
+                            ? 'Monthly translation limit reached; showing the original transcript.'
+                            : item.transcriptionBuyerStatus === 'disabled' || item.transcriptionBuyerStatus === 'not_configured'
+                              ? 'Translation setup is pending; showing the original transcript.'
+                              : 'Translation unavailable; showing the original transcript.'}
                         </Text>
                       ) : null}
                     </>
                   ) : null}
                   {item.transcriptionStatus === 'not_requested' && !voiceTranslationEnabled ? (
                     <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16 }}>
-                      This note was sent as audio only. Turn on voice translation to add an Urdu transcript.
+                      This note was sent as audio only. Turn on voice translation to add a translated transcript.
                     </Text>
                   ) : null}
                   {item.transcriptionStatus && !['translated', 'transcribed', 'not_requested'].includes(item.transcriptionStatus) ? (
@@ -347,14 +447,18 @@ export function BuyerSupportChatPanel({
         <Pressable
           testID="buyer-chat-reply-language"
           accessibilityRole="button"
-          accessibilityLabel={`Choose reply language. Current: ${buyerLanguages.find(language => language.code === buyerLanguage)?.name ?? buyerLanguage}`}
+          accessibilityLabel={`Choose chat language. Current: ${buyerLanguages.find(language => language.code === buyerLanguage)?.name ?? buyerLanguage}`}
+          accessibilityState={{ disabled: languageUpdating, busy: languageUpdating }}
+          disabled={languageUpdating}
           onPress={() => setLanguagePickerOpen(true)}
           style={[styles.languageButton, { backgroundColor: colors.secondary, borderColor: colors.border }]}
         >
-          <Text style={[styles.languageButtonText, { color: colors.primary }]}>
-            {buyerLanguages.find(language => language.code === buyerLanguage)?.name ?? buyerLanguage.toUpperCase()}
-          </Text>
-          <Feather name="chevron-down" size={14} color={colors.primary} />
+          {languageUpdating
+            ? <ActivityIndicator size="small" color={colors.primary} />
+            : <Text style={[styles.languageButtonText, { color: colors.primary }]}>
+                {buyerLanguages.find(language => language.code === buyerLanguage)?.name ?? buyerLanguage.toUpperCase()}
+              </Text>}
+          {!languageUpdating ? <Feather name="chevron-down" size={14} color={colors.primary} /> : null}
         </Pressable>
       </View>
       <View style={{ paddingHorizontal: 14, paddingTop: 7, paddingBottom: 2 }}>
@@ -385,7 +489,7 @@ export function BuyerSupportChatPanel({
           <View style={[styles.languageModal, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.languageModalHeader}>
               <View style={styles.languageModalTitleGroup}>
-                <Text style={[styles.languageModalTitle, { color: colors.foreground }]}>Reply language</Text>
+                <Text style={[styles.languageModalTitle, { color: colors.foreground }]}>Chat language</Text>
                 <Text style={[styles.languageModalSubtitle, { color: colors.mutedForeground }]}>
                   Support replies will be translated into this language.
                 </Text>
@@ -404,7 +508,7 @@ export function BuyerSupportChatPanel({
             />
             <ScrollView style={styles.languageList} keyboardShouldPersistTaps="handled">
               {visibleLanguages.map((language) => {
-                const selected = language.code === buyerLanguage;
+                const selected = language.code.toLowerCase() === buyerLanguage.toLowerCase();
                 return (
                   <Pressable
                     key={language.code}
@@ -714,6 +818,8 @@ const styles = StyleSheet.create({
   messageBody: { fontSize: 14, lineHeight: 20 },
   originalBody: { marginTop: 5, fontSize: 11, lineHeight: 16 },
   translationStatus: { marginTop: 5, fontSize: 10, lineHeight: 14, fontStyle: 'italic' },
+  speechButton: { alignSelf: 'flex-start', minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3, paddingVertical: 5, paddingRight: 10 },
+  speechButtonText: { fontSize: 11, fontWeight: '700' },
   imagePressable: { marginTop: 7, overflow: 'hidden', borderRadius: 12 },
   messageImage: { width: '100%', height: 190, borderRadius: 12, backgroundColor: 'transparent' },
   audioMessage: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8, padding: 10, borderRadius: 14 },

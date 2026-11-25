@@ -2465,7 +2465,7 @@ export const GetBuyerSupportTranslationLanguagesResponse = zod.record(zod.string
 
 
 /**
- * @summary Save the buyer language for support replies
+ * @summary Set the buyer language for support messages and voice transcripts
  */
 export const UpdateBuyerSupportLanguageParams = zod.object({
   "conversation": zod.coerce.string()

@@ -14,6 +14,7 @@ import {
   useAudioRecorder,
   useAudioRecorderState,
 } from 'expo-audio';
+import * as Speech from 'expo-speech';
 import {
   useGetBuyerSupportTranslationLanguages,
   useSendInvestorConversationMessage,
@@ -33,6 +34,9 @@ import { first, list, messageOf, record, type Json } from '@/lib/data';
 import {
   defaultSupportLanguageForCountry,
   FALLBACK_SUPPORT_LANGUAGES,
+  matchSupportSpeechVoice,
+  supportLanguageLabel,
+  supportSpeechLocale,
   type SupportLanguage,
 } from '@/lib/support-languages';
 import { motionHaptic } from '@/lib/motion';
@@ -140,7 +144,7 @@ function normalizedMessages(rawMessages: Json[], ownId: string, apiOrigin: strin
     return {
       id: first(item, ['id'], `${createdAt}-${index}`),
       own,
-      senderLabel: own ? 'You' : 'OG Exports Support',
+      senderLabel: own ? 'You' : 'Support',
       body: first(item, ['message', 'body', 'content'], ''),
       createdAt,
       attachmentUrl: resolvedUrl || undefined,
@@ -151,8 +155,16 @@ function normalizedMessages(rawMessages: Json[], ownId: string, apiOrigin: strin
       sourceLanguage: first(item, ['source_language'], '') || undefined,
       targetLanguage: first(item, ['target_language'], '') || undefined,
       translationStatus: first(item, ['translation_status'], '') || undefined,
+      buyerTranslatedBody: first(item, ['buyer_translated_body'], '') || undefined,
+      buyerTranslationLanguage: first(item, ['buyer_translation_language'], '') || undefined,
+      buyerTranslationStatus: first(item, ['buyer_translation_status'], '') || undefined,
       transcriptionBody: first(item, ['transcription_body'], '') || undefined,
       transcriptionTranslatedBody: first(item, ['transcription_translated_body'], '') || undefined,
+      transcriptionSourceLanguage: first(item, ['transcription_language', 'transcription_source_language'], '') || undefined,
+      transcriptionTargetLanguage: first(item, ['transcription_target_language'], '') || undefined,
+      transcriptionBuyerBody: first(item, ['transcription_buyer_body'], '') || undefined,
+      transcriptionBuyerLanguage: first(item, ['transcription_buyer_language'], '') || undefined,
+      transcriptionBuyerStatus: first(item, ['transcription_buyer_status'], '') || undefined,
       transcriptionStatus: first(item, ['transcription_status'], '') || undefined,
     };
   }).sort((left, right) => {
@@ -198,6 +210,7 @@ export function BuyerSupportChatExperience({
     [languagesQuery.data],
   );
   const [buyerLanguage, setBuyerLanguage] = useState(defaultBuyerLanguage);
+  const [languageUpdating, setLanguageUpdating] = useState(false);
   const updateBuyerLanguage = useUpdateBuyerSupportLanguage();
   const updateVoiceConsent = useUpdateBuyerVoiceTranslationConsent();
   const transcribeVoiceMessage = useTranscribeBuyerVoiceMessage();
@@ -218,6 +231,9 @@ export function BuyerSupportChatExperience({
   const [voiceTranslationEnabled, setVoiceTranslationEnabled] = useState(voiceTranslationConsented);
   const [voiceTranslationBusy, setVoiceTranslationBusy] = useState(false);
   const [transcribingMessageId, setTranscribingMessageId] = useState<string | null>(null);
+  const [speakingMessageKey, setSpeakingMessageKey] = useState<string | null>(null);
+  const speakingMessageKeyRef = useRef<string | null>(null);
+  const speechRequestRef = useRef(0);
   const autoStopRequested = useRef(false);
   const normalized = useMemo(() => normalizedMessages(messages, ownId, apiOrigin), [messages, ownId, apiOrigin]);
 
@@ -241,6 +257,12 @@ export function BuyerSupportChatExperience({
   useEffect(() => {
     if (playerStatus.didJustFinish) setPlayingAudioUrl(null);
   }, [playerStatus.didJustFinish]);
+
+  useEffect(() => () => {
+    speechRequestRef.current += 1;
+    speakingMessageKeyRef.current = null;
+    void Speech.stop();
+  }, []);
 
   useEffect(() => {
     setVoiceTranslationEnabled(voiceTranslationConsented);
@@ -615,6 +637,10 @@ export function BuyerSupportChatExperience({
 
   async function playAudio(url: string) {
     try {
+      speechRequestRef.current += 1;
+      speakingMessageKeyRef.current = null;
+      setSpeakingMessageKey(null);
+      await Speech.stop();
       await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
       if (playingAudioUrl === url) {
         if (playerStatus.playing) {
@@ -629,6 +655,75 @@ export function BuyerSupportChatExperience({
       player.play();
     } catch (err) {
       setActionError(messageOf(err));
+    }
+  }
+
+  async function speakText(text: string, language: string, messageKey: string) {
+    if (!text.trim()) return;
+
+    const requestId = speechRequestRef.current + 1;
+    speechRequestRef.current = requestId;
+    setActionError('');
+
+    if (speakingMessageKeyRef.current === messageKey) {
+      speakingMessageKeyRef.current = null;
+      setSpeakingMessageKey(null);
+      await Speech.stop();
+      return;
+    }
+
+    speakingMessageKeyRef.current = messageKey;
+    setSpeakingMessageKey(messageKey);
+    if (playingAudioUrl) {
+      player.pause();
+      setPlayingAudioUrl(null);
+    }
+
+    const clearSpeakingState = () => {
+      if (speechRequestRef.current === requestId) {
+        speakingMessageKeyRef.current = null;
+        setSpeakingMessageKey(null);
+      }
+    };
+
+    try {
+      await Speech.stop();
+      const voices = await Speech.getAvailableVoicesAsync();
+      if (speechRequestRef.current !== requestId) return;
+
+      const voice = matchSupportSpeechVoice(voices, language);
+      if (Platform.OS !== 'web' && voices.length === 0) {
+        clearSpeakingState();
+        setActionError('This phone has no available text-to-speech voice engine. The translated text is still available.');
+        return;
+      }
+      if (voices.length > 0 && !voice) {
+        clearSpeakingState();
+        const setupHint = Platform.OS === 'android'
+          ? ' Install this language in Android Settings > Text-to-speech output.'
+          : ' Install a voice for this language in iPhone Settings > Accessibility > Spoken Content.';
+        setActionError(`No ${supportLanguageLabel(language, buyerLanguages)} voice is installed.${setupHint} The translated text is still available.`);
+        return;
+      }
+
+      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+      if (speechRequestRef.current !== requestId) return;
+      Speech.speak(text, {
+        language: voice?.language || supportSpeechLocale(language),
+        ...(voice ? { voice: voice.identifier } : {}),
+        rate: 0.94,
+        onDone: clearSpeakingState,
+        onStopped: clearSpeakingState,
+        onError: () => {
+          clearSpeakingState();
+          setActionError(Platform.OS === 'android'
+            ? 'Android could not play this language. Check Text-to-speech output and install its voice data; the translated text remains available.'
+            : 'This device could not play the selected language. The translated text remains available.');
+        },
+      });
+    } catch {
+      clearSpeakingState();
+      setActionError('The device could not start speech playback. The translated text is still available.');
     }
   }
 
@@ -664,18 +759,28 @@ export function BuyerSupportChatExperience({
   }
 
   async function changeBuyerLanguage(language: string) {
-    setBuyerLanguage(language);
-    await AsyncStorage.setItem(languageStorageKey, language).catch(() => {
-      setActionError('Your reply language could not be saved on this device.');
-    });
+    if (languageUpdating || language.toLowerCase() === buyerLanguage.toLowerCase()) return;
+    setLanguageUpdating(true);
+    setActionError('');
+    speechRequestRef.current += 1;
+    speakingMessageKeyRef.current = null;
+    setSpeakingMessageKey(null);
+    await Speech.stop();
+
     try {
       await updateBuyerLanguage.mutateAsync({
         conversation: conversationId,
         data: { buyer_language: language },
       });
+      setBuyerLanguage(language);
+      await AsyncStorage.setItem(languageStorageKey, language).catch(() => {
+        setActionError('Your language changed, but could not be saved on this device.');
+      });
       onSent();
-    } catch {
-      setActionError('Your language is saved on this device, but could not sync to your account.');
+    } catch (err) {
+      setActionError(`Your language was not changed. ${messageOf(err)}`);
+    } finally {
+      setLanguageUpdating(false);
     }
   }
 
@@ -707,11 +812,14 @@ export function BuyerSupportChatExperience({
       onStartRecording={() => void startRecording()}
       onStopRecording={() => void stopRecording()}
       onPlayAudio={(url) => void playAudio(url)}
+      onSpeakText={(text, language, messageKey) => void speakText(text, language, messageKey)}
+      speakingMessageKey={speakingMessageKey}
       onOpenMedia={(url) => void openMedia(url)}
       playingAudioUrl={playingAudioUrl}
       audioPlaying={Boolean(playingAudioUrl && playerStatus.playing)}
       audioProgress={progress}
       buyerLanguage={buyerLanguage}
+      languageUpdating={languageUpdating}
       buyerLanguages={buyerLanguages}
       onBuyerLanguageChange={(language) => void changeBuyerLanguage(language)}
       voiceTranslationEnabled={voiceTranslationEnabled}

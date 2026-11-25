@@ -40,15 +40,17 @@ function actionFeedback() {
   motionHaptic('action');
 }
 
-export function Screen({ title, subtitle, children, action, scrollable = true, refreshable = false, hideHeader = false, edgeToEdgeContent = false }: {
+export function Screen({ title, subtitle, children, action, headerLeading, scrollable = true, refreshable = false, hideHeader = false, edgeToEdgeContent = false, safeAreaTop = false }: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
   action?: React.ReactNode;
+  headerLeading?: React.ReactNode;
   scrollable?: boolean;
   refreshable?: boolean;
   hideHeader?: boolean;
   edgeToEdgeContent?: boolean;
+  safeAreaTop?: boolean;
 }) {
   const colors = useColors();
   const tabBarBehavior = useTabBarBehavior();
@@ -64,7 +66,9 @@ export function Screen({ title, subtitle, children, action, scrollable = true, r
     ? 67
     : Platform.OS === 'android'
       ? insets.top
-      : isHeaderlessTabRoute ? Math.max(20, insets.top - 4) : 0;
+      : isHeaderlessTabRoute
+        ? Math.max(20, insets.top - 4)
+        : safeAreaTop ? insets.top + 8 : 0;
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = React.useState(false);
   const refresh = React.useCallback(async () => {
@@ -79,12 +83,22 @@ export function Screen({ title, subtitle, children, action, scrollable = true, r
   }, [queryClient, refreshable, refreshing]);
   const header = (
     <MotionReveal testID="screen-header-reveal">
-    <View style={[s.header, Platform.OS === 'ios' ? { marginBottom: 16 } : undefined]}>
+    <View style={[
+      s.header,
+      Platform.OS === 'ios' ? { marginBottom: 16 } : undefined,
+      headerLeading ? { flexDirection: 'column', alignItems: 'stretch' } : undefined,
+    ]}>
+      {headerLeading ? (
+        <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14 }}>
+          {headerLeading}
+          {action}
+        </View>
+      ) : null}
       <View style={{ flex: 1 }}>
         <Text style={[s.title, { color: colors.foreground }]}>{title}</Text>
         {subtitle ? <Text style={[s.subtitle, { color: colors.mutedForeground }]}>{subtitle}</Text> : null}
       </View>
-      {action}
+      {!headerLeading ? action : null}
     </View>
     </MotionReveal>
   );
