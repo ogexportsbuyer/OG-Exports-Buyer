@@ -41,11 +41,6 @@ class GoogleCloudVoiceService
         }
 
         $mime = strtolower((string) $message->attachment_mime);
-        $format = $this->recognitionFormat($mime, (string) $message->attachment_name);
-        if (! $format) {
-            return $this->transcriptionResult(null, null, null, null, 'unsupported_audio_format');
-        }
-
         $absolutePath = MediaStorage::absolutePath($message->attachment_path);
         if (! $absolutePath || ! is_file($absolutePath)) {
             return $this->transcriptionResult(null, null, null, null, 'audio_unavailable');
@@ -57,7 +52,12 @@ class GoogleCloudVoiceService
         }
 
         $audio = file_get_contents($absolutePath);
-        if (! is_string($audio) || ! $this->matchesAudioFormat($audio, $format['encoding'])) {
+        if (! is_string($audio)) {
+            return $this->transcriptionResult(null, null, null, null, 'unsupported_audio_format');
+        }
+
+        $format = $this->recognitionFormat($mime, (string) $message->attachment_name, $audio);
+        if (! $format || ! $this->matchesAudioFormat($audio, $format['encoding'])) {
             return $this->transcriptionResult(null, null, null, null, 'unsupported_audio_format');
         }
 
@@ -171,18 +171,36 @@ class GoogleCloudVoiceService
         ];
     }
 
-    private function recognitionFormat(string $mime, string $name): ?array
+    private function recognitionFormat(string $mime, string $name, string $bytes): ?array
     {
         $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+
+        if (str_starts_with($bytes, "#!AMR-WB\n")) {
+            return ['encoding' => 'AMR_WB', 'sample_rate' => 16000];
+        }
+        if (str_starts_with($bytes, "#!AMR\n")) {
+            return ['encoding' => 'AMR', 'sample_rate' => 8000];
+        }
+        if (str_starts_with($bytes, 'OggS') && str_contains($bytes, 'OpusHead')) {
+            return ['encoding' => 'OGG_OPUS', 'sample_rate' => 48000];
+        }
 
         return match (true) {
             $mime === 'audio/wav' || $mime === 'audio/x-wav' || $extension === 'wav' => [
                 'encoding' => 'LINEAR16',
                 'sample_rate' => 16000,
             ],
+            $mime === 'audio/amr-wb' || $extension === 'awb' => [
+                'encoding' => 'AMR_WB',
+                'sample_rate' => 16000,
+            ],
             $mime === 'audio/amr' || $extension === 'amr' => [
                 'encoding' => 'AMR',
                 'sample_rate' => 8000,
+            ],
+            $mime === 'audio/ogg' || $mime === 'application/ogg' || $extension === 'ogg' || $extension === 'opus' => [
+                'encoding' => 'OGG_OPUS',
+                'sample_rate' => 48000,
             ],
             $mime === 'audio/webm' || str_starts_with($mime, 'audio/webm;') || $extension === 'webm' => [
                 'encoding' => 'WEBM_OPUS',
@@ -199,6 +217,8 @@ class GoogleCloudVoiceService
                 && substr($bytes, 0, 4) === 'RIFF'
                 && substr($bytes, 8, 4) === 'WAVE',
             'AMR' => str_starts_with($bytes, '#!AMR'),
+            'AMR_WB' => str_starts_with($bytes, "#!AMR-WB\n"),
+            'OGG_OPUS' => str_starts_with($bytes, 'OggS') && str_contains($bytes, 'OpusHead'),
             'WEBM_OPUS' => str_starts_with($bytes, "\x1A\x45\xDF\xA3"),
             default => false,
         };
@@ -233,9 +253,17 @@ class GoogleCloudVoiceService
             return null;
         }
 
-        if ($encoding === 'AMR') {
-            $frameBytes = [12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 1];
-            $offset = 6;
+        if ($encoding === 'AMR' || $encoding === 'AMR_WB') {
+            $isWideband = $encoding === 'AMR_WB';
+            $frameBytes = $isWideband
+                ? [18, 24, 33, 37, 41, 47, 51, 59, 61, 6, 0, 0, 0, 0, 0, 1]
+                : [12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 1];
+            $offset = $isWideband ? 9 : 6;
+            $header = $isWideband ? "#!AMR-WB\n" : '#!AMR\n';
+            if (! str_starts_with($bytes, $header)) {
+                return null;
+            }
+
             $frames = 0;
             $length = strlen($bytes);
 
@@ -253,11 +281,65 @@ class GoogleCloudVoiceService
             return $frames * 0.02;
         }
 
+        if ($encoding === 'OGG_OPUS') {
+            return $this->oggOpusDurationSeconds($bytes);
+        }
+
         if ($encoding === 'WEBM_OPUS') {
             return $this->webmDurationSeconds($bytes);
         }
 
         return null;
+    }
+
+    private function oggOpusDurationSeconds(string $bytes): ?float
+    {
+        if (! str_starts_with($bytes, 'OggS') || ! str_contains($bytes, 'OpusHead')) {
+            return null;
+        }
+
+        $length = strlen($bytes);
+        $offset = 0;
+        $lastGranule = null;
+
+        while ($offset < $length) {
+            if ($offset + 27 > $length || substr($bytes, $offset, 4) !== 'OggS' || ord($bytes[$offset + 4]) !== 0) {
+                return null;
+            }
+
+            $granule = unpack('Vlow/Vhigh', substr($bytes, $offset + 6, 8));
+            if (! is_array($granule)) {
+                return null;
+            }
+            $low = (int) ($granule['low'] ?? 0);
+            $high = (int) ($granule['high'] ?? 0);
+            if (! ($low === 0xFFFFFFFF && $high === 0xFFFFFFFF)) {
+                if ($high !== 0) {
+                    return null;
+                }
+                $lastGranule = $low;
+            }
+
+            $segmentCount = ord($bytes[$offset + 26]);
+            $lacingOffset = $offset + 27;
+            if ($lacingOffset + $segmentCount > $length) {
+                return null;
+            }
+
+            $payloadLength = 0;
+            for ($index = 0; $index < $segmentCount; $index++) {
+                $payloadLength += ord($bytes[$lacingOffset + $index]);
+            }
+            $pageEnd = $lacingOffset + $segmentCount + $payloadLength;
+            if ($pageEnd > $length) {
+                return null;
+            }
+            $offset = $pageEnd;
+        }
+
+        return $lastGranule !== null && $lastGranule > 0
+            ? $lastGranule / 48000
+            : null;
     }
 
     private function webmDurationSeconds(string $bytes): ?float

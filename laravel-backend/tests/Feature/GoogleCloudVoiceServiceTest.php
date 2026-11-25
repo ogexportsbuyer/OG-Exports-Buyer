@@ -80,6 +80,33 @@ beforeEach(function () {
             'created_at' => now(),
         ]);
     };
+    $this->makeRawVoiceMessage = function (
+        User $buyer,
+        Conversation $conversation,
+        string $name,
+        string $mime,
+        string $bytes
+    ): Message {
+        $relativeDirectory = 'upload/messages/'.$buyer->id.'/voice-test-'.bin2hex(random_bytes(5));
+        $absoluteDirectory = public_path($relativeDirectory);
+        if (! is_dir($absoluteDirectory)) {
+            mkdir($absoluteDirectory, 0755, true);
+        }
+        $path = $relativeDirectory.'/'.$name;
+        file_put_contents(public_path($path), $bytes);
+        $this->voiceTestFiles[] = public_path($path);
+
+        return Message::query()->create([
+            'conversation_id' => $conversation->id,
+            'sender_id' => $buyer->id,
+            'body' => '',
+            'attachment_path' => $path,
+            'attachment_url' => '/'.$path,
+            'attachment_name' => $name,
+            'attachment_mime' => $mime,
+            'created_at' => now(),
+        ]);
+    };
 });
 
 afterEach(function () {
@@ -276,6 +303,75 @@ it('supports web voice notes and reserves their measured seconds', function () {
     Http::assertSent(fn ($request) =>
         str_contains($request->url(), 'speech.googleapis.com')
         && $request['config']['encoding'] === 'WEBM_OPUS'
+        && $request['config']['sampleRateHertz'] === 48000
+    );
+    expect(DB::table('google_speech_monthly_usage')->value('speech_seconds_reserved'))->toBe(2);
+});
+
+it('transcribes AMR wideband and Ogg Opus voice notes', function () {
+    config([
+        'services.google_cloud.speech_api_key' => 'test-speech-key',
+        'services.google_cloud.speech_enabled' => true,
+        'services.google_cloud.speech_monthly_minutes' => 50,
+        'services.google_cloud.translation_enabled' => false,
+    ]);
+    Http::fake([
+        'speech.googleapis.com/*' => Http::response([
+            'results' => [['alternatives' => [['transcript' => 'Hello there.']]]],
+        ]),
+    ]);
+
+    $buyer = ($this->makeBuyer)();
+    $conversation = ($this->makeConversation)($buyer);
+    $amrWideband = "#!AMR-WB\n".str_repeat("\x04".str_repeat("\0", 17), 50);
+    $amrMessage = ($this->makeRawVoiceMessage)(
+        $buyer,
+        $conversation,
+        'voice.awb',
+        'audio/amr-wb',
+        $amrWideband
+    );
+
+    $oggPage = static function (string $payload, int $granule, int $sequence, int $flags): string {
+        return 'OggS'
+            .chr(0)
+            .chr($flags)
+            .pack('V2', $granule, 0)
+            .pack('V', 1)
+            .pack('V', $sequence)
+            .pack('V', 0)
+            .chr(1)
+            .chr(strlen($payload))
+            .$payload;
+    };
+    $opusHead = 'OpusHead'.chr(1).chr(1).pack('v', 0).pack('V', 48000).pack('v', 0).chr(0);
+    $oggOpus = $oggPage($opusHead, 0, 0, 2).$oggPage("\x00", 48000, 1, 4);
+    $oggMessage = ($this->makeRawVoiceMessage)(
+        $buyer,
+        $conversation,
+        'voice.ogg',
+        'audio/ogg',
+        $oggOpus
+    );
+
+    $this->actingAs($buyer)
+        ->patchJson("/api/conversations/{$conversation->id}/voice-translation-consent", ['enabled' => true])
+        ->assertOk();
+
+    $this->postJson("/api/conversations/{$conversation->id}/messages/{$amrMessage->id}/transcription")
+        ->assertOk()
+        ->assertJsonPath('data.transcription_status', 'transcribed');
+    $this->postJson("/api/conversations/{$conversation->id}/messages/{$oggMessage->id}/transcription")
+        ->assertOk()
+        ->assertJsonPath('data.transcription_status', 'transcribed');
+
+    Http::assertSentCount(2);
+    Http::assertSent(fn ($request) =>
+        $request['config']['encoding'] === 'AMR_WB'
+        && $request['config']['sampleRateHertz'] === 16000
+    );
+    Http::assertSent(fn ($request) =>
+        $request['config']['encoding'] === 'OGG_OPUS'
         && $request['config']['sampleRateHertz'] === 48000
     );
     expect(DB::table('google_speech_monthly_usage')->value('speech_seconds_reserved'))->toBe(2);

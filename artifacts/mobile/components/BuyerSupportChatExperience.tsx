@@ -230,6 +230,8 @@ export function BuyerSupportChatExperience({
   const [playingAudioUrl, setPlayingAudioUrl] = useState<string | null>(null);
   const [voiceTranslationEnabled, setVoiceTranslationEnabled] = useState(voiceTranslationConsented);
   const [voiceTranslationBusy, setVoiceTranslationBusy] = useState(false);
+  const [voiceConsentPromptVisible, setVoiceConsentPromptVisible] = useState(false);
+  const [voiceConsentWillSend, setVoiceConsentWillSend] = useState(false);
   const [transcribingMessageId, setTranscribingMessageId] = useState<string | null>(null);
   const [speakingMessageKey, setSpeakingMessageKey] = useState<string | null>(null);
   const speakingMessageKeyRef = useRef<string | null>(null);
@@ -266,6 +268,7 @@ export function BuyerSupportChatExperience({
 
   useEffect(() => {
     setVoiceTranslationEnabled(voiceTranslationConsented);
+    if (voiceTranslationConsented) setVoiceConsentPromptVisible(false);
   }, [voiceTranslationConsented]);
 
   useEffect(() => {
@@ -511,6 +514,7 @@ export function BuyerSupportChatExperience({
         data: { enabled },
       });
       setVoiceTranslationEnabled(enabled);
+      if (enabled) setVoiceConsentPromptVisible(false);
       onSent();
       return true;
     } catch (err) {
@@ -523,25 +527,14 @@ export function BuyerSupportChatExperience({
 
   function toggleVoiceTranslation() {
     if (voiceTranslationEnabled) {
-      Alert.alert(
-        'Turn off voice translation?',
-        'New voice notes will stay as audio only. Transcripts already saved in this conversation will remain visible.',
-        [
-          { text: 'Keep on', style: 'cancel' },
-          { text: 'Turn off', style: 'destructive', onPress: () => void saveVoiceTranslationConsent(false) },
-        ],
-      );
+      setVoiceConsentPromptVisible(false);
+      setVoiceConsentWillSend(false);
+      void saveVoiceTranslationConsent(false);
       return;
     }
 
-    Alert.alert(
-      'Enable voice translation?',
-      'When enabled, voice notes you send are processed by Google Cloud Speech-to-Text and translated to Urdu. The original stays attached to this support conversation. You can turn this off at any time. Calls are not recorded.',
-      [
-        { text: 'Not now', style: 'cancel' },
-        { text: 'Enable', onPress: () => void saveVoiceTranslationConsent(true) },
-      ],
-    );
+    setVoiceConsentWillSend(false);
+    setVoiceConsentPromptVisible((visible) => !visible);
   }
 
   async function transcribeMessage(messageId: string) {
@@ -733,21 +726,17 @@ export function BuyerSupportChatExperience({
       return;
     }
 
-    Alert.alert(
-      'Translate this voice note?',
-      'If you choose translation, this audio will be processed by Google Cloud Speech-to-Text and translated to Urdu. You can send it as audio only instead.',
-      [
-        { text: 'Send audio only', onPress: () => void sendMessage(false) },
-        {
-          text: 'Translate & send',
-          onPress: () => {
-            void (async () => {
-              if (await saveVoiceTranslationConsent(true)) await sendMessage(true);
-            })();
-          },
-        },
-      ],
-    );
+    setActionError('');
+    setVoiceConsentWillSend(true);
+    setVoiceConsentPromptVisible(true);
+  }
+
+  async function confirmVoiceTranslationConsent() {
+    const shouldSend = voiceConsentWillSend;
+    setVoiceConsentWillSend(false);
+    if (await saveVoiceTranslationConsent(true) && shouldSend) {
+      await sendMessage(true);
+    }
   }
 
   async function openMedia(url: string) {
@@ -824,7 +813,14 @@ export function BuyerSupportChatExperience({
       onBuyerLanguageChange={(language) => void changeBuyerLanguage(language)}
       voiceTranslationEnabled={voiceTranslationEnabled}
       voiceTranslationBusy={voiceTranslationBusy}
+      voiceConsentPromptVisible={voiceConsentPromptVisible}
+      voiceConsentWillSend={voiceConsentWillSend}
       onToggleVoiceTranslation={toggleVoiceTranslation}
+      onConfirmVoiceConsent={() => void confirmVoiceTranslationConsent()}
+      onCancelVoiceConsent={() => {
+        setVoiceConsentWillSend(false);
+        setVoiceConsentPromptVisible(false);
+      }}
       onRetryTranscription={(messageId) => void transcribeMessage(messageId)}
       transcribingMessageId={transcribingMessageId}
       sendProgressLabel={sendProgress ? `Sending ${sendProgress.current}/${sendProgress.total}` : undefined}
