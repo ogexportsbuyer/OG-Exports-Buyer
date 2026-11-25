@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, PanResponder, Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, PanResponder, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { BrandMark } from '@/components/BrandMark';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { router } from 'expo-router';
@@ -340,10 +340,9 @@ export default function Onboarding() {
     new Animated.Value(0),
   ]).current;
   const copyOpacity = useRef(new Animated.Value(0)).current;
-  const copyOffset = useRef(new Animated.Value(10)).current;
   const swipeDirection = useRef(1);
   const slide = slides[step];
-  const compact = windowHeight < 800 || windowWidth < 375;
+  const compact = windowHeight < 850 || windowWidth < 390;
   const horizontalPadding = windowWidth < 360 ? 18 : 24;
 
   useEffect(() => {
@@ -366,14 +365,12 @@ export default function Onboarding() {
       illustrationScale.setValue(1);
       illustrationStages.forEach(stage => stage.setValue(1));
       copyOpacity.setValue(1);
-      copyOffset.setValue(0);
       return;
     }
     illustrationOpacity.setValue(0);
     illustrationScale.setValue(0.96);
     illustrationStages.forEach(stage => stage.setValue(0));
     copyOpacity.setValue(0);
-    copyOffset.setValue(10);
     const useNativeDriver = Platform.OS !== 'web';
     const illustrationReveal = Animated.stagger(105, illustrationStages.map(stage => Animated.timing(stage, {
       toValue: 1,
@@ -395,20 +392,12 @@ export default function Onboarding() {
           useNativeDriver,
         }),
       ]),
-      Animated.parallel([
-        Animated.timing(copyOpacity, {
-          toValue: 1,
-          duration: MOTION.component,
-          easing: MOTION.easeOut,
-          useNativeDriver,
-        }),
-        Animated.timing(copyOffset, {
-          toValue: 0,
-          duration: MOTION.component,
-          easing: MOTION.easeOut,
-          useNativeDriver,
-        }),
-      ]),
+      Animated.timing(copyOpacity, {
+        toValue: 1,
+        duration: MOTION.component,
+        easing: MOTION.easeOut,
+        useNativeDriver,
+      }),
     ]);
     illustrationReveal.start();
     reveal.start();
@@ -416,7 +405,7 @@ export default function Onboarding() {
       reveal.stop();
       illustrationReveal.stop();
     };
-  }, [copyOffset, copyOpacity, illustrationOpacity, illustrationScale, illustrationStages, reduceMotion, step]);
+  }, [copyOpacity, illustrationOpacity, illustrationScale, illustrationStages, reduceMotion, step]);
 
   const swipeResponder = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > 10 && Math.abs(gesture.dx) > Math.abs(gesture.dy),
@@ -463,7 +452,7 @@ export default function Onboarding() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background, paddingHorizontal: horizontalPadding, paddingTop: 0, paddingBottom: 0 }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background, paddingHorizontal: horizontalPadding, paddingTop: 0, paddingBottom: Platform.OS === 'web' ? 34 : Math.max(insets.bottom, 10) }]}>
       <RouteBrandBackdrop />
       <View style={[styles.header, { paddingTop: Platform.OS === 'web' ? Math.max(insets.top, 67) : 8 }]}>
         <View style={styles.brandLockup}>
@@ -477,7 +466,13 @@ export default function Onboarding() {
           <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>{String(step + 1).padStart(2, '0')} / 03</Text>
         </View>
       </View>
-      <View style={{ flex: 1, justifyContent: 'center' }}>
+      <ScrollView
+        style={styles.mainScroll}
+        contentContainerStyle={styles.mainContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        contentInsetAdjustmentBehavior="never"
+      >
         <Animated.View {...swipeResponder.panHandlers} style={{ opacity, transform: [{ translateX }] }}>
           <Animated.View style={{ opacity: illustrationOpacity, transform: [{ scale: illustrationScale }] }}>
             <Card testID={`onboarding-illustration-${step + 1}`} style={[styles.illustrationCard, { height: compact ? 158 : 232, backgroundColor: colors.secondary, borderColor: colors.border, marginBottom: compact ? 13 : 27 }]}>
@@ -489,7 +484,7 @@ export default function Onboarding() {
               <View pointerEvents="none" style={[styles.artRule, { backgroundColor: colors.border }]} />
             </Card>
           </Animated.View>
-          <Animated.View style={{ opacity: copyOpacity, transform: [{ translateY: copyOffset }] }}>
+          <Animated.View style={{ opacity: copyOpacity }}>
             <Text style={{ color: colors.accent, fontSize: 10, lineHeight: 16, fontWeight: '700', letterSpacing: 1.65, textAlign: 'center' }}>{slide.eyebrow.split('/')[1].trim()}</Text>
             <Text accessibilityRole="header" style={{ color: colors.primary, fontSize: compact ? 26 : 32, lineHeight: compact ? 33 : 39, fontWeight: '700', marginTop: compact ? 6 : 8, textAlign: 'center', letterSpacing: -0.65 }}>{slide.title}</Text>
             <Text style={{ color: colors.foreground, opacity: 0.82, fontSize: compact ? 14 : 15, lineHeight: compact ? 20 : 23, marginTop: compact ? 8 : 12, textAlign: 'center', paddingHorizontal: 4 }}>{slide.body}</Text>
@@ -498,7 +493,7 @@ export default function Onboarding() {
             </View>
           </Animated.View>
         </Animated.View>
-      </View>
+      </ScrollView>
       <View style={styles.controlsBlock}>
         <View style={styles.controlTopline}>
           <Pressable
@@ -545,6 +540,8 @@ export default function Onboarding() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
+  mainScroll: { flex: 1 },
+  mainContent: { flexGrow: 1, justifyContent: 'center', paddingVertical: 10 },
   header: { minHeight: 66, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   brandLockup: { flexDirection: 'row', alignItems: 'center', gap: 11 },
   stepPill: { minHeight: 30, borderRadius: 15, paddingHorizontal: 11, alignItems: 'center', justifyContent: 'center' },

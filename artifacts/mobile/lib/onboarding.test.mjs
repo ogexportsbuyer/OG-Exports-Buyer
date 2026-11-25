@@ -36,6 +36,14 @@ test('onboarding offers accessible navigation and finishes at the buyer home', (
   assert.match(onboarding, /useMotion\(\)/);
 });
 
+test('onboarding keeps animated copy in normal flow and scrolls when the screen is short', () => {
+  assert.match(onboarding, /<ScrollView[\s\S]*?contentContainerStyle=\{styles\.mainContent\}/);
+  assert.match(onboarding, /mainContent: \{ flexGrow: 1, justifyContent: 'center'/);
+  assert.match(onboarding, /<Animated\.View style=\{\{ opacity: copyOpacity \}\}>/);
+  assert.match(onboarding, /paddingBottom: Platform\.OS === 'web' \? 34 : Math\.max\(insets\.bottom, 10\)/);
+  assert.doesNotMatch(onboarding, /copyOffset/);
+});
+
 test('first-run splash routing honors the persisted onboarding completion state', () => {
   assert.match(entryScreen, /buyerEntryDestination\(onboardingComplete\)/);
   assert.match(authContext, /AsyncStorage\.getItem\(ONBOARDING_KEY\)/);
