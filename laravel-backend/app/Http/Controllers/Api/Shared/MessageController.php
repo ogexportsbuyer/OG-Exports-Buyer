@@ -8,11 +8,13 @@ use App\Models\AppNotification;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
+use App\Services\GoogleCloudVoiceService;
 use App\Support\MediaPath;
 use App\Support\NotifiesUsers;
 use App\Services\GoogleCloudTranslationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MessageController extends Controller
 {
@@ -40,6 +42,60 @@ class MessageController extends Controller
         return response()->json([
             'data' => [
                 'buyer_language' => $conversation->buyer_language,
+            ],
+        ]);
+    }
+
+    public function updateBuyerVoiceTranslationConsent(Request $request, Conversation $conversation): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless($user->hasRole('buyer') && (int) $conversation->created_by === (int) $user->id, 403);
+
+        $data = $request->validate([
+            'enabled' => ['required', 'boolean'],
+        ]);
+        $enabled = (bool) $data['enabled'];
+
+        DB::transaction(function () use ($conversation, $user, $enabled): void {
+            $lockedConversation = Conversation::query()
+                ->whereKey($conversation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $currentlyEnabled = $lockedConversation->buyer_voice_translation_consent_at !== null
+                && $lockedConversation->buyer_voice_translation_consent_revoked_at === null;
+
+            if ($currentlyEnabled === $enabled) {
+                return;
+            }
+
+            if ($enabled) {
+                $lockedConversation->forceFill([
+                    'buyer_voice_translation_consent_at' => now(),
+                    'buyer_voice_translation_consent_revoked_at' => null,
+                ])->save();
+            } else {
+                $lockedConversation->forceFill([
+                    'buyer_voice_translation_consent_revoked_at' => now(),
+                ])->save();
+            }
+
+            DB::table('buyer_voice_translation_consent_events')->insert([
+                'conversation_id' => $lockedConversation->id,
+                'buyer_id' => $user->id,
+                'enabled' => $enabled,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
+
+        $conversation->refresh();
+
+        return response()->json([
+            'data' => [
+                'voice_translation_enabled' => $conversation->buyer_voice_translation_consent_at !== null
+                    && $conversation->buyer_voice_translation_consent_revoked_at === null,
+                'consented_at' => $conversation->buyer_voice_translation_consent_at,
+                'revoked_at' => $conversation->buyer_voice_translation_consent_revoked_at,
             ],
         ]);
     }
@@ -218,6 +274,57 @@ class MessageController extends Controller
         return response()->json([
             'data' => $message->load('sender:id,name,email'),
         ], 201);
+    }
+
+    public function transcribeBuyerVoiceMessage(
+        Request $request,
+        Conversation $conversation,
+        int $messageId,
+        GoogleCloudVoiceService $voiceService,
+    ): JsonResponse {
+        $user = $request->user();
+        abort_unless($user->hasRole('buyer') && (int) $conversation->created_by === (int) $user->id, 403);
+        abort_unless(
+            $conversation->buyer_voice_translation_consent_at !== null
+                && $conversation->buyer_voice_translation_consent_revoked_at === null,
+            403,
+            'Voice translation consent is required.',
+        );
+
+        $message = $conversation->messages()->whereKey($messageId)->firstOrFail();
+        abort_unless((int) $message->sender_id === (int) $user->id, 403);
+        abort_unless(
+            str_starts_with(strtolower((string) $message->attachment_mime), 'audio/')
+                && filled($message->attachment_path),
+            422,
+            'A stored voice-message attachment is required.',
+        );
+
+        if (in_array($message->transcription_status, ['translated', 'transcribed'], true)) {
+            return response()->json(['data' => $message->load('sender:id,name,email')]);
+        }
+
+        if (
+            $message->transcription_status === 'processing'
+            && $message->transcription_attempted_at?->gt(now()->subMinutes(3))
+        ) {
+            return response()->json([
+                'message' => 'Voice translation is already being processed.',
+                'data' => $message->load('sender:id,name,email'),
+            ], 202);
+        }
+
+        $message->forceFill([
+            'transcription_status' => 'processing',
+            'transcription_attempted_at' => now(),
+        ])->save();
+
+        $result = $voiceService->transcribeBuyerVoiceMessage($message, $conversation);
+        $message->forceFill($result)->save();
+
+        return response()->json([
+            'data' => $message->fresh()->load('sender:id,name,email'),
+        ]);
     }
 
     public function markRead(Request $request, int $conversationId): JsonResponse

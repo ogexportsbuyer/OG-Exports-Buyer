@@ -105,6 +105,20 @@ it('accepts iPhone m4a voice notes when the upload is reported as an mp4 contain
         ->assertJsonPath('data.mime', 'audio/mp4');
 });
 
+it('accepts Android AMR voice notes for speech transcription', function () {
+    $response = $this->actingAs($this->user)
+        ->post('/api/uploads', [
+            'file' => UploadedFile::fake()->create('voice-note.amr', 48, 'audio/amr'),
+            'category' => 'messages',
+        ], [
+            'Accept' => 'application/json',
+        ]);
+
+    $response->assertCreated()
+        ->assertJsonPath('data.name', 'voice-note.amr')
+        ->assertJsonPath('data.mime', 'audio/amr');
+});
+
 it('accepts support images and videos while keeping them in the message upload folder', function () {
     $image = $this->actingAs($this->user)
         ->post('/api/uploads', [

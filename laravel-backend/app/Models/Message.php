@@ -17,6 +17,12 @@ class Message extends Model
         'source_language',
         'target_language',
         'translation_status',
+        'transcription_body',
+        'transcription_translated_body',
+        'transcription_source_language',
+        'transcription_target_language',
+        'transcription_status',
+        'transcription_attempted_at',
         'attachment_path',
         'attachment_url',
         'attachment_name',
@@ -30,6 +36,7 @@ class Message extends Model
         return [
             'read_at' => 'datetime',
             'created_at' => 'datetime',
+            'transcription_attempted_at' => 'datetime',
         ];
     }
 

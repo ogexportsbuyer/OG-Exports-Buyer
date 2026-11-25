@@ -1344,6 +1344,10 @@ export interface BuyerQuotationMessageInput {
   body: string;
 }
 
+export interface BuyerVoiceTranslationConsentInput {
+  enabled: boolean;
+}
+
 export interface JsonObject { [key: string]: unknown }
 
 export type GetProductsParams = {

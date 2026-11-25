@@ -12,8 +12,18 @@ class Conversation extends Model
     protected $fillable = [
         'subject',
         'buyer_language',
+        'buyer_voice_translation_consent_at',
+        'buyer_voice_translation_consent_revoked_at',
         'created_by',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'buyer_voice_translation_consent_at' => 'datetime',
+            'buyer_voice_translation_consent_revoked_at' => 'datetime',
+        ];
+    }
 
     public function creator(): BelongsTo
     {

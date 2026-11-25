@@ -25,6 +25,11 @@ type ChatMessage = {
   source_language?: string | null
   target_language?: string | null
   translation_status?: string | null
+  transcription_body?: string | null
+  transcription_translated_body?: string | null
+  transcription_source_language?: string | null
+  transcription_target_language?: string | null
+  transcription_status?: string | null
   attachment_path?: string | null
   attachment_url?: string | null
   attachment_name?: string | null
@@ -459,6 +464,25 @@ export function PortalMessages({ Layout, showSupport: showSupportProp }: PortalM
                                   {m.translation_status === "quota_exceeded"
                                     ? "Translation limit reached; original shown."
                                     : "Translation unavailable; original shown."}
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : null}
+                          {m.transcription_body || m.transcription_status === "processing" ? (
+                            <div className="rounded-lg border border-border/70 bg-background/70 px-2.5 py-2 text-foreground">
+                              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                {m.transcription_translated_body ? "Urdu voice translation" : "Voice transcript"}
+                              </p>
+                              {m.transcription_translated_body || m.transcription_body ? (
+                                <p className="whitespace-pre-wrap">
+                                  {m.transcription_translated_body || m.transcription_body}
+                                </p>
+                              ) : (
+                                <p className="text-xs text-muted-foreground">Transcribing voice note…</p>
+                              )}
+                              {m.transcription_body && m.transcription_translated_body && m.transcription_body !== m.transcription_translated_body ? (
+                                <p className="mt-1.5 border-t border-border/60 pt-1.5 text-xs text-muted-foreground">
+                                  Original · {m.transcription_body}
                                 </p>
                               ) : null}
                             </div>

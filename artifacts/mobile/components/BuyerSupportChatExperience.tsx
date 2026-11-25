@@ -4,6 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { File as ExpoFile } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import {
+  AudioQuality,
+  IOSOutputFormat,
   RecordingPresets,
   requestRecordingPermissionsAsync,
   setAudioModeAsync,
@@ -16,6 +18,8 @@ import {
   useGetBuyerSupportTranslationLanguages,
   useSendInvestorConversationMessage,
   useUpdateBuyerSupportLanguage,
+  useTranscribeBuyerVoiceMessage,
+  useUpdateBuyerVoiceTranslationConsent,
 } from '@workspace/api-client-react';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -41,6 +45,7 @@ import {
 type BuyerSupportChatExperienceProps = {
   conversationId: string;
   savedBuyerLanguage: string;
+  voiceTranslationConsented: boolean;
   messages: Json[];
   loading: boolean;
   error: string | null;
@@ -50,6 +55,41 @@ type BuyerSupportChatExperienceProps = {
 
 type PendingMediaSource = string | ExpoFile | Blob;
 type QueuedBuyerMedia = BuyerSupportPendingMedia & { source: PendingMediaSource };
+
+const buyerVoiceRecordingOptions = Platform.select({
+  ios: {
+    ...RecordingPresets.LOW_QUALITY,
+    extension: '.wav',
+    sampleRate: 16000,
+    numberOfChannels: 1,
+    bitRate: 256000,
+    ios: {
+      ...RecordingPresets.LOW_QUALITY.ios,
+      extension: '.wav',
+      sampleRate: 16000,
+      outputFormat: IOSOutputFormat.LINEARPCM,
+      audioQuality: AudioQuality.HIGH,
+      linearPCMBitDepth: 16,
+      linearPCMIsBigEndian: false,
+      linearPCMIsFloat: false,
+    },
+  },
+  android: {
+    ...RecordingPresets.LOW_QUALITY,
+    extension: '.amr',
+    sampleRate: 8000,
+    numberOfChannels: 1,
+    bitRate: 12200,
+    android: {
+      ...RecordingPresets.LOW_QUALITY.android,
+      extension: '.amr',
+      sampleRate: 8000,
+      outputFormat: 'amrnb',
+      audioEncoder: 'amr_nb',
+    },
+  },
+  default: RecordingPresets.LOW_QUALITY,
+}) ?? RecordingPresets.LOW_QUALITY;
 
 function createMediaId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
@@ -67,6 +107,7 @@ function mediaExtension(mimeType: string, kind: 'image' | 'video' | 'audio') {
   if (mime.includes('wav')) return 'wav';
   if (mime.includes('ogg')) return 'ogg';
   if (mime.includes('aac')) return 'aac';
+  if (mime.includes('amr')) return 'amr';
   return kind === 'image' ? 'jpg' : kind === 'video' ? 'mp4' : 'm4a';
 }
 
@@ -110,6 +151,9 @@ function normalizedMessages(rawMessages: Json[], ownId: string, apiOrigin: strin
       sourceLanguage: first(item, ['source_language'], '') || undefined,
       targetLanguage: first(item, ['target_language'], '') || undefined,
       translationStatus: first(item, ['translation_status'], '') || undefined,
+      transcriptionBody: first(item, ['transcription_body'], '') || undefined,
+      transcriptionTranslatedBody: first(item, ['transcription_translated_body'], '') || undefined,
+      transcriptionStatus: first(item, ['transcription_status'], '') || undefined,
     };
   }).sort((left, right) => {
     const leftTime = Date.parse(left.createdAt);
@@ -121,6 +165,7 @@ function normalizedMessages(rawMessages: Json[], ownId: string, apiOrigin: strin
 export function BuyerSupportChatExperience({
   conversationId,
   savedBuyerLanguage,
+  voiceTranslationConsented,
   messages,
   loading,
   error,
@@ -154,6 +199,8 @@ export function BuyerSupportChatExperience({
   );
   const [buyerLanguage, setBuyerLanguage] = useState(defaultBuyerLanguage);
   const updateBuyerLanguage = useUpdateBuyerSupportLanguage();
+  const updateVoiceConsent = useUpdateBuyerVoiceTranslationConsent();
+  const transcribeVoiceMessage = useTranscribeBuyerVoiceMessage();
   const send = useSendInvestorConversationMessage();
   const [draft, setDraft] = useState('');
   const [pendingMedia, setPendingMedia] = useState<QueuedBuyerMedia[]>([]);
@@ -163,11 +210,15 @@ export function BuyerSupportChatExperience({
   const [actionError, setActionError] = useState('');
   const [sendProgress, setSendProgress] = useState<{ current: number; total: number } | null>(null);
   const sendingRef = useRef(false);
-  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorder = useAudioRecorder(buyerVoiceRecordingOptions);
   const recorderState = useAudioRecorderState(recorder, 250);
   const player = useAudioPlayer(null, { updateInterval: 300 });
   const playerStatus = useAudioPlayerStatus(player);
   const [playingAudioUrl, setPlayingAudioUrl] = useState<string | null>(null);
+  const [voiceTranslationEnabled, setVoiceTranslationEnabled] = useState(voiceTranslationConsented);
+  const [voiceTranslationBusy, setVoiceTranslationBusy] = useState(false);
+  const [transcribingMessageId, setTranscribingMessageId] = useState<string | null>(null);
+  const autoStopRequested = useRef(false);
   const normalized = useMemo(() => normalizedMessages(messages, ownId, apiOrigin), [messages, ownId, apiOrigin]);
 
   useEffect(() => {
@@ -190,6 +241,23 @@ export function BuyerSupportChatExperience({
   useEffect(() => {
     if (playerStatus.didJustFinish) setPlayingAudioUrl(null);
   }, [playerStatus.didJustFinish]);
+
+  useEffect(() => {
+    setVoiceTranslationEnabled(voiceTranslationConsented);
+  }, [voiceTranslationConsented]);
+
+  useEffect(() => {
+    if (!recorderState.isRecording) {
+      autoStopRequested.current = false;
+      return;
+    }
+    if (recorderState.durationMillis < 60_000 || autoStopRequested.current) return;
+
+    autoStopRequested.current = true;
+    void stopRecording().then(() => {
+      Alert.alert('Voice note limit reached', 'Voice translation supports recordings up to one minute. The recording has been stopped and is ready to send.');
+    });
+  }, [recorderState.durationMillis, recorderState.isRecording]);
 
   async function pickMedia() {
     if (recorderState.isRecording) {
@@ -376,10 +444,18 @@ export function BuyerSupportChatExperience({
       const uri = recorder.uri || status.url;
       if (!uri) throw new Error('The voice note was not saved. Please record it again.');
 
-      const mimeType = Platform.OS === 'web' ? 'audio/webm' : 'audio/mp4';
+      const mimeType = Platform.OS === 'web'
+        ? 'audio/webm'
+        : Platform.OS === 'ios'
+          ? 'audio/wav'
+          : 'audio/amr';
       const kind = 'audio' as const;
       const name = normalizedName(
-        Platform.OS === 'web' ? 'voice-message.webm' : 'voice-message.m4a',
+        Platform.OS === 'web'
+          ? 'voice-message.webm'
+          : Platform.OS === 'ios'
+            ? 'voice-message.wav'
+            : 'voice-message.amr',
         mimeType,
         kind,
       );
@@ -404,7 +480,63 @@ export function BuyerSupportChatExperience({
     setPendingMedia((current) => (Array.isArray(current) ? current : []).filter((media) => media.id !== mediaId));
   }
 
-  async function sendMessage() {
+  async function saveVoiceTranslationConsent(enabled: boolean): Promise<boolean> {
+    setVoiceTranslationBusy(true);
+    setActionError('');
+    try {
+      await updateVoiceConsent.mutateAsync({
+        conversation: conversationId,
+        data: { enabled },
+      });
+      setVoiceTranslationEnabled(enabled);
+      onSent();
+      return true;
+    } catch (err) {
+      setActionError(messageOf(err));
+      return false;
+    } finally {
+      setVoiceTranslationBusy(false);
+    }
+  }
+
+  function toggleVoiceTranslation() {
+    if (voiceTranslationEnabled) {
+      Alert.alert(
+        'Turn off voice translation?',
+        'New voice notes will stay as audio only. Transcripts already saved in this conversation will remain visible.',
+        [
+          { text: 'Keep on', style: 'cancel' },
+          { text: 'Turn off', style: 'destructive', onPress: () => void saveVoiceTranslationConsent(false) },
+        ],
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Enable voice translation?',
+      'When enabled, voice notes you send are processed by Google Cloud Speech-to-Text and translated to Urdu. The original stays attached to this support conversation. You can turn this off at any time. Calls are not recorded.',
+      [
+        { text: 'Not now', style: 'cancel' },
+        { text: 'Enable', onPress: () => void saveVoiceTranslationConsent(true) },
+      ],
+    );
+  }
+
+  async function transcribeMessage(messageId: string) {
+    if (!conversationId || !messageId || !voiceTranslationEnabled || transcribingMessageId) return;
+    setTranscribingMessageId(messageId);
+    setActionError('');
+    try {
+      await transcribeVoiceMessage.mutateAsync({ conversation: conversationId, messageId });
+      onSent();
+    } catch (err) {
+      setActionError(`Voice note is in the chat, but its transcript could not be loaded. ${messageOf(err)}`);
+    } finally {
+      setTranscribingMessageId(null);
+    }
+  }
+
+  async function sendMessage(translateVoice = voiceTranslationEnabled) {
     const body = draft.trim();
     const queuedMedia = [...queuedPendingMedia];
     if (!conversationId || (!body && queuedMedia.length === 0) || uploading || send.isPending || sendingRef.current) return;
@@ -430,7 +562,7 @@ export function BuyerSupportChatExperience({
             media.kind,
             apiOrigin,
           );
-          await send.mutateAsync({
+          const sent = await send.mutateAsync({
             conversation: conversationId,
             data: {
               body: index === 0 ? body : '',
@@ -442,6 +574,18 @@ export function BuyerSupportChatExperience({
             },
           });
           sentMessages += 1;
+          const sentMessage = record(record(sent).data);
+          const sentMessageId = first(sentMessage, ['id'], first(record(sent), ['id'], ''));
+          if (media.kind === 'audio' && translateVoice && sentMessageId) {
+            try {
+              await transcribeVoiceMessage.mutateAsync({
+                conversation: conversationId,
+                messageId: sentMessageId,
+              });
+            } catch {
+              setActionError('Your voice note was sent, but its transcript could not be completed. You can retry it later.');
+            }
+          }
           setPendingMedia((current) => (Array.isArray(current) ? current : []).filter((item) => item.id !== media.id));
           if (media.kind === 'audio' && playingAudioUrl === media.uri) {
             player.pause();
@@ -488,6 +632,29 @@ export function BuyerSupportChatExperience({
     }
   }
 
+  function sendWithConsentCheck() {
+    if (voiceTranslationEnabled || !queuedPendingMedia.some((media) => media.kind === 'audio')) {
+      void sendMessage(voiceTranslationEnabled);
+      return;
+    }
+
+    Alert.alert(
+      'Translate this voice note?',
+      'If you choose translation, this audio will be processed by Google Cloud Speech-to-Text and translated to Urdu. You can send it as audio only instead.',
+      [
+        { text: 'Send audio only', onPress: () => void sendMessage(false) },
+        {
+          text: 'Translate & send',
+          onPress: () => {
+            void (async () => {
+              if (await saveVoiceTranslationConsent(true)) await sendMessage(true);
+            })();
+          },
+        },
+      ],
+    );
+  }
+
   async function openMedia(url: string) {
     try {
       await Linking.openURL(url);
@@ -527,7 +694,7 @@ export function BuyerSupportChatExperience({
       }}
       draft={draft}
       onDraftChange={setDraft}
-      onSend={() => void sendMessage()}
+      onSend={sendWithConsentCheck}
       sendDisabled={!draft.trim() && queuedPendingMedia.length === 0}
       sending={uploading || send.isPending}
       cameraBusy={cameraBusy}
@@ -547,6 +714,11 @@ export function BuyerSupportChatExperience({
       buyerLanguage={buyerLanguage}
       buyerLanguages={buyerLanguages}
       onBuyerLanguageChange={(language) => void changeBuyerLanguage(language)}
+      voiceTranslationEnabled={voiceTranslationEnabled}
+      voiceTranslationBusy={voiceTranslationBusy}
+      onToggleVoiceTranslation={toggleVoiceTranslation}
+      onRetryTranscription={(messageId) => void transcribeMessage(messageId)}
+      transcribingMessageId={transcribingMessageId}
       sendProgressLabel={sendProgress ? `Sending ${sendProgress.current}/${sendProgress.total}` : undefined}
     />
   );

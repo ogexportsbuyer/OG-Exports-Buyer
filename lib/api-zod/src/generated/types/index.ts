@@ -26,6 +26,7 @@ export * from './adminTwoFactorChallenge';
 export * from './adminTwoFactorResend';
 export * from './bankAccountReviewInput';
 export * from './buyerQuotationMessageInput';
+export * from './buyerVoiceTranslationConsentInput';
 export * from './containerJourney';
 export * from './containerJourneyUpdate';
 export * from './containerTracking';

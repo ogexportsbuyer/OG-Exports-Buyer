@@ -29,7 +29,7 @@ class UploadController extends Controller
         $clientMime = strtolower((string) $file->getClientMimeType());
         $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: '');
         $isImage = str_starts_with(strtolower($mime), 'image/');
-        $messageAudioExtensions = ['m4a', 'mp3', 'wav', 'aac', 'ogg', 'opus'];
+        $messageAudioExtensions = ['m4a', 'mp3', 'wav', 'aac', 'ogg', 'opus', 'amr'];
         $isAudio = str_starts_with(strtolower($mime), 'audio/')
             || ($normalizedCategory === 'messages' && (
                 str_starts_with($clientMime, 'audio/')
@@ -47,8 +47,8 @@ class UploadController extends Controller
                     'required',
                     'file',
                     'max:10240',
-                    'mimes:m4a,mp4,mp3,wav,aac,ogg,opus,webm,3gp',
-                    'extensions:m4a,mp3,wav,aac,ogg,opus,webm,3gp',
+                    'mimes:m4a,mp4,mp3,wav,aac,ogg,opus,amr,webm,3gp',
+                    'extensions:m4a,mp3,wav,aac,ogg,opus,amr,webm,3gp',
                 ],
             ]);
         } elseif ($isImage) {
@@ -85,6 +85,7 @@ class UploadController extends Controller
                 'aac' => 'audio/aac',
                 'ogg' => 'audio/ogg',
                 'opus' => 'audio/opus',
+                'amr' => 'audio/amr',
                 'webm' => 'audio/webm',
                 '3gp' => 'audio/3gpp',
                 default => $mime,

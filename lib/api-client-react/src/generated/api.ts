@@ -32,6 +32,7 @@ import type {
   AdminTwoFactorResend,
   BankAccountReviewInput,
   BuyerQuotationMessageInput,
+  BuyerVoiceTranslationConsentInput,
   ContainerTracking,
   ContainerTrackingUpdate,
   DevicePushTokenRegistration,
@@ -10496,6 +10497,95 @@ export const useUpdateBuyerSupportLanguage = <TError = ErrorType<unknown>,
       return useMutation(getUpdateBuyerSupportLanguageMutationOptions(options));
     }
 
+export const getUpdateBuyerVoiceTranslationConsentUrl = (conversation: string,) => {
+
+
+
+
+  return `/api/conversations/${conversation}/voice-translation-consent`
+}
+
+/**
+ * @summary Save or revoke buyer voice-translation consent
+ */
+export const updateBuyerVoiceTranslationConsent = async (conversation: string,
+    buyerVoiceTranslationConsentInput: BuyerVoiceTranslationConsentInput, options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<JsonObject>(getUpdateBuyerVoiceTranslationConsentUrl(conversation),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(buyerVoiceTranslationConsentInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateBuyerVoiceTranslationConsentMutationKey = () => ['updateBuyerVoiceTranslationConsent'] as const;
+
+export const getUpdateBuyerVoiceTranslationConsentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBuyerVoiceTranslationConsent>>, TError,UpdateBuyerVoiceTranslationConsentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateBuyerVoiceTranslationConsent>>, TError,UpdateBuyerVoiceTranslationConsentMutationVariables, TContext> => {
+
+const mutationKey = getUpdateBuyerVoiceTranslationConsentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateBuyerVoiceTranslationConsent>>, UpdateBuyerVoiceTranslationConsentMutationVariables> = (props) => {
+          const {conversation,data} = props ?? {};
+
+          return  updateBuyerVoiceTranslationConsent(conversation,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateBuyerVoiceTranslationConsentMutationResult = NonNullable<Awaited<ReturnType<typeof updateBuyerVoiceTranslationConsent>>>
+    export type UpdateBuyerVoiceTranslationConsentMutationBody = BodyType<BuyerVoiceTranslationConsentInput>
+    export type UpdateBuyerVoiceTranslationConsentMutationError = ErrorType<unknown>
+    export type UpdateBuyerVoiceTranslationConsentMutationVariables = {conversation: string;data: BodyType<BuyerVoiceTranslationConsentInput>}
+
+    /**
+ * @summary Save or revoke buyer voice-translation consent
+ */
+export const useUpdateBuyerVoiceTranslationConsent = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBuyerVoiceTranslationConsent>>, TError,UpdateBuyerVoiceTranslationConsentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateBuyerVoiceTranslationConsent>>,
+        TError,
+        UpdateBuyerVoiceTranslationConsentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateBuyerVoiceTranslationConsentMutationOptions(options));
+    }
+
 export const getGetInvestorConversationMessagesUrl = (conversation: string,) => {
 
 
@@ -10660,6 +10750,82 @@ export const useSendInvestorConversationMessage = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getSendInvestorConversationMessageMutationOptions(options));
+    }
+
+export const getTranscribeBuyerVoiceMessageUrl = (conversation: string,
+    messageId: string,) => {
+
+
+
+
+  return `/api/conversations/${conversation}/messages/${messageId}/transcription`
+}
+
+/**
+ * @summary Transcribe and translate an opted-in buyer voice note
+ */
+export const transcribeBuyerVoiceMessage = async (conversation: string,
+    messageId: string, options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
+
+  return customFetch<JsonObject>(getTranscribeBuyerVoiceMessageUrl(conversation,messageId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getTranscribeBuyerVoiceMessageMutationKey = () => ['transcribeBuyerVoiceMessage'] as const;
+
+export const getTranscribeBuyerVoiceMessageMutationOptions = <TError = ErrorType<JsonObject>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof transcribeBuyerVoiceMessage>>, TError,TranscribeBuyerVoiceMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof transcribeBuyerVoiceMessage>>, TError,TranscribeBuyerVoiceMessageMutationVariables, TContext> => {
+
+const mutationKey = getTranscribeBuyerVoiceMessageMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof transcribeBuyerVoiceMessage>>, TranscribeBuyerVoiceMessageMutationVariables> = (props) => {
+          const {conversation,messageId} = props ?? {};
+
+          return  transcribeBuyerVoiceMessage(conversation,messageId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TranscribeBuyerVoiceMessageMutationResult = NonNullable<Awaited<ReturnType<typeof transcribeBuyerVoiceMessage>>>
+
+    export type TranscribeBuyerVoiceMessageMutationError = ErrorType<JsonObject>
+    export type TranscribeBuyerVoiceMessageMutationVariables = {conversation: string;messageId: string}
+
+    /**
+ * @summary Transcribe and translate an opted-in buyer voice note
+ */
+export const useTranscribeBuyerVoiceMessage = <TError = ErrorType<JsonObject>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof transcribeBuyerVoiceMessage>>, TError,TranscribeBuyerVoiceMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof transcribeBuyerVoiceMessage>>,
+        TError,
+        TranscribeBuyerVoiceMessageMutationVariables,
+        TContext
+      > => {
+      return useMutation(getTranscribeBuyerVoiceMessageMutationOptions(options));
     }
 
 export const getGetInvestorSupportTicketsUrl = () => {

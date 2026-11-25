@@ -1608,6 +1608,21 @@ paths:
             schema: { $ref: "#/components/schemas/JsonObject" }
       responses:
         "200": { description: Saved buyer support language, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /conversations/{conversation}/voice-translation-consent:
+    patch:
+      operationId: updateBuyerVoiceTranslationConsent
+      tags: [communication]
+      summary: Save or revoke buyer voice-translation consent
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: conversation, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BuyerVoiceTranslationConsentInput" }
+      responses:
+        "200": { description: Updated voice-translation consent, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
   /conversations/{conversation}/messages:
     get:
       operationId: getInvestorConversationMessages
@@ -1632,6 +1647,18 @@ paths:
             schema: { $ref: "#/components/schemas/JsonObject" }
       responses:
         "201": { description: Message created, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /conversations/{conversation}/messages/{messageId}/transcription:
+    post:
+      operationId: transcribeBuyerVoiceMessage
+      tags: [communication]
+      summary: Transcribe and translate an opted-in buyer voice note
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: conversation, in: path, required: true, schema: { type: string } }
+        - { name: messageId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Transcribed voice message, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "403": { description: Voice-translation consent is required, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
   /support/tickets:
     get:
       operationId: getInvestorSupportTickets
@@ -2985,6 +3012,12 @@ components:
       required: [body]
       properties:
         body: { type: string, minLength: 1, maxLength: 5000 }
+    BuyerVoiceTranslationConsentInput:
+      type: object
+      additionalProperties: false
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
     JsonObject:
       type: object
       additionalProperties: true

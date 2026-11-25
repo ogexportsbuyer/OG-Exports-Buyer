@@ -2477,6 +2477,20 @@ export const UpdateBuyerSupportLanguageResponse = zod.record(zod.string(), zod.u
 
 
 /**
+ * @summary Save or revoke buyer voice-translation consent
+ */
+export const UpdateBuyerVoiceTranslationConsentParams = zod.object({
+  "conversation": zod.coerce.string()
+})
+
+export const UpdateBuyerVoiceTranslationConsentBody = zod.object({
+  "enabled": zod.boolean()
+})
+
+export const UpdateBuyerVoiceTranslationConsentResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
  * @summary List support conversation messages
  */
 export const GetInvestorConversationMessagesParams = zod.object({
@@ -2496,6 +2510,17 @@ export const SendInvestorConversationMessageParams = zod.object({
 export const SendInvestorConversationMessageBody = zod.record(zod.string(), zod.unknown())
 
 export const SendInvestorConversationMessageResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Transcribe and translate an opted-in buyer voice note
+ */
+export const TranscribeBuyerVoiceMessageParams = zod.object({
+  "conversation": zod.coerce.string(),
+  "messageId": zod.coerce.string()
+})
+
+export const TranscribeBuyerVoiceMessageResponse = zod.record(zod.string(), zod.unknown())
 
 
 /**

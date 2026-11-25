@@ -47,3 +47,4 @@
 - [Buyer marketplace flow](buyer-marketplace-flow.md) — keep buyer browsing public in the same app, gate cart/account actions with sign-in, and preserve role-based investor tabs.
 - [Buyer push and preferences](buyer-push-delivery.md) — keep buyer settings and device notifications separate from investor-only identity and push callbacks.
 - [Expo SDK 58 Android system bars](expo-sdk58-system-bars.md) — edge-to-edge is enforced; navigation-bar contrast settings need a native build, not Expo Go.
+- [Buyer support calls and translations](buyer-support-calls-translations.md) — keep calls inside buyer chat and route them to the planned admin mobile app; respect explicit voice-processing consent and caps.

@@ -32,6 +32,7 @@ const mediaExtensions: Record<string, BuyerChatMediaKind> = {
   ogg: 'audio',
   opus: 'audio',
   '3gp': 'audio',
+  amr: 'audio',
 };
 
 export function buyerChatMediaKind(name: string, mimeType: string): BuyerChatMediaKind | null {
@@ -41,7 +42,11 @@ export function buyerChatMediaKind(name: string, mimeType: string): BuyerChatMed
 
   if (mime.startsWith('image/')) return extensionKind === 'image' ? 'image' : null;
   if (mime.startsWith('video/')) return extensionKind === 'video' ? 'video' : null;
-  if (mime.startsWith('audio/')) return extensionKind === 'audio' ? 'audio' : null;
+  if (mime.startsWith('audio/')) {
+    return extensionKind === 'audio' || (extension === 'webm' && mime.startsWith('audio/webm'))
+      ? 'audio'
+      : null;
+  }
 
   return extensionKind ?? null;
 }

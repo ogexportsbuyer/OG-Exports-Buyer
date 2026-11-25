@@ -33,6 +33,9 @@ export type BuyerSupportMessage = {
   sourceLanguage?: string;
   targetLanguage?: string;
   translationStatus?: string;
+  transcriptionBody?: string;
+  transcriptionTranslatedBody?: string;
+  transcriptionStatus?: string;
 };
 
 export type BuyerSupportLanguage = { code: string; name: string };
@@ -73,6 +76,11 @@ export type BuyerSupportChatPanelProps = {
   buyerLanguage: string;
   buyerLanguages: BuyerSupportLanguage[];
   onBuyerLanguageChange: (language: string) => void;
+  voiceTranslationEnabled: boolean;
+  voiceTranslationBusy: boolean;
+  onToggleVoiceTranslation: () => void;
+  onRetryTranscription: (messageId: string) => void;
+  transcribingMessageId: string | null;
   sendProgressLabel?: string;
 };
 
@@ -116,6 +124,11 @@ export function BuyerSupportChatPanel({
   buyerLanguage,
   buyerLanguages,
   onBuyerLanguageChange,
+  voiceTranslationEnabled,
+  voiceTranslationBusy,
+  onToggleVoiceTranslation,
+  onRetryTranscription,
+  transcribingMessageId,
   sendProgressLabel,
   pendingMedia: pendingMediaValue,
 }: BuyerSupportChatPanelProps) {
@@ -202,37 +215,103 @@ export function BuyerSupportChatPanel({
             </Pressable>
           ) : null}
           {item.attachmentUrl && item.attachmentKind === 'audio' ? (
-            <Pressable
-              testID="buyer-chat-play-sent-audio"
-              accessibilityRole="button"
-              accessibilityLabel={`${isPlaying ? 'Pause' : 'Play'} voice message`}
-              onPress={() => onPlayAudio(item.attachmentUrl!)}
-              style={[styles.audioMessage, { backgroundColor: own ? colors.card : colors.secondary }]}
-            >
-              <View style={[styles.audioPlay, { backgroundColor: colors.primary }]}>
-                <Feather name={isPlaying ? 'pause' : 'play'} size={15} color={colors.primaryForeground} />
-              </View>
-              <View style={styles.audioDetails}>
-                <Text style={[styles.audioTitle, { color: colors.foreground }]}>Voice message</Text>
-                <View style={styles.messageWaveform} accessibilityLabel="Voice message playback progress">
-                  {voiceWaveform.map((height, index) => {
-                    const played = isActive && audioProgress >= (index + 1) / voiceWaveform.length;
-                    return (
-                      <View
-                        key={index}
-                        style={[
-                          styles.waveformBar,
-                          { height, backgroundColor: played ? colors.primary : colors.border, opacity: played ? 1 : 0.8 },
-                        ]}
-                      />
-                    );
-                  })}
+            <>
+              <Pressable
+                testID="buyer-chat-play-sent-audio"
+                accessibilityRole="button"
+                accessibilityLabel={`${isPlaying ? 'Pause' : 'Play'} voice message`}
+                onPress={() => onPlayAudio(item.attachmentUrl!)}
+                style={[styles.audioMessage, { backgroundColor: own ? colors.card : colors.secondary }]}
+              >
+                <View style={[styles.audioPlay, { backgroundColor: colors.primary }]}>
+                  <Feather name={isPlaying ? 'pause' : 'play'} size={15} color={colors.primaryForeground} />
                 </View>
-              </View>
-              <Text style={[styles.audioDuration, { color: colors.mutedForeground }]}>
-                {item.durationSeconds ? formatDuration(item.durationSeconds) : 'Voice note'}
-              </Text>
-            </Pressable>
+                <View style={styles.audioDetails}>
+                  <Text style={[styles.audioTitle, { color: colors.foreground }]}>Voice message</Text>
+                  <View style={styles.messageWaveform} accessibilityLabel="Voice message playback progress">
+                    {voiceWaveform.map((height, index) => {
+                      const played = isActive && audioProgress >= (index + 1) / voiceWaveform.length;
+                      return (
+                        <View
+                          key={index}
+                          style={[
+                            styles.waveformBar,
+                            { height, backgroundColor: played ? colors.primary : colors.border, opacity: played ? 1 : 0.8 },
+                          ]}
+                        />
+                      );
+                    })}
+                  </View>
+                </View>
+                <Text style={[styles.audioDuration, { color: colors.mutedForeground }]}>
+                  {item.durationSeconds ? formatDuration(item.durationSeconds) : 'Voice note'}
+                </Text>
+              </Pressable>
+              {item.transcriptionBody || item.transcriptionStatus ? (
+                <View style={{
+                  marginTop: 8,
+                  padding: 10,
+                  borderRadius: 12,
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderColor: colors.border,
+                  backgroundColor: own ? colors.card : colors.lightGreen,
+                }}>
+                  {item.transcriptionBody ? (
+                    <>
+                      <Text style={{ color: colors.primary, fontSize: 10, fontWeight: '700', letterSpacing: 0.6 }}>
+                        {item.transcriptionTranslatedBody ? 'URDU TRANSLATION' : 'VOICE TRANSCRIPT'}
+                      </Text>
+                      <Text style={{ color: colors.foreground, fontSize: 12, lineHeight: 18, marginTop: 4 }}>
+                        {item.transcriptionTranslatedBody || item.transcriptionBody}
+                      </Text>
+                      {item.transcriptionTranslatedBody && item.transcriptionTranslatedBody !== item.transcriptionBody ? (
+                        <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginTop: 5 }}>
+                          Original · {item.transcriptionBody}
+                        </Text>
+                      ) : null}
+                    </>
+                  ) : null}
+                  {item.transcriptionStatus === 'not_requested' && !voiceTranslationEnabled ? (
+                    <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16 }}>
+                      This note was sent as audio only. Turn on voice translation to add an Urdu transcript.
+                    </Text>
+                  ) : null}
+                  {item.transcriptionStatus && !['translated', 'transcribed', 'not_requested'].includes(item.transcriptionStatus) ? (
+                    <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16 }}>
+                      {item.transcriptionStatus === 'processing'
+                        ? 'Transcribing this voice note…'
+                        : item.transcriptionStatus === 'quota_exceeded'
+                          ? 'The monthly voice-processing limit has been reached.'
+                          : item.transcriptionStatus === 'unsupported_audio_format'
+                            ? 'This voice-note format can still be played, but cannot be transcribed.'
+                            : item.transcriptionStatus === 'audio_too_long'
+                              ? 'Voice translation supports notes up to 60 seconds.'
+                              : item.transcriptionStatus === 'not_configured' || item.transcriptionStatus === 'disabled'
+                                ? 'Voice translation setup is not active yet.'
+                                : item.transcriptionStatus === 'no_speech_detected'
+                                  ? 'No clear speech was detected in this recording.'
+                                  : 'Voice transcription could not be completed.'}
+                    </Text>
+                  ) : null}
+                  {voiceTranslationEnabled && ['not_requested', 'failed', 'not_configured', 'disabled'].includes(item.transcriptionStatus || '') ? (
+                    <Pressable
+                      testID={`buyer-chat-retry-transcription-${item.id}`}
+                      accessibilityRole="button"
+                      disabled={voiceTranslationBusy || transcribingMessageId === item.id}
+                      onPress={() => onRetryTranscription(item.id)}
+                      style={{ alignSelf: 'flex-start', marginTop: 7, flexDirection: 'row', alignItems: 'center', gap: 5, opacity: voiceTranslationBusy || transcribingMessageId === item.id ? 0.55 : 1 }}
+                    >
+                      {transcribingMessageId === item.id
+                        ? <ActivityIndicator size="small" color={colors.primary} />
+                        : <Feather name="refresh-cw" size={12} color={colors.primary} />}
+                      <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>
+                        {transcribingMessageId === item.id ? 'Transcribing…' : 'Retry translation'}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null}
+            </>
           ) : null}
           {item.attachmentUrl && (item.attachmentKind === 'video' || item.attachmentKind === 'file') ? (
             <Pressable
@@ -276,6 +355,23 @@ export function BuyerSupportChatPanel({
             {buyerLanguages.find(language => language.code === buyerLanguage)?.name ?? buyerLanguage.toUpperCase()}
           </Text>
           <Feather name="chevron-down" size={14} color={colors.primary} />
+        </Pressable>
+      </View>
+      <View style={{ paddingHorizontal: 14, paddingTop: 7, paddingBottom: 2 }}>
+        <Pressable
+          testID="buyer-chat-voice-translation-toggle"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: voiceTranslationBusy }}
+          disabled={voiceTranslationBusy}
+          onPress={onToggleVoiceTranslation}
+          style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, opacity: voiceTranslationBusy ? 0.55 : 1 }}
+        >
+          {voiceTranslationBusy
+            ? <ActivityIndicator size="small" color={colors.primary} />
+            : <Feather name={voiceTranslationEnabled ? 'check-circle' : 'mic'} size={13} color={voiceTranslationEnabled ? colors.primary : colors.mutedForeground} />}
+          <Text style={{ color: voiceTranslationEnabled ? colors.primary : colors.mutedForeground, fontSize: 10, fontWeight: '600' }}>
+            Voice translation {voiceTranslationEnabled ? 'on' : 'off'}
+          </Text>
         </Pressable>
       </View>
 

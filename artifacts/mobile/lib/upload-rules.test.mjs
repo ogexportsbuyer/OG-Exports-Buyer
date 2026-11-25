@@ -37,6 +37,8 @@ test('classifies supported buyer chat images, videos, and voice notes', () => {
   assert.equal(buyerChatMediaKind('photo.webp', 'image/webp'), 'image');
   assert.equal(buyerChatMediaKind('shipment.mov', 'video/quicktime'), 'video');
   assert.equal(buyerChatMediaKind('voice-note.m4a', 'audio/mp4'), 'audio');
+  assert.equal(buyerChatMediaKind('voice-note.amr', 'audio/amr'), 'audio');
+  assert.equal(buyerChatMediaKind('voice-note.webm', 'audio/webm'), 'audio');
   assert.equal(buyerChatMediaKind('document.pdf', 'application/pdf'), null);
 });
 
@@ -44,6 +46,7 @@ test('enforces separate image, video, and audio size limits for buyer chat', () 
   assert.equal(validateBuyerChatMediaFile('photo.jpg', 'image/jpeg', MAX_BUYER_CHAT_IMAGE_BYTES), 'image');
   assert.equal(validateBuyerChatMediaFile('clip.mp4', 'video/mp4', MAX_BUYER_CHAT_VIDEO_BYTES), 'video');
   assert.equal(validateBuyerChatMediaFile('voice.m4a', 'audio/mp4', MAX_BUYER_CHAT_AUDIO_BYTES), 'audio');
+  assert.equal(validateBuyerChatMediaFile('voice.amr', 'audio/amr', MAX_BUYER_CHAT_AUDIO_BYTES), 'audio');
   assert.throws(() => validateBuyerChatMediaFile('photo.jpg', 'image/jpeg', MAX_BUYER_CHAT_IMAGE_BYTES + 1), /8 MB/);
   assert.throws(() => validateBuyerChatMediaFile('clip.mp4', 'video/mp4', MAX_BUYER_CHAT_VIDEO_BYTES + 1), /20 MB/);
   assert.throws(() => validateBuyerChatMediaFile('voice.m4a', 'audio/mp4', MAX_BUYER_CHAT_AUDIO_BYTES + 1), /10 MB/);

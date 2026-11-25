@@ -179,8 +179,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/conversations', [MessageController::class, 'conversations']);
     Route::post('/conversations', [MessageController::class, 'storeConversation']);
     Route::patch('/conversations/{conversation}/preferences', [MessageController::class, 'updateBuyerLanguage']);
+    Route::patch('/conversations/{conversation}/voice-translation-consent', [MessageController::class, 'updateBuyerVoiceTranslationConsent'])->middleware('throttle:10,1');
     Route::get('/conversations/{conversation}/messages', [MessageController::class, 'messages']);
     Route::post('/conversations/{conversation}/messages', [MessageController::class, 'storeMessage']);
+    Route::post('/conversations/{conversation}/messages/{messageId}/transcription', [MessageController::class, 'transcribeBuyerVoiceMessage'])->middleware('throttle:10,1');
     Route::post('/conversations/{conversation}/read', [MessageController::class, 'markRead']);
     Route::get('/messages/unread-count', [MessageController::class, 'unreadCount']);
     Route::get('/messages/translation-languages', [MessageController::class, 'translationLanguages']);

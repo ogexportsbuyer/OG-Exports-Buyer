@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Support\MediaStorage;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Throwable;
@@ -14,11 +13,9 @@ class GoogleCloudVoiceService
 {
     private const SPEECH_ENDPOINT = 'https://speech.googleapis.com/v1/speech:recognize';
 
-    private const TTS_ENDPOINT = 'https://texttospeech.googleapis.com/v1/text:synthesize';
-
     private const MAX_AUDIO_BYTES = 10 * 1024 * 1024;
 
-    private const MAX_SYNC_AUDIO_SECONDS = 60;
+    private const MAX_SYNC_AUDIO_SECONDS = 60.0;
 
     /**
      * @return array{
@@ -61,17 +58,28 @@ class GoogleCloudVoiceService
             return $this->transcriptionResult(null, null, null, null, 'unsupported_audio_format');
         }
 
-        if (! $this->reserveSpeechMinute()) {
-            return $this->transcriptionResult(null, null, null, null, 'quota_exceeded');
+        $translator = app(GoogleCloudTranslationService::class);
+        $buyer = $conversation->creator()->with('profile')->first();
+        if (! $buyer) {
+            return $this->transcriptionResult(null, null, null, null, 'buyer_unavailable');
         }
 
-        $translator = app(GoogleCloudTranslationService::class);
-        $sourceLanguage = $translator->buyerLanguage(
-            $conversation->creator()->with('profile')->first() ?? $message->sender()->with('profile')->firstOrFail()
-        );
+        $sourceLanguage = $translator->buyerLanguage($buyer, $conversation->buyer_language);
         $sourceLocale = $this->speechLocale($sourceLanguage);
         if (! $sourceLocale) {
             return $this->transcriptionResult(null, null, $sourceLanguage, 'ur', 'unsupported_language');
+        }
+
+        $durationSeconds = $this->audioDurationSeconds($audio, $format['encoding']);
+        if ($durationSeconds === null) {
+            return $this->transcriptionResult(null, null, $sourceLanguage, 'ur', 'unsupported_audio_format');
+        }
+        if ($durationSeconds <= 0 || $durationSeconds > self::MAX_SYNC_AUDIO_SECONDS) {
+            return $this->transcriptionResult(null, null, $sourceLanguage, 'ur', 'audio_too_long');
+        }
+
+        if (! $this->reserveSpeechSeconds((int) ceil($durationSeconds))) {
+            return $this->transcriptionResult(null, null, $sourceLanguage, 'ur', 'quota_exceeded');
         }
 
         try {
@@ -117,107 +125,6 @@ class GoogleCloudVoiceService
         }
     }
 
-    /**
-     * @return array{audio_url:?string, status:string}
-     */
-    public function translatedAudioUrl(Message $message, Conversation $conversation): array
-    {
-        $key = (string) config('services.google_cloud.speech_api_key', '');
-        if ($key === '') {
-            return ['audio_url' => null, 'status' => 'not_configured'];
-        }
-
-        if (! config('services.google_cloud.speech_enabled', false)) {
-            return ['audio_url' => null, 'status' => 'disabled'];
-        }
-
-        $text = trim((string) ($message->translated_body ?: $message->body));
-        if ($text === '') {
-            return ['audio_url' => null, 'status' => 'no_text'];
-        }
-
-        $language = app(GoogleCloudTranslationService::class)->buyerLanguage(
-            $conversation->creator()->with('profile')->firstOrFail(),
-            $message->target_language ?? $conversation->buyer_language
-        );
-        $voice = $this->textToSpeechLocale($language);
-        if (! $voice) {
-            return ['audio_url' => null, 'status' => 'unsupported_language'];
-        }
-
-        $path = $this->cachedAudioPath($message, $language);
-        $this->purgeExpiredAudio();
-        if (! is_file($path)) {
-            $characterCount = mb_strlen($text, 'UTF-8');
-            if (! $this->reserveTtsCharacters($characterCount)) {
-                return ['audio_url' => null, 'status' => 'quota_exceeded'];
-            }
-
-            try {
-                $response = Http::timeout(25)->post(self::TTS_ENDPOINT.'?key='.urlencode($key), [
-                    'input' => ['text' => $text],
-                    'voice' => [
-                        'languageCode' => $voice['language_code'],
-                        'name' => $voice['voice_name'],
-                    ],
-                    'audioConfig' => [
-                        'audioEncoding' => 'MP3',
-                        'speakingRate' => 1.0,
-                        'pitch' => 0.0,
-                    ],
-                ]);
-
-                $encodedAudio = $response->json('audioContent');
-                $audio = is_string($encodedAudio) ? base64_decode($encodedAudio, true) : false;
-                if (! $response->successful() || ! is_string($audio) || $audio === '' || strlen($audio) > 8 * 1024 * 1024) {
-                    return ['audio_url' => null, 'status' => 'failed'];
-                }
-
-                $directory = dirname($path);
-                if (! is_dir($directory) && ! mkdir($directory, 0700, true) && ! is_dir($directory)) {
-                    return ['audio_url' => null, 'status' => 'failed'];
-                }
-
-                $temporaryPath = tempnam($directory, 'tts-');
-                if ($temporaryPath === false) {
-                    return ['audio_url' => null, 'status' => 'failed'];
-                }
-
-                try {
-                    if (file_put_contents($temporaryPath, $audio, LOCK_EX) === false) {
-                        return ['audio_url' => null, 'status' => 'failed'];
-                    }
-                    chmod($temporaryPath, 0600);
-                    if (! rename($temporaryPath, $path)) {
-                        return ['audio_url' => null, 'status' => 'failed'];
-                    }
-                } finally {
-                    if (is_file($temporaryPath)) {
-                        unlink($temporaryPath);
-                    }
-                }
-            } catch (Throwable) {
-                return ['audio_url' => null, 'status' => 'failed'];
-            }
-        }
-
-        return [
-            'audio_url' => \Illuminate\Support\Facades\URL::temporarySignedRoute(
-                'messages.translated-audio',
-                now()->addMinutes(15),
-                ['message' => $message->id, 'language' => $language]
-            ),
-            'status' => 'ready',
-        ];
-    }
-
-    public function cachedAudioPath(Message $message, string $language): string
-    {
-        $safeLanguage = preg_replace('/[^a-zA-Z0-9-]/', '', $language) ?: 'en';
-
-        return storage_path('app/private/chat-tts-cache/'.$message->id.'-'.$safeLanguage.'.mp3');
-    }
-
     public function transcriptionResult(
         ?string $sourceText,
         ?string $translatedText,
@@ -258,11 +165,163 @@ class GoogleCloudVoiceService
     private function matchesAudioFormat(string $bytes, string $encoding): bool
     {
         return match ($encoding) {
-            'LINEAR16' => strlen($bytes) > 44 && substr($bytes, 0, 4) === 'RIFF' && substr($bytes, 8, 4) === 'WAVE',
+            'LINEAR16' => strlen($bytes) > 44
+                && substr($bytes, 0, 4) === 'RIFF'
+                && substr($bytes, 8, 4) === 'WAVE',
             'AMR' => str_starts_with($bytes, '#!AMR'),
             'WEBM_OPUS' => str_starts_with($bytes, "\x1A\x45\xDF\xA3"),
             default => false,
         };
+    }
+
+    private function audioDurationSeconds(string $bytes, string $encoding): ?float
+    {
+        if ($encoding === 'LINEAR16') {
+            if (strlen($bytes) < 44) {
+                return null;
+            }
+
+            $sampleRate = unpack('Vvalue', substr($bytes, 24, 4))['value'] ?? 0;
+            $channels = unpack('vvalue', substr($bytes, 22, 2))['value'] ?? 0;
+            $bitsPerSample = unpack('vvalue', substr($bytes, 34, 2))['value'] ?? 0;
+            $format = unpack('vvalue', substr($bytes, 20, 2))['value'] ?? 0;
+            if ($format !== 1 || $sampleRate < 8000 || $sampleRate > 48000 || $channels !== 1 || $bitsPerSample !== 16) {
+                return null;
+            }
+
+            $offset = 12;
+            $length = strlen($bytes);
+            while ($offset + 8 <= $length) {
+                $chunkName = substr($bytes, $offset, 4);
+                $chunkSize = unpack('Vvalue', substr($bytes, $offset + 4, 4))['value'] ?? 0;
+                if ($chunkName === 'data') {
+                    return $chunkSize / ($sampleRate * $channels * ($bitsPerSample / 8));
+                }
+                $offset += 8 + $chunkSize + ($chunkSize % 2);
+            }
+
+            return null;
+        }
+
+        if ($encoding === 'AMR') {
+            $frameBytes = [12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 1];
+            $offset = 6;
+            $frames = 0;
+            $length = strlen($bytes);
+
+            while ($offset < $length) {
+                $frameHeader = ord($bytes[$offset]);
+                $frameType = ($frameHeader >> 3) & 0x0F;
+                $totalBytes = $frameBytes[$frameType] ?? 0;
+                if ($totalBytes < 1 || $offset + $totalBytes > $length) {
+                    return null;
+                }
+                $offset += $totalBytes;
+                $frames++;
+            }
+
+            return $frames * 0.02;
+        }
+
+        if ($encoding === 'WEBM_OPUS') {
+            return $this->webmDurationSeconds($bytes);
+        }
+
+        return null;
+    }
+
+    private function webmDurationSeconds(string $bytes): ?float
+    {
+        $infoOffset = strpos($bytes, "\x15\x49\xA9\x66");
+        if ($infoOffset === false) {
+            return null;
+        }
+
+        $cursor = $infoOffset + 4;
+        $infoSize = $this->readEbmlVint($bytes, $cursor, true);
+        if (! $infoSize) {
+            return null;
+        }
+        $cursor += $infoSize['length'];
+        $end = min(strlen($bytes), $cursor + $infoSize['value']);
+        $timecodeScale = 1_000_000;
+        $duration = null;
+
+        while ($cursor < $end) {
+            $elementStart = $cursor;
+            $elementId = $this->readEbmlVint($bytes, $cursor, false);
+            if (! $elementId) {
+                return null;
+            }
+            $cursor += $elementId['length'];
+            $elementSize = $this->readEbmlVint($bytes, $cursor, true);
+            if (! $elementSize) {
+                return null;
+            }
+            $cursor += $elementSize['length'];
+            $payloadEnd = $cursor + $elementSize['value'];
+            if ($payloadEnd > $end) {
+                return null;
+            }
+
+            $idBytes = bin2hex(substr($bytes, $elementStart, $elementId['length']));
+            if ($idBytes === '2ad7b1' && $elementSize['value'] > 0 && $elementSize['value'] <= 8) {
+                $timecodeScale = $this->readUnsignedBigEndian(substr($bytes, $cursor, $elementSize['value']));
+                if ($timecodeScale <= 0 || $timecodeScale > 10_000_000) {
+                    return null;
+                }
+            } elseif ($idBytes === '4489' && in_array($elementSize['value'], [4, 8], true)) {
+                $unpacked = unpack($elementSize['value'] === 8 ? 'Evalue' : 'Gvalue', substr($bytes, $cursor, $elementSize['value']));
+                $duration = is_array($unpacked) ? (float) ($unpacked['value'] ?? 0) : null;
+            }
+
+            $cursor = $payloadEnd;
+        }
+
+        if ($duration === null || $duration <= 0 || $timecodeScale <= 0) {
+            return null;
+        }
+
+        return $duration * $timecodeScale / 1_000_000_000;
+    }
+
+    private function readEbmlVint(string $bytes, int $offset, bool $removeMarker): ?array
+    {
+        if ($offset >= strlen($bytes)) {
+            return null;
+        }
+
+        $first = ord($bytes[$offset]);
+        if ($first === 0) {
+            return null;
+        }
+
+        $mask = 0x80;
+        $length = 1;
+        while (($first & $mask) === 0 && $length <= 8) {
+            $mask >>= 1;
+            $length++;
+        }
+        if ($length > 8 || $offset + $length > strlen($bytes)) {
+            return null;
+        }
+
+        $value = $removeMarker ? ($first & ($mask - 1)) : $first;
+        for ($index = 1; $index < $length; $index++) {
+            $value = ($value * 256) + ord($bytes[$offset + $index]);
+        }
+
+        return ['value' => $value, 'length' => $length];
+    }
+
+    private function readUnsignedBigEndian(string $bytes): int
+    {
+        $value = 0;
+        for ($index = 0, $length = strlen($bytes); $index < $length; $index++) {
+            $value = ($value * 256) + ord($bytes[$index]);
+        }
+
+        return $value;
     }
 
     private function speechLocale(string $language): ?string
@@ -271,7 +330,7 @@ class GoogleCloudVoiceService
 
         return match ($base) {
             'ar' => 'ar-SA',
-            'bn' => 'bn-BD',
+            'bn' => 'bn-IN',
             'de' => 'de-DE',
             'en' => 'en-US',
             'es' => 'es-ES',
@@ -289,67 +348,35 @@ class GoogleCloudVoiceService
             'tr' => 'tr-TR',
             'ur' => 'ur-PK',
             'vi' => 'vi-VN',
-            'zh' => str_contains(strtolower($language), 'tw') ? 'cmn-TW' : 'cmn-Hans-CN',
+            'zh' => str_contains(strtolower($language), 'tw') ? 'cmn-Hant-TW' : 'cmn-Hans-CN',
             default => null,
         };
     }
 
-    private function textToSpeechLocale(string $language): ?array
+    private function reserveSpeechSeconds(int $seconds): bool
     {
-        $base = strtolower(explode('-', $language)[0]);
-
-        return match ($base) {
-            'ar' => ['language_code' => 'ar-XA', 'voice_name' => 'ar-XA-Standard-A'],
-            'bn' => ['language_code' => 'bn-IN', 'voice_name' => 'bn-IN-Standard-A'],
-            'de' => ['language_code' => 'de-DE', 'voice_name' => 'de-DE-Standard-A'],
-            'en' => ['language_code' => 'en-US', 'voice_name' => 'en-US-Standard-C'],
-            'es' => ['language_code' => 'es-ES', 'voice_name' => 'es-ES-Standard-A'],
-            'fr' => ['language_code' => 'fr-FR', 'voice_name' => 'fr-FR-Standard-A'],
-            'hi' => ['language_code' => 'hi-IN', 'voice_name' => 'hi-IN-Standard-A'],
-            'id' => ['language_code' => 'id-ID', 'voice_name' => 'id-ID-Standard-A'],
-            'it' => ['language_code' => 'it-IT', 'voice_name' => 'it-IT-Standard-A'],
-            'ja' => ['language_code' => 'ja-JP', 'voice_name' => 'ja-JP-Standard-A'],
-            'ko' => ['language_code' => 'ko-KR', 'voice_name' => 'ko-KR-Standard-A'],
-            'ms' => ['language_code' => 'ms-MY', 'voice_name' => 'ms-MY-Standard-A'],
-            'nl' => ['language_code' => 'nl-NL', 'voice_name' => 'nl-NL-Standard-A'],
-            'pt' => ['language_code' => 'pt-BR', 'voice_name' => 'pt-BR-Standard-A'],
-            'ru' => ['language_code' => 'ru-RU', 'voice_name' => 'ru-RU-Standard-A'],
-            'th' => ['language_code' => 'th-TH', 'voice_name' => 'th-TH-Standard-A'],
-            'tr' => ['language_code' => 'tr-TR', 'voice_name' => 'tr-TR-Standard-A'],
-            'ur' => ['language_code' => 'ur-IN', 'voice_name' => 'ur-IN-Standard-A'],
-            'vi' => ['language_code' => 'vi-VN', 'voice_name' => 'vi-VN-Standard-A'],
-            'zh' => str_contains(strtolower($language), 'tw')
-                ? ['language_code' => 'cmn-TW', 'voice_name' => 'cmn-TW-Standard-A']
-                : ['language_code' => 'cmn-CN', 'voice_name' => 'cmn-CN-Standard-A'],
-            default => null,
-        };
-    }
-
-    private function reserveSpeechMinute(): bool
-    {
-        $limit = max(0, (int) config('services.google_cloud.speech_monthly_minutes', 50));
-        if ($limit === 0) {
+        $limitSeconds = max(0, (int) config('services.google_cloud.speech_monthly_minutes', 50)) * 60;
+        if ($limitSeconds === 0 || $seconds <= 0) {
             return false;
         }
 
         $period = now()->format('Y-m');
 
-        return DB::transaction(function () use ($period, $limit): bool {
+        return DB::transaction(function () use ($period, $limitSeconds, $seconds): bool {
             DB::table('google_speech_monthly_usage')->insertOrIgnore([
                 'period' => $period,
-                'speech_minutes_reserved' => 0,
-                'tts_characters_reserved' => 0,
+                'speech_seconds_reserved' => 0,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
             $usage = DB::table('google_speech_monthly_usage')->where('period', $period)->lockForUpdate()->first();
-            if (! $usage || (int) $usage->speech_minutes_reserved + 1 > $limit) {
+            if (! $usage || (int) $usage->speech_seconds_reserved + $seconds > $limitSeconds) {
                 return false;
             }
 
             DB::table('google_speech_monthly_usage')->where('period', $period)->update([
-                'speech_minutes_reserved' => (int) $usage->speech_minutes_reserved + 1,
+                'speech_seconds_reserved' => (int) $usage->speech_seconds_reserved + $seconds,
                 'updated_at' => now(),
             ]);
 
@@ -357,49 +384,4 @@ class GoogleCloudVoiceService
         });
     }
 
-    private function reserveTtsCharacters(int $characterCount): bool
-    {
-        $limit = max(0, (int) config('services.google_cloud.tts_monthly_character_limit', 300000));
-        if ($limit === 0 || $characterCount <= 0) {
-            return false;
-        }
-
-        $period = now()->format('Y-m');
-
-        return DB::transaction(function () use ($period, $characterCount, $limit): bool {
-            DB::table('google_speech_monthly_usage')->insertOrIgnore([
-                'period' => $period,
-                'speech_minutes_reserved' => 0,
-                'tts_characters_reserved' => 0,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            $usage = DB::table('google_speech_monthly_usage')->where('period', $period)->lockForUpdate()->first();
-            if (! $usage || (int) $usage->tts_characters_reserved + $characterCount > $limit) {
-                return false;
-            }
-
-            DB::table('google_speech_monthly_usage')->where('period', $period)->update([
-                'tts_characters_reserved' => (int) $usage->tts_characters_reserved + $characterCount,
-                'updated_at' => now(),
-            ]);
-
-            return true;
-        });
-    }
-
-    private function purgeExpiredAudio(): void
-    {
-        $directory = storage_path('app/private/chat-tts-cache');
-        if (! is_dir($directory)) {
-            return;
-        }
-
-        foreach (glob($directory.'/*.mp3') ?: [] as $path) {
-            if (is_file($path) && filemtime($path) < now()->subDay()->timestamp) {
-                unlink($path);
-            }
-        }
-    }
 }
