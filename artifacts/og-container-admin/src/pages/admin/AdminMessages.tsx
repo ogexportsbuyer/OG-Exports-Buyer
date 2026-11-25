@@ -25,6 +25,10 @@ type ChatMessage = {
   id: number
   sender_id: number
   body: string
+  translated_body?: string | null
+  source_language?: string | null
+  target_language?: string | null
+  translation_status?: string | null
   attachment_path?: string | null
   attachment_url?: string | null
   attachment_name?: string | null
@@ -365,6 +369,23 @@ export default function AdminMessages() {
                             }`}
                           >
                             {m.body ? <p className="whitespace-pre-wrap">{m.body}</p> : null}
+                            {m.translated_body ? (
+                              <div className="rounded-lg border border-border/70 bg-background/70 px-2.5 py-2">
+                                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                  {isMine ? `Buyer translation · ${m.target_language || ""}` : `Urdu translation · ${m.source_language || ""}`}
+                                </p>
+                                <p className="whitespace-pre-wrap">{m.translated_body}</p>
+                              </div>
+                            ) : null}
+                            {!m.translated_body && m.translation_status && !["not_needed", "translated"].includes(m.translation_status) ? (
+                              <p className="text-[10px] text-muted-foreground">
+                                {m.translation_status === "quota_exceeded"
+                                  ? "Translation limit reached; original shown."
+                                  : m.translation_status === "disabled" || m.translation_status === "not_configured"
+                                    ? "Translation is not enabled for this message."
+                                    : "Translation unavailable; original shown."}
+                              </p>
+                            ) : null}
                             {fileUrl && showAsImage && (
                               <ChatImagePreview
                                 src={fileUrl}

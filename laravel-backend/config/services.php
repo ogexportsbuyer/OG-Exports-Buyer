@@ -42,4 +42,10 @@ return [
         'replit_domains' => env('REPLIT_DOMAINS', ''),
     ],
 
+    'google_cloud' => [
+        'translation_api_key' => env('GOOGLE_CLOUD_TRANSLATION_API_KEY'),
+        'translation_enabled' => filter_var(env('GOOGLE_CLOUD_TRANSLATION_ENABLED', false), FILTER_VALIDATE_BOOL),
+        'translation_monthly_character_limit' => (int) env('GOOGLE_CLOUD_TRANSLATION_MONTHLY_CHARACTER_LIMIT', 400000),
+    ],
+
 ];

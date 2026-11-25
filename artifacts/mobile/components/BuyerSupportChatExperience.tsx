@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Linking, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { File as ExpoFile } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import {
@@ -11,7 +12,7 @@ import {
   useAudioRecorder,
   useAudioRecorderState,
 } from 'expo-audio';
-import { useSendInvestorConversationMessage } from '@workspace/api-client-react';
+import { useGetBuyerSupportTranslationLanguages, useSendInvestorConversationMessage } from '@workspace/api-client-react';
 import { useAuth } from '@/context/AuthContext';
 import {
   buyerChatMediaKind,
@@ -20,7 +21,12 @@ import {
 } from '@/lib/upload-rules';
 import { uploadBuyerChatMedia } from '@/lib/file-upload';
 import { resolveBuyerProductImageUrl } from '@/lib/buyer-product-data';
-import { first, messageOf, record, type Json } from '@/lib/data';
+import { first, list, messageOf, record, type Json } from '@/lib/data';
+import {
+  defaultSupportLanguageForCountry,
+  FALLBACK_SUPPORT_LANGUAGES,
+  type SupportLanguage,
+} from '@/lib/support-languages';
 import { motionHaptic } from '@/lib/motion';
 import {
   BuyerSupportChatPanel,
@@ -95,6 +101,10 @@ function normalizedMessages(rawMessages: Json[], ownId: string, apiOrigin: strin
       attachmentName: attachmentName || undefined,
       attachmentMime: attachmentMime || undefined,
       attachmentKind: kind ?? (rawAttachment ? 'file' : undefined),
+      translatedBody: first(item, ['translated_body'], '') || undefined,
+      sourceLanguage: first(item, ['source_language'], '') || undefined,
+      targetLanguage: first(item, ['target_language'], '') || undefined,
+      translationStatus: first(item, ['translation_status'], '') || undefined,
     };
   }).sort((left, right) => {
     const leftTime = Date.parse(left.createdAt);
@@ -113,6 +123,29 @@ export function BuyerSupportChatExperience({
 }: BuyerSupportChatExperienceProps) {
   const { apiOrigin, user } = useAuth();
   const ownId = first(record(user), ['id'], '');
+  const userProfile = record(record(user).profile);
+  const defaultBuyerLanguage = defaultSupportLanguageForCountry(
+    first(record(user), ['country'], first(userProfile, ['country'], '')),
+  );
+  const languageStorageKey = `og-buyer-support-language:${ownId || 'guest'}`;
+  const languagesQuery = useGetBuyerSupportTranslationLanguages({
+    query: {
+      queryKey: ['buyer-support-translation-languages'],
+      enabled: Boolean(ownId),
+      staleTime: 7 * 24 * 60 * 60 * 1000,
+      retry: 1,
+    },
+  });
+  const buyerLanguages = useMemo(() => {
+    const fetchedLanguages = list(languagesQuery.data).map((language) => ({
+      code: first(language, ['code']),
+      name: first(language, ['name']),
+    })).filter((language): language is SupportLanguage => Boolean(language.code && language.name));
+    return fetchedLanguages.length > 0 ? fetchedLanguages : FALLBACK_SUPPORT_LANGUAGES;
+  },
+    [languagesQuery.data],
+  );
+  const [buyerLanguage, setBuyerLanguage] = useState(defaultBuyerLanguage);
   const send = useSendInvestorConversationMessage();
   const [draft, setDraft] = useState('');
   const [pendingMedia, setPendingMedia] = useState<QueuedBuyerMedia[]>([]);
@@ -128,6 +161,20 @@ export function BuyerSupportChatExperience({
   const playerStatus = useAudioPlayerStatus(player);
   const [playingAudioUrl, setPlayingAudioUrl] = useState<string | null>(null);
   const normalized = useMemo(() => normalizedMessages(messages, ownId, apiOrigin), [messages, ownId, apiOrigin]);
+
+  useEffect(() => {
+    let active = true;
+    void AsyncStorage.getItem(languageStorageKey).then((savedLanguage) => {
+      if (active && savedLanguage && /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(savedLanguage)) {
+        setBuyerLanguage(savedLanguage);
+      } else if (active) {
+        setBuyerLanguage(defaultBuyerLanguage);
+      }
+    }).catch(() => {
+      if (active) setBuyerLanguage(defaultBuyerLanguage);
+    });
+    return () => { active = false; };
+  }, [defaultBuyerLanguage, languageStorageKey]);
 
   useEffect(() => {
     if (playerStatus.didJustFinish) setPlayingAudioUrl(null);
@@ -376,6 +423,7 @@ export function BuyerSupportChatExperience({
             conversation: conversationId,
             data: {
               body: index === 0 ? body : '',
+              buyer_language: buyerLanguage,
               attachment_path: uploaded.path,
               attachment_url: uploaded.url,
               attachment_name: uploaded.name,
@@ -393,7 +441,7 @@ export function BuyerSupportChatExperience({
       } else {
         await send.mutateAsync({
           conversation: conversationId,
-          data: { body },
+          data: { body, buyer_language: buyerLanguage },
         });
         sentMessages += 1;
         setDraft('');
@@ -437,6 +485,13 @@ export function BuyerSupportChatExperience({
     }
   }
 
+  async function changeBuyerLanguage(language: string) {
+    setBuyerLanguage(language);
+    await AsyncStorage.setItem(languageStorageKey, language).catch(() => {
+      setActionError('Your reply language could not be saved on this device.');
+    });
+  }
+
   const progress = playerStatus.duration > 0
     ? Math.min(1, playerStatus.currentTime / playerStatus.duration)
     : 0;
@@ -469,6 +524,9 @@ export function BuyerSupportChatExperience({
       playingAudioUrl={playingAudioUrl}
       audioPlaying={Boolean(playingAudioUrl && playerStatus.playing)}
       audioProgress={progress}
+      buyerLanguage={buyerLanguage}
+      buyerLanguages={buyerLanguages}
+      onBuyerLanguageChange={(language) => void changeBuyerLanguage(language)}
       sendProgressLabel={sendProgress ? `Sending ${sendProgress.current}/${sendProgress.total}` : undefined}
     />
   );

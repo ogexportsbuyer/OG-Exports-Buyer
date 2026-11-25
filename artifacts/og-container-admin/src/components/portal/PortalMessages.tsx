@@ -21,6 +21,10 @@ type ChatMessage = {
   id: number
   sender_id: number
   body: string
+  translated_body?: string | null
+  source_language?: string | null
+  target_language?: string | null
+  translation_status?: string | null
   attachment_path?: string | null
   attachment_url?: string | null
   attachment_name?: string | null
@@ -440,7 +444,25 @@ export function PortalMessages({ Layout, showSupport: showSupportProp }: PortalM
                               : "bg-destructive/10 text-foreground border border-destructive/20"
                           }`}
                         >
-                          {m.body ? <p className="whitespace-pre-wrap">{m.body}</p> : null}
+                          {m.body ? (
+                            <div className="space-y-1.5">
+                              <p className="whitespace-pre-wrap">
+                                {!isMine && m.translated_body ? m.translated_body : m.body}
+                              </p>
+                              {!isMine && m.translated_body && m.body !== m.translated_body ? (
+                                <p className="whitespace-pre-wrap border-t border-border/60 pt-1.5 text-[11px] text-muted-foreground">
+                                  Original · {m.body}
+                                </p>
+                              ) : null}
+                              {!isMine && !m.translated_body && m.translation_status && !["not_needed", "translated"].includes(m.translation_status) ? (
+                                <p className="text-[10px] text-muted-foreground">
+                                  {m.translation_status === "quota_exceeded"
+                                    ? "Translation limit reached; original shown."
+                                    : "Translation unavailable; original shown."}
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : null}
                           {fileUrl && showAsImage && (
                             <ChatImagePreview
                               src={fileUrl}

@@ -10,12 +10,20 @@ use App\Models\Message;
 use App\Models\User;
 use App\Support\MediaPath;
 use App\Support\NotifiesUsers;
+use App\Services\GoogleCloudTranslationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class MessageController extends Controller
 {
     use PaginatesQueries;
+
+    public function translationLanguages(): JsonResponse
+    {
+        return response()->json([
+            'data' => app(GoogleCloudTranslationService::class)->supportedLanguages(),
+        ]);
+    }
 
     public function conversations(Request $request): JsonResponse
     {
@@ -128,6 +136,7 @@ class MessageController extends Controller
     {
         $data = $request->validate([
             'body' => ['nullable', 'string', 'max:5000'],
+            'buyer_language' => ['nullable', 'string', 'regex:/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/'],
             'attachment_path' => ['nullable', 'string', 'max:1000'],
             'attachment_url' => ['nullable', 'string', 'max:1000'],
             'attachment_name' => ['nullable', 'string', 'max:255'],
@@ -146,10 +155,28 @@ class MessageController extends Controller
             ->whereHas('participants', fn ($q) => $q->where('users.id', $user->id))
             ->findOrFail($conversationId);
 
+        $translation = [
+            'translated_body' => null,
+            'source_language' => null,
+            'target_language' => null,
+            'translation_status' => 'not_needed',
+        ];
+        if ($user->hasRole('buyer')) {
+            $buyerLanguage = app(GoogleCloudTranslationService::class)->buyerLanguage(
+                $user->loadMissing('profile'),
+                $data['buyer_language'] ?? $conversation->buyer_language
+            );
+            $conversation->forceFill(['buyer_language' => $buyerLanguage])->save();
+            if (! empty($data['body'])) {
+                $translation = app(GoogleCloudTranslationService::class)->translate($data['body'], 'ur');
+            }
+        }
+
         $message = Message::create([
             'conversation_id' => $conversation->id,
             'sender_id' => $user->id,
             'body' => $data['body'] ?? '',
+            ...$translation,
             'attachment_path' => $data['attachment_path'] ?? null,
             'attachment_url' => $data['attachment_url'] ?? null,
             'attachment_name' => $data['attachment_name'] ?? null,
@@ -160,7 +187,7 @@ class MessageController extends Controller
         $conversation->touch();
 
         $recipients = $conversation->participants()->where('users.id', '!=', $user->id)->get();
-        $preview = $data['body'] ?: ($data['attachment_name'] ?? 'Sent an attachment');
+        $preview = $message->translated_body ?: ($data['body'] ?: ($data['attachment_name'] ?? 'Sent an attachment'));
         NotifiesUsers::notifyMany(
             $recipients,
             'new_message',

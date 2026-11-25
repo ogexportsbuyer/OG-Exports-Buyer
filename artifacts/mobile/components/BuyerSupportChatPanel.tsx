@@ -4,6 +4,7 @@ import {
   FlatList,
   Image,
   Keyboard,
+  Modal,
   Pressable,
   Platform,
   ScrollView,
@@ -28,7 +29,13 @@ export type BuyerSupportMessage = {
   attachmentMime?: string;
   attachmentKind?: 'image' | 'video' | 'audio' | 'file';
   durationSeconds?: number;
+  translatedBody?: string;
+  sourceLanguage?: string;
+  targetLanguage?: string;
+  translationStatus?: string;
 };
+
+export type BuyerSupportLanguage = { code: string; name: string };
 
 export type BuyerSupportPendingMedia = {
   id: string;
@@ -63,6 +70,9 @@ export type BuyerSupportChatPanelProps = {
   playingAudioUrl: string | null;
   audioPlaying: boolean;
   audioProgress: number;
+  buyerLanguage: string;
+  buyerLanguages: BuyerSupportLanguage[];
+  onBuyerLanguageChange: (language: string) => void;
   sendProgressLabel?: string;
 };
 
@@ -103,6 +113,9 @@ export function BuyerSupportChatPanel({
   playingAudioUrl,
   audioPlaying,
   audioProgress,
+  buyerLanguage,
+  buyerLanguages,
+  onBuyerLanguageChange,
   sendProgressLabel,
   pendingMedia: pendingMediaValue,
 }: BuyerSupportChatPanelProps) {
@@ -112,6 +125,11 @@ export function BuyerSupportChatPanel({
   const listRef = useRef<FlatList<BuyerSupportMessage>>(null);
   const pendingMedia = Array.isArray(pendingMediaValue) ? pendingMediaValue : [];
   const pendingCardWidth = 84;
+  const [languagePickerOpen, setLanguagePickerOpen] = React.useState(false);
+  const [languageSearch, setLanguageSearch] = React.useState('');
+  const visibleLanguages = buyerLanguages.filter((language) =>
+    `${language.name} ${language.code}`.toLocaleLowerCase().includes(languageSearch.trim().toLocaleLowerCase()),
+  );
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: false }));
@@ -151,7 +169,27 @@ export function BuyerSupportChatPanel({
             </Text>
             <Text style={[styles.timestamp, { color: colors.mutedForeground }]}>{formatTime(item.createdAt)}</Text>
           </View>
-          {item.body ? <Text style={[styles.messageBody, { color: colors.foreground }]}>{item.body}</Text> : null}
+          {item.body ? (
+            <>
+              <Text style={[styles.messageBody, { color: colors.foreground }]}>
+                {!own && item.translatedBody ? item.translatedBody : item.body}
+              </Text>
+              {!own && item.translatedBody && item.body !== item.translatedBody ? (
+                <Text style={[styles.originalBody, { color: colors.mutedForeground }]}>
+                  Original · {item.body}
+                </Text>
+              ) : null}
+              {!own && !item.translatedBody && item.translationStatus && !['not_needed', 'translated'].includes(item.translationStatus) ? (
+                <Text style={[styles.translationStatus, { color: colors.mutedForeground }]}>
+                  {item.translationStatus === 'quota_exceeded'
+                    ? 'Monthly translation limit reached; showing original.'
+                    : item.translationStatus === 'disabled' || item.translationStatus === 'not_configured'
+                      ? 'Translation setup is pending; showing original.'
+                      : 'Translation unavailable; showing original.'}
+                </Text>
+              ) : null}
+            </>
+          ) : null}
           {item.attachmentUrl && item.attachmentKind === 'image' ? (
             <Pressable
               testID="buyer-chat-open-image"
@@ -222,6 +260,86 @@ export function BuyerSupportChatPanel({
 
   return (
     <View style={styles.container} testID="buyer-support-chat-panel">
+      <View style={[styles.languageBar, { borderBottomColor: colors.border }]}>
+        <View style={styles.languageLabelGroup}>
+          <Feather name="globe" size={14} color={colors.primary} />
+          <Text style={[styles.languageLabel, { color: colors.mutedForeground }]}>Translate replies to</Text>
+        </View>
+        <Pressable
+          testID="buyer-chat-reply-language"
+          accessibilityRole="button"
+          accessibilityLabel={`Choose reply language. Current: ${buyerLanguages.find(language => language.code === buyerLanguage)?.name ?? buyerLanguage}`}
+          onPress={() => setLanguagePickerOpen(true)}
+          style={[styles.languageButton, { backgroundColor: colors.secondary, borderColor: colors.border }]}
+        >
+          <Text style={[styles.languageButtonText, { color: colors.primary }]}>
+            {buyerLanguages.find(language => language.code === buyerLanguage)?.name ?? buyerLanguage.toUpperCase()}
+          </Text>
+          <Feather name="chevron-down" size={14} color={colors.primary} />
+        </Pressable>
+      </View>
+
+      <Modal
+        visible={languagePickerOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLanguagePickerOpen(false)}
+      >
+        <View style={styles.languageModalBackdrop}>
+          <View style={[styles.languageModal, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.languageModalHeader}>
+              <View style={styles.languageModalTitleGroup}>
+                <Text style={[styles.languageModalTitle, { color: colors.foreground }]}>Reply language</Text>
+                <Text style={[styles.languageModalSubtitle, { color: colors.mutedForeground }]}>
+                  Support replies will be translated into this language.
+                </Text>
+              </View>
+              <Pressable accessibilityRole="button" accessibilityLabel="Close language selector" onPress={() => setLanguagePickerOpen(false)}>
+                <Feather name="x" size={19} color={colors.mutedForeground} />
+              </Pressable>
+            </View>
+            <TextInput
+              value={languageSearch}
+              onChangeText={setLanguageSearch}
+              placeholder="Search languages"
+              placeholderTextColor={colors.mutedForeground}
+              style={[styles.languageSearch, { color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }]}
+              accessibilityLabel="Search translation languages"
+            />
+            <ScrollView style={styles.languageList} keyboardShouldPersistTaps="handled">
+              {visibleLanguages.map((language) => {
+                const selected = language.code === buyerLanguage;
+                return (
+                  <Pressable
+                    key={language.code}
+                    testID={`buyer-chat-language-${language.code}`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    onPress={() => {
+                      onBuyerLanguageChange(language.code);
+                      setLanguagePickerOpen(false);
+                      setLanguageSearch('');
+                    }}
+                    style={[
+                      styles.languageOption,
+                      { borderBottomColor: colors.border },
+                      selected ? { backgroundColor: colors.lightGreen } : null,
+                    ]}
+                  >
+                    <Text style={[styles.languageOptionName, { color: colors.foreground }]}>{language.name}</Text>
+                    <Text style={[styles.languageOptionCode, { color: colors.mutedForeground }]}>{language.code.toUpperCase()}</Text>
+                    {selected ? <Feather name="check" size={16} color={colors.primary} /> : null}
+                  </Pressable>
+                );
+              })}
+              {visibleLanguages.length === 0 ? (
+                <Text style={[styles.noLanguages, { color: colors.mutedForeground }]}>No language matches that search.</Text>
+              ) : null}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       {error ? (
         <View style={[styles.errorBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={[styles.errorIcon, { backgroundColor: colors.secondary }]}>
@@ -474,6 +592,23 @@ const styles = StyleSheet.create({
   list: { flex: 1 },
   composerDock: { width: '100%', zIndex: 2 },
   listContent: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 14, flexGrow: 1, justifyContent: 'flex-end' },
+  languageBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingHorizontal: 14, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  languageLabelGroup: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  languageLabel: { fontSize: 11, fontWeight: '600' },
+  languageButton: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 7, maxWidth: '55%' },
+  languageButtonText: { fontSize: 11, fontWeight: '700', flexShrink: 1 },
+  languageModalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.46)', justifyContent: 'center', padding: 20 },
+  languageModal: { maxHeight: '78%', borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, padding: 16 },
+  languageModalHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 },
+  languageModalTitleGroup: { flex: 1, gap: 4 },
+  languageModalTitle: { fontSize: 17, fontWeight: '700' },
+  languageModalSubtitle: { fontSize: 12, lineHeight: 17 },
+  languageSearch: { minHeight: 42, borderWidth: StyleSheet.hairlineWidth, borderRadius: 13, paddingHorizontal: 12, fontSize: 14, marginBottom: 8 },
+  languageList: { flexGrow: 0 },
+  languageOption: { minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth, paddingHorizontal: 8 },
+  languageOptionName: { flex: 1, fontSize: 13, fontWeight: '600' },
+  languageOptionCode: { fontSize: 10, fontWeight: '700', letterSpacing: 0.4 },
+  noLanguages: { textAlign: 'center', paddingVertical: 20, fontSize: 12 },
   emptyList: { justifyContent: 'center' },
   messageRow: { width: '100%', marginBottom: 10, flexDirection: 'row' },
   bubble: { width: '88%', maxWidth: 460, paddingHorizontal: 13, paddingVertical: 10, borderWidth: StyleSheet.hairlineWidth, borderRadius: 18 },
@@ -481,6 +616,8 @@ const styles = StyleSheet.create({
   sender: { fontSize: 10, fontWeight: '700', letterSpacing: 0.2, flexShrink: 1 },
   timestamp: { fontSize: 10 },
   messageBody: { fontSize: 14, lineHeight: 20 },
+  originalBody: { marginTop: 5, fontSize: 11, lineHeight: 16 },
+  translationStatus: { marginTop: 5, fontSize: 10, lineHeight: 14, fontStyle: 'italic' },
   imagePressable: { marginTop: 7, overflow: 'hidden', borderRadius: 12 },
   messageImage: { width: '100%', height: 190, borderRadius: 12, backgroundColor: 'transparent' },
   audioMessage: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8, padding: 10, borderRadius: 14 },

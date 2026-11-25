@@ -182,6 +182,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/conversations/{conversation}/messages', [MessageController::class, 'storeMessage']);
     Route::post('/conversations/{conversation}/read', [MessageController::class, 'markRead']);
     Route::get('/messages/unread-count', [MessageController::class, 'unreadCount']);
+    Route::get('/messages/translation-languages', [MessageController::class, 'translationLanguages']);
 
     Route::get('/support/tickets', [SupportTicketController::class, 'index']);
     Route::post('/support/tickets', [SupportTicketController::class, 'store']);

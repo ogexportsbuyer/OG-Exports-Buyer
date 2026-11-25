@@ -10330,6 +10330,83 @@ export function useGetInvestorAdminConversation<TData = Awaited<ReturnType<typeo
 
 
 
+export const getGetBuyerSupportTranslationLanguagesUrl = () => {
+
+
+
+
+  return `/api/messages/translation-languages`
+}
+
+/**
+ * @summary List buyer support translation languages
+ */
+export const getBuyerSupportTranslationLanguages = async ( options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
+
+  return customFetch<JsonObject>(getGetBuyerSupportTranslationLanguagesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBuyerSupportTranslationLanguagesQueryKey = () => {
+    return [
+    `/api/messages/translation-languages`
+    ] as const;
+    }
+
+
+export const getGetBuyerSupportTranslationLanguagesQueryOptions = <TData = Awaited<ReturnType<typeof getBuyerSupportTranslationLanguages>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBuyerSupportTranslationLanguages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBuyerSupportTranslationLanguagesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBuyerSupportTranslationLanguages>>> = ({ signal }) => getBuyerSupportTranslationLanguages({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBuyerSupportTranslationLanguages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBuyerSupportTranslationLanguagesQueryResult = NonNullable<Awaited<ReturnType<typeof getBuyerSupportTranslationLanguages>>>
+export type GetBuyerSupportTranslationLanguagesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List buyer support translation languages
+ */
+
+export function useGetBuyerSupportTranslationLanguages<TData = Awaited<ReturnType<typeof getBuyerSupportTranslationLanguages>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBuyerSupportTranslationLanguages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBuyerSupportTranslationLanguagesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetInvestorConversationMessagesUrl = (conversation: string,) => {
 
 

@@ -1585,6 +1585,14 @@ paths:
       security: [{ BearerAuth: [] }]
       responses:
         "200": { description: Conversation, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+  /messages/translation-languages:
+    get:
+      operationId: getBuyerSupportTranslationLanguages
+      tags: [communication]
+      summary: List buyer support translation languages
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: Supported translation languages, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
   /conversations/{conversation}/messages:
     get:
       operationId: getInvestorConversationMessages

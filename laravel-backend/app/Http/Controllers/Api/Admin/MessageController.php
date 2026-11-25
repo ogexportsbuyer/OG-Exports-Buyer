@@ -10,6 +10,7 @@ use App\Models\Message;
 use App\Models\User;
 use App\Support\MediaPath;
 use App\Support\NotifiesUsers;
+use App\Services\GoogleCloudTranslationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -81,7 +82,9 @@ class MessageController extends Controller
                     'company' => $user->profile?->company_name,
                 ],
                 'last_message' => $last ? [
-                    'body' => $last->body,
+                    'body' => $last->sender_id !== $admin->id && $last->translated_body
+                        ? $last->translated_body
+                        : $last->body,
                     'attachment_name' => $last->attachment_name,
                     'created_at' => $last->created_at,
                     'sender_id' => $last->sender_id,
@@ -210,10 +213,26 @@ class MessageController extends Controller
             ->whereHas('participants', fn ($q) => $q->where('users.id', $admin->id))
             ->findOrFail($id);
 
+        $translation = [
+            'translated_body' => null,
+            'source_language' => null,
+            'target_language' => null,
+            'translation_status' => 'not_needed',
+        ];
+        $buyer = $conversation->participants()->with('profile')->get()
+            ->first(fn (User $participant) => $participant->hasRole('buyer'));
+        if ($buyer && ! empty($data['body'])) {
+            $translator = app(GoogleCloudTranslationService::class);
+            $targetLanguage = $translator->buyerLanguage($buyer, $conversation->buyer_language);
+            $conversation->forceFill(['buyer_language' => $targetLanguage])->save();
+            $translation = $translator->translate($data['body'], $targetLanguage);
+        }
+
         $message = Message::create([
             'conversation_id' => $conversation->id,
             'sender_id' => $admin->id,
             'body' => $data['body'] ?? '',
+            ...$translation,
             'attachment_path' => $data['attachment_path'] ?? null,
             'attachment_url' => $data['attachment_url'] ?? null,
             'attachment_name' => $data['attachment_name'] ?? null,
@@ -224,7 +243,7 @@ class MessageController extends Controller
         $conversation->touch();
 
         $recipients = $conversation->participants()->where('users.id', '!=', $admin->id)->get();
-        $messageText = trim(strip_tags((string) ($data['body'] ?? '')));
+        $messageText = trim(strip_tags((string) ($message->translated_body ?: ($data['body'] ?? ''))));
         $preview = $messageText !== ''
             ? Str::limit($messageText, 200)
             : 'A new attachment is available in your secure conversation.';

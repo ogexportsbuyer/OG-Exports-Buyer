@@ -11,6 +11,7 @@ class Conversation extends Model
 {
     protected $fillable = [
         'subject',
+        'buyer_language',
         'created_by',
     ];
 

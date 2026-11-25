@@ -2459,6 +2459,12 @@ export const GetInvestorAdminConversationResponse = zod.record(zod.string(), zod
 
 
 /**
+ * @summary List buyer support translation languages
+ */
+export const GetBuyerSupportTranslationLanguagesResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
  * @summary List support conversation messages
  */
 export const GetInvestorConversationMessagesParams = zod.object({

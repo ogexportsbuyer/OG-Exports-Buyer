@@ -6,6 +6,8 @@ use App\Models\Message;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 
 uses(RefreshDatabase::class);
 
@@ -48,5 +50,55 @@ it('stores buyer support media metadata and notifies the other participant', fun
             ->where('type', 'new_message')
             ->where('data->message_id', $response->json('data.id'))
             ->exists())->toBeTrue();
+});
+
+it('translates new buyer and support messages toward each recipient language', function () {
+    config([
+        'services.google_cloud.translation_api_key' => 'test-key',
+        'services.google_cloud.translation_enabled' => true,
+        'services.google_cloud.translation_monthly_character_limit' => 400000,
+    ]);
+    Http::fake(function ($request) {
+        $target = (string) $request['target'];
+        return Http::response([
+            'data' => [
+                'translations' => [[
+                    'translatedText' => $target === 'ur' ? 'اردو ترجمہ' : 'Bonjour',
+                    'detectedSourceLanguage' => $target === 'ur' ? 'ar' : 'ur',
+                ]],
+            ],
+        ]);
+    });
+    Mail::fake();
+
+    $buyerMessage = $this->actingAs($this->buyer)
+        ->postJson("/api/conversations/{$this->conversation->id}/messages", [
+            'body' => 'مرحبا، أحتاج إلى عرض سعر.',
+            'buyer_language' => 'fr',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.body', 'مرحبا، أحتاج إلى عرض سعر.')
+        ->assertJsonPath('data.translated_body', 'اردو ترجمہ')
+        ->assertJsonPath('data.source_language', 'ar')
+        ->assertJsonPath('data.target_language', 'ur')
+        ->assertJsonPath('data.translation_status', 'translated');
+
+    expect($this->conversation->fresh()->buyer_language)->toBe('fr');
+
+    $adminMessage = $this->actingAs($this->admin)
+        ->postJson("/api/admin/conversations/{$this->conversation->id}/messages", [
+            'body' => 'آپ کی درخواست موصول ہوگئی ہے۔',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.body', 'آپ کی درخواست موصول ہوگئی ہے۔')
+        ->assertJsonPath('data.translated_body', 'Bonjour')
+        ->assertJsonPath('data.source_language', 'ur')
+        ->assertJsonPath('data.target_language', 'fr')
+        ->assertJsonPath('data.translation_status', 'translated');
+
+    expect(Message::query()->where('id', $buyerMessage->json('data.id'))->value('body'))
+        ->toBe('مرحبا، أحتاج إلى عرض سعر.')
+        ->and(Message::query()->where('id', $adminMessage->json('data.id'))->value('body'))
+        ->toBe('آپ کی درخواست موصول ہوگئی ہے۔');
 });
 
