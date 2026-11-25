@@ -181,15 +181,34 @@ class ShipmentController extends Controller
 
     public function updateMilestone(Request $request, int $id, int $milestoneId): JsonResponse
     {
+        $shipment = Shipment::query()->with('buyer')->findOrFail($id);
         $milestone = ShipmentMilestone::query()
             ->where('shipment_id', $id)
             ->findOrFail($milestoneId);
+        $previousLabel = $milestone->label;
 
         $milestone->update($request->validate([
             'label' => ['sometimes', 'string', 'max:255'],
             'occurred_at' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
         ]));
+
+        if ($milestone->wasChanged()) {
+            $changes = ['milestone_details' => true];
+
+            if (
+                $milestone->wasChanged('label')
+                && $shipment->current_milestone === $previousLabel
+            ) {
+                $shipment->update(['current_milestone' => $milestone->label]);
+                $changes = ['current_milestone' => $milestone->label];
+            }
+
+            BuyerTradeNotifier::shipmentUpdated(
+                $shipment->fresh()->load('buyer'),
+                $changes,
+            );
+        }
 
         return response()->json(['data' => $milestone->fresh()]);
     }

@@ -4,35 +4,23 @@ use App\Models\AppNotification;
 use App\Models\EmailTemplate;
 use App\Models\Order;
 use App\Models\Quotation;
+use App\Models\Shipment;
+use App\Models\ShipmentMilestone;
 use App\Models\User;
 use App\Support\DepositReviewStatuses;
 use App\Support\OrderStatuses;
 use App\Support\PortalNotificationTypes;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->seed(RoleSeeder::class);
-
-    foreach ([
-        'buyer_order_status_update',
-        'quotation_reply',
-        'buyer_payment_approved',
-    ] as $slug) {
-        EmailTemplate::query()->updateOrCreate(
-            ['slug' => $slug],
-            [
-                'subject' => '{{app_name}} — {{title}}',
-                'body_html' => '<p>Dear {{user_name}},</p><p>{{body}}</p>',
-                'body_text' => 'Dear {{user_name}}, {{body}}',
-                'placeholders' => ['user_name', 'title', 'body', 'app_name', 'portal_url', 'order_number', 'status', 'payment_status', 'notes', 'quotation_ref', 'message_preview'],
-                'is_active' => true,
-            ]
-        );
-    }
+    config(['mail.default' => 'array']);
 
     $this->admin = User::factory()->create(['account_status' => 'active', 'name' => 'Admin']);
     $this->admin->assignRole('admin');
@@ -45,11 +33,28 @@ beforeEach(function () {
     $this->buyer->assignRole('buyer');
 });
 
-it('notifies buyer when admin updates order status', function () {
-    Mail::fake();
+it('installs active email templates for buyer-facing admin updates with migrations', function () {
+    $slugs = [
+        'quotation_sent',
+        'quotation_reply',
+        'buyer_order_status_update',
+        'buyer_shipment_update',
+        'buyer_trade_document',
+        'buyer_payment_approved',
+        'buyer_payment_rejected',
+        'buyer_payment_cancelled',
+        'support_ticket_update',
+    ];
 
+    foreach ($slugs as $slug) {
+        expect(EmailTemplate::query()->where('slug', $slug)->where('is_active', true)->exists())
+            ->toBeTrue("Expected active email template [{$slug}] from migrations.");
+    }
+});
+
+it('notifies buyer when admin updates order status', function () {
     $authLogs = [];
-    \Illuminate\Support\Facades\Event::listen(\Illuminate\Log\Events\MessageLogged::class, function ($event) use (&$authLogs) {
+    Event::listen(MessageLogged::class, function (MessageLogged $event) use (&$authLogs) {
         $authLogs[] = $event;
     });
 
@@ -89,6 +94,10 @@ it('notifies buyer when admin updates order status', function () {
     });
     expect($emailSent)->toBeTrue();
 
+    $messages = Mail::mailer('array')->getSymfonyTransport()->messages();
+    expect($messages)->toHaveCount(1)
+        ->and($messages[0]->getEnvelope()->getRecipients()[0]->getAddress())->toBe($this->buyer->email);
+
     $this->actingAs($this->buyer)
         ->withHeader('Origin', 'http://localhost:5000')
         ->getJson('/api/notifications/unread-count')
@@ -97,8 +106,6 @@ it('notifies buyer when admin updates order status', function () {
 });
 
 it('notifies buyer when admin replies on a quotation', function () {
-    Mail::fake();
-
     $quotation = Quotation::query()->create([
         'buyer_id' => $this->buyer->id,
         'product_name' => 'Basmati Rice',
@@ -126,12 +133,11 @@ it('notifies buyer when admin replies on a quotation', function () {
 
     expect($notification)->not->toBeNull()
         ->and($notification->body)->toContain('freight rate')
-        ->and($notification->data['href'] ?? null)->toBe('/buyer/quotations');
+        ->and($notification->data['href'] ?? null)->toBe('/buyer/quotations')
+        ->and(Mail::mailer('array')->getSymfonyTransport()->messages())->toHaveCount(1);
 });
 
 it('notifies and emails buyer when admin approves buyer payment', function () {
-    Mail::fake();
-
     $order = Order::query()->create([
         'order_number' => 'ORD-PAY-100',
         'buyer_id' => $this->buyer->id,
@@ -161,7 +167,55 @@ it('notifies and emails buyer when admin approves buyer payment', function () {
     expect(Order::query()->whereKey($order->id)->value('payment_status'))
         ->toBe(DepositReviewStatuses::APPROVED);
 
-    // Mail::send (templated HTML) is used by NotificationMailer; Mail::fake prevents delivery.
-    // In-app notification from notifyAndEmail confirms the email path was invoked with the template slug.
     expect(EmailTemplate::query()->where('slug', 'buyer_payment_approved')->where('is_active', true)->exists())->toBeTrue();
+
+    $messages = Mail::mailer('array')->getSymfonyTransport()->messages();
+    expect($messages)->toHaveCount(1)
+        ->and($messages[0]->getEnvelope()->getRecipients()[0]->getAddress())->toBe($this->buyer->email);
+});
+
+it('emails the buyer when an admin edits an existing shipment milestone', function () {
+    $order = Order::query()->create([
+        'order_number' => 'ORD-SHIPMENT-EMAIL',
+        'buyer_id' => $this->buyer->id,
+        'status' => OrderStatuses::ORDER_CONFIRMED,
+        'payment_status' => 'unpaid',
+        'total_value' => 5000,
+        'currency' => 'USD',
+        'placed_at' => now(),
+    ]);
+    $shipment = Shipment::query()->create([
+        'order_id' => $order->id,
+        'buyer_id' => $this->buyer->id,
+        'product_snapshot' => 'Yellow Maize',
+        'container' => 'OGXU1234567',
+        'status' => 'in_transit',
+        'current_milestone' => 'Gate-In at Port',
+    ]);
+    $milestone = ShipmentMilestone::query()->create([
+        'shipment_id' => $shipment->id,
+        'label' => 'Gate-In at Port',
+        'occurred_at' => now()->subDay(),
+    ]);
+
+    $this->actingAs($this->admin)
+        ->withHeader('Origin', 'http://localhost:5000')
+        ->putJson("/api/admin/shipments/{$shipment->id}/milestones/{$milestone->id}", [
+            'label' => 'Vessel Loaded',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.label', 'Vessel Loaded');
+
+    expect(Shipment::query()->whereKey($shipment->id)->value('current_milestone'))
+        ->toBe('Vessel Loaded');
+
+    $notification = AppNotification::query()
+        ->where('user_id', $this->buyer->id)
+        ->where('type', PortalNotificationTypes::SHIPMENT_UPDATE)
+        ->sole();
+    $messages = Mail::mailer('array')->getSymfonyTransport()->messages();
+
+    expect($notification->body)->toContain('Vessel Loaded')
+        ->and($messages)->toHaveCount(1)
+        ->and($messages[0]->getEnvelope()->getRecipients()[0]->getAddress())->toBe($this->buyer->email);
 });
