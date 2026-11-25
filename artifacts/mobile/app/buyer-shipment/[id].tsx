@@ -11,7 +11,7 @@ import { LocalizedText as Text } from '@/components/LocalizedText';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { record } from '@/lib/data';
-import { mapBuyerShipment } from '@/lib/buyer-shipment-data';
+import { buyerShipmentDetailRows, mapBuyerShipment } from '@/lib/buyer-shipment-data';
 
 export default function BuyerShipmentDetail() {
   const colors = useColors();
@@ -27,6 +27,7 @@ export default function BuyerShipmentDetail() {
     () => mapBuyerShipment(record(query.data).data),
     [query.data],
   );
+  const detailRows = useMemo(() => buyerShipmentDetailRows(shipment), [shipment]);
 
   if (!token) return <BuyerAuthGate title="Shipment details" body="Sign in to view shipment milestones, documents, and order information." returnTo={`/buyer-shipment/${routeId ?? ''}`} />;
 
@@ -81,14 +82,23 @@ export default function BuyerShipmentDetail() {
 
           <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '800', marginBottom: 9 }}>Shipping details</Text>
           <Card style={{ padding: 13, marginBottom: 13 }}>
-            <DetailRow label="Container number" value={shipment.container} colors={colors} />
-            <DetailRow label="Order reference" value={shipment.orderNumber} colors={colors} />
-            <DetailRow label="Shipping line" value={shipment.shippingLine} colors={colors} />
-            <DetailRow label="Vessel" value={shipment.vessel} colors={colors} />
-            <DetailRow label="Origin port" value={shipment.origin} colors={colors} />
-            <DetailRow label="Destination port" value={shipment.destination} colors={colors} />
-            <DetailRow label="Estimated departure" value={shipment.etd} colors={colors} />
-            <DetailRow label="Estimated arrival" value={shipment.eta} colors={colors} last />
+            {detailRows.map((detail, index) => (
+              <DetailRow
+                key={detail.label}
+                label={detail.label}
+                value={detail.value}
+                colors={colors}
+                last={index === detailRows.length - 1}
+              />
+            ))}
+            {detailRows.length < 8 ? (
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 11, marginTop: detailRows.length ? 9 : 0, borderRadius: 12, backgroundColor: colors.secondary }}>
+                <Feather name="info" size={14} color={colors.primary} style={{ marginTop: 1 }} />
+                <Text style={{ flex: 1, color: colors.mutedForeground, fontSize: 10, lineHeight: 15 }}>
+                  More shipping details will appear here when OG Exports shares them.
+                </Text>
+              </View>
+            ) : null}
           </Card>
 
           <BuyerShipmentTimeline steps={shipment.timeline} updates={shipment.recentUpdates} />

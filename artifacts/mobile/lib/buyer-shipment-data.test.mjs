@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  buyerShipmentDetailRows,
   isShipmentInTransit,
   mapBuyerShipment,
   shipmentSearchText,
@@ -78,6 +79,41 @@ test('shows pending shipments, upcoming journey steps, and unrecognized real upd
   }]);
   assert.equal(shipment.documents[0].status, 'pending');
   assert.equal(shipment.documents[0].downloadUrl, '/api/buyer/documents/12/download');
+});
+
+test('uses related order destination when shipment destination is absent and recognizes common field aliases', () => {
+  const shipment = mapBuyerShipment({
+    id: 21,
+    status: 'booking_confirmed',
+    destination: null,
+    vessel_name: 'MV Buyer Route',
+    shipping_company: 'Ocean Line',
+    estimated_arrival_date: '2026-12-18',
+    order: {
+      id: 12,
+      order_number: 'ORD-BUYER-12',
+      destination_port: 'Arzew, Algeria',
+    },
+  });
+
+  assert.equal(shipment.destination, 'Arzew, Algeria');
+  assert.equal(shipment.vessel, 'MV Buyer Route');
+  assert.equal(shipment.shippingLine, 'Ocean Line');
+  assert.equal(shipment.eta, 'Dec 18, 2026');
+});
+
+test('shipment details omit unavailable placeholders and keep reported values', () => {
+  const shipment = mapBuyerShipment({
+    id: 22,
+    container: null,
+    order: { order_number: 'ORD-22', destination_port: 'Arzew, Algeria' },
+    status: 'in_transit',
+  });
+
+  assert.deepEqual(buyerShipmentDetailRows(shipment), [
+    { label: 'Order reference', value: 'ORD-22' },
+    { label: 'Destination port', value: 'Arzew, Algeria' },
+  ]);
 });
 
 test('marks every stage complete for delivered shipments and labels known statuses', () => {

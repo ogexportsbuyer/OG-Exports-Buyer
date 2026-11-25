@@ -47,6 +47,22 @@ export type BuyerShipmentView = {
   recentUpdates: ShipmentUpdate[];
 };
 
+export type BuyerShipmentDetailRow = {
+  label: string;
+  value: string;
+};
+
+const BUYER_SHIPMENT_DETAIL_FIELDS: Array<[keyof BuyerShipmentView, string]> = [
+  ['container', 'Container number'],
+  ['orderNumber', 'Order reference'],
+  ['shippingLine', 'Shipping line'],
+  ['vessel', 'Vessel'],
+  ['origin', 'Origin port'],
+  ['destination', 'Destination port'],
+  ['etd', 'Estimated departure'],
+  ['eta', 'Estimated arrival'],
+];
+
 export const SHIPMENT_TIMELINE_STEPS = [
   'Awaiting Booking',
   'Booking Confirmed',
@@ -270,21 +286,25 @@ export function mapBuyerShipment(value: unknown): BuyerShipmentView {
       description: fieldText(milestone, ['description', 'notes', 'note']),
     }];
   });
+  const destination = fieldText(
+    shipment,
+    ['destination', 'destination_port', 'port_of_discharge', 'destinationPort'],
+  ) || fieldText(order, ['destination_port', 'destination', 'port_of_discharge', 'destinationPort'], '—');
 
   return {
     id: fieldText(shipment, ['id']),
     orderId: fieldText(order, ['order_number'], fieldText(shipment, ['order_number', 'order_id'], '—')),
     orderNumber: fieldText(order, ['order_number'], fieldText(shipment, ['order_number', 'order_id'], '—')),
     orderRecordId: fieldText(order, ['id'], fieldText(shipment, ['order_id'])),
-    container: fieldText(shipment, ['container', 'container_number', 'reference'], '—'),
-    trackingNumber: fieldText(shipment, ['tracking_number', 'tracking_code']),
+    container: fieldText(shipment, ['container', 'container_number', 'container_no', 'containerNumber', 'reference'], '—'),
+    trackingNumber: fieldText(shipment, ['tracking_number', 'tracking_code', 'tracking_no']),
     currentMilestone,
-    shippingLine: fieldText(shipment, ['shipping_line', 'carrier'], '—'),
-    vessel: fieldText(shipment, ['vessel', 'vessel_name'], '—'),
-    origin: fieldText(shipment, ['origin', 'origin_port'], '—'),
-    destination: fieldText(shipment, ['destination', 'destination_port'], '—'),
-    etd: formatShipmentDate(fieldText(shipment, ['etd', 'estimated_departure', 'departure_date'])),
-    eta: formatShipmentDate(fieldText(shipment, ['eta', 'estimated_delivery', 'estimated_delivery_date'])),
+    shippingLine: fieldText(shipment, ['shipping_line', 'shippingLine', 'shipping_company', 'carrier'], '—'),
+    vessel: fieldText(shipment, ['vessel', 'vessel_name', 'vesselName', 'ship_name'], '—'),
+    origin: fieldText(shipment, ['origin', 'origin_port', 'port_of_loading', 'originPort'], '—'),
+    destination,
+    etd: formatShipmentDate(fieldText(shipment, ['etd', 'estimated_departure', 'estimated_departure_date', 'departure_date'])),
+    eta: formatShipmentDate(fieldText(shipment, ['eta', 'estimated_arrival', 'estimated_arrival_date', 'estimated_delivery', 'estimated_delivery_date'])),
     statusRaw,
     statusLabel: shipmentStatusLabel(statusRaw),
     progress: shipmentProgress(statusRaw, currentMilestone, milestones.length),
@@ -293,6 +313,15 @@ export function mapBuyerShipment(value: unknown): BuyerShipmentView {
     timeline,
     recentUpdates,
   };
+}
+
+export function buyerShipmentDetailRows(shipment: BuyerShipmentView): BuyerShipmentDetailRow[] {
+  return BUYER_SHIPMENT_DETAIL_FIELDS.flatMap(([key, label]) => {
+    const value = shipment[key];
+    return typeof value === 'string' && value.trim() && value !== '—'
+      ? [{ label, value }]
+      : [];
+  });
 }
 
 export function shipmentSearchText(shipment: BuyerShipmentView): string {
