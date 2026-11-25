@@ -25,6 +25,12 @@ Do not trust a newly scanned SSH host key until its fingerprint has been confirm
 
 **How to apply:** If no trusted `known_hosts` entry exists, obtain the SSH fingerprint without uploading files, have it confirmed first, then pin the verified key for the deployment connection.
 
+For nonstandard SSH ports, `ssh-keyscan` may print comment lines before the actual public-key row, and SSH may verify the resolved IP as well as the hostname.
+
+**Why:** Parsing the first scan line can create a malformed host-key entry that strict checking correctly rejects.
+
+**How to apply:** Select the row whose key type is `ssh-ed25519`, compare its `ssh-keygen -lf` fingerprint to the user-confirmed value, and pin both `[hostname]:port` and `[resolved-IP]:port` when applicable.
+
 **Why:** Hostinger's browser-terminal instructions apply to its newer File Manager; older File Manager layouts may have no terminal control.
 
 **How to apply:** If the toolbar lacks both a Terminal control and the newer Deploy control, stop searching the file list and use SSH Access or another confirmed deployment method instead.
