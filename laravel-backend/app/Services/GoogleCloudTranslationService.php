@@ -124,9 +124,12 @@ class GoogleCloudTranslationService
             return $fallback;
         }
 
-        return Cache::remember('google-cloud-translation-languages-en', now()->addDays(7), function () use ($apiKey, $fallback) {
+        $cacheKey = 'google-cloud-translation-languages-en-'.hash('sha256', $apiKey);
+
+        return Cache::remember($cacheKey, now()->addDays(7), function () use ($apiKey, $fallback) {
             try {
-                $response = Http::timeout(8)->get(self::ENDPOINT.'/languages?key='.urlencode($apiKey), [
+                $response = Http::timeout(8)->get(self::ENDPOINT.'/languages', [
+                    'key' => $apiKey,
                     'target' => 'en',
                 ]);
 

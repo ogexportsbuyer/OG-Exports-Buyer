@@ -136,9 +136,10 @@ export function BuyerSupportChatExperience({
   const languageStorageKey = `og-buyer-support-language:${ownId || 'guest'}`;
   const languagesQuery = useGetBuyerSupportTranslationLanguages({
     query: {
-      queryKey: ['buyer-support-translation-languages'],
+      queryKey: ['buyer-support-translation-languages-v2'],
       enabled: Boolean(ownId),
       staleTime: 7 * 24 * 60 * 60 * 1000,
+      refetchOnMount: 'always',
       retry: 1,
     },
   });

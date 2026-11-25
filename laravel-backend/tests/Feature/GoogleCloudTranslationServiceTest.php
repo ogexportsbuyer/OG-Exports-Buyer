@@ -4,6 +4,7 @@ use App\Models\User;
 use App\Services\GoogleCloudTranslationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 uses(RefreshDatabase::class);
@@ -125,6 +126,32 @@ it('loads Google supported languages only after translation is explicitly enable
         ['code' => 'fr', 'name' => 'French'],
         ['code' => 'ur', 'name' => 'Urdu'],
     ]);
+    Http::assertSent(fn ($request) => $request['key'] === 'test-key' && $request['target'] === 'en');
+});
+
+it('does not reuse a stale language fallback cached for another Google key', function () {
+    config([
+        'services.google_cloud.translation_api_key' => 'new-test-key',
+        'services.google_cloud.translation_enabled' => true,
+    ]);
+    Cache::put('google-cloud-translation-languages-en', [
+        ['code' => 'en', 'name' => 'English'],
+    ], now()->addDay());
+    Http::fake([
+        'translation.googleapis.com/language/translate/v2/languages*' => Http::response([
+            'data' => ['languages' => [
+                ['language' => 'ar', 'name' => 'Arabic'],
+                ['language' => 'ur', 'name' => 'Urdu'],
+            ]],
+        ]),
+    ]);
+
+    expect($this->service->supportedLanguages())->toBe([
+        ['code' => 'ar', 'name' => 'Arabic'],
+        ['code' => 'ur', 'name' => 'Urdu'],
+    ]);
+
+    Http::assertSentCount(1);
 });
 
 it('lets only the conversation owner save the support reply language', function () {
