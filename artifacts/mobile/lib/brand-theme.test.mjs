@@ -100,20 +100,22 @@ function pngDimensions(relativePath) {
   return [data.readUInt32BE(16), data.readUInt32BE(20)];
 }
 
-test('official mobile launcher assets use properly sized approved-logo PNGs', () => {
+test('buyer launcher uses the supplied OG cart icon without changing other app branding', () => {
   const config = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8')).expo;
-  assert.equal(config.name, 'OG Exports Buyer');
-  assert.equal(config.icon, './assets/images/og-app-icon.png');
+  assert.equal(config.name, 'OG Buyer');
+  assert.equal(config.icon, './assets/images/og-buyer-launcher-icon.png');
   assert.equal(config.ios.icon, config.icon);
   assert.equal(config.android.icon, config.icon);
   assert.deepEqual(pngDimensions(config.icon), [1024, 1024]);
-  assert.equal(config.android.adaptiveIcon.foregroundImage, './assets/images/og-adaptive-foreground.png');
+  assert.equal(config.android.adaptiveIcon.foregroundImage, config.icon);
   assert.deepEqual(pngDimensions(config.android.adaptiveIcon.foregroundImage), [1024, 1024]);
   assert.equal(config.android.adaptiveIcon.backgroundColor, colors.light.splashEnd);
   assert.equal(config.android.adaptiveIcon.backgroundImage, './assets/images/og-icon-background.png');
   assert.deepEqual(pngDimensions(config.android.adaptiveIcon.backgroundImage), [1024, 1024]);
   assert.equal(config.web.favicon, './assets/images/og-favicon.png');
   assert.deepEqual(pngDimensions(config.web.favicon), [128, 128]);
+  const splash = config.plugins.find(plugin => Array.isArray(plugin) && plugin[0] === 'expo-splash-screen')?.[1];
+  assert.equal(splash.image, './assets/images/splash-transparent.png');
 });
 
 test('approved OG vector is transparent and cropped to the official mark', () => {

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "OG Exports Buyer",
+    "name": "OG Buyer",
     "slug": "og-buyer",
     "owner": "og-exports-buyer",
     "version": "1.0.2",
     "orientation": "portrait",
-    "icon": "./assets/images/og-app-icon.png",
+    "icon": "./assets/images/og-buyer-launcher-icon.png",
     "scheme": "mobile",
     "userInterfaceStyle": "light",
     "ios": {
@@ -13,16 +13,16 @@
       "version": "1.0.2",
       "buildNumber": "4",
       "supportsTablet": false,
-      "icon": "./assets/images/og-app-icon.png"
+      "icon": "./assets/images/og-buyer-launcher-icon.png"
     },
     "android": {
       "package": "com.ogexports.buyer",
       "googleServicesFile": "./google-services.json",
       "versionCode": 2,
-      "icon": "./assets/images/og-app-icon.png",
+      "icon": "./assets/images/og-buyer-launcher-icon.png",
       "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/og-adaptive-foreground.png",
+        "foregroundImage": "./assets/images/og-buyer-launcher-icon.png",
         "backgroundImage": "./assets/images/og-icon-background.png",
         "backgroundColor": "#0A3335"
       }
