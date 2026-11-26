@@ -68,7 +68,7 @@ export function BuyerOrdersByStatusCard({ statuses }: { statuses: unknown }) {
     suppliedColor: row.color,
   }));
   const total = rows.reduce((sum, row) => sum + row.value, 0);
-  const fallbackColors = [colors.primary, colors.accent, colors.tint, colors.mutedForeground, colors.lightGreen];
+  const fallbackColors = [colors.primary, colors.accentSurface, colors.tint, colors.mutedForeground, colors.lightGreen];
   const segments = rows.map(row => ({
     ...row,
     color: /^#[\da-f]{6}$/i.test(row.suppliedColor) ? row.suppliedColor : fallbackColors[row.index % fallbackColors.length],

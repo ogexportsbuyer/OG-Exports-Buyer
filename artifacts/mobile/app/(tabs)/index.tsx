@@ -367,7 +367,7 @@ export default function InvestorHome() {
        <View style={{ position: 'relative', zIndex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
          <Pressable testID="home-account-menu" accessibilityRole="button" accessibilityLabel="Open account menu" hitSlop={8} onPress={() => setAccountMenuOpen(true)}
            style={({ pressed }) => ({ width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(248, 251, 248, 0.4)', backgroundColor: 'rgba(248, 251, 248, 0.11)', alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.76 : 1 })}>
-           <MaterialCommunityIcons name="bank-outline" size={19} color={colors.accent} />
+            <MaterialCommunityIcons name="bank-outline" size={19} color={colors.accentSurface} />
          </Pressable>
          <View style={{ flex: 1, minWidth: 0 }}>
            <Text numberOfLines={1} style={{ color: colors.balanceCardText, fontSize: 14, fontWeight: '700' }}>{greeting}, {firstName}</Text>

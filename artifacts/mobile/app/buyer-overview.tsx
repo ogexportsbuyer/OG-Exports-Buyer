@@ -141,7 +141,7 @@ function BuyerOverviewContent() {
       trend: first(kpis, ['rfqs_trend']),
       up: kpis.rfqs_trend_up !== false,
       icon: 'file-text' as const,
-      tone: colors.accent,
+      tone: colors.accentSurface,
     },
   ];
 
@@ -166,14 +166,14 @@ function BuyerOverviewContent() {
                 <Text style={{ color: 'rgba(255,255,255,0.72)', fontSize: 9, marginTop: 3 }}>Across non-cancelled orders</Text>
               </View>
               <View style={{ width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' }}>
-                <Feather name="briefcase" size={17} color={colors.accent} />
+                <Feather name="briefcase" size={17} color={colors.accentSurface} />
               </View>
             </View>
 
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
               <View style={{ flex: 1, minWidth: 0, padding: 10, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                  <Feather name="check-circle" size={12} color={colors.accent} />
+                  <Feather name="check-circle" size={12} color={colors.accentSurface} />
                   <Text style={{ color: 'rgba(255,255,255,0.76)', fontSize: 9, fontWeight: '700' }}>Completed</Text>
                 </View>
                 <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.primaryForeground, fontSize: 13, fontWeight: '800', marginTop: 5 }}>
@@ -182,7 +182,7 @@ function BuyerOverviewContent() {
               </View>
               <View style={{ flex: 1, minWidth: 0, padding: 10, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                  <Feather name="clock" size={12} color={colors.accent} />
+                  <Feather name="clock" size={12} color={colors.accentSurface} />
                   <Text style={{ color: 'rgba(255,255,255,0.76)', fontSize: 9, fontWeight: '700' }}>In processing</Text>
                 </View>
                 <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.primaryForeground, fontSize: 13, fontWeight: '800', marginTop: 5 }}>
@@ -192,12 +192,12 @@ function BuyerOverviewContent() {
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.16)', marginTop: 12, paddingTop: 11 }}>
-              <Feather name="tag" size={14} color={colors.accent} />
+              <Feather name="tag" size={14} color={colors.accentSurface} />
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.primaryForeground, fontSize: 10, fontWeight: '800' }}>Discount saved</Text>
                 <Text style={{ color: 'rgba(255,255,255,0.68)', fontSize: 9, marginTop: 1 }}>Recorded at checkout</Text>
               </View>
-              <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.accent, fontSize: 13, fontWeight: '800' }}>
+              <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.accentSurface, fontSize: 13, fontWeight: '800' }}>
                 {discountSavings === null ? '—' : money(discountSavings, tradeCurrency, { preserveSource: true })}
               </Text>
             </View>
@@ -211,8 +211,8 @@ function BuyerOverviewContent() {
             {activityMetricCards.map(metric => (
               <Card key={metric.label} style={{ flex: 1, minWidth: 0, minHeight: 103, padding: 9, marginBottom: 2 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 3 }}>
-                  <View style={{ width: 27, height: 27, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: metric.tone === colors.accent ? colors.secondary : colors.lightGreen }}>
-                    <Feather name={metric.icon} size={13} color={metric.tone} />
+                  <View style={{ width: 27, height: 27, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: metric.tone === colors.accentSurface ? colors.accentSurface : colors.lightGreen }}>
+                    <Feather name={metric.icon} size={13} color={metric.tone === colors.accentSurface ? colors.accentForeground : metric.tone} />
                   </View>
                   {metric.trend ? <Feather name={metric.up ? 'trending-up' : 'trending-down'} size={11} color={metric.up ? colors.primary : colors.destructive} /> : null}
                 </View>

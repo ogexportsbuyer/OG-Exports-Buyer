@@ -79,6 +79,7 @@ function NativeLayout() {
     <NativeTabs
       tintColor={colors.navigationAccent}
       iconColor={{ default: colors.mutedForeground, selected: colors.navigationAccent }}
+      indicatorColor={colors.accentSurface}
       labelStyle={{ default: { color: colors.mutedForeground }, selected: { color: colors.accent, fontWeight: '600' } }}
       backgroundColor={colors.card}
       hidden={!visible || hideForBuyerMessages}

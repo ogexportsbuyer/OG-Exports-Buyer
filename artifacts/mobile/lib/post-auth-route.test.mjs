@@ -241,6 +241,7 @@ test('buyer selected tab uses the new gold icon fill and readable gold label', (
   assert.match(layout, /tabBarActiveTintColor: colors\.accent/);
   assert.match(layout, /tintColor=\{colors\.navigationAccent\}/);
   assert.match(layout, /selected: colors\.navigationAccent/);
+  assert.match(layout, /indicatorColor=\{colors\.accentSurface\}/);
   assert.match(layout, /selected: \{ color: colors\.accent,/);
   assert.doesNotMatch(layout, /selectedTabIconBackdrop/);
 });

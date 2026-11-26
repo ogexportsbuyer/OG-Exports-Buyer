@@ -42,7 +42,7 @@ const colors = {
     splashMuted: '#B9CCC9',
     splashTrack: 'rgba(241, 244, 242, 0.18)',
     accent: '#82580D',
-    navigationAccent: '#A57622',
+    navigationAccent: '#F0B43D',
     accentSurface: '#F0B43D',
     accentForeground: '#142018',
     statusSuccessBackground: '#E3EEEC',

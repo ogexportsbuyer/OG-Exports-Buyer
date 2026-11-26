@@ -206,10 +206,10 @@ export function PortfolioBenchmarkCard({ points, available, loading, hideValues 
           <Svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`} accessibilityLabel="Portfolio and market benchmark return comparison">
             <Path d={`M 8 ${zeroY.toFixed(2)} L ${chartWidth - 8} ${zeroY.toFixed(2)}`} stroke={colors.border} strokeWidth={1} strokeDasharray="4 5" />
             <Path d={makePath('portfolio')} fill="none" stroke={colors.primary} strokeWidth={2.6} strokeLinejoin="round" strokeLinecap="round" />
-            <Path d={makePath('market')} fill="none" stroke={colors.accent} strokeWidth={2.2} strokeDasharray="5 4" strokeLinejoin="round" strokeLinecap="round" />
+            <Path d={makePath('market')} fill="none" stroke={colors.accentSurface} strokeWidth={2.2} strokeDasharray="5 4" strokeLinejoin="round" strokeLinecap="round" />
             {lastPoint ? <>
               <Circle cx={xFor(chartPoints.length - 1)} cy={yFor(lastPoint.portfolio)} r={4} fill={colors.primary} stroke={colors.card} strokeWidth={2} />
-              <Circle cx={xFor(chartPoints.length - 1)} cy={yFor(lastPoint.market)} r={4} fill={colors.accent} stroke={colors.card} strokeWidth={2} />
+              <Circle cx={xFor(chartPoints.length - 1)} cy={yFor(lastPoint.market)} r={4} fill={colors.accentSurface} stroke={colors.card} strokeWidth={2} />
             </> : null}
           </Svg>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
