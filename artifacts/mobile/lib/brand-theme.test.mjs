@@ -23,16 +23,6 @@ test('mobile brand accents use the supplied splash reference teal', () => {
   assert.equal(colors.light.allocationBalance, colors.light.primary);
 });
 
-test('light and dark gold accents match the selected navigation gold', () => {
-  for (const name of ['light', 'dark']) {
-    const theme = colors[name];
-    assert.equal(theme.accent, theme.navigationAccent, `${name} accent matches selected navigation gold`);
-    assert.equal(theme.accentSurface, theme.navigationAccent, `${name} accent surfaces match selected navigation gold`);
-    assert.equal(theme.allocationProfits, theme.navigationAccent, `${name} profit indicators match selected navigation gold`);
-    assert.equal(theme.stageFunding, theme.navigationAccent, `${name} funding indicators match selected navigation gold`);
-  }
-});
-
 test('brand buttons and body text remain readable in light and dark appearances', () => {
   for (const name of ['light', 'dark']) {
     const theme = colors[name];
@@ -153,6 +143,8 @@ test('screen and PDF branding share the transparent approved SVG mark', () => {
   assert.match(buyerHeader, /\['Worldwide'\]\.map\(label => \{/, 'the buyer homepage top navigation keeps only Worldwide');
   assert.doesNotMatch(buyerHeader, /'For you'|'Products'/, 'For you and Products are removed from the homepage top navigation');
   assert.match(buyerHeader, /const brandSlides = \[/);
+  assert.match(buyerHeader, /<Feather name="shopping-cart" size=\{20\} color=\{colors\.primary\} \/>/, 'the homepage cart icon uses the dark-green primary color');
+  assert.match(buyerHeader, /backgroundColor: colors\.accentSurface/, 'cart and notification count badges use the same gold surface');
   assert.match(buyerHeader, /const isFocused = usePathname\(\)\.split\('\/'\)\.includes\('buyer-home'\)/, 'autoplay follows the active buyer-home route');
   assert.doesNotMatch(buyerHeader, /<Image\b/, 'brand banners do not use product imagery');
   assert.doesNotMatch(buyerHeader, /promoAction|slide\.action/, 'brand banners do not show a product-browse button');

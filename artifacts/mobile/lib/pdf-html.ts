@@ -43,7 +43,7 @@ export function brandedPdfHtml(sourceHtml: string, title: string, logoUri: strin
     .og-pdf-watermark img{display:block;width:62vw;max-width:390px;height:auto;object-fit:contain;opacity:.045}
      .og-pdf-brand{display:flex;align-items:center;gap:14px;padding:11px 0 15px;border-top:3px solid #F0B43D;border-bottom:2px solid #0A3637;margin-bottom:21px}
     .og-pdf-brand img{width:76px;height:56px;object-fit:contain;flex-shrink:0}
-     .og-pdf-kicker{color:#F0B43D;font-size:8px;font-weight:800;letter-spacing:1.35px;text-transform:uppercase}
+     .og-pdf-kicker{color:#82580D;font-size:8px;font-weight:800;letter-spacing:1.35px;text-transform:uppercase}
     .og-pdf-brand h1{font-size:21px;line-height:1.25;margin:4px 0;color:#0A3637}
     .og-pdf-brand p{margin:0;color:#62746b;font-size:9px}
     .og-pdf-content{overflow-wrap:anywhere}

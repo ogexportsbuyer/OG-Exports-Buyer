@@ -550,7 +550,7 @@ export default function BuyerHomeHeader({
             style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.6 : 1 }]}
           >
             <View style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
-              <Feather name="shopping-cart" size={20} color={colors.accent} />
+              <Feather name="shopping-cart" size={20} color={colors.primary} />
               {cartItemCount > 0 ? (
                 <View
                   testID="buyer-home-cart-count"

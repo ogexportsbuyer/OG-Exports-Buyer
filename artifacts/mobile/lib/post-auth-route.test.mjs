@@ -268,7 +268,7 @@ test('buyer bottom navigation places Dashboard before Messages and keeps home ca
   assert.equal(isBuyerRoutePublicBeforeAuth('buyer-cart'), true);
   assert.doesNotMatch(cartScreen, /return <BuyerAuthGate/);
   assert.match(cartScreen, /buyerGuestCartRow/);
-  assert.match(homeHeader, /<Feather name="shopping-cart" size=\{20\} color=\{colors\.accent\} \/>/);
+  assert.match(homeHeader, /<Feather name="shopping-cart" size=\{20\} color=\{colors\.primary\} \/>/);
   assert.match(rootLayout, /Stack\.Screen name="buyer-cart" options=\{\{ headerShown: false \}\}/);
   assert.match(profile, /\['Executive dashboard', '\/\(buyer-tabs\)\/dashboard'/);
   assert.match(dashboard, /if \(!isDashboardTab\) return <Redirect href="\/\(buyer-tabs\)\/dashboard" \/>/);
