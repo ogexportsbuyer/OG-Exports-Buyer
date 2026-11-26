@@ -23,6 +23,16 @@ test('mobile brand accents use the supplied splash reference teal', () => {
   assert.equal(colors.light.allocationBalance, colors.light.primary);
 });
 
+test('light and dark gold accents match the selected navigation gold', () => {
+  for (const name of ['light', 'dark']) {
+    const theme = colors[name];
+    assert.equal(theme.accent, theme.navigationAccent, `${name} accent matches selected navigation gold`);
+    assert.equal(theme.accentSurface, theme.navigationAccent, `${name} accent surfaces match selected navigation gold`);
+    assert.equal(theme.allocationProfits, theme.navigationAccent, `${name} profit indicators match selected navigation gold`);
+    assert.equal(theme.stageFunding, theme.navigationAccent, `${name} funding indicators match selected navigation gold`);
+  }
+});
+
 test('brand buttons and body text remain readable in light and dark appearances', () => {
   for (const name of ['light', 'dark']) {
     const theme = colors[name];
