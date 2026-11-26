@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -26,6 +26,7 @@ import { useBuyerGuestFlow } from '@/context/BuyerGuestFlowContext';
 
 export default function BuyerProducts() {
   const colors = useColors();
+  const { width: windowWidth } = useWindowDimensions();
   const queryClient = useQueryClient();
   const { ready, token, apiOrigin, user } = useAuth();
   const guestFlow = useBuyerGuestFlow();
@@ -86,6 +87,7 @@ export default function BuyerProducts() {
     [filters, products, search],
   );
   const activeFilterCount = buyerProductFilterCount(filters);
+  const productCardWidth = Math.min(224, (windowWidth - 54) / 2);
 
   const activeFilterChips: { label: string; clear: () => void }[] = [];
   if (filters.category) activeFilterChips.push({ label: filters.category, clear: () => setFilters(current => ({ ...current, category: '', subcategory: '' })) });
@@ -255,24 +257,30 @@ export default function BuyerProducts() {
         />
       ) : null}
 
-      {filteredProducts.map((product, index) => {
-        const id = first(product, ['id'], `product-${index}`);
-        const isAdded = addedId === id;
+      {filteredProducts.length ? (
+        <View testID="buyer-products-grid" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingBottom: 10 }}>
+          {filteredProducts.map((product, index) => {
+            const id = first(product, ['id'], `product-${index}`);
+            const isAdded = addedId === id;
 
-        return (
-          <BuyerProductCard
-            key={id}
-            product={product}
-            added={isAdded}
-            adding={addToCart.isPending}
-            signedIn={!!token}
-            favorite={favoriteIds.includes(id)}
-            onOpenDetails={() => router.push({ pathname: '/buyer-product/[id]', params: { id } })}
-            onAddToCart={() => void addProduct(product)}
-            onToggleFavorite={() => void toggleFavorite(id)}
-          />
-        );
-      })}
+            return (
+              <BuyerProductCard
+                key={id}
+                product={product}
+                added={isAdded}
+                adding={addToCart.isPending}
+                signedIn={!!token}
+                favorite={favoriteIds.includes(id)}
+                layout="grid"
+                width={productCardWidth}
+                onOpenDetails={() => router.push({ pathname: '/buyer-product/[id]', params: { id } })}
+                onAddToCart={() => void addProduct(product)}
+                onToggleFavorite={() => void toggleFavorite(id)}
+              />
+            );
+          })}
+        </View>
+      ) : null}
     </Screen>
   );
 }

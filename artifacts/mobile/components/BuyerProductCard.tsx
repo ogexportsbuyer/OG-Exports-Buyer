@@ -15,12 +15,14 @@ type BuyerProductCardProps = {
   adding: boolean;
   signedIn: boolean;
   favorite: boolean;
+  layout?: 'detailed' | 'grid';
+  width?: number;
   onOpenDetails: () => void;
   onAddToCart: () => void;
   onToggleFavorite: () => void;
 };
 
-function Tag({ label, tone = 'neutral' }: { label: string; tone?: 'neutral' | 'accent' | 'green' }) {
+function Tag({ label, tone = 'neutral', compact = false }: { label: string; tone?: 'neutral' | 'accent' | 'green'; compact?: boolean }) {
   const colors = useColors();
   const palette = tone === 'green'
     ? { background: colors.statusSuccessBackground, foreground: colors.statusSuccess, border: colors.statusSuccessBackground }
@@ -35,10 +37,10 @@ function Tag({ label, tone = 'neutral' }: { label: string; tone?: 'neutral' | 'a
       borderWidth: 1,
       borderColor: palette.border,
       backgroundColor: palette.background,
-      paddingHorizontal: 9,
-      paddingVertical: 5,
+      paddingHorizontal: compact ? 7 : 9,
+      paddingVertical: compact ? 3 : 5,
     }}>
-      <Text numberOfLines={1} style={{ color: palette.foreground, fontSize: 10, lineHeight: 14, fontWeight: '700' }}>
+      <Text numberOfLines={1} style={{ color: palette.foreground, fontSize: compact ? 8 : 10, lineHeight: compact ? 11 : 14, fontWeight: '700' }}>
         {label}
       </Text>
     </View>
@@ -51,11 +53,14 @@ export function BuyerProductCard({
   adding,
   signedIn,
   favorite,
+  layout = 'detailed',
+  width,
   onOpenDetails,
   onAddToCart,
   onToggleFavorite,
 }: BuyerProductCardProps) {
   const colors = useColors();
+  const compact = layout === 'grid';
   const [imageFailed, setImageFailed] = useState(false);
   const id = first(product, ['id'], 'product');
   const name = first(product, ['name'], 'Export product');
@@ -72,10 +77,20 @@ export function BuyerProductCard({
   const status = first(product, ['status']).toLowerCase();
   const approved = status === 'approved';
   const stock = amount(product, ['stock']);
+  const imageHeight = compact ? Math.min(156, Math.round((width ?? 172) * 0.82)) : 190;
 
   return (
-    <Card testID={`buyer-product-card-${id}`} style={{ padding: 0, marginBottom: 16, borderRadius: 22 }}>
-      <View style={{ height: 190, overflow: 'hidden', backgroundColor: colors.secondary }}>
+    <Card
+      testID={`buyer-product-card-${id}`}
+      style={{
+        width,
+        padding: 0,
+        marginBottom: compact ? 0 : 16,
+        borderRadius: compact ? colors.radius + 1 : 22,
+        overflow: compact ? 'hidden' : 'visible',
+      }}
+    >
+      <View style={{ height: imageHeight, overflow: 'hidden', backgroundColor: colors.secondary }}>
         {imageUrl && !imageFailed ? (
           <Image
             source={{ uri: imageUrl }}
@@ -91,11 +106,11 @@ export function BuyerProductCard({
           </View>
         )}
         <View style={{ position: 'absolute', top: 12, left: 12 }}>
-          <Tag label={category} tone="accent" />
+          <Tag label={category} tone="accent" compact={compact} />
         </View>
         {approved ? (
           <View style={{ position: 'absolute', top: 12, right: 12 }}>
-            <Tag label="OG approved" tone="green" />
+            <Tag label={compact ? 'Approved' : 'OG approved'} tone="green" compact={compact} />
           </View>
         ) : null}
         <Pressable
@@ -104,27 +119,27 @@ export function BuyerProductCard({
           accessibilityLabel={favorite ? `Remove ${name} from saved products` : `Save ${name}`}
           accessibilityState={{ selected: favorite }}
           onPress={onToggleFavorite}
-          style={{ position: 'absolute', top: 49, right: 12, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }}
+          style={{ position: 'absolute', top: compact ? 44 : 49, right: 12, width: compact ? 32 : 36, height: compact ? 32 : 36, borderRadius: compact ? 16 : 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }}
         >
-          <Feather name="heart" size={17} color={favorite ? colors.accent : colors.mutedForeground} />
+          <Feather name="heart" size={compact ? 15 : 17} color={favorite ? colors.accent : colors.mutedForeground} />
         </Pressable>
       </View>
 
-      <View style={{ padding: 15 }}>
-        <Text style={{ color: colors.foreground, fontSize: 19, lineHeight: 25, fontWeight: '800' }}>{name}</Text>
+      <View style={{ padding: compact ? 11 : 15 }}>
+        <Text numberOfLines={compact ? 2 : undefined} style={{ color: colors.foreground, fontSize: compact ? 13 : 19, lineHeight: compact ? 18 : 25, fontWeight: '800', minHeight: compact ? 36 : undefined }}>{name}</Text>
         {origin ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 }}>
-            <Feather name="map-pin" size={12} color={colors.mutedForeground} />
-            <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Origin: {origin}</Text>
+            <Feather name="map-pin" size={compact ? 10 : 12} color={colors.mutedForeground} />
+            <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: compact ? 9 : 11, flex: 1 }}>Origin: {origin}</Text>
           </View>
         ) : null}
-        {description ? (
+        {!compact && description ? (
           <Text numberOfLines={2} style={{ color: colors.mutedForeground, fontSize: 12, lineHeight: 18, marginTop: 10 }}>
             {description}
           </Text>
         ) : null}
 
-        {specs.length ? (
+        {!compact && specs.length ? (
           <View testID={`buyer-product-spec-preview-${id}`} style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8, marginTop: 13, padding: 10, borderRadius: 14, backgroundColor: colors.secondary }}>
             {specs.slice(0, 4).map((spec, index) => (
               <View key={`${spec.label}-${index}`} style={{ width: '48%', minHeight: 48, justifyContent: 'center' }}>
@@ -135,7 +150,7 @@ export function BuyerProductCard({
           </View>
         ) : null}
 
-        {certifications.length ? (
+        {!compact && certifications.length ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 11 }}>
             {certifications.slice(0, 2).map((certification, index) => (
               <Tag key={`${certification}-${index}`} label={certification} tone="green" />
@@ -144,12 +159,12 @@ export function BuyerProductCard({
           </View>
         ) : null}
 
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 9 }}>
+        {!compact ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 9 }}>
           {paymentTerms.slice(0, 2).map((term, index) => <Tag key={`payment-${term}-${index}`} label={term} />)}
           {deliveryTerms.slice(0, 2).map((term, index) => <Tag key={`delivery-${term}-${index}`} label={term} tone="accent" />)}
-        </View>
+        </View> : null}
 
-        {(packaging.length || minimumOrder || first(product, ['lead_time'])) ? (
+        {!compact && (packaging.length || minimumOrder || first(product, ['lead_time'])) ? (
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 12 }}>
             <Feather name="package" size={13} color={colors.mutedForeground} style={{ marginTop: 2 }} />
             <Text style={{ flex: 1, color: colors.mutedForeground, fontSize: 10, lineHeight: 15 }}>
@@ -158,6 +173,13 @@ export function BuyerProductCard({
           </View>
         ) : null}
 
+        {compact ? (
+          <View style={{ marginTop: 9, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.border }}>
+            <Text style={{ color: colors.mutedForeground, fontSize: 8, fontWeight: '800', letterSpacing: 0.5 }}>FOB PRICE</Text>
+            <Text numberOfLines={1} style={{ color: colors.primary, fontSize: 11, fontWeight: '800', marginTop: 3 }}>{displayPrice(product)}</Text>
+            {minimumOrder ? <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 9, marginTop: 3 }}>MOQ: {minimumOrder}</Text> : null}
+          </View>
+        ) : (
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginTop: 13, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border }}>
           <View style={{ flex: 1 }}>
             <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '700', letterSpacing: 0.6 }}>PRODUCT PRICE</Text>
@@ -176,8 +198,9 @@ export function BuyerProductCard({
             </View>
           ) : null}
         </View>
+        )}
 
-        <View style={{ flexDirection: 'row', gap: 9, marginTop: 14 }}>
+        <View style={{ flexDirection: 'row', gap: compact ? 6 : 9, marginTop: compact ? 10 : 14 }}>
           <Pressable
             testID={`buyer-product-details-${id}`}
             accessibilityRole="button"
@@ -187,21 +210,21 @@ export function BuyerProductCard({
               onOpenDetails();
             }}
             style={({ pressed }) => ({
-              minHeight: 44,
-              flex: 0.85,
+              minHeight: compact ? 38 : 44,
+              flex: compact ? 0.78 : 0.85,
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 6,
-              borderRadius: 13,
+              gap: compact ? 3 : 6,
+              borderRadius: compact ? 11 : 13,
               borderWidth: 1,
               borderColor: colors.border,
               backgroundColor: colors.card,
               opacity: pressed ? 0.82 : 1,
             })}
           >
-            <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>Details</Text>
-            <Feather name="chevron-right" size={14} color={colors.foreground} />
+            <Text style={{ color: colors.foreground, fontSize: compact ? 9 : 11, fontWeight: '700' }}>Details</Text>
+            <Feather name="chevron-right" size={compact ? 12 : 14} color={colors.foreground} />
           </Pressable>
           <Pressable
             testID={`buyer-product-add-${id}`}
@@ -211,22 +234,22 @@ export function BuyerProductCard({
             disabled={adding || added}
             onPress={onAddToCart}
             style={({ pressed }) => ({
-              minHeight: 44,
-              flex: 1.15,
+              minHeight: compact ? 38 : 44,
+              flex: compact ? 1.22 : 1.15,
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 7,
-              borderRadius: 13,
+              gap: compact ? 4 : 7,
+              borderRadius: compact ? 11 : 13,
               backgroundColor: colors.buttonBackground,
               opacity: adding || added ? 0.72 : pressed ? 0.86 : 1,
             })}
           >
             {adding ? <ActivityIndicator size="small" color={colors.buttonForeground} /> : (
-              <Feather name={added ? 'check' : 'shopping-cart'} size={14} color={colors.buttonForeground} />
+              <Feather name={added ? 'check' : 'shopping-cart'} size={compact ? 12 : 14} color={colors.buttonForeground} />
             )}
-            <Text numberOfLines={1} style={{ color: colors.buttonForeground, fontSize: 11, fontWeight: '700' }}>
-              {adding ? 'Adding…' : added ? 'Added to cart' : 'Add to cart'}
+            <Text numberOfLines={1} style={{ color: colors.buttonForeground, fontSize: compact ? 9 : 11, fontWeight: '700' }}>
+              {adding ? 'Adding…' : added ? (compact ? 'Added' : 'Added to cart') : (compact ? 'Add' : 'Add to cart')}
             </Text>
           </Pressable>
         </View>
