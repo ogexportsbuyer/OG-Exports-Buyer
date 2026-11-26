@@ -52,6 +52,35 @@ it('stores buyer support media metadata and notifies the other participant', fun
             ->exists())->toBeTrue();
 });
 
+it('returns the latest support messages on the first page in chronological order', function () {
+    $firstMessageAt = now()->startOfSecond();
+
+    foreach (range(1, 20) as $number) {
+        Message::query()->create([
+            'conversation_id' => $this->conversation->id,
+            'sender_id' => $number <= 15 ? $this->buyer->id : $this->admin->id,
+            'body' => sprintf('Support message %02d', $number),
+            'created_at' => $firstMessageAt->copy()->addSeconds($number),
+        ]);
+    }
+
+    $firstPage = $this->actingAs($this->buyer)
+        ->getJson("/api/conversations/{$this->conversation->id}/messages")
+        ->assertOk()
+        ->assertJsonPath('current_page', 1)
+        ->assertJsonPath('last_page', 2)
+        ->assertJsonPath('data.0.body', 'Support message 06')
+        ->assertJsonPath('data.14.body', 'Support message 20')
+        ->assertJsonPath('data.14.sender_id', $this->admin->id);
+
+    expect($firstPage->json('data'))->toHaveCount(15);
+
+    $this->getJson("/api/conversations/{$this->conversation->id}/messages?page=2")
+        ->assertOk()
+        ->assertJsonPath('data.0.body', 'Support message 01')
+        ->assertJsonPath('data.4.body', 'Support message 05');
+});
+
 it('translates new buyer and support messages toward each recipient language', function () {
     config([
         'services.google_cloud.translation_api_key' => 'test-key',

@@ -207,9 +207,10 @@ class MessageController extends Controller
 
         $messages = $conversation->messages()
             ->with('sender:id,name,email')
-            ->orderBy('created_at')
-            ->orderBy('id')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->paginate($this->perPage($request));
+        $messages->setCollection($messages->getCollection()->reverse()->values());
 
         return response()->json($messages);
     }
