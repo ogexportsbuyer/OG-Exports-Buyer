@@ -33,6 +33,14 @@ const ORIGINS = ["Punjab, PK", "Sindh, PK", "KPK, PK", "Balochistan, PK", "Gilgi
 const INCOTERMS_LIST = ["FOB", "CIF", "CFR", "DAP", "EXW"]
 const PRODUCT_UNITS = ["MT", "kg", "g", "L", "mL", "m²", "m³", "piece", "bag", "box", "letter", "dozen"]
 
+function productFobLabel(product: AdminProduct) {
+  const amount = Number(product.fob)
+  const formattedAmount = Number.isFinite(amount)
+    ? amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : product.fob
+  return `${product.currency || "USD"} ${formattedAmount} / ${product.unitOfMeasure || "MT"}`
+}
+
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function Toast({ msg, type = "success", onClose }: { msg: string; type?: "success" | "error"; onClose: () => void }) {
   return (
@@ -910,8 +918,10 @@ export default function AdminProducts() {
                         </td>
                         <td className="px-3 py-3">
                           {p.fob ? (
-                            <span className="text-[12px] font-bold" style={{ color: GOLD }}>{p.fob} / {p.unitOfMeasure || "MT"}</span>
-                            {p.discountPercentage ? <span className="ml-2 text-[10px] font-bold text-emerald-700">{p.discountPercentage}% OFF</span> : null}
+                            <div>
+                              <span className="text-[12px] font-bold" style={{ color: GOLD }}>{productFobLabel(p)}</span>
+                              {p.discountPercentage ? <span className="ml-2 text-[10px] font-bold text-emerald-700">{p.discountPercentage}% OFF</span> : null}
+                            </div>
                           ) : (
                             <span className="text-[11px] text-muted-foreground italic">Not set — click Edit</span>
                           )}
@@ -971,7 +981,7 @@ export default function AdminProducts() {
                           <td className="px-3 py-3 text-[11px] text-muted-foreground">{p.category}</td>
                           <td className="px-3 py-3 text-[10px] font-mono text-muted-foreground">{p.sku}</td>
                           <td className="px-3 py-3">
-                            {p.fob ? <span className="text-[11px] font-bold" style={{ color: GOLD }}>{p.fob} / {p.unitOfMeasure || "MT"}{p.discountPercentage ? ` · ${p.discountPercentage}% OFF` : ""}</span>
+                            {p.fob ? <span className="text-[11px] font-bold" style={{ color: GOLD }}>{productFobLabel(p)}{p.discountPercentage ? ` · ${p.discountPercentage}% OFF` : ""}</span>
                               : <span className="text-[10px] text-muted-foreground">—</span>}
                           </td>
                           <td className="px-3 py-3 text-[11px] text-muted-foreground">{p.minOrder}</td>

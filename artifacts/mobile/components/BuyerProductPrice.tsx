@@ -67,7 +67,7 @@ export function BuyerProductPrice({
       </View>
       {discounted ? (
         <Text style={{ color: colors.mutedForeground, fontSize: compact ? 8 : 10, fontWeight: '600' }}>
-          Save {formatFobPrice(price.discountAmountPerUnit, price.currency, price.unitOfMeasure)} per unit
+          Save {formatFobPrice(price.discountAmountPerUnit, price.currency)} per {price.unitOfMeasure}
         </Text>
       ) : null}
     </View>

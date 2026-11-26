@@ -1,4 +1,4 @@
-import type { Json } from './data.ts';
+type Json = Record<string, unknown>;
 
 export type BuyerPriceDetails = {
   basePrice: number | null;

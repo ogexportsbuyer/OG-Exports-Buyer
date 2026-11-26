@@ -262,7 +262,7 @@ export interface AdminProduct {
   id: string; name: string; category: string; categoryId?: number | null; sku: string; price: string
   minOrder: string; origin: string; status: "approved" | "pending" | "rejected" | "draft"
   stock: string; rating: number; orders: number
-  fob?: string; unitOfMeasure?: string; discountPercentage?: number
+  fob?: string; currency?: string; unitOfMeasure?: string; discountPercentage?: number
   description?: string; shortDescription?: string; incoterms?: string; videoUrl?: string
   /** Resolved display URL for primary image */
   imageUrl?: string

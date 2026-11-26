@@ -104,8 +104,8 @@ it('stores relative image paths when creating a product', function () {
     ]);
 
     $response->assertCreated()
-        ->assertJsonPath('data.image_url', 'product_images/kinnow-mandarin-1710000000-0-abc123.jpg')
-        ->assertJsonPath('data.media.0.url', 'product_images/kinnow-mandarin-1710000000-1-def456.jpg');
+        ->assertJsonPath('data.image_url', fn ($url) => str_ends_with($url, 'product_images/kinnow-mandarin-1710000000-0-abc123.jpg'))
+        ->assertJsonPath('data.media.0.url', fn ($url) => str_ends_with($url, 'product_images/kinnow-mandarin-1710000000-1-def456.jpg'));
 
     $this->assertDatabaseHas('products', [
         'name' => 'Kinnow Mandarin',

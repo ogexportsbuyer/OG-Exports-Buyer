@@ -638,7 +638,7 @@ export function formatFobRateLabel(fob: unknown, currencySymbol: string = "$", u
   if (Number.isFinite(n)) return `${prefixCurrencyAmount(n.toFixed(2), currencySymbol)} / ${unitOfMeasure}`
   const raw = String(fob).trim()
   if (!raw) return ""
-  const withoutUnit = raw.replace(/\s*\/\s*(?:MT|kg|g|L|m²|m³|piece|bag|box|letter|dozen)$/i, "")
+  const withoutUnit = raw.replace(/\s*\/\s*[^/]+$/, "")
   return `${prefixCurrencyAmount(withoutUnit, currencySymbol)} / ${unitOfMeasure}`
 }
 
@@ -706,7 +706,7 @@ export function mapProduct(p: any) {
     categoryId: categoryId != null && categoryId !== "" ? Number(categoryId) : null,
     sku: p.sku || "",
     price: fobDisplay || "",
-    currency: p.currency || undefined,
+    currency: p.currency || "USD",
     fobRate: fobRate || undefined,
     cifPrice: undefined,
     fobDisplay: fobDisplay || undefined,

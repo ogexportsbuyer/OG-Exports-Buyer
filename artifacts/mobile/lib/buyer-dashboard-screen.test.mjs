@@ -16,7 +16,11 @@ test('buyer dashboard has explicit loading, failure, and manual retry states', (
 });
 
 test('partial and empty API data stays explicit rather than becoming invented metrics', () => {
-  assert.match(screen, /spendTotal === null \? '—'/);
+  assert.match(screen, /totalPurchaseValue === null \? '—'/);
+  assert.match(screen, /completedTradeValue === null \? '—'/);
+  assert.match(screen, /processingTradeValue === null \? '—'/);
+  assert.match(screen, /discountSavings === null \? '—'/);
+  assert.match(screen, /Savings include only discounts recorded when an order was placed/);
   assert.match(screen, /completion === null \? '—'/);
   assert.match(screen, /Profile completion is not available yet/);
   assert.match(screen, /Trust score is not available yet/);

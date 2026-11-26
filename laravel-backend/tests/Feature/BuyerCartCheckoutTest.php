@@ -86,7 +86,7 @@ it('uses the current FOB discount and snapshots unit pricing when the buyer chec
         ->assertOk()
         ->assertJsonPath('data.items.0.unit_of_measure', 'kg')
         ->assertJsonPath('data.items.0.list_unit_price', 1250)
-        ->assertJsonPath('data.items.0.unit_price', 1125)
+        ->assertJsonPath('data.items.0.unit_price', '1125.00')
         ->assertJsonPath('data.items.0.discount_percentage', 10)
         ->assertJsonPath('data.items.0.discount_amount_per_unit', 125);
 

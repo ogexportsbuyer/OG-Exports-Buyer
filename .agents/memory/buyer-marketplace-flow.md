@@ -50,3 +50,9 @@ An FOB order must not be placed when any cart item has no positive, confirmed pr
 **Why:** The backend treats a missing product price as zero, which could otherwise create a confirmed zero-value order.
 
 **How to apply:** Keep the FOB order path blocked until every line has a price, while leaving non-FOB quotation requests available.
+
+For Buyer trade pricing, admins set a product's unit and discount percentage against its displayed FOB price. Dashboard purchase value is order value, not wallet balance; savings count only discounts saved with new orders, never estimates from current product prices.
+
+**Why:** The user chose total purchase value and admin-entered percentages, and historical orders have no reliable discount snapshots.
+
+**How to apply:** Keep catalogue, cart, checkout, and new order lines on the same FOB-per-unit basis. Treat negotiated quotation prices separately from catalogue discounts, and leave legacy savings unestimated.

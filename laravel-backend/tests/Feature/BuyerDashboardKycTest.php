@@ -123,6 +123,18 @@ it('summarizes purchases, completed and processing trades, and recorded discount
         'total_value_usd' => 300,
         'placed_at' => now()->subDay(),
     ]);
+    $completedPkr = Order::query()->create([
+        'order_number' => 'ORD-BUYER-DASH-COMPLETE-PKR',
+        'buyer_id' => $this->buyer->id,
+        'status' => 'completed',
+        'payment_status' => 'paid',
+        'total_value' => 27850,
+        'currency' => 'PKR',
+        'exchange_rate' => 278.5,
+        'total_value_usd' => 100,
+        'total_value_pkr' => 27850,
+        'placed_at' => now()->subHours(12),
+    ]);
     $cancelled = Order::query()->create([
         'order_number' => 'ORD-BUYER-DASH-CANCEL',
         'buyer_id' => $this->buyer->id,
@@ -134,7 +146,12 @@ it('summarizes purchases, completed and processing trades, and recorded discount
         'placed_at' => now(),
     ]);
 
-    foreach ([[$completed, 5, 2], [$processing, 2, 3], [$cancelled, 80, 1]] as [$order, $discount, $quantity]) {
+    foreach ([
+        [$completed, 5, 2],
+        [$processing, 2, 3],
+        [$completedPkr, 278.5, 2],
+        [$cancelled, 80, 1],
+    ] as [$order, $discount, $quantity]) {
         OrderItem::query()->create([
             'order_id' => $order->id,
             'product_name' => 'Trade item',
@@ -152,10 +169,10 @@ it('summarizes purchases, completed and processing trades, and recorded discount
         ->getJson('/api/buyer/dashboard')
         ->assertOk()
         ->assertJsonPath('data.trade_value_summary.currency', 'USD')
-        ->assertJsonPath('data.trade_value_summary.total_purchase_value_usd', 500)
-        ->assertJsonPath('data.trade_value_summary.completed_trade_value_usd', 200)
+        ->assertJsonPath('data.trade_value_summary.total_purchase_value_usd', 600)
+        ->assertJsonPath('data.trade_value_summary.completed_trade_value_usd', 300)
         ->assertJsonPath('data.trade_value_summary.processing_trade_value_usd', 300)
-        ->assertJsonPath('data.trade_value_summary.discount_savings_usd', 16);
+        ->assertJsonPath('data.trade_value_summary.discount_savings_usd', 18);
 });
 
 it('marks company registration done on profile checklist when approved kyc has registration document', function () {

@@ -1,5 +1,3 @@
-import { buyerPriceDetails } from './buyer-pricing.ts';
-
 export type BuyerGuestCartEntry = {
   productId: number;
   quantity: number;
@@ -76,7 +74,9 @@ function first(value: Record<string, unknown>, keys: string[], fallback = ''): s
 }
 
 function amount(value: Record<string, unknown>, keys: string[]): number | null {
-  const parsed = Number(first(value, keys));
+  const raw = first(value, keys);
+  if (!raw) return null;
+  const parsed = Number(raw);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
@@ -95,17 +95,22 @@ export function isBuyerGuestFlowSnapshot(value: unknown): value is BuyerGuestFlo
 
 export function buyerGuestCartRow(entry: BuyerGuestCartEntry): Record<string, unknown> {
   const product = record(entry.product);
-  const pricing = buyerPriceDetails(product);
+  const basePrice = amount(product, ['fob', 'price']);
+  const discountPercentage = Math.max(0, Math.min(99.99, amount(product, ['discount_percentage', 'discountPercent']) ?? 0));
+  const salePrice = amount(product, ['discounted_unit_price', 'discounted_price'])
+    ?? (basePrice !== null ? Math.round(basePrice * (1 - discountPercentage / 100) * 100) / 100 : null);
+  const discountAmountPerUnit = amount(product, ['discount_amount_per_unit'])
+    ?? (basePrice !== null && salePrice !== null ? Math.round(Math.max(0, basePrice - salePrice) * 100) / 100 : 0);
   return {
     id: `guest-${entry.productId}`,
     product_id: entry.productId,
     qty: entry.quantity,
-    unit_price: pricing.salePrice ?? 0,
-    list_unit_price: pricing.basePrice,
-    discount_percentage: pricing.discountPercentage,
-    discount_amount_per_unit: pricing.discountAmountPerUnit,
-    unit_of_measure: pricing.unitOfMeasure,
-    currency: pricing.currency,
+    unit_price: salePrice ?? 0,
+    list_unit_price: basePrice,
+    discount_percentage: discountPercentage,
+    discount_amount_per_unit: discountAmountPerUnit,
+    unit_of_measure: first(product, ['unit_of_measure', 'unitOfMeasure'], 'MT'),
+    currency: first(product, ['currency'], 'USD').toUpperCase(),
     product,
   };
 }
