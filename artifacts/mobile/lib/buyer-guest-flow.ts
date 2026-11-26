@@ -102,6 +102,26 @@ export function buyerGuestCartRow(entry: BuyerGuestCartEntry): Record<string, un
   };
 }
 
+export function buyerCartBadgeCount(
+  guestItems: BuyerGuestCartEntry[],
+  serverItems: unknown[],
+  isSignedIn: boolean,
+  mergeError: boolean,
+): number {
+  const guestProductIds = new Set(guestItems.map(item => String(item.productId)));
+  const serverProductIds = new Set(serverItems.map(value => {
+    const item = record(value);
+    return first(item, ['product_id'], first(record(item.product), ['id']));
+  }).filter(Boolean));
+
+  if (guestProductIds.size === 0) return serverProductIds.size;
+  if (isSignedIn && !mergeError) {
+    return new Set([...guestProductIds, ...serverProductIds]).size;
+  }
+
+  return guestProductIds.size;
+}
+
 export function buildBuyerGuestCartMergeTargets(
   guestItems: BuyerGuestCartEntry[],
   serverItems: unknown[],

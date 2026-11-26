@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { amount, first, list, messageOf, record } from '@/lib/data';
 import { productMinimumQuantity } from '@/lib/buyer-cart-flow';
 import {
+  buyerCartBadgeCount,
   buildBuyerGuestCartMergeTargets,
   EMPTY_BUYER_GUEST_FLOW,
   isBuyerGuestFlowSnapshot,
@@ -24,6 +25,7 @@ const STORAGE_KEY = 'og-exports-buyer-guest-flow-v1';
 type BuyerGuestFlowValue = {
   ready: boolean;
   cart: BuyerGuestCartEntry[];
+  cartItemCount: number;
   rfqDraft: BuyerGuestRfqDraft | null;
   checkoutDraft: BuyerGuestCheckoutDraft | null;
   isMergingCart: boolean;
@@ -68,6 +70,13 @@ export function BuyerGuestFlowProvider({ children }: { children: ReactNode }) {
       staleTime: 0,
     },
   });
+  const serverCartItems = list(record(record(cartQuery.data).data).items);
+  const cartItemCount = buyerCartBadgeCount(
+    snapshot.cart,
+    serverCartItems,
+    Boolean(token),
+    Boolean(mergeError),
+  );
 
   useEffect(() => {
     let active = true;
@@ -229,6 +238,7 @@ export function BuyerGuestFlowProvider({ children }: { children: ReactNode }) {
   const value = useMemo(() => ({
     ready,
     cart: snapshot.cart,
+    cartItemCount,
     rfqDraft: snapshot.rfqDraft,
     checkoutDraft: snapshot.checkoutDraft,
     isMergingCart,
@@ -245,6 +255,7 @@ export function BuyerGuestFlowProvider({ children }: { children: ReactNode }) {
   }), [
     ready,
     snapshot.cart,
+    cartItemCount,
     snapshot.rfqDraft,
     snapshot.checkoutDraft,
     isMergingCart,

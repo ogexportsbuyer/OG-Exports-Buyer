@@ -13,6 +13,7 @@ type Props = {
   onSearchChange: (value: string) => void;
   onBrowse: (searchTerm?: string) => void;
   onOpenCart: () => void;
+  cartItemCount: number;
   onOpenNotifications: () => void;
   unreadNotificationCount: number;
   onSelectTab: (label: string) => void;
@@ -399,6 +400,7 @@ export default function BuyerHomeHeader({
   onSearchChange,
   onBrowse,
   onOpenCart,
+  cartItemCount,
   onOpenNotifications,
   unreadNotificationCount,
   onSelectTab,
@@ -537,12 +539,39 @@ export default function BuyerHomeHeader({
           <Pressable
             testID="buyer-home-cart"
             accessibilityRole="button"
-            accessibilityLabel="Open cart"
+            accessibilityLabel={cartItemCount > 0
+              ? `Open cart, ${cartItemCount} ${cartItemCount === 1 ? 'product' : 'products'}`
+              : 'Open cart'}
             onPress={onOpenCart}
             hitSlop={8}
             style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.6 : 1 }]}
           >
-            <Feather name="shopping-cart" size={20} color={colors.accent} />
+            <View style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
+              <Feather name="shopping-cart" size={20} color={colors.accent} />
+              {cartItemCount > 0 ? (
+                <View
+                  testID="buyer-home-cart-count"
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    right: 0,
+                    minWidth: 17,
+                    height: 17,
+                    borderRadius: 9,
+                    paddingHorizontal: 3,
+                    borderWidth: 1,
+                    borderColor: colors.card,
+                    backgroundColor: colors.accent,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text numberOfLines={1} style={{ color: colors.accentForeground, fontSize: 8, lineHeight: 11, fontWeight: '700' }}>
+                    {cartItemCount > 99 ? '99+' : cartItemCount}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
           </Pressable>
           <Pressable
             testID="buyer-home-notifications"

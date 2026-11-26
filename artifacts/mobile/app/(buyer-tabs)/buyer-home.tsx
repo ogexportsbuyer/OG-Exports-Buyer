@@ -7,6 +7,7 @@ import { Card, EmptyState, ErrorState, LoadingCard, Screen, Status } from '@/com
 import BuyerHomeCatalog from '@/components/BuyerHomeCatalog';
 import BuyerHomeHeader from '@/components/BuyerHomeHeader';
 import { useAuth } from '@/context/AuthContext';
+import { useBuyerGuestFlow } from '@/context/BuyerGuestFlowContext';
 import { useColors } from '@/hooks/useColors';
 import {
   getGetBuyerOrdersQueryKey,
@@ -58,6 +59,7 @@ const styles = StyleSheet.create({
 
 export default function BuyerHome() {
   const { ready, token, apiOrigin } = useAuth();
+  const { cartItemCount } = useBuyerGuestFlow();
   const colors = useColors();
   const [search, setSearch] = useState('');
   const [selectedOrigin, setSelectedOrigin] = useState('Global');
@@ -125,6 +127,7 @@ export default function BuyerHome() {
         onSearchChange={setSearch}
         onBrowse={browseProducts}
         onOpenCart={() => router.push('/buyer-cart')}
+        cartItemCount={cartItemCount}
         onOpenNotifications={() => router.push('/buyer-notifications')}
         unreadNotificationCount={unreadNotificationCount}
         onSelectTab={selectTopTab}

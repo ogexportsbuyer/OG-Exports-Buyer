@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
+  buyerCartBadgeCount,
   buildBuyerGuestCartMergeTargets,
   buyerGuestCartRow,
   isBuyerGuestFlowSnapshot,
@@ -26,6 +27,33 @@ test('guest cart rows retain product details, images, FOB price and MOQ quantity
     unit_price: 1360,
     product: entry.product,
   });
+});
+
+test('home cart badge counts distinct products rather than quantities', () => {
+  const guestItems = [
+    { productId: 42, quantity: 20, product: {} },
+    { productId: 43, quantity: 5, product: {} },
+  ];
+
+  assert.equal(buyerCartBadgeCount(guestItems, [], false, false), 2);
+  assert.equal(buyerCartBadgeCount(
+    guestItems,
+    [{ product_id: 42, qty: 10 }, { product_id: 44, qty: 3 }],
+    true,
+    false,
+  ), 3);
+  assert.equal(buyerCartBadgeCount(
+    guestItems,
+    [{ product_id: 42, qty: 10 }, { product_id: 44, qty: 3 }],
+    true,
+    true,
+  ), 2);
+  assert.equal(buyerCartBadgeCount(
+    [],
+    [{ product_id: 42, qty: 100 }, { product_id: 42, qty: 5 }, { product_id: 44, qty: 1 }],
+    true,
+    false,
+  ), 2);
 });
 
 test('guest cart merge targets add server quantities once for each product', () => {
