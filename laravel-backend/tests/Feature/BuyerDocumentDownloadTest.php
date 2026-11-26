@@ -27,6 +27,22 @@ afterEach(function () {
     }
 });
 
+it('uses the official mobile app mark for PDF headers and watermarks', function () {
+    $officialMark = File::get(dirname(base_path()).'/artifacts/mobile/assets/images/og-official-mark.png');
+
+    expect(File::get(public_path('og-logo.png')))->toBe($officialMark);
+
+    $markDataUri = 'data:image/png;base64,'.base64_encode($officialMark);
+    $header = view('pdf.partials.brand-header')->render();
+    $styles = File::get(resource_path('views/pdf/partials/brand-styles.blade.php'));
+
+    expect($header)
+        ->toContain('<div class="pdf-watermark" aria-hidden="true">')
+        ->and(substr_count($header, $markDataUri))->toBe(2)
+        ->and($styles)->toContain('.pdf-watermark')
+        ->and($styles)->toContain('opacity: .045');
+});
+
 it('downloads an available buyer trade document', function () {
     $path = 'upload/trade-documents/downloadable.pdf';
     File::ensureDirectoryExists(public_path('upload/trade-documents'));

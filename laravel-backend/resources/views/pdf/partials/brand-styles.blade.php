@@ -16,6 +16,22 @@ body {
   line-height: 1.5;
 }
 
+.pdf-watermark {
+  position: fixed;
+  top: 31%;
+  left: 50%;
+  z-index: -1;
+  width: 250px;
+  margin-left: -125px;
+  opacity: .045;
+}
+
+.pdf-watermark img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 h1 {
   margin: 3px 0 5px;
   color: #0a3637;
@@ -61,14 +77,15 @@ tr,
 }
 
 .pdf-logo-cell {
-  width: 76px;
-  padding-right: 12px;
+  width: 68px;
+  padding-right: 10px;
 }
 
 .pdf-logo {
   display: block;
-  width: 64px;
-  height: 31px;
+  width: 52px;
+  height: 36px;
+  object-fit: contain;
 }
 
 .pdf-brand-name {

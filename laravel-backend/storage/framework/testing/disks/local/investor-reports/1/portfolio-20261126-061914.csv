@@ -1,7 +1,7 @@
-Report,"Portfolio Report"
+﻿Report,"Portfolio Report"
 Investor,"Investor Alpha"
-Email,lulu80@example.net
-"Generated At","04 Oct 2026 16:28"
+Email,whane@example.org
+"Generated At","26 Nov 2026 06:19"
 "Start Date",
 "End Date",
 
@@ -13,7 +13,7 @@ Summary
 
 Investments
 Reference,Project,Type,Status,Amount,Profit,"ROI %","Invested At"
-INV-PKR-USD-ONLY,"PKR USD Only Container",container,active,"$2,000.00",$200.00,10.00,2026-10-02
+INV-PKR-USD-ONLY,"PKR USD Only Container",container,active,"$2,000.00",$200.00,10.00,2026-11-24
 
 "Profit Distributions"
 Project,"Invested Amount","Profit Amount","ROI %","Distributed At"

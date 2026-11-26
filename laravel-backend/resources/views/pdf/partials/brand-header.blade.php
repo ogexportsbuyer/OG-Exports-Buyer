@@ -1,7 +1,13 @@
+@php($brandMarkDataUri = 'data:image/png;base64,'.base64_encode(file_get_contents(public_path('og-logo.png'))))
+
+<div class="pdf-watermark" aria-hidden="true">
+  <img src="{{ $brandMarkDataUri }}" alt="">
+</div>
+
 <table class="pdf-brand-lockup">
   <tr>
     <td class="pdf-logo-cell">
-      <img class="pdf-logo" src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('og-logo.png'))) }}" alt="OG Exports logo">
+      <img class="pdf-logo" src="{{ $brandMarkDataUri }}" alt="OG Exports official logo">
     </td>
     <td>
       <div class="pdf-brand-name">OG Exports</div>
