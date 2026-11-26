@@ -23,6 +23,11 @@ import type { NotificationResponse } from 'expo-notifications';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { BuyerGuestFlowProvider } from '@/context/BuyerGuestFlowContext';
 import { AppPreferencesProvider, useAppPreferences } from '@/context/AppPreferencesContext';
+import {
+  getGetSharedNotificationsQueryKey,
+  getGetSharedUnreadNotificationCountQueryKey,
+  useMarkSharedNotificationRead,
+} from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
 import { serializeRouteState } from '@/lib/post-auth-route';
 import { notificationHref } from '@/lib/notification-routing';
@@ -44,6 +49,8 @@ function RootLayoutNav() {
   const { reduceMotion } = useMotion();
   const { ready, token, user, apiOrigin, appUnlocked } = useAuth();
   const sessionQueryClient = useQueryClient();
+  const markNotificationRead = useMarkSharedNotificationRead();
+  const pendingPushNotificationId = useRef<string | null>(null);
   const { isRTL, preferences, resolvedAppearance } = useAppPreferences();
   const colors = useColors();
   const t = (value: string) => translateUi(value, preferences.language);
@@ -93,6 +100,18 @@ function RootLayoutNav() {
   }, [ready, sessionScope, sessionQueryClient]);
 
   useEffect(() => {
+    if (!ready || !token || !pendingPushNotificationId.current) return;
+    const notificationId = pendingPushNotificationId.current;
+    pendingPushNotificationId.current = null;
+    void markNotificationRead.mutateAsync({ id: Number(notificationId) })
+      .then(() => Promise.all([
+        sessionQueryClient.invalidateQueries({ queryKey: getGetSharedNotificationsQueryKey() }),
+        sessionQueryClient.invalidateQueries({ queryKey: getGetSharedUnreadNotificationCountQueryKey() }),
+      ]))
+      .catch(() => undefined);
+  }, [ready, token, markNotificationRead.mutateAsync, sessionQueryClient]);
+
+  useEffect(() => {
     if (Platform.OS === 'web' || (Platform.OS === 'android' && isRunningInExpoGo())) return;
     let active = true;
     let subscription: { remove: () => void } | undefined;
@@ -106,6 +125,11 @@ function RootLayoutNav() {
       if (handledResponses.size > 10) handledResponses.clear();
       void notificationsApi.clearLastNotificationResponseAsync();
       const data = record(request.content.data);
+      const notificationId = data.notification_id;
+      if ((typeof notificationId === 'string' && /^\d+$/.test(notificationId))
+        || (typeof notificationId === 'number' && Number.isSafeInteger(notificationId) && notificationId > 0)) {
+        pendingPushNotificationId.current = String(notificationId);
+      }
       router.push(notificationHref(data) ?? '/buyer-notifications');
     };
     void import('expo-notifications').then(notificationsApi => {

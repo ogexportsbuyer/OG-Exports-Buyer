@@ -94,6 +94,7 @@ class ComplianceController extends Controller
     public function kycApprove(Request $request, int $id): JsonResponse
     {
         $kyc = KycApplication::query()->with('user.profile')->findOrFail($id);
+        $shouldNotify = $kyc->status !== 'approved';
         if ($kyc->type === 'investor') {
             $submittedTypes = $kyc->documents->pluck('doc_type')->unique()->all();
             $missingTypes = array_values(array_diff(
@@ -137,7 +138,7 @@ class ComplianceController extends Controller
 
         AuditsActions::log('kyc.approved', 'compliance', $request->user(), ['kyc_id' => $id]);
 
-        if ($kyc->user) {
+        if ($shouldNotify && $kyc->user) {
             $href = PortalNotificationTypes::kycHrefForUser($kyc->user, $kyc->type);
             $body = $kyc->user->hasRole('investor')
                 ? 'Your identity verification has been approved. You now have full access to investment and withdrawal features.'
@@ -146,7 +147,7 @@ class ComplianceController extends Controller
             NotifiesUsers::notifyAndEmail(
                 $kyc->user,
                 PortalNotificationTypes::KYC_APPROVED,
-                'KYC verification approved',
+                'KYC Verification Approved',
                 $body,
                 ['kyc_id' => $id, 'href' => $href],
                 'kyc_approved',
@@ -167,6 +168,7 @@ class ComplianceController extends Controller
         ]);
 
         $kyc = KycApplication::query()->findOrFail($id);
+        $shouldNotify = $kyc->status !== 'rejected';
         $kyc->update([
             'status' => 'rejected',
             'reviewed_by' => $request->user()->id,
@@ -177,7 +179,7 @@ class ComplianceController extends Controller
         AuditsActions::log('kyc.rejected', 'compliance', $request->user(), ['kyc_id' => $id]);
 
         $kyc->loadMissing('user');
-        if ($kyc->user) {
+        if ($shouldNotify && $kyc->user) {
             $href = PortalNotificationTypes::kycHrefForUser($kyc->user, $kyc->type);
             $body = filled($data['notes'] ?? null)
                 ? 'Your KYC application was rejected. Reason: '.$data['notes']
@@ -186,7 +188,7 @@ class ComplianceController extends Controller
             NotifiesUsers::notifyAndEmail(
                 $kyc->user,
                 PortalNotificationTypes::KYC_REJECTED,
-                'KYC verification rejected',
+                'KYC Verification Unsuccessful',
                 $body,
                 ['kyc_id' => $id, 'href' => $href],
                 'kyc_rejected',

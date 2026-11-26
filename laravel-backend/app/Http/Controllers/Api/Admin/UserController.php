@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use App\Support\AuditsActions;
 use App\Support\InvestmentModule;
+use App\Support\NotifiesUsers;
 use App\Support\SupplierModule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -191,6 +192,8 @@ class UserController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $user = User::query()->findOrFail($id);
+        $previousAccountStatus = (string) $user->account_status;
+        $wasBuyer = $user->hasRole('buyer');
 
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
@@ -223,6 +226,25 @@ class UserController extends Controller
         }
 
         AuditsActions::log('user.updated', 'users', $request->user(), ['user_id' => $user->id]);
+        if (
+            $wasBuyer
+            && $user->hasRole('buyer')
+            && array_key_exists('account_status', $data)
+            && $previousAccountStatus !== (string) $data['account_status']
+        ) {
+            $statusLabel = match ($data['account_status']) {
+                'active' => 'Active',
+                'suspended' => 'Suspended',
+                default => 'Pending',
+            };
+            NotifiesUsers::notify(
+                $user,
+                'buyer_account_status',
+                "Buyer Account {$statusLabel}",
+                "Your buyer account status is now {$statusLabel}. Open OG Exports for details.",
+                ['href' => '/buyer-notifications', 'account_status' => $data['account_status']]
+            );
+        }
 
         return response()->json([
             'message' => 'User updated.',

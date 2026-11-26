@@ -301,25 +301,8 @@ final class InvestorPushBridge
         ?string $inAppBody = null,
         bool $isBuyer = false,
     ): array {
-        if ($isBuyer && in_array($type, [
-            InvestorNotificationTypes::KYC_SUBMITTED,
-            InvestorNotificationTypes::KYC_APPROVED,
-            InvestorNotificationTypes::KYC_REJECTED,
-        ], true)) {
-            return match ($type) {
-                InvestorNotificationTypes::KYC_SUBMITTED => [
-                    'Business verification received',
-                    'Your buyer account documents are under review. Open OG Exports for updates.',
-                ],
-                InvestorNotificationTypes::KYC_APPROVED => [
-                    'Business verification approved',
-                    'Your buyer business profile is verified. Open OG Exports to continue.',
-                ],
-                default => [
-                    'Business verification needs attention',
-                    'Open OG Exports to review your business profile and next steps.',
-                ],
-            };
+        if ($isBuyer) {
+            return self::buyerLockScreenContent($type, $data, $inAppTitle);
         }
 
         if (self::isFinancialType($type)) {
@@ -407,6 +390,123 @@ final class InvestorPushBridge
                 'A new account update is ready. Open OG Exports to review it.',
             ],
         };
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array{0: string, 1: string}
+     */
+    private static function buyerLockScreenContent(string $type, array $data, ?string $inAppTitle): array
+    {
+        $title = filled($inAppTitle)
+            ? Str::limit(trim(strip_tags((string) $inAppTitle)), 64, '')
+            : 'OG Exports buyer update';
+        $orderNumber = trim(strip_tags((string) ($data['order_number'] ?? '')));
+        if ($orderNumber === '') {
+            $orderId = $data['order_id'] ?? null;
+            $orderNumber = is_int($orderId) || (is_string($orderId) && ctype_digit($orderId))
+                ? '#'.$orderId
+                : 'your order';
+        }
+
+        if ($type === PortalNotificationTypes::ORDER_STATUS) {
+            $status = OrderStatuses::LABELS[(string) ($data['status'] ?? '')]
+                ?? self::humanizedStatus($data['status'] ?? null)
+                ?? 'updated';
+            $paymentStatus = filled($data['payment_status'] ?? null)
+                ? DepositReviewStatuses::label((string) $data['payment_status'])
+                : null;
+
+            if (($data['notification_event'] ?? null) === 'payment_status') {
+                return [$title, "Payment status for order {$orderNumber} is now {$paymentStatus}. Open OG Exports to review details."];
+            }
+
+            $body = "Order {$orderNumber} status is now {$status}.";
+            if ($paymentStatus && ($data['notification_event'] ?? null) === 'order_and_payment_status') {
+                $body .= " Payment status: {$paymentStatus}.";
+            }
+
+            return [$title, $body.' Track progress in OG Exports.'];
+        }
+
+        if ($type === PortalNotificationTypes::SHIPMENT_UPDATE) {
+            $milestone = trim(strip_tags((string) ($data['current_milestone'] ?? '')));
+            $status = self::humanizedStatus($data['status'] ?? null);
+            if ($milestone !== '') {
+                return [$title, "Shipment for order {$orderNumber} reached {$milestone}. Track it in OG Exports."];
+            }
+            if ($status !== null) {
+                return [$title, "Shipment for order {$orderNumber} is now {$status}. Track it in OG Exports."];
+            }
+
+            return [$title, "Shipment tracking for order {$orderNumber} is ready in OG Exports."];
+        }
+
+        if (in_array($type, [
+            PortalNotificationTypes::BUYER_PAYMENT_APPROVED,
+            PortalNotificationTypes::BUYER_PAYMENT_REJECTED,
+            PortalNotificationTypes::BUYER_PAYMENT_CANCELLED,
+        ], true)) {
+            $status = match ($type) {
+                PortalNotificationTypes::BUYER_PAYMENT_APPROVED => 'verified',
+                PortalNotificationTypes::BUYER_PAYMENT_REJECTED => 'rejected',
+                default => 'cancelled',
+            };
+
+            return [$title, "Payment for order {$orderNumber} is {$status}. Open OG Exports for payment details."];
+        }
+
+        if (in_array($type, [
+            InvestorNotificationTypes::KYC_SUBMITTED,
+            InvestorNotificationTypes::KYC_APPROVED,
+            InvestorNotificationTypes::KYC_REJECTED,
+        ], true)) {
+            $kycTitle = filled($inAppTitle)
+                ? Str::limit(trim(strip_tags((string) $inAppTitle)), 64, '')
+                : match ($type) {
+                    InvestorNotificationTypes::KYC_SUBMITTED => 'KYC Application Submitted',
+                    InvestorNotificationTypes::KYC_APPROVED => 'KYC Verification Approved',
+                    default => 'KYC Verification Unsuccessful',
+                };
+
+            return [$kycTitle, 'Open OG Exports to review your business verification status and next steps.'];
+        }
+
+        if ($type === PortalNotificationTypes::QUOTATION) {
+            return [$title, 'A quotation is ready to review in OG Exports.'];
+        }
+
+        if ($type === PortalNotificationTypes::QUOTATION_REPLY) {
+            return [$title, 'A new response is available in your OG Exports quotation.'];
+        }
+
+        if ($type === PortalNotificationTypes::TRADE_DOCUMENT) {
+            return [$title, 'A trade document is available. Open OG Exports to view it securely.'];
+        }
+
+        if (in_array($type, [PortalNotificationTypes::SUPPORT_TICKET, InvestorNotificationTypes::NEW_MESSAGE, 'new_message'], true)) {
+            return [$title, 'A new support message is available. Open OG Exports to read it securely.'];
+        }
+
+        if ($type === 'buyer_account_registration') {
+            return [$title, 'Your email is verified and your OG Exports buyer account is ready.'];
+        }
+
+        if ($type === 'buyer_profile_updated') {
+            return [$title, 'Your buyer profile details were updated successfully.'];
+        }
+
+        if ($type === 'security_alert') {
+            return [$title, 'Your account password was changed. Contact support if you did not make this change.'];
+        }
+
+        if ($type === 'buyer_account_status') {
+            $status = self::humanizedStatus($data['account_status'] ?? null) ?? 'updated';
+
+            return [$title, "Your buyer account status is now {$status}. Open OG Exports for details."];
+        }
+
+        return [$title, 'Open OG Exports to review this update.'];
     }
 
     private static function isFinancialType(string $type): bool

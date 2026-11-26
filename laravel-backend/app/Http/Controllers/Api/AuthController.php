@@ -13,6 +13,7 @@ use App\Support\AuthFlowLogger;
 use App\Support\InvestmentModule;
 use App\Support\AdminNotificationTypes;
 use App\Support\NotifiesAdmins;
+use App\Support\NotifiesUsers;
 use App\Support\SupplierModule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -166,6 +167,15 @@ class AuthController extends Controller
             $user->email.' just verified their account.',
             ['href' => '/admin/users', 'user_id' => $user->id, 'role' => $role]
         );
+        if ($user->hasRole('buyer')) {
+            NotifiesUsers::notify(
+                $user,
+                'buyer_account_registration',
+                'Account Registration Successful',
+                'Welcome to OG Exports. Your email is verified and your buyer account is ready.',
+                ['href' => '/buyer-notifications', 'event' => 'registration_verified']
+            );
+        }
 
         return response()->json([
             'message' => 'Email verified successfully.',
@@ -678,6 +688,17 @@ class AuthController extends Controller
             'account_status' => ['sometimes', 'string', 'in:active,suspended,pending'],
         ]);
 
+        $profileFields = ['company_name', 'country', 'city', 'address', 'avatar_url'];
+        $userProfileFields = ['name', 'phone'];
+        $profileChanged = collect($userProfileFields)->contains(
+            fn (string $field): bool => array_key_exists($field, $data)
+                && $user->{$field} !== $data[$field]
+        );
+        $profileChanged = $profileChanged || collect($profileFields)->contains(
+            fn (string $field): bool => array_key_exists($field, $data)
+                && $user->profile?->{$field} !== $data[$field]
+        );
+
         $userFill = collect($data)->only(['name', 'phone'])->all();
         if (array_key_exists('account_status', $data)) {
             $userFill['account_status'] = $data['account_status'];
@@ -700,6 +721,15 @@ class AuthController extends Controller
 
         if ($profileData !== []) {
             $user->profile()->updateOrCreate(['user_id' => $user->id], $profileData);
+        }
+        if ($profileChanged && $user->hasRole('buyer')) {
+            NotifiesUsers::notify(
+                $user,
+                'buyer_profile_updated',
+                'Profile Updated Successfully',
+                'Your buyer profile details were updated.',
+                ['href' => '/buyer-notifications', 'event' => 'profile_updated']
+            );
         }
 
         return new UserResource($user->fresh()->load(['profile', 'roles', 'latestKycApplication']));
@@ -724,6 +754,15 @@ class AuthController extends Controller
         $user->update(['password' => $data['password']]);
 
         \App\Support\AuditsActions::log('password.changed', 'security', $user);
+        if ($user->hasRole('buyer')) {
+            NotifiesUsers::notify(
+                $user,
+                'security_alert',
+                'Password Changed Successfully',
+                'Your OG Exports buyer account password was changed. Contact support if you did not make this change.',
+                ['href' => '/buyer-notifications', 'event' => 'password_changed']
+            );
+        }
 
         return response()->json(['message' => 'Password updated successfully.']);
     }

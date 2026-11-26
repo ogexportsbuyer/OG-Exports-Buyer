@@ -25,18 +25,30 @@ class BuyerTradeNotifier
         $orderNumber = $order->order_number ?: '#'.$order->id;
         $statusLabel = OrderStatuses::LABELS[$order->status]
             ?? ucfirst(str_replace('_', ' ', (string) $order->status));
-
-        $parts = ["Order status is now {$statusLabel}."];
-        if (
-            $previousPaymentStatus !== null
+        $orderStatusChanged = $previousStatus === null
+            || (string) $order->status !== (string) $previousStatus;
+        $paymentStatusChanged = $previousPaymentStatus !== null
             && (string) $order->payment_status !== (string) $previousPaymentStatus
-            && filled($order->payment_status)
-        ) {
-            $parts[] = 'Payment status: '.DepositReviewStatuses::label($order->payment_status).'.';
+            && filled($order->payment_status);
+        $paymentStatusLabel = DepositReviewStatuses::label($order->payment_status);
+
+        $parts = [];
+        if ($orderStatusChanged) {
+            $parts[] = "Order status is now {$statusLabel}.";
+        }
+        if ($paymentStatusChanged) {
+            $parts[] = "Payment status is now {$paymentStatusLabel}.";
         }
         if (filled($order->notes)) {
             $parts[] = 'Note: '.Str::limit((string) $order->notes, 120);
         }
+        if ($parts === []) {
+            return;
+        }
+
+        $title = $paymentStatusChanged && ! $orderStatusChanged
+            ? "Payment {$paymentStatusLabel} — {$orderNumber}"
+            : self::orderStatusTitle((string) $order->status).' — '.$orderNumber;
 
         $href = '/buyer/orders';
         $portalUrl = self::portalUrl($href);
@@ -44,12 +56,16 @@ class BuyerTradeNotifier
         NotifiesUsers::notifyAndEmail(
             $buyer,
             PortalNotificationTypes::ORDER_STATUS,
-            "Order update — {$orderNumber}",
+            $title,
             implode(' ', $parts),
             [
                 'order_id' => $order->id,
+                'order_number' => $orderNumber,
                 'status' => $order->status,
                 'payment_status' => $order->payment_status,
+                'notification_event' => $paymentStatusChanged && ! $orderStatusChanged
+                    ? 'payment_status'
+                    : ($paymentStatusChanged ? 'order_and_payment_status' : 'order_status'),
                 'href' => $href,
             ],
             'buyer_order_status_update',
@@ -111,11 +127,14 @@ class BuyerTradeNotifier
         NotifiesUsers::notifyAndEmail(
             $buyer,
             PortalNotificationTypes::SHIPMENT_UPDATE,
-            "Shipment created — {$label}",
+            "Shipment Tracking Created — {$label}",
             'A shipment has been created for your order. Track progress in your portal.',
             [
                 'shipment_id' => $shipment->id,
                 'order_id' => $shipment->order_id,
+                'order_number' => self::orderNumberForShipment($shipment),
+                'status' => $shipment->status,
+                'current_milestone' => $shipment->current_milestone,
                 'href' => $href,
             ],
             'buyer_shipment_update',
@@ -163,17 +182,27 @@ class BuyerTradeNotifier
             $parts[] = 'Shipment details were updated.';
         }
 
+        $milestone = trim((string) ($changes['current_milestone'] ?? ''));
+        $status = trim((string) ($changes['status'] ?? ''));
+        $title = $milestone !== ''
+            ? "Shipment Milestone: {$milestone} — {$label}"
+            : ($status !== ''
+                ? 'Shipment Status: '.ucfirst(str_replace('_', ' ', $status))." — {$label}"
+                : "Shipment Details Updated — {$label}");
         $href = '/buyer/shipments';
         $body = implode('. ', $parts).'.';
 
         NotifiesUsers::notifyAndEmail(
             $buyer,
             PortalNotificationTypes::SHIPMENT_UPDATE,
-            "Shipment update — {$label}",
+            $title,
             $body,
             [
                 'shipment_id' => $shipment->id,
                 'order_id' => $shipment->order_id,
+                'order_number' => self::orderNumberForShipment($shipment),
+                'status' => $shipment->status,
+                'current_milestone' => $shipment->current_milestone,
                 'href' => $href,
             ],
             'buyer_shipment_update',
@@ -229,9 +258,9 @@ class BuyerTradeNotifier
         NotifiesUsers::notifyAndEmail(
             $buyer,
             PortalNotificationTypes::BUYER_PAYMENT_APPROVED,
-            "Payment approved — {$orderNumber}",
+            "Payment Verified — {$orderNumber}",
             "Your payment for order {$orderNumber} has been verified.",
-            ['order_id' => $order->id, 'href' => $href],
+            ['order_id' => $order->id, 'order_number' => $orderNumber, 'status' => 'verified', 'href' => $href],
             'buyer_payment_approved',
             [
                 'order_number' => $orderNumber,
@@ -253,9 +282,9 @@ class BuyerTradeNotifier
         NotifiesUsers::notifyAndEmail(
             $buyer,
             PortalNotificationTypes::BUYER_PAYMENT_REJECTED,
-            "Payment rejected — {$orderNumber}",
+            "Payment Rejected — {$orderNumber}",
             "Your payment for order {$orderNumber} was rejected. Please resubmit or contact support.",
-            ['order_id' => $order->id, 'href' => $href],
+            ['order_id' => $order->id, 'order_number' => $orderNumber, 'status' => 'rejected', 'href' => $href],
             'buyer_payment_rejected',
             [
                 'order_number' => $orderNumber,
@@ -277,9 +306,9 @@ class BuyerTradeNotifier
         NotifiesUsers::notifyAndEmail(
             $buyer,
             PortalNotificationTypes::BUYER_PAYMENT_CANCELLED,
-            "Payment cancelled — {$orderNumber}",
+            "Payment Request Cancelled — {$orderNumber}",
             "Your pending payment for order {$orderNumber} has been cancelled.",
-            ['order_id' => $order->id, 'href' => $href],
+            ['order_id' => $order->id, 'order_number' => $orderNumber, 'status' => 'cancelled', 'href' => $href],
             'buyer_payment_cancelled',
             [
                 'order_number' => $orderNumber,
@@ -370,9 +399,32 @@ class BuyerTradeNotifier
 
     private static function buyerFromShipment(Shipment $shipment): ?User
     {
-        $shipment->loadMissing('buyer');
+        $shipment->loadMissing(['buyer', 'order']);
 
         return $shipment->buyer;
+    }
+
+    private static function orderNumberForShipment(Shipment $shipment): string
+    {
+        $shipment->loadMissing('order');
+
+        return $shipment->order?->order_number
+            ?: ($shipment->order_id ? '#'.$shipment->order_id : 'Shipment #'.$shipment->id);
+    }
+
+    private static function orderStatusTitle(string $status): string
+    {
+        return match ($status) {
+            OrderStatuses::ORDER_CONFIRMED => 'Order Confirmed Successfully',
+            OrderStatuses::PAYMENT => 'Order Payment Stage Started',
+            OrderStatuses::PRODUCTION => 'Production & Procurement Started',
+            OrderStatuses::QUALITY_INSPECTION => 'Quality Inspection in Progress',
+            OrderStatuses::LOADED_AT_PORT => 'Shipment Loaded at Port',
+            OrderStatuses::IN_TRANSIT => 'Shipment Dispatched — In Transit',
+            OrderStatuses::DELIVERED => 'Order Delivered Successfully',
+            OrderStatuses::CANCELLED => 'Order Cancelled',
+            default => 'Order Status: '.(OrderStatuses::LABELS[$status] ?? ucfirst(str_replace('_', ' ', $status))),
+        };
     }
 
     private static function portalUrl(string $path): string

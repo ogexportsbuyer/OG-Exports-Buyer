@@ -15,6 +15,8 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 use App\Support\MediaStorage;
 use App\Support\AdminNotificationTypes;
+use App\Support\InvestorNotificationTypes;
+use App\Support\NotifiesUsers;
 use App\Support\NotifiesAdmins;
 use Illuminate\Validation\ValidationException;
 
@@ -319,6 +321,9 @@ class CompanyController extends Controller
             ->where('type', 'company')
             ->latest()
             ->first();
+        $previousStatus = $kyc?->status;
+        $isResubmission = in_array($previousStatus, ['approved', 'rejected'], true);
+        $shouldNotifyBuyer = $kyc === null || $isResubmission || $previousStatus !== 'pending';
 
         if (! $kyc || in_array($kyc->status, ['approved', 'rejected'], true)) {
             $kyc = KycApplication::create([
@@ -371,6 +376,19 @@ class CompanyController extends Controller
             'Buyer uploaded '.($data['doc_type']).' for review.',
             ['href' => '/admin/compliance', 'user_id' => $user->id, 'kyc_id' => $kyc->id]
         );
+        if ($shouldNotifyBuyer) {
+            NotifiesUsers::notify(
+                $user,
+                InvestorNotificationTypes::KYC_SUBMITTED,
+                $isResubmission ? 'KYC Documents Resubmitted' : 'KYC Application Submitted',
+                'Your business verification documents were received and are now under review.',
+                [
+                    'kyc_id' => $kyc->id,
+                    'status' => 'pending',
+                    'href' => '/buyer/company',
+                ]
+            );
+        }
 
         return response()->json([
             'message' => 'Document uploaded for review.',

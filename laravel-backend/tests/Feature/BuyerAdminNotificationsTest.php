@@ -2,6 +2,7 @@
 
 use App\Models\AppNotification;
 use App\Models\EmailTemplate;
+use App\Models\KycApplication;
 use App\Models\Order;
 use App\Models\Quotation;
 use App\Models\Shipment;
@@ -83,6 +84,7 @@ it('notifies buyer when admin updates order status', function () {
 
     expect($notification)->not->toBeNull()
         ->and($notification->title)->toContain('ORD-NOTIF-001')
+        ->and($notification->title)->toContain('Quality Inspection in Progress')
         ->and($notification->data['href'] ?? null)->toBe('/buyer/orders');
 
     expect(EmailTemplate::query()->where('slug', 'buyer_order_status_update')->where('is_active', true)->exists())->toBeTrue();
@@ -103,6 +105,100 @@ it('notifies buyer when admin updates order status', function () {
         ->getJson('/api/notifications/unread-count')
         ->assertOk()
         ->assertJsonPath('data.unread_count', 1);
+});
+
+it('does not notify a buyer when an admin saves an unchanged order status', function () {
+    $order = Order::query()->create([
+        'order_number' => 'ORD-NOTIF-UNCHANGED',
+        'buyer_id' => $this->buyer->id,
+        'status' => OrderStatuses::ORDER_CONFIRMED,
+        'payment_status' => 'unpaid',
+        'total_value' => 5000,
+        'currency' => 'USD',
+        'placed_at' => now(),
+    ]);
+
+    $this->actingAs($this->admin)
+        ->withHeader('Origin', 'http://localhost:5000')
+        ->patchJson("/api/admin/orders/{$order->id}/status", [
+            'status' => OrderStatuses::ORDER_CONFIRMED,
+        ])
+        ->assertOk();
+
+    expect(AppNotification::query()->where('user_id', $this->buyer->id)->count())->toBe(0)
+        ->and(Mail::mailer('array')->getSymfonyTransport()->messages())->toHaveCount(0);
+});
+
+it('uses the exact payment status when only the payment status changes', function () {
+    $order = Order::query()->create([
+        'order_number' => 'ORD-PAY-STATUS',
+        'buyer_id' => $this->buyer->id,
+        'status' => OrderStatuses::ORDER_CONFIRMED,
+        'payment_status' => 'pending_verification',
+        'total_value' => 5000,
+        'currency' => 'USD',
+        'placed_at' => now(),
+    ]);
+
+    $this->actingAs($this->admin)
+        ->withHeader('Origin', 'http://localhost:5000')
+        ->patchJson("/api/admin/orders/{$order->id}/status", [
+            'status' => OrderStatuses::ORDER_CONFIRMED,
+            'payment_status' => 'approved',
+        ])
+        ->assertOk();
+
+    $notification = AppNotification::query()
+        ->where('user_id', $this->buyer->id)
+        ->where('type', PortalNotificationTypes::ORDER_STATUS)
+        ->sole();
+
+    expect($notification->title)->toBe('Payment Approved — ORD-PAY-STATUS')
+        ->and($notification->body)->toContain('Payment status is now Approved')
+        ->and($notification->data['notification_event'] ?? null)->toBe('payment_status');
+});
+
+it('notifies buyers once per KYC submission and approval transition', function () {
+    $this->actingAs($this->buyer)
+        ->postJson('/api/buyer/company/kyc/upload', [
+            'doc_type' => 'company_registration',
+            'path' => 'uploads/buyer/company-registration.pdf',
+            'original_name' => 'company-registration.pdf',
+        ])
+        ->assertCreated();
+
+    $application = KycApplication::query()
+        ->where('user_id', $this->buyer->id)
+        ->where('type', 'company')
+        ->sole();
+
+    $this->actingAs($this->buyer)
+        ->postJson('/api/buyer/company/kyc/upload', [
+            'doc_type' => 'tax_registration',
+            'path' => 'uploads/buyer/tax-registration.pdf',
+            'original_name' => 'tax-registration.pdf',
+        ])
+        ->assertCreated();
+
+    expect(AppNotification::query()
+        ->where('user_id', $this->buyer->id)
+        ->where('type', 'kyc_submitted')
+        ->count())->toBe(1);
+
+    $this->actingAs($this->admin)
+        ->postJson("/api/admin/compliance/kyc/{$application->id}/approve")
+        ->assertOk()
+        ->assertJsonPath('data.status', 'approved');
+
+    $this->actingAs($this->admin)
+        ->postJson("/api/admin/compliance/kyc/{$application->id}/approve")
+        ->assertOk()
+        ->assertJsonPath('data.status', 'approved');
+
+    expect(AppNotification::query()
+        ->where('user_id', $this->buyer->id)
+        ->where('type', 'kyc_approved')
+        ->count())->toBe(1);
 });
 
 it('notifies buyer when admin replies on a quotation', function () {
