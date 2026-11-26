@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { File as ExpoFile } from 'expo-file-system';
 import { Feather } from '@expo/vector-icons';
@@ -26,8 +26,14 @@ import { useColors } from '@/hooks/useColors';
 import { INVESTOR_DOCUMENT_MIME_TYPES } from '@/lib/upload-rules';
 import { uploadInvestorFile } from '@/lib/file-upload';
 import { first, list, messageOf, record } from '@/lib/data';
+import {
+  areBuyerCompanyVerificationDocumentsComplete,
+  BUYER_COMPANY_SETUP_STEPS,
+  nextBuyerCompanySetupTab,
+  type BuyerCompanySetupTab,
+} from '@/lib/buyer-company-setup-flow';
 
-type CompanyTab = 'company' | 'verification' | 'contacts' | 'preferences';
+type CompanyTab = BuyerCompanySetupTab;
 type CompanyFields = {
   company_name: string;
   registration_no: string;
@@ -93,6 +99,8 @@ export default function BuyerCompany() {
   const contacts = contactsQuery.data ? list(record(contactsQuery.data).data) : list(companyPayload.contacts);
   const kyc = record(companyPayload.kyc);
   const steps = list(kyc.steps);
+  const isComplete = areBuyerCompanyVerificationDocumentsComplete(steps);
+  const uploadedDocumentCount = steps.filter(step => Boolean(first(record(step.document), ['path']))).length;
 
   useEffect(() => {
     if (!companyQuery.isSuccess) return;
@@ -127,6 +135,7 @@ export default function BuyerCompany() {
     if (companyResult.isError) {
       throw companyResult.error ?? new Error('The saved company information could not be reloaded.');
     }
+    return record(record(companyResult.data).data);
   }
 
   async function saveCompanyDetails() {
@@ -142,7 +151,8 @@ export default function BuyerCompany() {
         throw new Error('The server did not confirm the saved company details. Please try again.');
       }
       await refreshCompany();
-      setNotice('Company details saved and confirmed.');
+      setTab(nextBuyerCompanySetupTab('company') ?? 'verification');
+      setNotice('Company details saved. Next, upload your verification documents.');
     } catch (err) {
       setError(messageOf(err));
     }
@@ -185,9 +195,10 @@ export default function BuyerCompany() {
     setNotice('');
   }
 
-  async function saveContact() {
+  async function saveContact(continueToPreferences = true) {
     setError('');
     setNotice('');
+    const wasEditing = editingContact !== null;
     try {
       if (!contactFields.name.trim()) throw new Error('Enter the contact person’s name.');
       const data = { ...contactFields, name: contactFields.name.trim(), title: contactFields.title.trim(), email: contactFields.email.trim(), phone: contactFields.phone.trim() };
@@ -200,7 +211,13 @@ export default function BuyerCompany() {
       setContactFields(emptyContact);
       setEditingContact(null);
       setShowContactForm(false);
-      setNotice(editingContact ? 'Contact updated.' : 'Contact added.');
+      if (continueToPreferences) {
+        setTab(nextBuyerCompanySetupTab('contacts') ?? 'preferences');
+        setNotice(wasEditing ? 'Contact updated. Review your trade preferences next.' : 'Contact saved. Review your trade preferences next.');
+      } else {
+        setShowContactForm(true);
+        setNotice('Contact saved. Add another contact or continue when you are ready.');
+      }
     } catch (err) {
       setError(messageOf(err));
     }
@@ -248,8 +265,15 @@ export default function BuyerCompany() {
       if (!first(document, ['path'])) {
         throw new Error('The verification document did not receive a server confirmation. Please try uploading again.');
       }
-      await refreshCompany();
-      setNotice(first(response, ['message'], 'File submitted for verification review.'));
+      const refreshed = await refreshCompany();
+      const updatedSteps = list(record(refreshed.kyc).steps);
+      const hasCompletedVerification = areBuyerCompanyVerificationDocumentsComplete(updatedSteps);
+      if (!isComplete && hasCompletedVerification) {
+        setTab(nextBuyerCompanySetupTab('verification') ?? 'contacts');
+        setNotice('All verification documents are uploaded. Next, review company contacts.');
+      } else {
+        setNotice(first(response, ['message'], 'File submitted for verification review.'));
+      }
     } catch (err) {
       setError(messageOf(err));
     } finally {
@@ -261,12 +285,9 @@ export default function BuyerCompany() {
     return <BuyerAuthGate title="Company profile" body="Sign in to manage company details, verification documents, contacts, and trade preferences." returnTo="/buyer-company" />;
   }
 
-  const tabs: [CompanyTab, string][] = [
-    ['company', 'Company'],
-    ['verification', 'Verification'],
-    ['contacts', 'Contacts'],
-    ['preferences', 'Trade preferences'],
-  ];
+  const tabs: [CompanyTab, string][] = BUYER_COMPANY_SETUP_STEPS.map(step => [step.id, step.title]);
+  const currentStepIndex = BUYER_COMPANY_SETUP_STEPS.findIndex(step => step.id === tab);
+  const currentStep = BUYER_COMPANY_SETUP_STEPS[currentStepIndex];
 
   return (
     <Screen title="Company profile" subtitle="Company information and trade setup" refreshable>
@@ -289,6 +310,28 @@ export default function BuyerCompany() {
       {companyQuery.isError ? <ErrorState message="Company profile could not be loaded." error={companyQuery.error} onRetry={() => void companyQuery.refetch()} /> : null}
       {companyQuery.isSuccess ? (
         <>
+          <Card style={{ padding: 13, marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' }}>
+                <Feather name={currentStep.icon} size={17} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '800', letterSpacing: 1 }}>STEP {currentStepIndex + 1} OF {BUYER_COMPANY_SETUP_STEPS.length}</Text>
+                <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '800', marginTop: 2 }}>{currentStep.title}</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginTop: 2 }}>{currentStep.description}</Text>
+              </View>
+            </View>
+            {tab === 'verification' ? (
+              <View style={{ marginTop: 10, paddingTop: 9, borderTopWidth: 1, borderTopColor: colors.border }}>
+                <Text style={{ color: colors.mutedForeground, fontSize: 10, fontWeight: '700' }}>{uploadedDocumentCount} of {steps.length} documents uploaded</Text>
+              </View>
+            ) : null}
+            <View accessibilityLabel={`Setup progress ${currentStepIndex + 1} of ${BUYER_COMPANY_SETUP_STEPS.length}`} style={{ flexDirection: 'row', gap: 4, marginTop: 10 }}>
+              {BUYER_COMPANY_SETUP_STEPS.map((step, index) => (
+                <View key={step.id} style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: index <= currentStepIndex ? colors.primary : colors.border }} />
+              ))}
+            </View>
+          </Card>
           <View style={{ flexDirection: 'row', padding: 4, borderRadius: 14, backgroundColor: colors.secondary, marginBottom: 15 }}>
             {tabs.map(([value, label]) => (
               <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: tab === value }} onPress={() => { setTab(value); setError(''); setNotice(''); }} style={{ flex: 1, minHeight: 38, borderRadius: 11, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3, backgroundColor: tab === value ? colors.card : 'transparent', borderWidth: tab === value ? 1 : 0, borderColor: colors.border }}>
@@ -350,6 +393,7 @@ export default function BuyerCompany() {
                 const docType = first(step, ['doc_type'], kycSteps[index] ?? '');
                 const stepDocument = record(step.document);
                 const fileName = first(stepDocument, ['original_name']);
+                const isUploading = uploadingType === docType;
                 return (
                   <Card key={docType || String(index)} style={{ padding: 14, marginBottom: 9 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
@@ -357,18 +401,58 @@ export default function BuyerCompany() {
                       <Status value={first(step, ['status'], 'Pending')} />
                     </View>
                     <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 17, marginTop: 6 }}>{first(step, ['desc'])}</Text>
-                    {fileName ? <Text style={{ color: colors.primary, fontSize: 10, marginTop: 6 }}>{fileName}</Text> : null}
-                    <Action
-                      title={uploadingType === docType ? 'Uploading…' : fileName ? 'Replace document' : 'Upload document'}
-                      icon="upload"
-                      secondary={!!fileName}
-                      disabled={!!uploadingType}
-                      loading={uploadingType === docType}
-                      onPress={() => void pickAndUpload(docType)}
-                    />
+                    {fileName ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                        <Feather name="file-text" size={13} color={colors.primary} />
+                        <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 10, flex: 1 }}>{fileName}</Text>
+                      </View>
+                    ) : null}
+                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 }}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`${fileName ? 'Replace' : 'Upload'} ${first(step, ['label'], 'verification document')}`}
+                        accessibilityState={{ disabled: !!uploadingType, busy: isUploading }}
+                        disabled={!!uploadingType}
+                        testID={`buyer-company-upload-${docType}`}
+                        onPress={() => void pickAndUpload(docType)}
+                        style={({ pressed }) => ({
+                          minWidth: 92,
+                          minHeight: 38,
+                          paddingHorizontal: 11,
+                          borderRadius: 12,
+                          borderWidth: 1,
+                          borderColor: colors.primary,
+                          backgroundColor: pressed ? colors.lightGreen : colors.secondary,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          opacity: uploadingType && !isUploading ? 0.5 : 1,
+                        })}
+                      >
+                        {isUploading
+                          ? <ActivityIndicator size="small" color={colors.primary} />
+                          : <Feather name={fileName ? 'refresh-cw' : 'upload'} size={14} color={colors.primary} />}
+                        <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>
+                          {isUploading ? 'Uploading' : fileName ? 'Replace' : 'Upload'}
+                        </Text>
+                      </Pressable>
+                    </View>
                   </Card>
                 );
               })}
+              {isComplete ? (
+                <Action
+                  title="Continue to company contacts"
+                  icon="arrow-right"
+                  secondary
+                  onPress={() => {
+                    setTab(nextBuyerCompanySetupTab('verification') ?? 'contacts');
+                    setNotice('');
+                    setError('');
+                  }}
+                />
+              ) : null}
             </>
           ) : null}
 
@@ -410,11 +494,25 @@ export default function BuyerCompany() {
                     <Feather name={contactFields.is_primary ? 'check-square' : 'square'} size={16} color={colors.primary} />
                     <Text style={{ color: colors.foreground, fontSize: 12 }}>Set as primary contact</Text>
                   </Pressable>
-                  <Action title={editingContact ? 'Save contact' : 'Add contact'} icon="save" loading={createContact.isPending || updateContact.isPending} disabled={createContact.isPending || updateContact.isPending} onPress={() => void saveContact()} />
+                  <Action title={editingContact ? 'Save & continue' : 'Save & continue'} icon="arrow-right" loading={createContact.isPending || updateContact.isPending} disabled={createContact.isPending || updateContact.isPending} onPress={() => void saveContact(true)} />
+                  {!editingContact ? <Action title="Save & add another" icon="user-plus" secondary loading={createContact.isPending} disabled={createContact.isPending || updateContact.isPending} onPress={() => void saveContact(false)} /> : null}
                   <Action title="Cancel" secondary onPress={() => { setShowContactForm(false); setEditingContact(null); setContactFields(emptyContact); }} />
                 </Card>
               ) : (
-                <Action title="Add company contact" icon="user-plus" onPress={() => { setContactFields(emptyContact); setEditingContact(null); setShowContactForm(true); setError(''); setNotice(''); }} />
+                <>
+                  <Action title="Add company contact" icon="user-plus" onPress={() => { setContactFields(emptyContact); setEditingContact(null); setShowContactForm(true); setError(''); setNotice(''); }} />
+                  <Action
+                    title="Continue to trade preferences"
+                    icon="arrow-right"
+                    secondary
+                    disabled={contactsQuery.isLoading}
+                    onPress={() => {
+                      setTab(nextBuyerCompanySetupTab('contacts') ?? 'preferences');
+                      setNotice('Contacts saved. Set your preferred trade terms next.');
+                      setError('');
+                    }}
+                  />
+                </>
               )}
             </>
           ) : null}
