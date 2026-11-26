@@ -9,15 +9,16 @@ use App\Models\KycApplication;
 use App\Models\KycDocument;
 use App\Models\Port;
 use App\Models\UserProfile;
+use App\Support\AdminNotificationTypes;
+use App\Support\InvestorNotificationTypes;
+use App\Support\MediaStorage;
+use App\Support\NotifiesAdmins;
+use App\Support\NotifiesUsers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use App\Support\MediaStorage;
-use App\Support\AdminNotificationTypes;
-use App\Support\InvestorNotificationTypes;
-use App\Support\NotifiesUsers;
-use App\Support\NotifiesAdmins;
 use Illuminate\Validation\ValidationException;
 
 class CompanyController extends Controller
@@ -101,26 +102,43 @@ class CompanyController extends Controller
         $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
         $meta = $this->profileMeta($profile);
 
-        $meta['registration_no'] = $data['registration_no'] ?? ($meta['registration_no'] ?? null);
-        $meta['import_license_no'] = $data['import_license'] ?? ($meta['import_license_no'] ?? null);
-        if (! empty($data['import_license'])) {
-            $meta['import_license'] = true;
+        $metaFields = [
+            'registration_no' => 'registration_no',
+            'import_license' => 'import_license_no',
+            'tax_id' => 'tax_id',
+            'business_type' => 'business_type',
+            'annual_volume' => 'annual_volume',
+            'website' => 'website',
+        ];
+        foreach ($metaFields as $input => $key) {
+            if (array_key_exists($input, $data)) {
+                $value = $data[$input];
+                $meta[$key] = is_string($value) && trim($value) !== '' ? trim($value) : null;
+            }
         }
-        $meta['tax_id'] = $data['tax_id'] ?? ($meta['tax_id'] ?? null);
-        if (! empty($data['tax_id'])) {
-            $meta['tax_registration'] = true;
+        if (array_key_exists('import_license', $data)) {
+            $meta['import_license'] = filled($meta['import_license_no'] ?? null);
         }
-        $meta['business_type'] = $data['business_type'] ?? ($meta['business_type'] ?? null);
-        $meta['annual_volume'] = $data['annual_volume'] ?? ($meta['annual_volume'] ?? null);
-        $meta['website'] = $data['website'] ?? ($meta['website'] ?? null);
+        if (array_key_exists('tax_id', $data)) {
+            $meta['tax_registration'] = filled($meta['tax_id'] ?? null);
+        }
 
-        $profile->fill([
-            'company_name' => $data['company_name'] ?? $profile->company_name,
-            'country' => $data['country'] ?? $profile->country,
-            'city' => $data['city'] ?? $profile->city,
-            'address' => $data['address'] ?? $profile->address,
-            'meta' => $meta,
-        ])->save();
+        $profileFields = [];
+        foreach ([
+            'company_name' => 'company_name',
+            'country' => 'country',
+            'city' => 'city',
+            'address' => 'address',
+        ] as $input => $column) {
+            if (array_key_exists($input, $data)) {
+                $value = $data[$input];
+                $profileFields[$column] = is_string($value) && trim($value) !== '' ? trim($value) : null;
+            }
+        }
+        $profile->fill([...$profileFields, 'meta' => $meta])->save();
+
+        // Return a fresh server snapshot instead of an already-loaded profile relation.
+        $user->setRelation('profile', $profile->fresh());
 
         return $this->show($request);
     }
@@ -316,59 +334,63 @@ class CompanyController extends Controller
         ]);
 
         $user = $request->user();
-        $kyc = KycApplication::query()
-            ->where('user_id', $user->id)
-            ->where('type', 'company')
-            ->latest()
-            ->first();
-        $previousStatus = $kyc?->status;
-        $isResubmission = in_array($previousStatus, ['approved', 'rejected'], true);
-        $shouldNotifyBuyer = $kyc === null || $isResubmission || $previousStatus !== 'pending';
+        [$kyc, $doc, $shouldNotifyBuyer, $isResubmission] = DB::transaction(function () use ($user, $data) {
+            $kyc = KycApplication::query()
+                ->where('user_id', $user->id)
+                ->where('type', 'company')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->first();
+            $previousStatus = $kyc?->status;
+            $isResubmission = in_array($previousStatus, ['approved', 'rejected'], true);
+            $shouldNotifyBuyer = $kyc === null || $isResubmission || $previousStatus !== 'pending';
 
-        if (! $kyc || in_array($kyc->status, ['approved', 'rejected'], true)) {
-            $kyc = KycApplication::create([
-                'user_id' => $user->id,
-                'type' => 'company',
-                'country' => $user->profile?->country,
-                'status' => 'pending',
-                'submitted_at' => now(),
-                'payload' => ['source' => 'buyer_company'],
+            if (! $kyc || in_array($kyc->status, ['approved', 'rejected'], true)) {
+                $kyc = KycApplication::create([
+                    'user_id' => $user->id,
+                    'type' => 'company',
+                    'country' => $user->profile?->country,
+                    'status' => 'pending',
+                    'submitted_at' => now(),
+                    'payload' => ['source' => 'buyer_company'],
+                ]);
+            } else {
+                $kyc->update([
+                    'status' => 'pending',
+                    'submitted_at' => now(),
+                ]);
+            }
+
+            KycDocument::query()
+                ->where('kyc_application_id', $kyc->id)
+                ->where('doc_type', $data['doc_type'])
+                ->delete();
+
+            $doc = KycDocument::create([
+                'kyc_application_id' => $kyc->id,
+                'doc_type' => $data['doc_type'],
+                'path' => $data['path'],
+                'original_name' => $data['original_name'] ?? null,
             ]);
-        } else {
-            $kyc->update([
-                'status' => 'pending',
-                'submitted_at' => now(),
-            ]);
-        }
 
-        // Replace existing doc of same type on this application
-        KycDocument::query()
-            ->where('kyc_application_id', $kyc->id)
-            ->where('doc_type', $data['doc_type'])
-            ->delete();
+            $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
+            $meta = $this->profileMeta($profile);
+            if ($data['doc_type'] === 'kyc_documents') {
+                $meta['kyc'] = false; // under review until approved
+            }
+            if ($data['doc_type'] === 'banking_details') {
+                $meta['banking_details'] = true;
+            }
+            if ($data['doc_type'] === 'import_license') {
+                $meta['import_license'] = true;
+            }
+            if ($data['doc_type'] === 'tax_registration') {
+                $meta['tax_registration'] = true;
+            }
+            $profile->update(['meta' => $meta]);
 
-        $doc = KycDocument::create([
-            'kyc_application_id' => $kyc->id,
-            'doc_type' => $data['doc_type'],
-            'path' => $data['path'],
-            'original_name' => $data['original_name'] ?? null,
-        ]);
-
-        $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
-        $meta = $this->profileMeta($profile);
-        if ($data['doc_type'] === 'kyc_documents') {
-            $meta['kyc'] = false; // under review until approved
-        }
-        if ($data['doc_type'] === 'banking_details') {
-            $meta['banking_details'] = true;
-        }
-        if ($data['doc_type'] === 'import_license') {
-            $meta['import_license'] = true;
-        }
-        if ($data['doc_type'] === 'tax_registration') {
-            $meta['tax_registration'] = true;
-        }
-        $profile->update(['meta' => $meta]);
+            return [$kyc, $doc, $shouldNotifyBuyer, $isResubmission];
+        });
 
         NotifiesAdmins::notify(
             AdminNotificationTypes::KYC_SUBMITTED,
@@ -415,7 +437,8 @@ class CompanyController extends Controller
             ->where('user_id', $userId)
             ->where('type', 'company')
             ->with('documents')
-            ->latest()
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->first();
 
         $docsByType = collect($app?->documents ?? [])->keyBy('doc_type');

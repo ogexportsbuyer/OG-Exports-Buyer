@@ -120,19 +120,29 @@ export default function BuyerCompany() {
   const verificationStatus = useMemo(() => first(record(kyc.application), ['status'], 'Not started'), [kyc.application]);
 
   async function refreshCompany() {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: getGetBuyerCompanyQueryKey() }),
+    const [companyResult] = await Promise.all([
+      companyQuery.refetch(),
       queryClient.invalidateQueries({ queryKey: getGetBuyerCompanyContactsQueryKey() }),
     ]);
+    if (companyResult.isError) {
+      throw companyResult.error ?? new Error('The saved company information could not be reloaded.');
+    }
   }
 
   async function saveCompanyDetails() {
     setError('');
     setNotice('');
     try {
-      await saveCompany.mutateAsync({ data: companyFields });
+      const data = Object.fromEntries(
+        Object.entries(companyFields).map(([key, value]) => [key, value.trim()]),
+      ) as CompanyFields;
+      const response = record(await saveCompany.mutateAsync({ data }));
+      const savedCompany = record(record(response.data).company);
+      if (!Object.keys(savedCompany).length) {
+        throw new Error('The server did not confirm the saved company details. Please try again.');
+      }
       await refreshCompany();
-      setNotice('Company details saved.');
+      setNotice('Company details saved and confirmed.');
     } catch (err) {
       setError(messageOf(err));
     }
@@ -142,7 +152,7 @@ export default function BuyerCompany() {
     setError('');
     setNotice('');
     try {
-      await savePreferences.mutateAsync({
+      const response = record(await savePreferences.mutateAsync({
         data: {
           payment_terms: preferences.payment_terms.trim(),
           incoterm: preferences.incoterm.trim(),
@@ -150,9 +160,12 @@ export default function BuyerCompany() {
           ports: csvValues(preferences.ports),
           commodities: csvValues(preferences.commodities),
         },
-      });
+      }));
+      if (!Object.keys(record(response.data)).length) {
+        throw new Error('The server did not confirm the saved trade preferences. Please try again.');
+      }
       await refreshCompany();
-      setNotice('Trade preferences saved.');
+      setNotice('Trade preferences saved and confirmed.');
     } catch (err) {
       setError(messageOf(err));
     }
@@ -231,8 +244,12 @@ export default function BuyerCompany() {
       }
       const path = await uploadInvestorFile(uploadSource, fileName, mimeType, 'kyc', apiOrigin);
       const response = record(await uploadKyc.mutateAsync({ data: { doc_type: docType, path, original_name: fileName } }));
-      setNotice(first(response, ['message'], 'File submitted for verification review.'));
+      const document = record(record(response.data).document);
+      if (!first(document, ['path'])) {
+        throw new Error('The verification document did not receive a server confirmation. Please try uploading again.');
+      }
       await refreshCompany();
+      setNotice(first(response, ['message'], 'File submitted for verification review.'));
     } catch (err) {
       setError(messageOf(err));
     } finally {
@@ -274,14 +291,31 @@ export default function BuyerCompany() {
         <>
           <View style={{ flexDirection: 'row', padding: 4, borderRadius: 14, backgroundColor: colors.secondary, marginBottom: 15 }}>
             {tabs.map(([value, label]) => (
-              <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: tab === value }} onPress={() => setTab(value)} style={{ flex: 1, minHeight: 38, borderRadius: 11, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3, backgroundColor: tab === value ? colors.card : 'transparent', borderWidth: tab === value ? 1 : 0, borderColor: colors.border }}>
+              <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: tab === value }} onPress={() => { setTab(value); setError(''); setNotice(''); }} style={{ flex: 1, minHeight: 38, borderRadius: 11, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3, backgroundColor: tab === value ? colors.card : 'transparent', borderWidth: tab === value ? 1 : 0, borderColor: colors.border }}>
                 <Text style={{ color: tab === value ? colors.primary : colors.mutedForeground, fontSize: 10, fontWeight: '800' }}>{label}</Text>
               </Pressable>
             ))}
           </View>
 
-          {error ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, lineHeight: 18, marginBottom: 9 }}>{error}</Text> : null}
-          {notice ? <Text accessibilityLiveRegion="polite" style={{ color: colors.primary, fontSize: 12, marginBottom: 9 }}>{notice}</Text> : null}
+          {error ? (
+            <Card style={{ padding: 11, marginBottom: 10, borderColor: colors.destructive }}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+                <Feather name="alert-circle" size={16} color={colors.destructive} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.destructive, fontSize: 12, fontWeight: '800', marginBottom: 3 }}>Could not save changes</Text>
+                  <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 11, lineHeight: 16 }}>{error}</Text>
+                </View>
+              </View>
+            </Card>
+          ) : null}
+          {notice ? (
+            <Card style={{ padding: 11, marginBottom: 10, borderColor: colors.primary }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Feather name="check-circle" size={16} color={colors.primary} />
+                <Text accessibilityLiveRegion="polite" style={{ color: colors.primary, fontSize: 12, fontWeight: '700', flex: 1 }}>{notice}</Text>
+              </View>
+            </Card>
+          ) : null}
 
           {tab === 'company' ? (
             <Card style={{ padding: 15 }}>
@@ -296,7 +330,7 @@ export default function BuyerCompany() {
               <CountryPicker label="Country" value={companyFields.country} onChange={country => setCompanyFields(value => ({ ...value, country }))} placeholder="Select country" testID="buyer-company-country" />
               <Field label="City" value={companyFields.city} onChangeText={city => setCompanyFields(value => ({ ...value, city }))} />
               <Field label="Business address" value={companyFields.address} onChangeText={address => setCompanyFields(value => ({ ...value, address }))} multiline />
-              <Action title="Save company details" icon="save" loading={saveCompany.isPending} onPress={() => void saveCompanyDetails()} testID="buyer-company-save" />
+              <Action title="Save company details" icon="save" loading={saveCompany.isPending} disabled={saveCompany.isPending} onPress={() => void saveCompanyDetails()} testID="buyer-company-save" />
             </Card>
           ) : null}
 
@@ -376,7 +410,7 @@ export default function BuyerCompany() {
                     <Feather name={contactFields.is_primary ? 'check-square' : 'square'} size={16} color={colors.primary} />
                     <Text style={{ color: colors.foreground, fontSize: 12 }}>Set as primary contact</Text>
                   </Pressable>
-                  <Action title={editingContact ? 'Save contact' : 'Add contact'} icon="save" loading={createContact.isPending || updateContact.isPending} onPress={() => void saveContact()} />
+                  <Action title={editingContact ? 'Save contact' : 'Add contact'} icon="save" loading={createContact.isPending || updateContact.isPending} disabled={createContact.isPending || updateContact.isPending} onPress={() => void saveContact()} />
                   <Action title="Cancel" secondary onPress={() => { setShowContactForm(false); setEditingContact(null); setContactFields(emptyContact); }} />
                 </Card>
               ) : (
@@ -394,7 +428,7 @@ export default function BuyerCompany() {
               <Field label="Shipping preference" value={preferences.shipping} onChangeText={shipping => setPreferences(value => ({ ...value, shipping }))} />
               <Field label="Preferred ports" value={preferences.ports} onChangeText={ports => setPreferences(value => ({ ...value, ports }))} placeholder="Only ports in your company country" />
               <Field label="Interested commodities" value={preferences.commodities} onChangeText={commodities => setPreferences(value => ({ ...value, commodities }))} />
-              <Action title="Save trade preferences" icon="save" loading={savePreferences.isPending} onPress={() => void saveTradePreferences()} />
+              <Action title="Save trade preferences" icon="save" loading={savePreferences.isPending} disabled={savePreferences.isPending} onPress={() => void saveTradePreferences()} />
             </Card>
           ) : null}
         </>

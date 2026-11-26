@@ -2,6 +2,7 @@
 
 use App\Models\ContactPerson;
 use App\Models\Country;
+use App\Models\KycApplication;
 use App\Models\Port;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
@@ -33,6 +34,54 @@ it('returns buyer company profile data', function () {
         ]);
 });
 
+it('saves buyer company details and preserves other profile metadata', function () {
+    $user = User::factory()->create();
+    $user->assignRole('buyer');
+    $profile = $user->profile()->create([
+        'company_name' => 'Old Trading Co.',
+        'meta' => [
+            'unrelated_setting' => 'keep-me',
+            'trade_preferences' => ['payment_terms' => 'LC at Sight'],
+        ],
+    ]);
+
+    $payload = [
+        'company_name' => 'New Trading Co.',
+        'registration_no' => 'REG-1084',
+        'import_license' => 'IMP-5542',
+        'tax_id' => 'TAX-9921',
+        'business_type' => 'Importer',
+        'annual_volume' => '500 MT',
+        'website' => 'https://example.test',
+        'country' => 'Pakistan',
+        'city' => 'Karachi',
+        'address' => 'Port Road',
+    ];
+
+    $this->actingAs($user)
+        ->withHeader('Origin', 'http://localhost:5000')
+        ->putJson('/api/buyer/company', $payload)
+        ->assertOk()
+        ->assertJsonPath('data.company.company_name', 'New Trading Co.')
+        ->assertJsonPath('data.company.registration_no', 'REG-1084')
+        ->assertJsonPath('data.company.import_license', 'IMP-5542')
+        ->assertJsonPath('data.company.tax_id', 'TAX-9921')
+        ->assertJsonPath('data.company.country', 'Pakistan')
+        ->assertJsonPath('data.company.city', 'Karachi')
+        ->assertJsonPath('data.company.address', 'Port Road');
+
+    $this->actingAs($user)
+        ->withHeader('Origin', 'http://localhost:5000')
+        ->getJson('/api/buyer/company')
+        ->assertOk()
+        ->assertJsonPath('data.company.website', 'https://example.test')
+        ->assertJsonPath('data.company.annual_volume', '500 MT');
+
+    $savedMeta = $profile->fresh()->meta;
+    expect($savedMeta['unrelated_setting'])->toBe('keep-me')
+        ->and($savedMeta['trade_preferences']['payment_terms'])->toBe('LC at Sight');
+});
+
 it('allows buyer to update company preferences with country ports', function () {
     $user = User::factory()->create();
     $user->assignRole('buyer');
@@ -57,6 +106,51 @@ it('allows buyer to update company preferences with country ports', function () 
         ->assertOk()
         ->assertJsonPath('data.payment_terms', 'LC at Sight')
         ->assertJsonPath('data.ports.0', 'Jebel Ali (AEJEA)');
+});
+
+it('keeps the newest company verification visible when resubmissions share a timestamp', function () {
+    $user = User::factory()->create();
+    $user->assignRole('buyer');
+    $user->profile()->create(['country' => 'Pakistan']);
+    $timestamp = now()->startOfSecond();
+    $this->travelTo($timestamp);
+
+    $previousApplication = KycApplication::query()->create([
+        'user_id' => $user->id,
+        'type' => 'company',
+        'country' => 'Pakistan',
+        'status' => 'rejected',
+        'submitted_at' => $timestamp,
+        'created_at' => $timestamp,
+        'updated_at' => $timestamp,
+    ]);
+
+    $response = $this->actingAs($user)
+        ->withHeader('Origin', 'http://localhost:5000')
+        ->postJson('/api/buyer/company/kyc/upload', [
+            'doc_type' => 'company_registration',
+            'path' => 'upload/kyc/'.$user->id.'/company-registration.pdf',
+            'original_name' => 'company-registration.pdf',
+        ])
+        ->assertCreated();
+
+    $newestApplication = KycApplication::query()
+        ->where('user_id', $user->id)
+        ->where('type', 'company')
+        ->orderByDesc('created_at')
+        ->orderByDesc('id')
+        ->firstOrFail();
+
+    expect($newestApplication->id)->toBeGreaterThan($previousApplication->id);
+    $response->assertJsonPath('data.kyc.application.id', $newestApplication->id)
+        ->assertJsonPath('data.kyc.steps.0.document.original_name', 'company-registration.pdf');
+
+    $this->actingAs($user)
+        ->withHeader('Origin', 'http://localhost:5000')
+        ->getJson('/api/buyer/company')
+        ->assertOk()
+        ->assertJsonPath('data.kyc.application.id', $newestApplication->id)
+        ->assertJsonPath('data.kyc.steps.0.document.original_name', 'company-registration.pdf');
 });
 
 it('rejects preferred ports outside the buyer country', function () {
