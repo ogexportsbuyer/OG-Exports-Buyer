@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\UserProfile;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
@@ -173,6 +174,41 @@ it('summarizes purchases, completed and processing trades, and recorded discount
         ->assertJsonPath('data.trade_value_summary.completed_trade_value_usd', 300)
         ->assertJsonPath('data.trade_value_summary.processing_trade_value_usd', 300)
         ->assertJsonPath('data.trade_value_summary.discount_savings_usd', 18);
+});
+
+it('keeps trade totals available when the optional discount snapshot column is missing', function () {
+    Order::query()->create([
+        'order_number' => 'ORD-BUYER-DASH-LEGACY-COMPLETE',
+        'buyer_id' => $this->buyer->id,
+        'status' => 'delivered',
+        'payment_status' => 'paid',
+        'total_value' => 38100,
+        'currency' => 'USD',
+        'total_value_usd' => 38100,
+        'placed_at' => now()->subDay(),
+    ]);
+    Order::query()->create([
+        'order_number' => 'ORD-BUYER-DASH-LEGACY-PROCESS',
+        'buyer_id' => $this->buyer->id,
+        'status' => 'in_transit',
+        'payment_status' => 'paid',
+        'total_value' => 12750,
+        'currency' => 'USD',
+        'total_value_usd' => 12750,
+        'placed_at' => now(),
+    ]);
+
+    Schema::shouldReceive('hasColumn')
+        ->once()
+        ->with('order_items', 'discount_amount')
+        ->andReturnFalse();
+
+    $this->actingAs($this->buyer)
+        ->getJson('/api/buyer/dashboard')
+        ->assertOk()
+        ->assertJsonPath('data.trade_value_summary.completed_trade_value_usd', 38100)
+        ->assertJsonPath('data.trade_value_summary.processing_trade_value_usd', 12750)
+        ->assertJsonPath('data.trade_value_summary.discount_savings_usd', null);
 });
 
 it('marks company registration done on profile checklist when approved kyc has registration document', function () {

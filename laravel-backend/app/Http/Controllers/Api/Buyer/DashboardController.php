@@ -18,6 +18,7 @@ use App\Support\UserDisplayCurrency;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
@@ -224,7 +225,7 @@ class DashboardController extends Controller
      * New dashboard values use USD snapshots and exclude cancelled orders.
      * Discount savings are counted only where a new order item stored them.
      *
-     * @return array{currency: string, total_purchase_value_usd: float, completed_trade_value_usd: float, processing_trade_value_usd: float, discount_savings_usd: float}
+     * @return array{currency: string, total_purchase_value_usd: float, completed_trade_value_usd: float, processing_trade_value_usd: float, discount_savings_usd: float|null}
      */
     private function buildTradeValueSummary(int $userId): array
     {
@@ -269,8 +270,12 @@ class DashboardController extends Controller
     /**
      * @param  list<string>  $cancelledStatuses
      */
-    private function recordedDiscountSavingsUsd(int $userId, array $cancelledStatuses): float
+    private function recordedDiscountSavingsUsd(int $userId, array $cancelledStatuses): ?float
     {
+        if (! Schema::hasColumn('order_items', 'discount_amount')) {
+            return null;
+        }
+
         $items = OrderItem::query()
             ->with(['order:id,buyer_id,status,total_value,currency,total_value_usd,total_value_pkr,exchange_rate'])
             ->whereHas('order', function ($query) use ($userId, $cancelledStatuses) {

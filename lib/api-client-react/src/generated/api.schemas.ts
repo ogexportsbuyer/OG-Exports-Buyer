@@ -1424,7 +1424,7 @@ export interface BuyerTradeValueSummary {
   completed_trade_value_usd: number;
   processing_trade_value_usd: number;
   /** Savings only from order items with a saved order-time discount snapshot. */
-  discount_savings_usd: number;
+  discount_savings_usd: number | null;
 }
 
 export type BuyerDashboardResponseData = {
