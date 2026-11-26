@@ -20,8 +20,8 @@ function contrastRatio(foreground, background) {
 }
 
 test('mobile accent and card surfaces use the new premium gold palette', () => {
-  assert.equal(palette.light.accent, '#825D18');
-  assert.equal(palette.dark.accent, '#E4B548');
+  assert.equal(palette.light.accent, '#82580D');
+  assert.equal(palette.dark.accent, '#F0B43D');
   assert.equal(palette.light.accentSurface, '#F0B43D');
   assert.equal(palette.dark.accentSurface, '#F0B43D');
   assert.equal(palette.light.stageFunding, palette.light.accent);
@@ -39,6 +39,7 @@ test('mobile accent and card surfaces use the new premium gold palette', () => {
 
 test('gold accent labels maintain readable contrast in both appearances', () => {
   assert.ok(contrastRatio(palette.light.accent, palette.light.background) >= 4.5, 'light gold labels remain readable on the app surface');
+  assert.ok(contrastRatio(palette.light.accent, '#F7E0AD') >= 4.5, 'light gold labels remain readable on warm card surfaces');
   assert.ok(contrastRatio(palette.dark.accent, palette.dark.background) >= 4.5, 'dark gold labels remain readable on the app surface');
   assert.ok(contrastRatio(palette.light.accentForeground, palette.light.accentSurface) >= 4.5, 'light gold fills keep dark readable labels');
   assert.ok(contrastRatio(palette.dark.accentForeground, palette.dark.accentSurface) >= 4.5, 'dark gold fills keep dark readable labels');

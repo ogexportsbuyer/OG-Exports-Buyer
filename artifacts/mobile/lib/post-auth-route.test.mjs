@@ -233,10 +233,11 @@ test('buyer navigation uses Profile in both native and classic tab bars', () => 
   assert.match(layout, /NativeTabs\.Trigger\.Label>\{t\('Profile'\)\}/);
 });
 
-test('buyer selected tab uses orange-gold icon and label without a glass backdrop', () => {
+test('buyer selected tab uses the new gold icon fill and readable gold label', () => {
   const layout = readFileSync(new URL('../app/(buyer-tabs)/_layout.tsx', import.meta.url), 'utf8');
   assert.match(layout, /function BuyerTabIcon/);
-  assert.match(layout, /focused \? colors\.accent : colors\.mutedForeground/);
+  assert.match(layout, /focused \? colors\.accentForeground : colors\.mutedForeground/);
+  assert.match(layout, /focused && \{ backgroundColor: colors\.accentSurface \}/);
   assert.match(layout, /tabBarActiveTintColor: colors\.accent/);
   assert.match(layout, /selected: colors\.accent/);
   assert.doesNotMatch(layout, /selectedTabIconBackdrop/);
