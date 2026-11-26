@@ -1,16 +1,12 @@
-import React, { useState } from 'react';
-import { Image, Pressable, View } from 'react-native';
+import React from 'react';
+import { Pressable, View } from 'react-native';
 import { Redirect, router, useSegments } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetBuyerDashboardQueryKey,
   getGetSharedNotificationsQueryKey,
-  getGetInvestorMeQueryKey,
   useGetBuyerDashboard,
   useGetSharedNotifications,
-  useUpdateInvestorMe,
 } from '@workspace/api-client-react';
 import { BuyerAuthGate } from '@/components/BuyerAuthGate';
 import { BuyerOrdersByStatusCard, BuyerSpendTrendCard } from '@/components/BuyerDashboardCharts';
@@ -18,12 +14,10 @@ import { Action, Card, EmptyState, ErrorState, LoadingCard, Screen, Status } fro
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
-import { amount, first, list, messageOf, money, record, type Json } from '@/lib/data';
-import { uploadInvestorFile } from '@/lib/file-upload';
+import { amount, first, list, money, record } from '@/lib/data';
 import {
   buyerDashboardAlertTime,
   buyerDashboardErrorMessage,
-  buyerDashboardKycLabel,
   recentBuyerApprovalNotifications,
   unwrapBuyerDashboardResponse,
 } from '@/lib/buyer-dashboard-data';
@@ -79,11 +73,7 @@ export default function BuyerOverview() {
 
 function BuyerOverviewContent() {
   const colors = useColors();
-  const { token, user, apiOrigin, updateUser } = useAuth();
-  const queryClient = useQueryClient();
-  const [avatarBusy, setAvatarBusy] = useState(false);
-  const [avatarMessage, setAvatarMessage] = useState('');
-  const [avatarError, setAvatarError] = useState('');
+  const { token } = useAuth();
   const query = useGetBuyerDashboard({
     query: {
       queryKey: getGetBuyerDashboardQueryKey(),
@@ -104,23 +94,11 @@ function BuyerOverviewContent() {
       refetchOnReconnect: true,
     },
   });
-  const updateProfile = useUpdateInvestorMe();
   const dashboard = record(unwrapBuyerDashboardResponse(query.data));
   const kpis = record(dashboard.kpis);
   const tradeValueSummary = record(dashboard.trade_value_summary);
   const currencyCode = first(dashboard, ['display_currency'], 'USD');
   const tradeCurrency = first(tradeValueSummary, ['currency'], 'USD');
-  const displayName = first(record(user), ['name', 'display_name'], 'Valued Buyer');
-  const userProfile = record(record(user).profile);
-  const companyName = first(userProfile, ['company_name', 'business_name']);
-  const currentHour = new Date().getHours();
-  const greeting = currentHour < 12 ? 'Good morning' : currentHour < 17 ? 'Good afternoon' : 'Good evening';
-  const avatarPath = first(record(user), ['avatar_url'], first(userProfile, ['avatar_url']));
-  const avatarUri = avatarPath
-    ? /^https?:\/\//i.test(avatarPath)
-      ? avatarPath
-      : `${apiOrigin.replace(/\/+$/, '')}/${avatarPath.replace(/^\/+/, '')}`
-    : '';
   const totalPurchaseValue = amount(tradeValueSummary, ['total_purchase_value_usd']);
   const completedTradeValue = amount(tradeValueSummary, ['completed_trade_value_usd']);
   const processingTradeValue = amount(tradeValueSummary, ['processing_trade_value_usd']);
@@ -135,7 +113,6 @@ function BuyerOverviewContent() {
   const completion = amount(dashboard, ['profile_completion']);
   const trustScore = amount(dashboard, ['trust_score']);
   const trustTier = first(dashboard, ['trust_tier']);
-  const memberSince = first(dashboard, ['member_since']);
   const spendYoY = amount(dashboard, ['spend_yoy_pct']);
   const spendYearOverYear = spendYoY === null ? '—' : `${spendYoY > 0 ? '+' : ''}${spendYoY}% YoY`;
   const activityMetricCards = [
@@ -168,90 +145,16 @@ function BuyerOverviewContent() {
     },
   ];
 
-  async function chooseAvatar() {
-    setAvatarError('');
-    setAvatarMessage('');
-    try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        setAvatarError('Allow photo library access to choose a profile image.');
-        return;
-      }
-      const selection = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.82,
-      });
-      if (selection.canceled || !selection.assets[0]) return;
-      const asset = selection.assets[0];
-      if (!apiOrigin) throw new Error('The buyer service is not configured for this app.');
-      setAvatarBusy(true);
-      const mimeType = asset.mimeType || 'image/jpeg';
-      const extension = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
-      const fileName = asset.fileName || `buyer-avatar-${Date.now()}.${extension}`;
-      const path = await uploadInvestorFile(asset.uri, fileName, mimeType, 'avatars', apiOrigin);
-      const response = record(await updateProfile.mutateAsync({
-        data: { avatar_url: path } as unknown as Parameters<typeof updateProfile.mutateAsync>[0]['data'],
-      }));
-      const savedUser = record(response.user ?? response.data);
-      const currentUser = record(user);
-      const nextUser = {
-        ...currentUser,
-        ...savedUser,
-        avatar_url: path,
-        profile: { ...record(currentUser.profile), ...record(savedUser.profile), avatar_url: path },
-      };
-      await updateUser(nextUser as Json);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: getGetBuyerDashboardQueryKey() }),
-        queryClient.invalidateQueries({ queryKey: getGetInvestorMeQueryKey() }),
-      ]);
-      setAvatarMessage('Profile photo updated.');
-    } catch (error) {
-      setAvatarError(messageOf(error));
-    } finally {
-      setAvatarBusy(false);
-    }
-  }
-
   if (!token) {
-    return <BuyerAuthGate title="Buyer dashboard" body="Sign in to view your live orders, quotations, shipments, and trade activity." returnTo="/(buyer-tabs)/dashboard" />;
+    return <BuyerAuthGate title="Trade overview" body="Sign in to view your live orders, quotations, shipments, and trade activity." returnTo="/(buyer-tabs)/dashboard" />;
   }
 
   return (
-    <Screen title="Buyer dashboard" subtitle="Your sourcing and trade overview" refreshable>
+    <Screen title="Trade overview" subtitle="Orders, shipments and quotes at a glance" refreshable>
       {query.isLoading ? <LoadingCard label="Loading your trade overview…" lines={3} /> : null}
       {query.isError ? <ErrorState message={buyerDashboardErrorMessage(query.error)} error={query.error} onRetry={() => void query.refetch()} /> : null}
       {query.isSuccess ? (
         <>
-          <Card style={{ padding: 16, marginBottom: 14, backgroundColor: colors.primary, borderColor: colors.primary }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Pressable accessibilityRole="button" accessibilityLabel={avatarBusy ? 'Uploading profile photo' : 'Change profile photo'} onPress={() => void chooseAvatar()} disabled={avatarBusy}>
-                <View style={{ width: 54, height: 54, borderRadius: 27, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card, borderWidth: 2, borderColor: colors.accent }}>
-                  {avatarUri ? <Image source={{ uri: avatarUri }} style={{ width: '100%', height: '100%' }} /> : <Text style={{ color: colors.primary, fontSize: 20, fontWeight: '800' }}>{displayName.slice(0, 1).toUpperCase()}</Text>}
-                  <View style={{ position: 'absolute', right: 0, bottom: 0, width: 19, height: 19, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accent }}>
-                    <Feather name={avatarBusy ? 'loader' : 'camera'} size={10} color={colors.primaryForeground} />
-                  </View>
-                </View>
-              </Pressable>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 10, fontWeight: '700' }}>{greeting}</Text>
-                <Text numberOfLines={1} style={{ color: colors.primaryForeground, fontSize: 18, fontWeight: '800', marginTop: 3 }}>{displayName}</Text>
-                <Text numberOfLines={1} style={{ color: 'rgba(255,255,255,0.72)', fontSize: 10, marginTop: 2 }}>{companyName || 'OG Exports buyer account'}</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 7, marginTop: 8 }}>
-                  <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.14)' }}>
-                    <Text style={{ color: colors.primaryForeground, fontSize: 9, fontWeight: '800' }}>{buyerDashboardKycLabel(first(dashboard, ['kyc_status']))}</Text>
-                  </View>
-                  {trustTier ? <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '800' }}>{trustTier} buyer</Text> : null}
-                  {memberSince ? <Text style={{ color: 'rgba(255,255,255,0.68)', fontSize: 9 }}>Member since {memberSince}</Text> : null}
-                </View>
-              </View>
-            </View>
-            {avatarError ? <Text accessibilityRole="alert" style={{ color: '#FFE1DC', fontSize: 11, lineHeight: 16, marginTop: 10 }}>{avatarError}</Text> : null}
-            {avatarMessage ? <Text accessibilityLiveRegion="polite" style={{ color: colors.primaryForeground, fontSize: 11, marginTop: 9 }}>{avatarMessage}</Text> : null}
-          </Card>
-
           <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800', marginBottom: 9, marginTop: 4 }}>Purchase overview</Text>
           <Card testID="buyer-dashboard-purchase-overview" style={{ padding: 15, marginBottom: 7, backgroundColor: colors.primary, borderColor: colors.primary }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>

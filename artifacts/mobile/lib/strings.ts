@@ -1263,6 +1263,7 @@ const phrases: ReadonlyArray<readonly [string, string, string]> = [
   ["Categories will appear here when OG Exports publishes them.","OG Exports کے زمرے شائع کرنے پر وہ یہاں دکھائی دیں گے۔","ستظهر الفئات هنا عندما تنشرها OG Exports."],
   ["Buyer dashboard","خریدار ڈیش بورڈ","لوحة المشتري"],
   ["Your sourcing and trade overview","آپ کی خریداری اور تجارت کا جائزہ","نظرة عامة على التوريد والتجارة"],
+  ["Orders, shipments and quotes at a glance","آرڈرز، شپمنٹس اور کوٹیشنز ایک نظر میں","الطلبات والشحنات وعروض الأسعار بنظرة واحدة"],
   ["OG Exports buyer account","OG Exports خریدار اکاؤنٹ","حساب المشتري لدى OG Exports"],
   ["Sign in to view your live orders, quotations, shipments, and trade activity.","اپنے موجودہ آرڈرز، کوٹیشنز، شپمنٹس اور تجارتی سرگرمی دیکھنے کے لیے سائن اِن کریں۔","سجّل الدخول لعرض طلباتك وطلبات الأسعار والشحنات وأنشطة التداول."],
   ["Purchase overview","خریداری کا جائزہ","نظرة عامة على المشتريات"],

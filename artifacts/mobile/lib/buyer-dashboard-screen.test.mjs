@@ -60,10 +60,16 @@ test('dashboard prioritizes purchase value and preserves the recent activity pre
   assert.doesNotMatch(screen, /heroActions/);
 });
 
+test('dashboard opens with a professional localized heading and no profile hero card', () => {
+  assert.match(screen, /BuyerAuthGate title="Trade overview"/);
+  assert.match(screen, /Screen title="Trade overview" subtitle="Orders, shipments and quotes at a glance"/);
+  assert.doesNotMatch(screen, /Good morning|Good afternoon|Good evening|Change profile photo|Member since|buyerDashboardKycLabel/);
+});
+
 test('new dashboard headings and purchase explanations have Urdu and Arabic translations', () => {
   for (const phrase of [
-    'Buyer dashboard',
-    'Your sourcing and trade overview',
+    'Trade overview',
+    'Orders, shipments and quotes at a glance',
     'Purchase overview',
     'TOTAL PURCHASE VALUE',
     'Across non-cancelled orders',

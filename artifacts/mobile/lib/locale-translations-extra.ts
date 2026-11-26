@@ -2353,6 +2353,13 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "es": "Resumen de operaciones",
     "de": "Handelsübersicht"
   },
+  "Orders, shipments and quotes at a glance": {
+    "ru": "Заказы, отправки и предложения в одном обзоре",
+    "zh-CN": "订单、货运与报价一览",
+    "fr": "Commandes, expéditions et devis en un coup d’œil",
+    "es": "Pedidos, envíos y cotizaciones de un vistazo",
+    "de": "Bestellungen, Sendungen und Angebote im Überblick"
+  },
   "Trade status": {
     "ru": "Статус сделки",
     "zh-CN": "交易状态",
