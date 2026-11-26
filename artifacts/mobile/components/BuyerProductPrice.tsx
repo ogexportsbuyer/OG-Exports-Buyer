@@ -44,7 +44,7 @@ export function BuyerProductPrice({
             paddingVertical: compact ? 2 : 4,
           }}
         >
-          <Text style={{ color: colors.accent, fontSize: badgeFontSize, fontWeight: '900', letterSpacing: 0.25 }}>
+          <Text style={{ color: colors.accentText, fontSize: badgeFontSize, fontWeight: '900', letterSpacing: 0.25 }}>
             {price.discountPercentage}% OFF
           </Text>
         </Animated.View>

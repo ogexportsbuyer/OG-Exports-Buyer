@@ -213,7 +213,7 @@ export default function BuyerProducts() {
       {!productsQuery.isLoading && !productsQuery.isError ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
           <Text style={{ color: colors.mutedForeground, fontSize: 10, fontWeight: '700' }}>{filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} found</Text>
-          {filters.currency || filters.priceMin || filters.priceMax ? <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '800' }}>FOB PRICE FILTER</Text> : null}
+          {filters.currency || filters.priceMin || filters.priceMax ? <Text style={{ color: colors.accentText, fontSize: 9, fontWeight: '800' }}>FOB PRICE FILTER</Text> : null}
         </View>
       ) : null}
       <BuyerProductFilterSheet

@@ -92,7 +92,7 @@ export default function LegalContent() {
   return <Screen title={selectedDocument.title} subtitle={selectedDocument.summary}>
     <Card>
       {language !== 'en' ? <>
-        <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '700', lineHeight: 19, marginBottom: 10 }}>
+        <Text style={{ color: colors.accentText, fontSize: 12, fontWeight: '700', lineHeight: 19, marginBottom: 10 }}>
           {translateUi('Translation draft — qualified review pending. The approved English source is available for comparison.', language)}
         </Text>
         <Pressable
@@ -110,7 +110,7 @@ export default function LegalContent() {
           </Text>
         </Pressable>
       </> : null}
-      <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '700', lineHeight: 19, marginBottom: 14 }}>
+      <Text style={{ color: colors.accentText, fontSize: 12, fontWeight: '700', lineHeight: 19, marginBottom: 14 }}>
         {translateUi('Important: This information is not individualized investment, legal, tax or accounting advice. Review the signed agreement for your transaction and seek independent professional advice where appropriate.', language)}
       </Text>
       <Action

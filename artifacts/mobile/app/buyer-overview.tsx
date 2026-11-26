@@ -308,7 +308,7 @@ function BuyerOverviewContent() {
                     <Feather name={type === 'shipment' ? 'truck' : type === 'rfq' ? 'file-plus' : 'bell'} size={15} color={colors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    {first(alert, ['badge']) ? <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '800', marginBottom: 2 }}>{first(alert, ['badge'])}</Text> : null}
+                    {first(alert, ['badge']) ? <Text style={{ color: colors.accentText, fontSize: 9, fontWeight: '800', marginBottom: 2 }}>{first(alert, ['badge'])}</Text> : null}
                     <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>{first(alert, ['title'], 'Trade update')}</Text>
                   </View>
                   <Feather name="chevron-right" size={15} color={colors.mutedForeground} />

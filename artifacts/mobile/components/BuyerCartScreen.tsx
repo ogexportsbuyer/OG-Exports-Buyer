@@ -380,7 +380,7 @@ export default function BuyerCartScreen() {
               </View>
             ) : null}
             {items.some(item => (amount(item, ['unit_price']) ?? 0) <= 0) ? (
-              <Text style={{ color: colors.accent, fontSize: 11, fontWeight: '600', marginBottom: 10 }}>
+              <Text style={{ color: colors.accentText, fontSize: 11, fontWeight: '600', marginBottom: 10 }}>
                 Some items need a confirmed quotation.
               </Text>
             ) : null}

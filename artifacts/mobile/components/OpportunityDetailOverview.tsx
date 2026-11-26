@@ -217,7 +217,7 @@ export function OpportunityDetailOverview({
           ['Pending holds', formatMoney(pendingHolds)],
         ].map(([label, value]) => <View key={label} style={{ flex: 1, padding: 11, borderRadius: 12, backgroundColor: colors.secondary }}>
           <Text style={{ color: colors.mutedForeground, fontSize: 10 }}>{label}</Text>
-          <Text numberOfLines={1} style={{ color: label === 'Remaining' ? colors.accent : colors.foreground, fontSize: 13, fontWeight: '700', marginTop: 4 }}>{value}</Text>
+          <Text numberOfLines={1} style={{ color: label === 'Remaining' ? colors.accentText : colors.foreground, fontSize: 13, fontWeight: '700', marginTop: 4 }}>{value}</Text>
         </View>)}
       </View>
       <View style={{ flexDirection: 'row', gap: 9, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border }}>

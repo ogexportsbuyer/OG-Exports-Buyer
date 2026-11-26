@@ -80,7 +80,7 @@ function NativeLayout() {
       tintColor={colors.navigationAccent}
       iconColor={{ default: colors.mutedForeground, selected: colors.navigationAccent }}
       indicatorColor={colors.accentSurface}
-      labelStyle={{ default: { color: colors.mutedForeground }, selected: { color: colors.accent, fontWeight: '600' } }}
+      labelStyle={{ default: { color: colors.mutedForeground }, selected: { color: colors.accentText, fontWeight: '600' } }}
       backgroundColor={colors.card}
       hidden={!visible || hideForBuyerMessages}
       minimizeBehavior="never"
@@ -122,7 +122,7 @@ function ClassicLayout() {
   return (
     <Tabs screenOptions={{
       headerShown: false,
-      tabBarActiveTintColor: colors.accent,
+      tabBarActiveTintColor: colors.accentText,
       tabBarInactiveTintColor: colors.mutedForeground,
       tabBarStyle: {
         display: hideForBuyerMessages ? 'none' : 'flex',

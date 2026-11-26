@@ -29,7 +29,7 @@ function Tag({ label, tone = 'neutral', compact = false }: { label: string; tone
   const palette = tone === 'green'
     ? { background: colors.statusSuccessBackground, foreground: colors.statusSuccess, border: colors.statusSuccessBackground }
     : tone === 'accent'
-      ? { background: colors.glassTintGold, foreground: colors.accent, border: colors.glassTintGold }
+      ? { background: colors.glassTintGold, foreground: colors.accentText, border: colors.glassTintGold }
       : { background: colors.secondary, foreground: colors.foreground, border: colors.border };
 
   return (

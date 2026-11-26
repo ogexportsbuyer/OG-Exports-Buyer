@@ -661,9 +661,9 @@ export default function BuyerCheckout() {
                 ) : null}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.border, marginTop: 13, paddingTop: 11 }}>
                   <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '800' }}>Estimated subtotal</Text>
-                  <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '800' }}>{subtotal > 0 ? formatFobPrice(subtotal, cartCurrency) : 'Price by quotation'}</Text>
+                  <Text style={{ color: colors.accentText, fontSize: 12, fontWeight: '800' }}>{subtotal > 0 ? formatFobPrice(subtotal, cartCurrency) : 'Price by quotation'}</Text>
                 </View>
-                {hasUnpricedItems ? <Text style={{ color: colors.accent, fontSize: 10, lineHeight: 15, marginTop: 8 }}>Some products need a confirmed price. Use a non-FOB term to send a quotation request.</Text> : null}
+                {hasUnpricedItems ? <Text style={{ color: colors.accentText, fontSize: 10, lineHeight: 15, marginTop: 8 }}>Some products need a confirmed price. Use a non-FOB term to send a quotation request.</Text> : null}
               </Card>
 
               <Action
@@ -702,7 +702,7 @@ export default function BuyerCheckout() {
                           {selected ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accentSurface }} /> : null}
                         </View>
                         <Text style={{ color: colors.foreground, flex: 1, fontSize: 12, fontWeight: '800' }}>{first(method, ['label'], code)}</Text>
-                        {first(method, ['badge']) ? <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '800' }}>{first(method, ['badge'])}</Text> : null}
+                        {first(method, ['badge']) ? <Text style={{ color: colors.accentText, fontSize: 9, fontWeight: '800' }}>{first(method, ['badge'])}</Text> : null}
                       </View>
                       {first(method, ['description']) ? <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginTop: 7, marginLeft: 27 }}>{first(method, ['description'])}</Text> : null}
                     </SelectableCard>
@@ -710,7 +710,7 @@ export default function BuyerCheckout() {
                 })}
                 {selectedMethod && methodFields.length ? (
                   <View style={{ marginTop: 3 }}>
-                    <Text style={{ color: colors.accent, fontSize: 10, fontWeight: '800', marginBottom: 8 }}>Payment details for this method</Text>
+                    <Text style={{ color: colors.accentText, fontSize: 10, fontWeight: '800', marginBottom: 8 }}>Payment details for this method</Text>
                     {methodFields.map((field, index) => (
                       <Field
                         key={`${paymentMethodCode}-${field}`}
@@ -757,7 +757,7 @@ export default function BuyerCheckout() {
                           <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '800' }}>{first(account, ['bank_name', 'bankName'], 'OG Exports')}</Text>
                           <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 3 }}>{first(account, ['account_title', 'account_name', 'accountTitle'], 'Company account')} · {first(account, ['currency'], 'USD')}</Text>
                         </View>
-                        {isDefaultAccount(account.is_default) ? <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '800' }}>RECOMMENDED</Text> : null}
+                        {isDefaultAccount(account.is_default) ? <Text style={{ color: colors.accentText, fontSize: 9, fontWeight: '800' }}>RECOMMENDED</Text> : null}
                       </View>
                       {accountNumber ? <Text selectable style={{ color: colors.foreground, fontSize: 10, fontWeight: '600', marginTop: 9, marginLeft: 27 }}>IBAN / account: {accountNumber}</Text> : null}
                       {first(account, ['swift_code', 'swift']) ? <Text selectable style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 4, marginLeft: 27 }}>SWIFT: {first(account, ['swift_code', 'swift'])}</Text> : null}
@@ -842,7 +842,7 @@ export default function BuyerCheckout() {
                 ) : null}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.border, marginTop: 13, paddingTop: 11 }}>
                   <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '800' }}>Estimated subtotal</Text>
-                  <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '800' }}>{formatFobPrice(subtotal, cartCurrency)}</Text>
+                  <Text style={{ color: colors.accentText, fontSize: 12, fontWeight: '800' }}>{formatFobPrice(subtotal, cartCurrency)}</Text>
                 </View>
                 <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginTop: 7 }}>Freight and any final adjustments are confirmed separately. No money is transferred by placing this order.</Text>
               </Card>

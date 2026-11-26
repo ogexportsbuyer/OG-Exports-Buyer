@@ -218,7 +218,7 @@ export function PortfolioBenchmarkCard({ points, available, loading, hideValues 
           </View>
           {lastPoint ? <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
             <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>Portfolio {hideValues ? '••••' : `${lastPoint.portfolio.toFixed(2)}%`}</Text>
-            <Text style={{ color: colors.accent, fontSize: 11, fontWeight: '700' }}>Market {hideValues ? '••••' : `${lastPoint.market.toFixed(2)}%`}</Text>
+            <Text style={{ color: colors.accentText, fontSize: 11, fontWeight: '700' }}>Market {hideValues ? '••••' : `${lastPoint.market.toFixed(2)}%`}</Text>
           </View> : null}
         </>}
   </Card>;

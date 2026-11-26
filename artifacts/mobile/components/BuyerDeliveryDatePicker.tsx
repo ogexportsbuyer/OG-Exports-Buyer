@@ -133,7 +133,7 @@ export function BuyerDeliveryDatePicker({
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 20 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '800', letterSpacing: 1.2 }}>OG EXPORTS · DELIVERY</Text>
+                <Text style={{ color: colors.accentText, fontSize: 9, fontWeight: '800', letterSpacing: 1.2 }}>OG EXPORTS · DELIVERY</Text>
                 <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: '800', marginTop: 4 }}>{label}</Text>
                 <Text style={{ color: colors.mutedForeground, fontSize: 11, marginTop: 4 }}>Choose a future date for your order.</Text>
               </View>

@@ -556,7 +556,7 @@ export function SuccessFeedback({
           alignItems: 'center',
         }}>
         <SuccessMark feedback={feedback} />
-        <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '900', letterSpacing: 1.15, textAlign: 'center', marginTop: 14 }}>
+        <Text style={{ color: colors.accentText, fontSize: 9, fontWeight: '900', letterSpacing: 1.15, textAlign: 'center', marginTop: 14 }}>
           OG EXPORTS · ACCOUNT UPDATE
         </Text>
         <Text style={{ color: colors.foreground, fontSize: 19, fontWeight: '700', textAlign: 'center', marginTop: 8 }}>
@@ -688,7 +688,7 @@ export function ConfirmationSheet({
         paddingBottom: Math.max(insets.bottom, 18) + 12,
       }}>
         <View style={{ width: 38, height: 4, borderRadius: 3, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 20 }} />
-        <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '900', letterSpacing: 1.15, marginBottom: 5 }}>
+        <Text style={{ color: colors.accentText, fontSize: 9, fontWeight: '900', letterSpacing: 1.15, marginBottom: 5 }}>
           OG EXPORTS · CONFIRMATION
         </Text>
         <Text style={{ color: colors.foreground, fontSize: 19, lineHeight: 25, fontWeight: '700' }}>{title}</Text>

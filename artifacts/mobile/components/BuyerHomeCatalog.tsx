@@ -266,7 +266,7 @@ export default function BuyerHomeCatalog({
         <>
           <View style={[styles.sectionHeader, { marginTop: 8, marginBottom: 12 }]}>
             <View>
-              <Text style={[styles.eyebrow, { color: colors.accent }]}>OG EXPORTS CATALOGUE</Text>
+              <Text style={[styles.eyebrow, { color: colors.accentText }]}>OG EXPORTS CATALOGUE</Text>
               <Text style={[styles.sectionTitle, { color: colors.foreground, fontSize: 20, lineHeight: 24 }]}>Products to explore</Text>
             </View>
             <Pressable
@@ -303,7 +303,7 @@ export default function BuyerHomeCatalog({
                       <BuyerProductImage uri={image} label={`${name} product`} style={StyleSheet.absoluteFill} priority="low" />
                     </View>
                     <View style={styles.recommendationBody}>
-                      <Text numberOfLines={1} style={[styles.recommendationCategory, { color: colors.accent }]}>
+                      <Text numberOfLines={1} style={[styles.recommendationCategory, { color: colors.accentText }]}>
                         {categoryName(product)}
                       </Text>
                       <Text numberOfLines={2} style={[styles.recommendationName, { color: colors.foreground }]}>{name}</Text>
@@ -349,7 +349,7 @@ export default function BuyerHomeCatalog({
 
       <View style={[styles.sectionHeader, { marginTop: 12, marginBottom: 12 }]}>
         <View>
-          <Text style={[styles.eyebrow, { color: colors.accent }]}>Browse by trade</Text>
+          <Text style={[styles.eyebrow, { color: colors.accentText }]}>Browse by trade</Text>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Explore categories</Text>
         </View>
         <Pressable
@@ -414,7 +414,7 @@ export default function BuyerHomeCatalog({
           >
             <View style={[styles.sectionHeader, { marginBottom: 10 }]}>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.eyebrow, { color: colors.accent }]}>OG EXPORTS CATALOGUE</Text>
+                <Text style={[styles.eyebrow, { color: colors.accentText }]}>OG EXPORTS CATALOGUE</Text>
                 <Text numberOfLines={2} style={[styles.sectionTitle, { color: colors.foreground, fontSize: 19, lineHeight: 23 }]}>
                   {section.name}
                 </Text>
@@ -515,7 +515,7 @@ function HomeProductCard({ product, index, width, testID, onBrowse, onSelectProd
             <Text numberOfLines={1} style={[styles.productCategory, { flex: 1, color: colors.mutedForeground }]}>
               {categoryName(product)}
             </Text>
-            {recordFeatured(product) ? <Text style={{ color: colors.accent, fontSize: 8, fontWeight: '800' }}>FEATURED</Text> : null}
+            {recordFeatured(product) ? <Text style={{ color: colors.accentText, fontSize: 8, fontWeight: '800' }}>FEATURED</Text> : null}
           </View>
           <Text numberOfLines={2} style={[styles.productName, { color: colors.foreground }]}>{name}</Text>
           <View style={styles.productOrigin}>

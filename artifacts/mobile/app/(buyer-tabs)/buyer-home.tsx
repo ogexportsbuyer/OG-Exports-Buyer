@@ -156,7 +156,7 @@ export default function BuyerHome() {
         <View style={styles.ordersSection}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={[styles.eyebrow, { color: colors.accent }]}>Your trade, in view</Text>
+              <Text style={[styles.eyebrow, { color: colors.accentText }]}>Your trade, in view</Text>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Active orders</Text>
             </View>
             <Pressable accessibilityRole="button" onPress={openOrders} style={styles.textAction}>

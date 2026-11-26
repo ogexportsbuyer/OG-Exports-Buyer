@@ -235,7 +235,7 @@ export function DateOfBirthPicker({
               <Feather name="calendar" size={19} color={colors.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '800', letterSpacing: 1.2, marginBottom: 3 }}>
+              <Text style={{ color: colors.accentText, fontSize: 9, fontWeight: '800', letterSpacing: 1.2, marginBottom: 3 }}>
                 OG EXPORTS
               </Text>
               <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: '700' }}>

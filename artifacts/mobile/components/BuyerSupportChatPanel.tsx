@@ -351,7 +351,7 @@ export function BuyerSupportChatPanel({
           >
             <View style={styles.languageModalHeader}>
               <View style={styles.languageModalTitleGroup}>
-                <Text style={[styles.languageModalEyebrow, { color: colors.accent }]}>OG EXPORTS · CHAT</Text>
+                <Text style={[styles.languageModalEyebrow, { color: colors.accentText }]}>OG EXPORTS · CHAT</Text>
                 <Text style={[styles.languageModalTitle, { color: colors.foreground }]}>Chat language</Text>
                 <Text style={[styles.languageModalSubtitle, { color: colors.mutedForeground }]}>
                   Support replies will be translated into this language.

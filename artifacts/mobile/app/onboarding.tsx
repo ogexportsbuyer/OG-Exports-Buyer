@@ -485,7 +485,7 @@ export default function Onboarding() {
             </Card>
           </Animated.View>
           <Animated.View style={{ opacity: copyOpacity }}>
-            <Text style={{ color: colors.accent, fontSize: 10, lineHeight: 16, fontWeight: '700', letterSpacing: 1.65, textAlign: 'center' }}>{slide.eyebrow.split('/')[1].trim()}</Text>
+            <Text style={{ color: colors.accentText, fontSize: 10, lineHeight: 16, fontWeight: '700', letterSpacing: 1.65, textAlign: 'center' }}>{slide.eyebrow.split('/')[1].trim()}</Text>
             <Text accessibilityRole="header" style={{ color: colors.primary, fontSize: compact ? 26 : 32, lineHeight: compact ? 33 : 39, fontWeight: '700', marginTop: compact ? 6 : 8, textAlign: 'center', letterSpacing: -0.65 }}>{slide.title}</Text>
             <Text style={{ color: colors.foreground, opacity: 0.82, fontSize: compact ? 14 : 15, lineHeight: compact ? 20 : 23, marginTop: compact ? 8 : 12, textAlign: 'center', paddingHorizontal: 4 }}>{slide.body}</Text>
             <View style={[styles.detailLine, { borderColor: colors.border }, compact ? { marginTop: 10, paddingTop: 8 } : null]}>

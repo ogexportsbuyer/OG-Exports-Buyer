@@ -241,7 +241,7 @@ export function OpportunityCard({ item, featured, progress, apiOrigin, onPress }
           {boundedProgress != null ? <MotionProgress value={boundedProgress} height={7} color={colors.primary} trackColor={colors.border} style={{ marginTop: 10 }} /> : null}
 
           <View style={{ flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', marginTop: 10 }}>
-            <Text style={{ color: colors.accent, fontSize: 15, fontWeight: '700' }}>{formatMoney(remaining)}</Text>
+            <Text style={{ color: colors.accentText, fontSize: 15, fontWeight: '700' }}>{formatMoney(remaining)}</Text>
             <Text style={{ color: colors.mutedForeground, fontSize: 14, marginLeft: 4 }}>remaining</Text>
           </View>
 

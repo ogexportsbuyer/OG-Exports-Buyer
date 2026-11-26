@@ -408,7 +408,7 @@ export function BuyerProductFilterSheet({ visible, products, apiCategories, sear
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingBottom: 12 }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '900', letterSpacing: 1.3 }}>OG EXPORTS CATALOGUE</Text>
+              <Text style={{ color: colors.accentText, fontSize: 9, fontWeight: '900', letterSpacing: 1.3 }}>OG EXPORTS CATALOGUE</Text>
               <Text style={{ color: colors.foreground, fontSize: 21, fontWeight: '800', marginTop: 3 }}>Refine your search</Text>
               <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 3 }}>20 trade filters · only saved catalogue details are matched</Text>
             </View>

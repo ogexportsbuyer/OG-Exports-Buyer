@@ -129,7 +129,7 @@ export function CountryPicker({
                 <Feather name="globe" size={19} color={colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '800', letterSpacing: 1.2, marginBottom: 3 }}>OG EXPORTS</Text>
+                <Text style={{ color: colors.accentText, fontSize: 9, fontWeight: '800', letterSpacing: 1.2, marginBottom: 3 }}>OG EXPORTS</Text>
                 <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: '700' }}>{isNationality ? 'Select nationality' : 'Select country'}</Text>
                 <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 3 }}>{isNationality ? 'Select your country of citizenship' : 'Search by country name or ISO code'}</Text>
               </View>

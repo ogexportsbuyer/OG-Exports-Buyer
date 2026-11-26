@@ -607,7 +607,7 @@ export function SupportMessages({
               accessibilityViewIsModal
               style={[styles.supportPopoverSurface, { borderColor: colors.glassBorder }]}
             >
-              <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '900', letterSpacing: 1.15, paddingHorizontal: 9, paddingTop: 4, paddingBottom: 8 }}>
+              <Text style={{ color: colors.accentText, fontSize: 9, fontWeight: '900', letterSpacing: 1.15, paddingHorizontal: 9, paddingTop: 4, paddingBottom: 8 }}>
                 OG EXPORTS · SUPPORT
               </Text>
               {([

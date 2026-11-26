@@ -275,7 +275,7 @@ export default function BuyerProductDetails() {
             )}
             <View style={{ position: 'absolute', top: 13, left: 13, flexDirection: 'row', gap: 7 }}>
               <View style={{ borderRadius: 18, backgroundColor: colors.card, paddingHorizontal: 10, paddingVertical: 6 }}>
-                <Text style={{ color: colors.accent, fontSize: 10, fontWeight: '800' }}>{categoryName(product)}</Text>
+                <Text style={{ color: colors.accentText, fontSize: 10, fontWeight: '800' }}>{categoryName(product)}</Text>
               </View>
               {first(product, ['status']).toLowerCase() === 'approved' ? (
                 <View style={{ borderRadius: 18, backgroundColor: colors.statusSuccessBackground, paddingHorizontal: 10, paddingVertical: 6 }}>
@@ -395,7 +395,7 @@ export default function BuyerProductDetails() {
           ) : null}
 
           <View style={{ marginTop: 17 }}>
-            <Text style={{ color: colors.accent, fontSize: 10, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' }}>
+            <Text style={{ color: colors.accentText, fontSize: 10, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' }}>
               OG Exports · Product catalogue
             </Text>
             <Text style={{ color: colors.foreground, fontSize: 25, lineHeight: 31, fontWeight: '800', marginTop: 6 }}>{name}</Text>

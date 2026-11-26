@@ -20,15 +20,15 @@ function contrastRatio(foreground, background) {
 }
 
 test('mobile accent and card surfaces use the new premium gold palette', () => {
-  assert.equal(palette.light.accent, '#82580D');
+  assert.equal(palette.light.accent, '#F0B43D');
   assert.equal(palette.dark.accent, '#F0B43D');
   assert.equal(palette.light.navigationAccent, '#F0B43D');
   assert.equal(palette.dark.navigationAccent, '#F0B43D');
   assert.equal(palette.light.accentSurface, '#F0B43D');
   assert.equal(palette.dark.accentSurface, '#F0B43D');
-  assert.equal(palette.light.stageFunding, palette.light.accent);
+  assert.equal(palette.light.stageFunding, palette.light.navigationAccent);
   assert.equal(palette.dark.stageFunding, palette.dark.accent);
-  assert.equal(palette.light.allocationProfits, palette.light.accent);
+  assert.equal(palette.light.allocationProfits, palette.light.navigationAccent);
   assert.equal(palette.dark.allocationProfits, palette.dark.accent);
   assert.equal(palette.light.glassFill, 'rgba(255, 249, 234, 0.74)');
   assert.equal(palette.light.glassTintGold, 'rgba(249, 224, 173, 0.78)');
@@ -40,9 +40,9 @@ test('mobile accent and card surfaces use the new premium gold palette', () => {
 });
 
 test('gold accent labels maintain readable contrast in both appearances', () => {
-  assert.ok(contrastRatio(palette.light.accent, palette.light.background) >= 4.5, 'light gold labels remain readable on the app surface');
-  assert.ok(contrastRatio(palette.light.accent, '#F7E0AD') >= 4.5, 'light gold labels remain readable on warm card surfaces');
-  assert.ok(contrastRatio(palette.dark.accent, palette.dark.background) >= 4.5, 'dark gold labels remain readable on the app surface');
+  assert.ok(contrastRatio(palette.light.accentText, palette.light.background) >= 4.5, 'light accent text remains readable on the app surface');
+  assert.ok(contrastRatio(palette.light.accentText, '#F7E0AD') >= 4.5, 'light accent text remains readable on warm card surfaces');
+  assert.ok(contrastRatio(palette.dark.accentText, palette.dark.background) >= 4.5, 'dark accent text remains readable on the app surface');
   assert.equal(palette.light.navigationAccent, palette.light.accentSurface, 'light navigation uses the exact new gold');
   assert.equal(palette.dark.navigationAccent, palette.dark.accentSurface, 'dark navigation uses the exact new gold');
   assert.ok(contrastRatio(palette.light.accentForeground, palette.light.accentSurface) >= 4.5, 'light gold fills keep dark readable labels');

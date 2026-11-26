@@ -94,7 +94,7 @@ export function BuyerRfqPicker({
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingBottom: 14 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '800', letterSpacing: 1.2 }}>OG EXPORTS</Text>
+                <Text style={{ color: colors.accentText, fontSize: 9, fontWeight: '800', letterSpacing: 1.2 }}>OG EXPORTS</Text>
                 <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: '700', marginTop: 3 }}>{label}</Text>
                 <Text style={{ color: colors.mutedForeground, fontSize: 11, marginTop: 3 }}>Search and select one option.</Text>
               </View>
