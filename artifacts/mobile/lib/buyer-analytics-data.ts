@@ -1,3 +1,5 @@
+import { getAppLocale } from './strings.ts';
+
 type Json = Record<string, unknown>;
 
 function record(value: unknown): Json {
@@ -30,7 +32,7 @@ export function analyticsMonthLabel(month: string): string {
   const match = /^(\d{4})-(\d{2})$/.exec(month);
   if (!match) return month;
   return new Date(Number(match[1]), Number(match[2]) - 1, 1)
-    .toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    .toLocaleDateString(getAppLocale(), { month: 'long', year: 'numeric' });
 }
 
 export function orderProductSummary(order: Json): string {

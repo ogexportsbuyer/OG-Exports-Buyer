@@ -17,6 +17,7 @@ import { useColors } from '@/hooks/useColors';
 import { useMotion } from '@/lib/motion';
 import { BUYER_NOTIFICATION_CATEGORIES, isNotificationPreferenceEnabled } from '@/lib/notification-categories';
 import { first, messageOf, record, unwrap } from '@/lib/data';
+import { APP_LANGUAGE_OPTIONS, type AppLanguage } from '@/lib/strings';
 
 const appearanceOptions: { value: AppearancePreference; label: string; icon: keyof typeof Feather.glyphMap }[] = [
   { value: 'light', label: 'Light', icon: 'sun' },
@@ -24,11 +25,7 @@ const appearanceOptions: { value: AppearancePreference; label: string; icon: key
   { value: 'system', label: 'System', icon: 'smartphone' },
 ];
 
-const languageOptions = [
-  { value: 'en' as const, label: 'English' },
-  { value: 'ur' as const, label: 'اردو' },
-  { value: 'ar' as const, label: 'العربية' },
-];
+const languageOptions = APP_LANGUAGE_OPTIONS;
 
 const currencyOptions: DisplayCurrency[] = ['USD', 'PKR', 'EUR', 'GBP'];
 
@@ -40,21 +37,23 @@ function ChoiceRow<T extends string>({
   onSelect,
   disabled,
   testID,
+  wrapOptions = false,
 }: {
   title: string;
   detail?: string;
   value: T;
-  options: { value: T; label: string; icon?: keyof typeof Feather.glyphMap }[];
+  options: ReadonlyArray<{ value: T; label: string; icon?: keyof typeof Feather.glyphMap }>;
   onSelect: (value: T) => void;
   disabled?: boolean;
   testID: string;
+  wrapOptions?: boolean;
 }) {
   const colors = useColors();
   return (
     <View style={{ paddingVertical: 13 }}>
       <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '700' }}>{title}</Text>
       {detail ? <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginTop: 3 }}>{detail}</Text> : null}
-      <View style={{ flexDirection: 'row', gap: 7, marginTop: 10 }}>
+      <View style={{ flexDirection: 'row', flexWrap: wrapOptions ? 'wrap' : 'nowrap', justifyContent: wrapOptions ? 'space-between' : undefined, gap: 7, marginTop: 10 }}>
         {options.map(option => {
           const selected = value === option.value;
           return (
@@ -66,7 +65,8 @@ function ChoiceRow<T extends string>({
               disabled={disabled}
               onPress={() => onSelect(option.value)}
               style={{
-                flex: 1,
+                flex: wrapOptions ? undefined : 1,
+                width: wrapOptions ? '31%' : undefined,
                 minHeight: 40,
                 borderRadius: 12,
                 borderWidth: 1,
@@ -76,12 +76,12 @@ function ChoiceRow<T extends string>({
                 justifyContent: 'center',
                 flexDirection: 'row',
                 gap: 6,
-                paddingHorizontal: 6,
+                paddingHorizontal: wrapOptions ? 3 : 6,
                 opacity: disabled ? 0.6 : 1,
               }}
             >
               {option.icon ? <Feather name={option.icon} size={13} color={selected ? colors.primaryForeground : colors.mutedForeground} /> : null}
-              <Text style={{ color: selected ? colors.primaryForeground : colors.foreground, fontSize: 11, fontWeight: selected ? '800' : '600' }}>
+              <Text numberOfLines={wrapOptions ? 1 : undefined} style={{ color: selected ? colors.primaryForeground : colors.foreground, fontSize: wrapOptions ? 9 : 11, fontWeight: selected ? '800' : '600' }}>
                 {option.label}
               </Text>
             </Pressable>
@@ -127,7 +127,7 @@ export default function BuyerSystemSettings() {
     if (profileQuery.data) setNotificationPrefs(record(profileMeta.notification_prefs));
   }, [profileQuery.data]);
 
-  async function saveAppPreference(patch: { language?: 'en' | 'ur' | 'ar'; currency?: DisplayCurrency; appearance?: AppearancePreference }) {
+  async function saveAppPreference(patch: { language?: AppLanguage; currency?: DisplayCurrency; appearance?: AppearancePreference }) {
     setSettingsError('');
     setNotice('');
     try {
@@ -208,6 +208,7 @@ export default function BuyerSystemSettings() {
           onSelect={value => void saveAppPreference({ language: value })}
           disabled={preferences.isSaving || preferences.isSyncing}
           testID="buyer-settings-language"
+          wrapOptions
         />
         <View style={{ height: 1, backgroundColor: colors.border }} />
         <ChoiceRow

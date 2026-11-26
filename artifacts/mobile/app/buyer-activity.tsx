@@ -21,6 +21,7 @@ import { useAppPreferences } from '@/context/AppPreferencesContext';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { rowsFromResponse } from '@/lib/buyer-data';
+import { getAppLocale } from '@/lib/strings';
 import {
   buildBuyerTradeActivity,
   buyerActivityHasMore,
@@ -42,7 +43,7 @@ export default function BuyerActivity() {
   const colors = useColors();
   const { token } = useAuth();
   const { preferences } = useAppPreferences();
-  const dateLocale = preferences.language === 'ur' ? 'ur-PK' : preferences.language === 'ar' ? 'ar' : 'en-US';
+  const dateLocale = getAppLocale(preferences.language);
   const [page, setPage] = useState(1);
   const [history, setHistory] = useState<BuyerActivitySources>(EMPTY_SOURCES);
   const [hasOlder, setHasOlder] = useState(false);

@@ -11,6 +11,7 @@ import { OFFICIAL_MARK_ASPECT } from '@/lib/official-mark-svg';
 import { useColors } from '@/hooks/useColors';
 import { MOTION, useMotion } from '@/lib/motion';
 import * as SplashScreen from 'expo-splash-screen';
+import { getUiLanguage, translateUi } from '@/lib/strings';
 
 const INTRO_MIN_DURATION = 5000;
 const MARK_ASPECT = 1 / OFFICIAL_MARK_ASPECT;
@@ -127,7 +128,7 @@ export default function Entry() {
       <Animated.View style={[styles.footer, { bottom: footerBottom, opacity: textOpacity }]}>
         <View
           accessibilityRole="progressbar"
-          accessibilityLabel="Loading OG Exports"
+          accessibilityLabel={translateUi('Loading OG Exports', getUiLanguage())}
           style={[styles.track, { width: barWidth, backgroundColor: colors.splashTrack }]}
         >
           <Animated.View style={[styles.fill, { width: barWidth, backgroundColor: colors.accent, transform: [{ translateX: -barWidth / 2 }, { scaleX: barScale }, { translateX: barWidth / 2 }] }]} />
@@ -138,7 +139,7 @@ export default function Entry() {
           numberOfLines={1}
           style={[styles.welcome, { color: colors.splashMuted }]}
         >
-          Welcome to OG Exports
+          {translateUi('Welcome to OG Exports', getUiLanguage())}
         </Animated.Text>
       </Animated.View>
     </View>

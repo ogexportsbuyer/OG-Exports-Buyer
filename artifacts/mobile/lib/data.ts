@@ -1,8 +1,10 @@
+import { getAppLocale, type AppLanguage } from './strings.ts';
+
 export type Json = Record<string, unknown>;
 
 type MoneyDisplayCurrency = 'USD' | 'PKR' | 'EUR' | 'GBP';
 type MoneyDisplayConfig = {
-  language: 'en' | 'ur' | 'ar';
+  language: AppLanguage;
   currency: MoneyDisplayCurrency;
   rates: Record<string, number>;
   conversionUnavailableLabel?: string;
@@ -145,7 +147,7 @@ export function money(value: unknown, currency?: string, options: { preserveSour
   const conversionUnavailable = converted == null && sourceCode !== targetCode;
   const displayCode = converted == null ? sourceCode : targetCode;
   const displayAmount = converted == null ? numeric : converted;
-  const locale = moneyDisplayConfig.language === 'ur' ? 'ur-PK' : moneyDisplayConfig.language === 'ar' ? 'ar-SA' : 'en-US';
+  const locale = getAppLocale(moneyDisplayConfig.language);
   let formatted: string;
   try {
     formatted = new Intl.NumberFormat(locale, {

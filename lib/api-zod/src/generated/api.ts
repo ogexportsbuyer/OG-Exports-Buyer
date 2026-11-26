@@ -739,7 +739,7 @@ export const UpdateInvestorMeBody = zod.object({
   "mobile": zod.string().max(updateInvestorMeBodyMobileMax).optional().describe('Optional mobile number with country calling code. This number is not verified by SMS.'),
   "country": zod.string().max(updateInvestorMeBodyCountryMax).optional().describe('Optional country or region.'),
   "preferences": zod.object({
-  "language": zod.enum(['en', 'ur', 'ar']).optional(),
+  "language": zod.enum(['en', 'ur', 'ar', 'ru', 'zh-CN', 'fr', 'es', 'de']).optional(),
   "appearance": zod.enum(['light', 'dark', 'system']).optional(),
   "theme": zod.enum(['light', 'dark', 'system']).optional(),
   "currency": zod.enum(['USD', 'PKR', 'EUR', 'GBP']).optional().describe('Selecting a currency converts the actual wallet balance and changes future wallet operations.')

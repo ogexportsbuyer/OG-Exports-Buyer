@@ -19,13 +19,14 @@ import { Action, Card, ConfirmationSheet, EmptyState, ErrorState, Field, Loading
 import { first, list, messageOf, record, unwrap } from '@/lib/data';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
+import { formatAppDate } from '@/lib/strings';
 import { saveAppPin, verifyAppPin } from '@/lib/app-pin';
 import { authenticateWithBiometrics, getBiometricInfo, type BiometricInfo } from '@/lib/biometrics';
 
 function displayDate(value: unknown) {
   if (typeof value !== 'string' || !value) return 'Date unavailable';
   const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
+  return Number.isNaN(parsed.getTime()) ? value : formatAppDate(parsed, { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function activityLabel(action: string) {

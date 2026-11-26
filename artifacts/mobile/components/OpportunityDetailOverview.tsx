@@ -6,6 +6,7 @@ import { Action, Card, ErrorState, Section, Status } from '@/components/Investor
 import { TradeProgressCard } from '@/components/TradeProgressCard';
 import { amount, first, list, money, record } from '@/lib/data';
 import { useColors } from '@/hooks/useColors';
+import { formatAppNumber } from '@/lib/strings';
 import { formatTargetReturnPercentage, targetReturnPercentage } from '@/lib/investment-metrics';
 
 type OpportunityDetailOverviewProps = {
@@ -200,7 +201,7 @@ export function OpportunityDetailOverview({
           {progress == null ? 'Funding progress not reported' : `${progress}% funded`}
         </Text>
         <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>
-          {investors == null ? 'Investor count not reported' : `${investors.toLocaleString()} ${investors === 1 ? 'investor' : 'investors'}`}
+          {investors == null ? 'Investor count not reported' : `${formatAppNumber(investors)} ${investors === 1 ? 'investor' : 'investors'}`}
         </Text>
       </View>
       {progress != null ? <View accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: progress }} style={{ height: 7, borderRadius: 5, backgroundColor: colors.secondary, overflow: 'hidden', marginTop: 11 }}>

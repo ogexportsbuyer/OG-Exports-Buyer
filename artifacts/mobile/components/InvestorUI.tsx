@@ -715,7 +715,7 @@ export function SwipeAction({ children, label, onAction, disabled = false }: {
   const colors = useColors();
   const { preferences } = useAppPreferences();
   const { reduceMotion } = useMotion();
-  const rtl = preferences.language !== 'en';
+  const rtl = preferences.language === 'ur' || preferences.language === 'ar';
   const actionWidth = 92;
   const translateX = React.useRef(new Animated.Value(0)).current;
   const isOpen = React.useRef(false);

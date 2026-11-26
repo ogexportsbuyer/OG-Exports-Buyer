@@ -1,3 +1,10 @@
+import {
+  formatAppDate,
+  getUiLanguage,
+  isRightToLeftLanguage,
+  translateUi,
+} from './strings.ts';
+
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, character => ({
     '&': '&amp;',
@@ -9,6 +16,9 @@ function escapeHtml(value: string): string {
 }
 
 export function brandedPdfHtml(sourceHtml: string, title: string, logoUri: string): string {
+  const language = getUiLanguage();
+  const direction = isRightToLeftLanguage(language) ? 'rtl' : 'ltr';
+  const localizedTitle = translateUi(title, language);
   const head = sourceHtml.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)?.[1] ?? '';
   const rawBody = sourceHtml.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i)?.[1] ?? sourceHtml;
   const body = rawBody
@@ -16,14 +26,18 @@ export function brandedPdfHtml(sourceHtml: string, title: string, logoUri: strin
     .replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
   const existingStyles = [...head.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)]
     .map(match => match[1]).join('\n');
-  const generatedAt = new Intl.DateTimeFormat(undefined, { dateStyle: 'long', timeStyle: 'short' }).format(new Date());
+  const generatedAt = formatAppDate(new Date(), { dateStyle: 'long', timeStyle: 'short' });
+  const footer = translateUi(
+    'Generated {date} from OG Exports account records. This document reflects the information available in your account when it was created.',
+    language,
+  ).replaceAll('{date}', generatedAt);
 
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>${escapeHtml(title)}</title><style>
+  return `<!doctype html><html lang="${escapeHtml(language)}" dir="${direction}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>${escapeHtml(localizedTitle)}</title><style>
     ${existingStyles}
     @page{size:A4;margin:18mm 14mm 20mm}
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    body{margin:0;color:#183b36;background:#fff;font:11px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+     body{margin:0;color:#183b36;background:#fff;font:11px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;direction:${direction}}
     .og-pdf{position:relative;z-index:1;max-width:800px;margin:0 auto}
     .og-pdf-watermark{position:fixed;inset:0;z-index:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
     .og-pdf-watermark img{display:block;width:62vw;max-width:390px;height:auto;object-fit:contain;opacity:.045}
@@ -34,7 +48,7 @@ export function brandedPdfHtml(sourceHtml: string, title: string, logoUri: strin
     .og-pdf-brand p{margin:0;color:#62746b;font-size:9px}
     .og-pdf-content{overflow-wrap:anywhere}
     table{width:100%;border-collapse:collapse}
-    th,td{padding:9px 8px;border-bottom:1px solid #e2eae5;text-align:left;vertical-align:top}
+     th,td{padding:9px 8px;border-bottom:1px solid #e2eae5;text-align:start;vertical-align:top}
     th{color:#61746a;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
     td{color:#173b2c}
     .og-pdf-footer{border-top:1px solid #d8e3dd;margin-top:24px;padding-top:10px;color:#6e7d75;font-size:8px}
@@ -49,10 +63,10 @@ export function brandedPdfHtml(sourceHtml: string, title: string, logoUri: strin
     tr,.receipt-card,.section{break-inside:avoid;page-break-inside:avoid}
     </style></head><body><div class="og-pdf-watermark" aria-hidden="true"><img src="${escapeHtml(logoUri)}" alt=""></div><main class="og-pdf">
     <header class="og-pdf-brand"><img src="${escapeHtml(logoUri)}" alt="OG Exports logo"><div>
-      <div class="og-pdf-kicker">Official account document</div><h1>${escapeHtml(title)}</h1>
-      <p>OG Exports · Global Trade · Secure Account Record</p>
+      <div class="og-pdf-kicker">${escapeHtml(translateUi('Official account document', language))}</div><h1>${escapeHtml(localizedTitle)}</h1>
+      <p>${escapeHtml(translateUi('OG Exports · Global Trade · Secure Account Record', language))}</p>
     </div></header>
     <section class="og-pdf-content">${body}</section>
-    <footer class="og-pdf-footer">Generated ${escapeHtml(generatedAt)} from OG Exports account records. This document reflects the information available in your account when it was created.</footer>
+    <footer class="og-pdf-footer">${escapeHtml(footer)}</footer>
     </main></body></html>`;
 }

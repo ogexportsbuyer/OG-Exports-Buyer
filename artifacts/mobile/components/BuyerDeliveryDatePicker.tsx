@@ -12,6 +12,7 @@ import {
   isFutureBuyerDeliveryDate,
   parseBuyerDeliveryDate,
 } from '@/lib/buyer-cart-flow';
+import { formatAppDate } from '@/lib/strings';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -40,7 +41,7 @@ export function BuyerDeliveryDatePicker({
   const calendarDays = buyerDeliveryCalendarDays(year, month);
   const selected = parseBuyerDeliveryDate(draft);
   const selectedLabel = formatBuyerDeliveryDateLabel(value);
-  const monthLabel = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(monthCursor);
+  const monthLabel = formatAppDate(monthCursor, { month: 'long', year: 'numeric' });
   const previousMonth = new Date(year, month - 1, 1);
   const previousMonthLastDay = new Date(year, month, 0).getDate();
   const canGoBack = isFutureBuyerDeliveryDate(
@@ -190,7 +191,7 @@ export function BuyerDeliveryDatePicker({
                     <Pressable
                       testID={`${testID}-day-${dayValue}`}
                       accessibilityRole="button"
-                      accessibilityLabel={new Intl.DateTimeFormat(undefined, { dateStyle: 'full' }).format(new Date(year, month, day))}
+                      accessibilityLabel={formatAppDate(new Date(year, month, day), { dateStyle: 'full' })}
                       accessibilityState={{ selected: active, disabled: !future }}
                       disabled={!future}
                       onPress={() => setDraft(dayValue)}

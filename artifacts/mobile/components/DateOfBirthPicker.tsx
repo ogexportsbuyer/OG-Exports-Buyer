@@ -13,7 +13,7 @@ import { LocalizedText as Text } from '@/components/LocalizedText';
 import { useOptionalAppPreferences } from '@/context/AppPreferencesContext';
 import { useColors } from '@/hooks/useColors';
 import { GlassPopupSurface } from '@/components/GlassPopupSurface';
-import { translateUi, type AppLanguage } from '@/lib/strings';
+import { getAppLocale, translateUi, type AppLanguage } from '@/lib/strings';
 import {
   formatDateOnly,
   formatDateOnlyForLocale,
@@ -34,12 +34,6 @@ type DateOfBirthPickerProps = {
   futureOnly?: boolean;
 };
 
-function localeForLanguage(language: AppLanguage): string {
-  if (language === 'ur') return 'ur-PK';
-  if (language === 'ar') return 'ar';
-  return 'en-US';
-}
-
 function calendarDate(year: number, month: number, day: number): Date {
   const date = new Date(2000, month - 1, day, 12);
   date.setFullYear(year);
@@ -59,7 +53,7 @@ export function DateOfBirthPicker({
   const preferences = useOptionalAppPreferences();
   const language = preferences?.preferences.language ?? 'en';
   const isRTL = preferences?.isRTL ?? (language === 'ur' || language === 'ar');
-  const locale = localeForLanguage(language);
+  const locale = getAppLocale(language);
   const today = getTodayParts();
   const selectedValue = parseDateOnly(value);
   const minimumYear = futureOnly ? today.year : Math.min(MIN_BIRTH_YEAR, selectedValue?.year ?? MIN_BIRTH_YEAR);

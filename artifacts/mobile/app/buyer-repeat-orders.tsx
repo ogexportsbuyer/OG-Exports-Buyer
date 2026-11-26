@@ -21,6 +21,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { amount, first, messageOf, record } from '@/lib/data';
 import { displayOrderNumber, productMinimumQuantity, rowsFromResponse } from '@/lib/buyer-data';
+import { formatAppNumber } from '@/lib/strings';
 
 export default function BuyerRepeatOrders() {
   const colors = useColors();
@@ -143,7 +144,7 @@ export default function BuyerRepeatOrders() {
             </Text>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
               <Text style={{ color: colors.mutedForeground, fontSize: 10 }}>Destination: {first(order, ['destination', 'destination_port'], 'Not recorded')}</Text>
-              {total !== null ? <Text style={{ color: colors.primary, fontSize: 10, fontWeight: '800' }}>USD {total.toLocaleString('en-US', { maximumFractionDigits: 0 })}</Text> : null}
+              {total !== null ? <Text style={{ color: colors.primary, fontSize: 10, fontWeight: '800' }}>USD {formatAppNumber(total, { maximumFractionDigits: 0 })}</Text> : null}
             </View>
             <Pressable
               accessibilityRole="button"

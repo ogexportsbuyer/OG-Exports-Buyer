@@ -2917,7 +2917,7 @@ components:
           properties:
             language:
               type: string
-              enum: [en, ur, ar]
+              enum: [en, ur, ar, ru, zh-CN, fr, es, de]
             appearance:
               type: string
               enum: [light, dark, system]

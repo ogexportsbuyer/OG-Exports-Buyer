@@ -32,7 +32,7 @@ it('retains each supported language through validation and profile reload', func
         ->assertJsonPath('data.preferences.language', $language)
         ->assertJsonPath('data.preferences.existing_option', 'keep')
         ->assertJsonPath('data.preferences.currency', 'USD');
-})->with(['en', 'ur', 'ar']);
+})->with(['en', 'ur', 'ar', 'ru', 'zh-CN', 'fr', 'es', 'de']);
 
 it('retains every appearance and keeps the legacy theme alias aligned', function (string $appearance) {
     $this->putJson('/api/investor/profile', ['preferences' => ['appearance' => $appearance]])

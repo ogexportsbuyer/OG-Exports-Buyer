@@ -16,9 +16,10 @@ import { amount, first, list, messageOf, record } from '@/lib/data';
 import { displayOrderNumber } from '@/lib/buyer-data';
 import { useAuth } from '@/context/AuthContext';
 import { shareInvestorFile } from '@/lib/file-download';
+import { formatAppNumber } from '@/lib/strings';
 
 function money(value: number): string {
-  return `USD ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `USD ${formatAppNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export default function BuyerOrderDetail() {

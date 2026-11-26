@@ -13,6 +13,7 @@ import { useColors } from '@/hooks/useColors';
 import { MotionReveal } from '@/lib/motion';
 import { mergeDepositRequests, resolveActivityTransactionTarget } from '@/lib/deposit-activity';
 import { latestRecords } from '@/lib/latest-records';
+import { formatAppDate } from '@/lib/strings';
 
 type WalletCategory = 'All' | 'Deposits' | 'Investments' | 'Withdrawals' | 'Distributions';
 const walletCategories: WalletCategory[] = ['All', 'Deposits', 'Investments', 'Withdrawals', 'Distributions'];
@@ -37,7 +38,7 @@ function displayDate(value: string) {
   if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatAppDate(date, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function balanceLabel(value: number | null, currency: string, loading: boolean, error: boolean) {

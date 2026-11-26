@@ -16,7 +16,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { hasBuyerAccount } from '@/lib/account-role';
 import { configureMoneyDisplay, first, messageOf, record, unwrap } from '@/lib/data';
-import { configureUiLanguage, translateUi } from '@/lib/strings';
+import { configureUiLanguage, isRightToLeftLanguage, translateUi } from '@/lib/strings';
 import { createPreferenceHydrator, createPreferenceSyncQueue, defaultPreferences, nextNativeDirectionKey, parsePreferences,
   persistPreferences, PreferenceSaveError, preferenceAccountId,
   type AppPreferences, type PreferencePatch } from '@/lib/app-preferences';
@@ -161,7 +161,7 @@ export function AppPreferencesProvider({ children }: { children: React.ReactNode
   const rateResponse = unwrap(ratesQuery.data);
   const rates = normalizeRates(rateResponse.rates, first(rateResponse, ['base']).toUpperCase());
   const ratesAsOf = first(rateResponse, ['as_of', 'updated_at']);
-  const isRTL = preferences.language === 'ur' || preferences.language === 'ar';
+  const isRTL = isRightToLeftLanguage(preferences.language);
   const resolvedAppearance = preferences.appearance === 'system'
     ? systemAppearance === 'dark' ? 'dark' : 'light'
     : preferences.appearance;

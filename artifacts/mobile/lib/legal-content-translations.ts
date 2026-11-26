@@ -1,6 +1,9 @@
-import type { LegalDocument } from './legal-content';
+import type { LegalDocument } from './legal-content.ts';
+import type { AppLanguage } from './strings.ts';
+import { additionalLegalDraftTranslations } from './legal-content-drafts-extra.ts';
 
 type DraftTranslation = LegalDocument & { reviewStatus: 'pending' };
+type DraftLanguage = Exclude<AppLanguage, 'en'>;
 
 type LocalizedSection = {
   heading: string;
@@ -21,7 +24,7 @@ const companyAr = 'أو جي إكسبورتس (شركة خاصة) محدودة';
 
 export const LEGAL_DRAFT_TRANSLATIONS: Record<
   string,
-  Record<'ur' | 'ar', DraftTranslation>
+  Partial<Record<DraftLanguage, DraftTranslation>>
 > = {
   terms: {
     ur: document('سروس کی شرائط', `${companyUr} · اشاعت سے مؤثر۔ یہ شرائط او جی ایکسپورٹس کی ویب سائٹ، سرمایہ کار ایپ اور متعلقہ ڈیجیٹل خدمات تک رسائی پر لاگو ہوتی ہیں۔`, [
@@ -407,9 +410,16 @@ export const LEGAL_DRAFT_TRANSLATIONS: Record<
   },
 };
 
+for (const [documentId, translations] of Object.entries(additionalLegalDraftTranslations)) {
+  LEGAL_DRAFT_TRANSLATIONS[documentId] = {
+    ...LEGAL_DRAFT_TRANSLATIONS[documentId],
+    ...translations,
+  };
+}
+
 export function getLegalDraftTranslation(
   section: string,
-  language: 'ur' | 'ar',
+  language: DraftLanguage,
 ): DraftTranslation | undefined {
   return LEGAL_DRAFT_TRANSLATIONS[section]?.[language];
 }
@@ -417,7 +427,7 @@ export function getLegalDraftTranslation(
 export function getLegalDocumentForPreference(
   source: LegalDocument | undefined,
   section: string,
-  language: 'en' | 'ur' | 'ar',
+  language: AppLanguage,
   showEnglishSource = false,
 ): LegalDocument | undefined {
   if (!source) return undefined;

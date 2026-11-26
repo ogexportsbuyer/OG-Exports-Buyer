@@ -1,3 +1,5 @@
+import { formatAppDate } from './strings.ts';
+
 export type BuyerCartRecord = Record<string, unknown>;
 
 function record(value: unknown): BuyerCartRecord {
@@ -86,7 +88,7 @@ export function parseBuyerDeliveryDate(value: string): Date | null {
 export function formatBuyerDeliveryDateLabel(value: string): string {
   const date = parseBuyerDeliveryDate(value);
   return date
-    ? new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).format(date)
+    ? formatAppDate(date, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
     : '';
 }
 

@@ -8,6 +8,7 @@ import { shareInvestorFile } from '@/lib/file-download';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { useBrandedAlert } from '@/components/BrandedAlertProvider';
+import { formatAppDate } from '@/lib/strings';
 
 const reportTypes = ['portfolio', 'profit', 'monthly', 'annual'];
 
@@ -23,7 +24,7 @@ function formatInfo(value: string) {
 function monthLabel(value: string) {
   const date = new Date(`${value}-01T12:00:00`);
   if (!Number.isFinite(date.getTime())) return value;
-  return new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(date);
+  return formatAppDate(date, { month: 'short', year: 'numeric' });
 }
 
 export default function Reports() {

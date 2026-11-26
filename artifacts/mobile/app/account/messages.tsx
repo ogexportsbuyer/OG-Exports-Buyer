@@ -15,6 +15,7 @@ import { GlassLayers } from '@/components/GlassSurface';
 import { GlassPopupSurface } from '@/components/GlassPopupSurface';
 import { hasBuyerAccount } from '@/lib/account-role';
 import { BuyerSupportChatExperience } from '@/components/BuyerSupportChatExperience';
+import { formatAppDate } from '@/lib/strings';
 
 type SupportMode = 'help' | 'chat' | 'tickets';
 
@@ -139,7 +140,7 @@ function chatTimestamp(value: string) {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString(undefined, {
+  return formatAppDate(date, {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',

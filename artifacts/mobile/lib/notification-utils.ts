@@ -1,3 +1,5 @@
+import { formatAppDate } from './strings.ts';
+
 export function isInvestorNotificationUnread(notification: Record<string, unknown>): boolean {
   const readAt = notification.read_at;
   if ((typeof readAt === 'string' && readAt.trim().length > 0) || (typeof readAt === 'number' && readAt > 0)) {
@@ -22,13 +24,13 @@ export function formatNotificationTimestamp(value: string): string {
   if (Number.isNaN(date.getTime())) return trimmed;
 
   try {
-    return new Intl.DateTimeFormat(undefined, {
+    return formatAppDate(date, {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-    }).format(date);
+    });
   } catch {
     return trimmed;
   }

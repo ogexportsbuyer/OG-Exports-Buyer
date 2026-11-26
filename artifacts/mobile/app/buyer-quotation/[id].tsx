@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatAppDate, formatAppNumber } from '@/lib/strings';
 import { FlatList, Pressable, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,14 +30,14 @@ function quotationReference(id: number) {
 }
 
 function money(value: number) {
-  return `USD ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `USD ${formatAppNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function timestamp(value: string) {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString(undefined, {
+  return formatAppDate(date, {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',

@@ -7,6 +7,7 @@ import { amount, first, record, type Json } from '@/lib/data';
 import { useColors } from '@/hooks/useColors';
 import { resolveTradeProgress, TRADE_STAGE_COLOR_TOKENS, TRADE_STAGES } from '@/lib/trade-progress';
 import { MotionProgress, MotionReveal } from '@/lib/motion';
+import { formatAppDate } from '@/lib/strings';
 
 type Props = {
   stageUpdates: Json[];
@@ -23,8 +24,8 @@ function eventDate(value: string, includeTime = true): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return includeTime
-    ? date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
-    : date.toLocaleDateString(undefined, { dateStyle: 'medium' });
+    ? formatAppDate(date, { dateStyle: 'medium', timeStyle: 'short' })
+    : formatAppDate(date, { dateStyle: 'medium' });
 }
 
 export function TradeProgressCard({

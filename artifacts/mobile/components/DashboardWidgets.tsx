@@ -7,6 +7,7 @@ import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Card, EmptyState, ErrorState, LoadingCard, Status } from '@/components/InvestorUI';
 import { amount, first, list, money, record } from '@/lib/data';
 import { useColors } from '@/hooks/useColors';
+import { formatAppDate } from '@/lib/strings';
 
 export type DashboardMetricItem = {
   label: string;
@@ -269,8 +270,8 @@ export function ProfitAnalyticsCard({ points, currency, loading, hideValues }: {
 function transactionDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value || 'Date unavailable';
-  const time = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(date);
+  const time = formatAppDate(date, { hour: 'numeric', minute: '2-digit' });
   return date.toDateString() === new Date().toDateString()
     ? time
-    : `${new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(date)} · ${time}`;
+    : `${formatAppDate(date, { day: 'numeric', month: 'short' })} · ${time}`;
 }

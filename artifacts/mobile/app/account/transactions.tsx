@@ -18,6 +18,7 @@ import {
   matchesHistoryDateRange,
   matchesHistoryStatus,
 } from '@/lib/dashboard-history';
+import { formatAppDate, formatAppNumber } from '@/lib/strings';
 import {
   savedUsdEquivalentForRecordedAmount,
   withdrawalPaymentMethod,
@@ -102,10 +103,10 @@ function formatDateTime(value: string) {
   if (!value) return unavailable;
   const timestamp = Date.parse(value);
   if (!Number.isFinite(timestamp)) return value;
-  return new Intl.DateTimeFormat(undefined, {
+  return formatAppDate(new Date(timestamp), {
     dateStyle: 'medium',
     timeStyle: 'short',
-  }).format(new Date(timestamp));
+  });
 }
 
 function formatLabel(value: string) {
@@ -519,7 +520,7 @@ export default function Transactions() {
         currency: currency || 'Not recorded',
         exchangeRate: exchangeRate === null
           ? currency.trim().toUpperCase() === 'USD' ? 'Not applicable (USD)' : 'Not recorded'
-          : `1 USD = ${exchangeRate.toLocaleString(undefined, { maximumFractionDigits: 8 })} ${currency || 'PKR'}`,
+          : `1 USD = ${formatAppNumber(exchangeRate, { maximumFractionDigits: 8 })} ${currency || 'PKR'}`,
       },
       occurredAt: first(withdrawal, ['created_at', 'date']),
       status: first(withdrawal, ['status', 'state']),

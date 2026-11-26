@@ -11,9 +11,9 @@ import {
   type TextStyle,
 } from 'react-native';
 import { useOptionalAppPreferences } from '@/context/AppPreferencesContext';
-import { getUiLanguage, translateUi } from '@/lib/strings';
+import { getUiLanguage, translateUi, type AppLanguage } from '@/lib/strings';
 
-function localizedChildren(children: React.ReactNode, language: 'en' | 'ur' | 'ar'): React.ReactNode {
+function localizedChildren(children: React.ReactNode, language: AppLanguage): React.ReactNode {
   if (typeof children === 'string') return translateUi(children, language);
   if (Array.isArray(children)) return children.map((child, index) => <React.Fragment key={index}>{localizedChildren(child, language)}</React.Fragment>);
   return children;

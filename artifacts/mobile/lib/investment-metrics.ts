@@ -1,3 +1,5 @@
+import { formatAppDate } from './strings.ts';
+
 export function calculateExpectedProfitFromRoi(
   investedAmount: number | null,
   roiPercent: number | null,
@@ -165,12 +167,12 @@ export function formatReportedPayoutDate(value: string): string | null {
     if (!Number.isFinite(date.getTime())) return null;
   }
 
-  return new Intl.DateTimeFormat(undefined, {
+  return formatAppDate(date, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
     timeZone: 'UTC',
-  }).format(date);
+  });
 }
 
 export function estimateDistributionDateIso(

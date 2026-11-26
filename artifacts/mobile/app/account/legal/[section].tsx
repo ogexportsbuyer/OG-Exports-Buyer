@@ -9,8 +9,16 @@ import { useColors } from '@/hooks/useColors';
 import { useAppPreferences } from '@/context/AppPreferencesContext';
 import { LEGAL_DOCUMENTS, legalDocumentFilename, legalDocumentFileContent } from '@/lib/legal-content';
 import { getLegalDocumentForPreference } from '@/lib/legal-content-translations';
-import { translateUi } from '@/lib/strings';
+import { translateUi, type AppLanguage } from '@/lib/strings';
 import { useBrandedAlert } from '@/components/BrandedAlertProvider';
+
+const additionalLegalDraftActionLabels: Partial<Record<AppLanguage, string>> = {
+  ru: 'Показать русский перевод',
+  'zh-CN': '显示简体中文译稿',
+  fr: 'Afficher le brouillon français',
+  es: 'Mostrar el borrador en español',
+  de: 'Deutschen Entwurf anzeigen',
+};
 
 export default function LegalContent() {
   const { showAlert } = useBrandedAlert();
@@ -95,7 +103,7 @@ export default function LegalContent() {
           <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '700' }}>
             {translateUi(
               showEnglishSource
-                ? language === 'ur' ? 'Show Urdu draft' : 'Show Arabic draft'
+                ? language === 'ur' ? 'Show Urdu draft' : language === 'ar' ? 'Show Arabic draft' : additionalLegalDraftActionLabels[language] ?? 'Show translated draft'
                 : 'Show approved English source',
               language,
             )}

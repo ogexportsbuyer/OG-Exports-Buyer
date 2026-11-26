@@ -1,3 +1,5 @@
+import { formatAppDate } from './strings.ts';
+
 export const BUYER_DOCUMENT_CATEGORIES = [
   'Commercial',
   'Shipping',
@@ -70,7 +72,7 @@ function formatBuyerDocumentDate(value: string): { label: string; sort: number }
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return { label: 'TBC', sort: 0 };
   return {
-    label: parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    label: formatAppDate(parsed, { month: 'short', day: 'numeric', year: 'numeric' }),
     sort: parsed.getTime(),
   };
 }

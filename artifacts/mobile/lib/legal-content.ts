@@ -1,3 +1,5 @@
+import { getUiLanguage, translateUi, type AppLanguage } from './strings.ts';
+
 export type LegalSection = {
   heading: string;
   paragraphs?: string[];
@@ -223,36 +225,27 @@ export const LEGAL_DOCUMENTS: Record<string, LegalDocument> = {
 
 export function legalDocumentFileContent(
   document: LegalDocument,
-  language: 'en' | 'ur' | 'ar',
+  language: AppLanguage,
   isPendingDraft: boolean,
 ): string {
   const labels = {
-    en: {
-      language: 'Language',
-      english: 'Approved English source',
-      urdu: 'Urdu draft',
-      arabic: 'Arabic draft',
-      summary: 'Summary',
-      draftNotice: 'Translation draft — qualified review pending. This translation is not approved. The approved English source is available in the app.',
-    },
-    ur: {
-      language: 'زبان',
-      english: 'منظور شدہ انگریزی اصل',
-      urdu: 'اردو مسودہ',
-      arabic: 'عربی مسودہ',
-      summary: 'خلاصہ',
-      draftNotice: 'ترجمے کا مسودہ — ماہر کا جائزہ باقی ہے۔ یہ ترجمہ منظور شدہ نہیں۔ منظور شدہ انگریزی اصل ایپ میں دستیاب ہے۔',
-    },
-    ar: {
-      language: 'اللغة',
-      english: 'المصدر الإنجليزي المعتمد',
-      urdu: 'مسودة أردية',
-      arabic: 'مسودة عربية',
-      summary: 'الملخص',
-      draftNotice: 'مسودة ترجمة — بانتظار المراجعة المتخصصة. هذه الترجمة غير معتمدة. المصدر الإنجليزي المعتمد متاح في التطبيق.',
-    },
-  }[language];
-  const languageLabel = language === 'en' ? labels.english : language === 'ur' ? labels.urdu : labels.arabic;
+    language: translateUi('Language', getUiLanguage()),
+    approvedSource: translateUi('Approved English source', getUiLanguage()),
+    summary: translateUi('Summary', getUiLanguage()),
+    draftNotice: translateUi('Translation draft — qualified review pending. This translation is not approved. The approved English source is available in the app.', getUiLanguage()),
+  };
+  const draftLanguageLabels: Record<Exclude<AppLanguage, 'en'>, string> = {
+    ur: 'اردو مسودہ',
+    ar: 'مسودة عربية',
+    ru: 'Черновик на русском',
+    'zh-CN': '简体中文译稿',
+    fr: 'Brouillon français',
+    es: 'Borrador en español',
+    de: 'Deutscher Entwurf',
+  };
+  const languageLabel = isPendingDraft && language !== 'en'
+    ? draftLanguageLabels[language]
+    : labels.approvedSource;
   const sections = document.sections.flatMap(section => [
     section.heading,
     ...(section.paragraphs ?? []),
@@ -275,7 +268,7 @@ export function legalDocumentFileContent(
 
 export function legalDocumentFilename(
   section: string,
-  language: 'en' | 'ur' | 'ar',
+  language: AppLanguage,
   isPendingDraft: boolean,
 ): string {
   const safeSection = section.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, '') || 'policy';

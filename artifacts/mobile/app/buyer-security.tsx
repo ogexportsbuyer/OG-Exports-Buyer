@@ -19,6 +19,7 @@ import { Action, Card, EmptyState, Field, LoadingCard, Screen, Status } from '@/
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
+import { formatAppDate } from '@/lib/strings';
 import { first, list, messageOf, record, unwrap } from '@/lib/data';
 
 type SecurityTab = 'account' | 'devices' | 'activity';
@@ -26,7 +27,7 @@ type SecurityTab = 'account' | 'devices' | 'activity';
 function displayDate(value: string) {
   if (!value) return 'Date unavailable';
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+  return Number.isNaN(date.getTime()) ? value : formatAppDate(date, { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function activityLabel(action: string) {

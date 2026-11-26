@@ -16,9 +16,10 @@ import {
 } from '@workspace/api-client-react';
 import { amount, first, record } from '@/lib/data';
 import { displayOrderNumber, rowsFromResponse } from '@/lib/buyer-data';
+import { formatAppNumber } from '@/lib/strings';
 
 function money(value: number): string {
-  return `USD ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `USD ${formatAppNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export default function BuyerOrders() {

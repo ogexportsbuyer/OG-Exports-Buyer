@@ -21,6 +21,7 @@ import { AllocationDonut, type AllocationSlice } from '@/components/AllocationDo
 import { amount, availableBalanceFromDashboard, first, list, money, record, unwrap, walletCurrencyFromDashboard } from '@/lib/data';
 import { mergeDepositRequests, resolveActivityTransactionTarget } from '@/lib/deposit-activity';
 import { latestRecords } from '@/lib/latest-records';
+import { formatAppDate } from '@/lib/strings';
 import { isInvestorNotificationUnread } from '@/lib/notification-utils';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
@@ -113,10 +114,10 @@ function transactionGroup(value: string) {
 function transactionDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value || 'Date unavailable';
-  const time = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(date);
+  const time = formatAppDate(date, { hour: 'numeric', minute: '2-digit' });
   return date.toDateString() === new Date().toDateString()
     ? time
-    : `${new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(date)} · ${time}`;
+    : `${formatAppDate(date, { day: 'numeric', month: 'short' })} · ${time}`;
 }
 
 function activityLabel(item: Record<string, unknown>) {

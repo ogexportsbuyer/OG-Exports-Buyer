@@ -16,9 +16,10 @@ import { useColors } from '@/hooks/useColors';
 import { amount, first, list, record } from '@/lib/data';
 import { rowsFromResponse } from '@/lib/buyer-data';
 import { analyticsMonthLabel, orderProductSummary, ordersForAnalyticsMonth } from '@/lib/buyer-analytics-data';
+import { formatAppNumber } from '@/lib/strings';
 
 function money(value: number | null) {
-  return value === null ? '—' : `USD ${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  return value === null ? '—' : `USD ${formatAppNumber(value, { maximumFractionDigits: 0 })}`;
 }
 
 export default function BuyerAnalytics() {

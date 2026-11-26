@@ -134,7 +134,7 @@ class ProfileController extends Controller
             'risk_profile' => ['nullable', 'string', 'max:50'],
             'notification_prefs' => ['nullable', 'array'],
             'preferences' => ['nullable', 'array'],
-            'preferences.language' => ['sometimes', 'string', Rule::in(['en', 'ur', 'ar'])],
+            'preferences.language' => ['sometimes', 'string', Rule::in(['en', 'ur', 'ar', 'ru', 'zh-CN', 'fr', 'es', 'de'])],
             'preferences.appearance' => ['sometimes', 'string', Rule::in(['light', 'dark', 'system'])],
             'preferences.theme' => ['sometimes', 'string', Rule::in(['light', 'dark', 'system'])],
             'preferences.currency' => ['sometimes', 'string', Rule::in(['USD', 'PKR', 'EUR', 'GBP'])],

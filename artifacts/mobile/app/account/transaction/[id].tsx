@@ -22,6 +22,7 @@ import { createTransactionReceipt, saveTransactionReceipt } from '@/lib/transact
 import { findCachedTransactionDetail, findFinancialDetailRecord } from '@/lib/financial-detail-record';
 import { getRememberedFinancialDetail, loadFinancialDetail, saveFinancialDetail } from '@/lib/financial-detail-cache';
 import { resolveTransactionPaymentMethod } from '@/lib/transaction-payment-method';
+import { formatAppDate, formatAppNumber } from '@/lib/strings';
 import { preferRecordedPositiveAmount, savedUsdEquivalentForRecordedAmount } from '@/lib/withdrawal-history';
 import {
   copyFinancialReference,
@@ -44,7 +45,7 @@ function formatDateTime(value: string) {
   if (!value) return unavailable;
   const timestamp = Date.parse(value);
   if (!Number.isFinite(timestamp)) return value;
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(timestamp));
+  return formatAppDate(new Date(timestamp), { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function DetailLine({ label, value }: { label: string; value: string }) {
@@ -392,7 +393,7 @@ export default function TransactionDetails() {
   const exchangeRate = amount(withdrawalBreakdown, ['exchange_rate']);
   const exchangeRateLabel = exchangeRate === null
     ? breakdownCurrency.trim().toUpperCase() === 'USD' ? 'Not applicable (USD)' : 'Not recorded'
-    : `1 USD = ${exchangeRate.toLocaleString(undefined, { maximumFractionDigits: 8 })} ${breakdownCurrency || 'PKR'}`;
+    : `1 USD = ${formatAppNumber(exchangeRate, { maximumFractionDigits: 8 })} ${breakdownCurrency || 'PKR'}`;
   const [receiptBusy, setReceiptBusy] = useState(false);
   const [receiptError, setReceiptError] = useState('');
   const [copiedRecordId, setCopiedRecordId] = useState('');

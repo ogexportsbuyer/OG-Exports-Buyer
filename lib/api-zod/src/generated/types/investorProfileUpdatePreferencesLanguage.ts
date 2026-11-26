@@ -13,4 +13,9 @@ export const InvestorProfileUpdatePreferencesLanguage = {
   en: 'en',
   ur: 'ur',
   ar: 'ar',
+  ru: 'ru',
+  'zh-CN': 'zh-CN',
+  fr: 'fr',
+  es: 'es',
+  de: 'de',
 } as const;

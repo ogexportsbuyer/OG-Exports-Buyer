@@ -1,3 +1,5 @@
+import { formatAppDate } from './strings.ts';
+
 export type BuyerDashboardRecord = Record<string, unknown>;
 
 function asRecord(value: unknown): BuyerDashboardRecord {
@@ -141,5 +143,5 @@ export function buyerDashboardAlertTime(value: unknown): string {
   if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
   const weeks = Math.floor(days / 7);
   if (weeks < 5) return `${weeks} week${weeks === 1 ? '' : 's'} ago`;
-  return date.toLocaleDateString();
+  return formatAppDate(date);
 }

@@ -7,6 +7,7 @@ import { first, messageOf, type Json } from '@/lib/data';
 import { useColors } from '@/hooks/useColors';
 import { shareInvestorFile } from '@/lib/file-download';
 import { MOTION, MotionReveal } from '@/lib/motion';
+import { formatAppDate } from '@/lib/strings';
 
 function updateTime(event: Json): number | null {
   const value = first(event, ['occurred_at']);
@@ -17,10 +18,10 @@ function updateTime(event: Json): number | null {
 function formatDateTime(value: string): string {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value || '—';
-  return new Intl.DateTimeFormat(undefined, {
+  return formatAppDate(parsed, {
     dateStyle: 'medium',
     timeStyle: 'short',
-  }).format(parsed);
+  });
 }
 
 export function TradeTimeline({

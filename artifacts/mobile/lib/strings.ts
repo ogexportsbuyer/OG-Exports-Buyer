@@ -1,6 +1,68 @@
-export type AppLanguage = 'en' | 'ur' | 'ar';
+import { additionalLocaleTranslations } from './locale-translations-extra.ts';
+
+export type AppLanguage = 'en' | 'ur' | 'ar' | 'ru' | 'zh-CN' | 'fr' | 'es' | 'de';
 
 let activeUiLanguage: AppLanguage = 'en';
+
+export const APP_LANGUAGE_OPTIONS: ReadonlyArray<{ value: AppLanguage; label: string; englishName: string }> = [
+  { value: 'en', label: 'English', englishName: 'English' },
+  { value: 'ur', label: 'اردو', englishName: 'Urdu' },
+  { value: 'ar', label: 'العربية', englishName: 'Arabic' },
+  { value: 'ru', label: 'Русский', englishName: 'Russian' },
+  { value: 'zh-CN', label: '简体中文', englishName: 'Chinese' },
+  { value: 'fr', label: 'Français', englishName: 'French' },
+  { value: 'es', label: 'Español', englishName: 'Spanish' },
+  { value: 'de', label: 'Deutsch', englishName: 'German' },
+];
+
+const appLocaleByLanguage: Record<AppLanguage, string> = {
+  en: 'en-US',
+  ur: 'ur-PK',
+  ar: 'ar',
+  ru: 'ru-RU',
+  'zh-CN': 'zh-CN',
+  fr: 'fr-FR',
+  es: 'es-ES',
+  de: 'de-DE',
+};
+
+export function getAppLocale(language: AppLanguage = activeUiLanguage): string {
+  return appLocaleByLanguage[language];
+}
+
+export function formatAppNumber(value: number, options: Intl.NumberFormatOptions = {}): string {
+  return new Intl.NumberFormat(getAppLocale(), options).format(value);
+}
+
+export function formatAppDate(
+  value: Date | number | string,
+  options: Intl.DateTimeFormatOptions = { dateStyle: 'medium' },
+): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (!Number.isFinite(date.getTime())) return '—';
+  return new Intl.DateTimeFormat(getAppLocale(), options).format(date);
+}
+
+export function getAppLanguageEnglishName(language: AppLanguage): string {
+  return APP_LANGUAGE_OPTIONS.find(option => option.value === language)?.englishName ?? 'English';
+}
+
+export function isRightToLeftLanguage(language: AppLanguage): boolean {
+  return language === 'ur' || language === 'ar';
+}
+
+export function isAppLanguage(value: unknown): value is AppLanguage {
+  return typeof value === 'string'
+    && APP_LANGUAGE_OPTIONS.some(option => option.value === value);
+}
+
+export function hasUiTranslation(
+  source: string,
+  language: Exclude<AppLanguage, 'en'>,
+): boolean {
+  const translated = translations.get(source)?.[language];
+  return typeof translated === 'string' && translated.trim().length > 0;
+}
 
 export function configureUiLanguage(language: AppLanguage) {
   activeUiLanguage = language;
@@ -1214,9 +1276,12 @@ const phrases: ReadonlyArray<readonly [string, string, string]> = [
   ["Quick actions","فوری اقدامات","إجراءات سريعة"],
 ];
 
-const translations = new Map<string, Readonly<Record<Exclude<AppLanguage, 'en'>, string>>>(
+const translations = new Map<string, Readonly<Partial<Record<Exclude<AppLanguage, 'en'>, string>>>>(
   phrases.map(([source, ur, ar]) => [source, { ur, ar }]),
 );
+for (const [source, localized] of Object.entries(additionalLocaleTranslations)) {
+  translations.set(source, { ...translations.get(source), ...localized });
+}
 
 export function translateUi(value: string, language: AppLanguage): string {
   if (!value) return value;
@@ -1236,10 +1301,13 @@ export function translateUi(value: string, language: AppLanguage): string {
   return value;
 }
 
-export function formatUiStatus(value: string): string {
+export function formatUiStatus(value: string, language: AppLanguage = activeUiLanguage): string {
   const normalized = value.trim().toLowerCase().replace(/[._-]+/g, ' ').replace(/\s+/g, ' ');
   if (!normalized) return 'Not provided';
-  if (['pending', 'pending review', 'awaiting review'].includes(normalized)) return 'Pending review';
-  if (['review', 'in review', 'under review'].includes(normalized)) return 'Under review';
-  return normalized.replace(/\b[a-z]/g, letter => letter.toUpperCase());
+  const status = ['pending', 'pending review', 'awaiting review'].includes(normalized)
+    ? 'Pending review'
+    : ['review', 'in review', 'under review'].includes(normalized)
+      ? 'Under review'
+      : normalized.replace(/\b[a-z]/g, letter => letter.toUpperCase());
+  return translateUi(status, language);
 }

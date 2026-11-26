@@ -21,6 +21,7 @@ import {
   type BuyerRfqDraft,
   type BuyerRfqStatus,
 } from '@/lib/buyer-rfq';
+import { formatAppDate } from '@/lib/strings';
 
 type Mode = 'history' | 'new' | 'success';
 const statusOptions: ('All' | BuyerRfqStatus)[] = ['All', 'Pending', 'Quoted', 'Accepted', 'Expired'];
@@ -30,7 +31,7 @@ function dateLabel(value: string) {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? value.slice(0, 10)
-    : date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+    : formatAppDate(date, { month: 'short', day: '2-digit', year: 'numeric' });
 }
 
 export default function BuyerRfq() {

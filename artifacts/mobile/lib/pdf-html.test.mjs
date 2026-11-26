@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { brandedPdfHtml } from './pdf-html.ts';
+import { configureUiLanguage } from './strings.ts';
 
 test('branded PDF preserves report rows and embeds the official OG Exports logo', () => {
   const html = brandedPdfHtml(
@@ -30,4 +31,19 @@ test('branded PDF escapes the title and removes executable HTML', () => {
   assert.match(html, /&lt;Receipt&gt;/);
   assert.doesNotMatch(html, /<script|onclick=/i);
   assert.ok(html.includes('<p>Safe</p>'));
+});
+
+test('branded PDF wrapper follows the selected language and right-to-left direction', () => {
+  configureUiLanguage('fr');
+  const french = brandedPdfHtml('<body><p>Statement</p></body>', 'Deposit request receipt', 'logo.png');
+  assert.match(french, /<html lang="fr" dir="ltr">/);
+  assert.match(french, /<h1>Reçu de demande de dépôt<\/h1>/);
+  assert.match(french, /Document officiel de compte/);
+  assert.doesNotMatch(french, /Official account document/);
+
+  configureUiLanguage('ar');
+  const arabic = brandedPdfHtml('<body><p>Statement</p></body>', 'Deposit request receipt', 'logo.png');
+  assert.match(arabic, /<html lang="ar" dir="rtl">/);
+  assert.match(arabic, /direction:rtl/);
+  configureUiLanguage('en');
 });

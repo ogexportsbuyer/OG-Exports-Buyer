@@ -5,7 +5,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +12,7 @@ import { useColors } from '@/hooks/useColors';
 import { Feather } from '@expo/vector-icons';
 import { reloadAppAsync } from 'expo';
 import { GlassPopupSurface } from '@/components/GlassPopupSurface';
+import { LocalizedText as Text } from '@/components/LocalizedText';
 
 export type ErrorFallbackProps = {
   error: Error;

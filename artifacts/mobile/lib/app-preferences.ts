@@ -1,4 +1,4 @@
-import type { AppLanguage } from './strings';
+import { isAppLanguage, type AppLanguage } from './strings.ts';
 
 export type AppearancePreference = 'light' | 'dark' | 'system';
 export type DisplayCurrency = 'USD' | 'PKR' | 'EUR' | 'GBP';
@@ -15,7 +15,7 @@ const object = (value: unknown): Record<string, unknown> =>
 export function parsePreferences(value: unknown): PreferencePatch {
   const source = object(value);
   const next: PreferencePatch = {};
-  if (source.language === 'en' || source.language === 'ur' || source.language === 'ar') next.language = source.language;
+  if (isAppLanguage(source.language)) next.language = source.language;
   const currency = typeof source.currency === 'string' ? source.currency.toUpperCase() : '';
   if (currency === 'USD' || currency === 'PKR' || currency === 'EUR' || currency === 'GBP') next.currency = currency;
   const appearance = source.appearance ?? source.theme;

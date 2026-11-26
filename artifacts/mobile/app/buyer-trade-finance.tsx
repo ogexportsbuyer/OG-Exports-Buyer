@@ -24,6 +24,7 @@ import { useColors } from '@/hooks/useColors';
 import { amount, first, list, messageOf, record } from '@/lib/data';
 import { displayOrderNumber, rowsFromResponse } from '@/lib/buyer-data';
 import { buyerKycStatusLabel, isBuyerKycApproved } from '@/lib/buyer-kyc-approval';
+import { formatAppNumber } from '@/lib/strings';
 
 type FinanceTab = 'accounts' | 'history' | 'submit';
 
@@ -36,7 +37,7 @@ function normalized(value: string) {
 }
 
 function money(value: number | null) {
-  return value === null ? 'Price confirmed separately' : `USD ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return value === null ? 'Price confirmed separately' : `USD ${formatAppNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export default function BuyerTradeFinance() {

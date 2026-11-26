@@ -29,6 +29,7 @@ import { shareInvestorFile } from '@/lib/file-download';
 import { getInvestorKycStatus, isInvestorKycVerified } from '@/lib/kyc';
 import { verifyAppPin } from '@/lib/app-pin';
 import { motionHaptic } from '@/lib/motion';
+import { formatAppNumber } from '@/lib/strings';
 import { createTransactionReceipt, saveTransactionReceipt } from '@/lib/transaction-receipt';
 import { goBackOrReplace } from '@/lib/safe-navigation';
 import {
@@ -612,9 +613,9 @@ export default function OpportunityDetail() {
           ? money(confirmation.walletAmount, first(confirmation, ['walletCurrency'], walletCurrency || 'USD'))
           : typeof confirmation.amountPkr === 'number' ? money(confirmation.amountPkr, 'PKR') : '';
         const exchangeRate = typeof confirmation.walletExchangeRate === 'number'
-          ? `1 ${resultCurrency || 'USD'} = ${confirmation.walletExchangeRate.toLocaleString(undefined, { maximumFractionDigits: 8 })} ${first(confirmation, ['walletCurrency'], walletCurrency || 'USD')}`
+          ? `1 ${resultCurrency || 'USD'} = ${formatAppNumber(confirmation.walletExchangeRate, { maximumFractionDigits: 8 })} ${first(confirmation, ['walletCurrency'], walletCurrency || 'USD')}`
           : typeof confirmation.exchangeRate === 'number'
-            ? `1 USD = ${confirmation.exchangeRate.toLocaleString(undefined, { maximumFractionDigits: 8 })} PKR`
+            ? `1 USD = ${formatAppNumber(confirmation.exchangeRate, { maximumFractionDigits: 8 })} PKR`
             : '';
         return <Card style={{ borderColor: colors.primary }}>
           <Text style={{ color: colors.primary, fontSize: 10, letterSpacing: 0.7, fontWeight: '700', marginBottom: 10 }}>INVESTMENT CONFIRMATION</Text>

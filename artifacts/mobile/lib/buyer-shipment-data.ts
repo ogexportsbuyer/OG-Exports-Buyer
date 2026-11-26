@@ -1,3 +1,5 @@
+import { formatAppDate } from './strings.ts';
+
 export type ShipmentTimelineStep = {
   step: string;
   date: string;
@@ -146,7 +148,7 @@ export function formatShipmentDate(value: string): string {
     ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
     : new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return formatAppDate(date, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export function formatShipmentTimestamp(value: string): string {

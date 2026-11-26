@@ -24,7 +24,7 @@ import { first, list, messageOf, record, unwrap, type Json } from '@/lib/data';
 import { countryForApi, profileUserCountry } from '@/lib/countries';
 import { useColors } from '@/hooks/useColors';
 import { useAppPreferences, type AppearancePreference, type DisplayCurrency } from '@/context/AppPreferencesContext';
-import { translateUi } from '@/lib/strings';
+import { APP_LANGUAGE_OPTIONS, translateUi, type AppLanguage } from '@/lib/strings';
 import { useBrandedAlert } from '@/components/BrandedAlertProvider';
 import { pushTokenSecureStoreKey } from '@/lib/push-token-key';
 import {
@@ -274,7 +274,7 @@ export default function Settings() {
     } catch (err) { setError(messageOf(err)); }
   }
 
-  async function saveAppPreference(patch: { language?: 'en' | 'ur' | 'ar'; currency?: DisplayCurrency; appearance?: AppearancePreference }) {
+  async function saveAppPreference(patch: { language?: AppLanguage; currency?: DisplayCurrency; appearance?: AppearancePreference }) {
     setError('');
     try {
       await appPreferences.savePreferences(patch);
@@ -323,11 +323,7 @@ export default function Settings() {
       <Text style={{ color: colors.foreground, fontWeight: '700', fontSize: 16, marginBottom: 10 }}>App preferences</Text>
       <Text style={{ color: colors.mutedForeground, fontSize: 12, marginBottom: 8 }}>Language</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-        {([
-          ['en', 'English'],
-          ['ur', 'اردو'],
-          ['ar', 'العربية'],
-        ] as const).map(([language, label]) => {
+        {APP_LANGUAGE_OPTIONS.map(({ value: language, label }) => {
           const selected = appPreferences.preferences.language === language;
           return <Pressable
             key={language}

@@ -11,17 +11,20 @@ import {
   getLegalDocumentForPreference,
   legalTranslationMatchesSource,
 } from './legal-content-translations.ts';
+import { configureUiLanguage, translateUi } from './strings.ts';
 
 const legalRoute = readFileSync(new URL('../app/account/legal/[section].tsx', import.meta.url), 'utf8');
 
-test('provides Urdu and Arabic pending-review translations for all five legal documents', () => {
+const supportedLegalDraftLanguages = ['ur', 'ar', 'ru', 'zh-CN', 'fr', 'es', 'de'];
+
+test('provides pending-review translations for all seven non-English languages and five legal documents', () => {
   assert.deepEqual(
     Object.keys(LEGAL_DRAFT_TRANSLATIONS).sort(),
     Object.keys(LEGAL_DOCUMENTS).sort(),
   );
 
   for (const [documentId, source] of Object.entries(LEGAL_DOCUMENTS)) {
-    for (const language of ['ur', 'ar']) {
+    for (const language of supportedLegalDraftLanguages) {
       const translation = LEGAL_DRAFT_TRANSLATIONS[documentId][language];
       assert.equal(translation.reviewStatus, 'pending', `${documentId}/${language} review status`);
       assert.ok(translation.title.trim(), `${documentId}/${language} title`);
@@ -44,30 +47,39 @@ test('provides Urdu and Arabic pending-review translations for all five legal do
   }
 });
 
-test('legal screen displays the document matching the saved English, Urdu, or Arabic preference', () => {
+test('legal screen displays the document matching every saved app-language preference', () => {
   assert.equal(Object.keys(LEGAL_DOCUMENTS).length, 5, 'all five legal routes are covered');
 
   for (const [documentId, source] of Object.entries(LEGAL_DOCUMENTS)) {
     assert.equal(getLegalDocumentForPreference(source, documentId, 'en'), source, `${documentId}/en`);
 
-    for (const language of ['ur', 'ar']) {
+    for (const language of supportedLegalDraftLanguages) {
       const translation = LEGAL_DRAFT_TRANSLATIONS[documentId][language];
       const displayed = getLegalDocumentForPreference(source, documentId, language);
       assert.equal(displayed, translation, `${documentId}/${language} displays its draft`);
       assert.notEqual(displayed, source, `${documentId}/${language} must not display English`);
-      assert.match(displayed.title, /\p{Script=Arabic}/u, `${documentId}/${language} title uses the RTL script`);
+      const script = {
+        ur: /\p{Script=Arabic}/u,
+        ar: /\p{Script=Arabic}/u,
+        ru: /\p{Script=Cyrillic}/u,
+        'zh-CN': /\p{Script=Han}/u,
+        fr: /\p{Script=Latin}/u,
+        es: /\p{Script=Latin}/u,
+        de: /\p{Script=Latin}/u,
+      }[language];
+      assert.match(displayed.title, script, `${documentId}/${language} title uses the expected script`);
       assert.match(
         displayed.sections.flatMap(section => [section.heading, ...(section.paragraphs ?? []), ...(section.bullets ?? [])]).join(' '),
-        /\p{Script=Arabic}/u,
-        `${documentId}/${language} legal body uses the RTL script`,
+        script,
+        `${documentId}/${language} legal body uses the expected script`,
       );
     }
   }
 });
 
-test('Urdu and Arabic screens switch to the English source and back to their draft', () => {
+test('every non-English legal screen switches to the English source and back to its draft', () => {
   for (const [documentId, source] of Object.entries(LEGAL_DOCUMENTS)) {
-    for (const language of ['ur', 'ar']) {
+    for (const language of supportedLegalDraftLanguages) {
       assert.equal(
         getLegalDocumentForPreference(source, documentId, language, true),
         source,
@@ -82,7 +94,7 @@ test('Urdu and Arabic screens switch to the English source and back to their dra
   }
 });
 
-test('exports every legal page in the selected language and marks Urdu and Arabic drafts as pending review', () => {
+test('exports every legal page in the selected language and marks every draft pending review', () => {
   for (const [documentId, source] of Object.entries(LEGAL_DOCUMENTS)) {
     const english = legalDocumentFileContent(source, 'en', false);
     assert.ok(english.includes(source.title), `${documentId}/en title`);
@@ -91,13 +103,14 @@ test('exports every legal page in the selected language and marks Urdu and Arabi
     assert.ok(!english.includes('qualified review pending'), `${documentId}/en is not a draft`);
     assert.equal(legalDocumentFilename(documentId, 'en', false), `og-exports-${documentId}-en.txt`);
 
-    for (const language of ['ur', 'ar']) {
+    for (const language of supportedLegalDraftLanguages) {
+      configureUiLanguage(language);
       const draft = LEGAL_DRAFT_TRANSLATIONS[documentId][language];
       const exported = legalDocumentFileContent(draft, language, true);
       assert.ok(exported.includes(draft.title), `${documentId}/${language} title`);
       assert.ok(exported.includes(draft.sections[0].heading), `${documentId}/${language} section`);
       assert.ok(exported.includes(draft.sections[0].paragraphs[0]), `${documentId}/${language} body`);
-      assert.ok(exported.includes('qualified review pending') || exported.includes('ماہر کا جائزہ باقی ہے') || exported.includes('بانتظار المراجعة المتخصصة'), `${documentId}/${language} pending review notice`);
+      assert.ok(exported.includes(translateUi('Translation draft — qualified review pending. This translation is not approved. The approved English source is available in the app.', language)), `${documentId}/${language} pending review notice`);
       assert.match(legalDocumentFilename(documentId, language, true), new RegExp(`-${language}-draft\\.txt$`));
 
       const explicitlySelectedEnglish = legalDocumentFileContent(source, 'en', false);
@@ -105,6 +118,7 @@ test('exports every legal page in the selected language and marks Urdu and Arabi
       assert.ok(!explicitlySelectedEnglish.includes('Translation draft'), `${documentId}/${language} English source is not labeled as a draft`);
     }
   }
+  configureUiLanguage('en');
 });
 
 test('the legal route uses the saved language and renders only the selected document', () => {
@@ -143,20 +157,16 @@ test('unavailable or structurally incomplete drafts are rejected instead of fall
     assert.equal(legalTranslationMatchesSource(source, draft), false);
   }
 
-  const originalUrdu = LEGAL_DRAFT_TRANSLATIONS.terms.ur;
-  const originalArabic = LEGAL_DRAFT_TRANSLATIONS.terms.ar;
+  const originalDrafts = Object.fromEntries(supportedLegalDraftLanguages.map(language => [language, LEGAL_DRAFT_TRANSLATIONS.terms[language]]));
   try {
-    delete LEGAL_DRAFT_TRANSLATIONS.terms.ur;
-    assert.equal(getLegalDocumentForPreference(source, 'terms', 'ur'), undefined);
-    LEGAL_DRAFT_TRANSLATIONS.terms.ur = { ...originalUrdu, sections: originalUrdu.sections.slice(0, -1) };
-    assert.equal(getLegalDocumentForPreference(source, 'terms', 'ur'), undefined);
-
-    delete LEGAL_DRAFT_TRANSLATIONS.terms.ar;
-    assert.equal(getLegalDocumentForPreference(source, 'terms', 'ar'), undefined);
-    LEGAL_DRAFT_TRANSLATIONS.terms.ar = { ...originalArabic, sections: originalArabic.sections.slice(0, -1) };
-    assert.equal(getLegalDocumentForPreference(source, 'terms', 'ar'), undefined);
+    for (const language of supportedLegalDraftLanguages) {
+      const original = originalDrafts[language];
+      delete LEGAL_DRAFT_TRANSLATIONS.terms[language];
+      assert.equal(getLegalDocumentForPreference(source, 'terms', language), undefined);
+      LEGAL_DRAFT_TRANSLATIONS.terms[language] = { ...original, sections: original.sections.slice(0, -1) };
+      assert.equal(getLegalDocumentForPreference(source, 'terms', language), undefined);
+    }
   } finally {
-    LEGAL_DRAFT_TRANSLATIONS.terms.ur = originalUrdu;
-    LEGAL_DRAFT_TRANSLATIONS.terms.ar = originalArabic;
+    for (const language of supportedLegalDraftLanguages) LEGAL_DRAFT_TRANSLATIONS.terms[language] = originalDrafts[language];
   }
 });

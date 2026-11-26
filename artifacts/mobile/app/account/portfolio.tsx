@@ -14,6 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { MOTION, MotionProgress, MotionReveal } from '@/lib/motion';
 import { PortfolioHistoryCard } from '@/components/PortfolioHistoryCard';
+import { formatAppDate } from '@/lib/strings';
 import {
   calculateExpectedProfitFromRoi,
   calculatePortfolioValueWithEstimates,
@@ -47,12 +48,12 @@ function reportedDate(value: string) {
   if (!value || value === '—') return 'Not reported';
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
-  return new Intl.DateTimeFormat('en', {
+  return formatAppDate(parsed, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
     timeZone: 'UTC',
-  }).format(parsed);
+  });
 }
 
 function InvestmentMetric({ label, value, color }: { label: string; value: string; color: string }) {

@@ -5,6 +5,10 @@ import {
   createPreferenceHydrator, createPreferenceSyncQueue, defaultPreferences, parsePreferences,
   nextNativeDirectionKey, persistPreferences, preferenceAccountId, readPreferenceSnapshot,
 } from './app-preferences.ts';
+import {
+  APP_LANGUAGE_OPTIONS, configureUiLanguage, formatAppDate, formatAppNumber,
+  hasUiTranslation, isAppLanguage, isRightToLeftLanguage, translateUi,
+} from './strings.ts';
 
 function harness(overrides = {}) {
   const events = [];
@@ -26,12 +30,43 @@ function harness(overrides = {}) {
 }
 
 test('preferences accept all supported options and migrate legacy theme/device snapshots', () => {
-  for (const language of ['en', 'ur', 'ar']) assert.equal(parsePreferences({ language }).language, language);
+  for (const language of ['en', 'ur', 'ar', 'ru', 'zh-CN', 'fr', 'es', 'de']) {
+    assert.equal(parsePreferences({ language }).language, language);
+  }
   for (const currency of ['USD', 'PKR', 'EUR', 'GBP']) assert.equal(parsePreferences({ currency }).currency, currency);
   for (const appearance of ['light', 'dark', 'system']) assert.equal(parsePreferences({ appearance }).appearance, appearance);
   assert.deepEqual(parsePreferences({ language: 'invalid', currency: 'bad', theme: 'dark' }), { appearance: 'dark' });
   assert.equal(readPreferenceSnapshot({ language: 'ur', currency: 'PKR' }).preferences.language, 'ur');
   assert.deepEqual(readPreferenceSnapshot({ pendingSync: { currency: 'GBP' } }).pending, { currency: 'GBP' });
+});
+
+test('all eight locale choices have names, correct direction, and locale-aware formats', () => {
+  assert.deepEqual(APP_LANGUAGE_OPTIONS.map(option => option.value), ['en', 'ur', 'ar', 'ru', 'zh-CN', 'fr', 'es', 'de']);
+  for (const language of APP_LANGUAGE_OPTIONS.map(option => option.value)) assert.ok(isAppLanguage(language));
+  assert.equal(isRightToLeftLanguage('ur'), true);
+  assert.equal(isRightToLeftLanguage('ar'), true);
+  for (const language of ['en', 'ru', 'zh-CN', 'fr', 'es', 'de']) assert.equal(isRightToLeftLanguage(language), false);
+
+  configureUiLanguage('fr');
+  assert.match(formatAppNumber(1234.5), /1.*234,5/);
+  assert.match(formatAppDate('2026-11-26', { month: 'long' }).toLowerCase(), /novembre/);
+  configureUiLanguage('en');
+});
+
+test('every phrase used by the app has all five additional UI translations', () => {
+  const source = readFileSync(new URL('./strings.ts', import.meta.url), 'utf8');
+  const start = source.indexOf('const phrases');
+  const end = source.indexOf('\n];', start);
+  assert.ok(start >= 0 && end > start, 'phrase catalog is readable');
+  const rows = source.slice(start, end).split('\n').slice(1).filter(line => line.trim()).map(line => JSON.parse(line.trim().replace(/,$/, '')));
+  const locales = ['ru', 'zh-CN', 'fr', 'es', 'de'];
+  assert.ok(rows.length >= 1000, 'the complete app catalog is tested');
+  for (const [phrase] of rows) {
+    for (const language of locales) {
+      assert.ok(hasUiTranslation(phrase, language), `missing ${language} translation for: ${phrase}`);
+      assert.ok(translateUi(phrase, language).trim(), `empty ${language} translation for: ${phrase}`);
+    }
+  }
 });
 
 test('appearance saves do not reapply an already handled native layout direction', () => {
