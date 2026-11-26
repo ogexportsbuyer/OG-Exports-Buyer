@@ -241,6 +241,7 @@ function RootLayoutNav() {
         <Stack.Screen name="buyer-profile-details" options={{ title: t('My profile') }} />
         <Stack.Screen name="buyer-company" options={{ title: t('Company profile') }} />
         <Stack.Screen name="buyer-security" options={{ title: t('Security & devices') }} />
+        <Stack.Screen name="buyer-activity" options={{ title: t('Trade activity') }} />
         <Stack.Screen name="buyer-notifications" options={{ headerShown: false }} />
         <Stack.Screen name="buyer-system-settings" options={{ title: t('System settings') }} />
         <Stack.Screen name="buyer-repeat-orders" options={{ title: t('Repeat orders') }} />

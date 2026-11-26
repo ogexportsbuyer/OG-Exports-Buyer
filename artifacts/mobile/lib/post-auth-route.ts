@@ -38,6 +38,7 @@ export type BuyerPostAuthHref =
   | '/(buyer-tabs)/buyer-messages'
   | '/(buyer-tabs)/buyer-profile'
   | '/buyer-notifications'
+  | '/buyer-activity'
   | '/buyer-system-settings'
   | '/buyer-profile-details'
   | '/buyer-company'
@@ -136,6 +137,7 @@ export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPos
     '/buyer-profile': '/(buyer-tabs)/buyer-profile',
     '/(buyer-tabs)/buyer-profile': '/(buyer-tabs)/buyer-profile',
     '/buyer-notifications': '/buyer-notifications',
+    '/buyer-activity': '/buyer-activity',
     '/buyer-system-settings': '/buyer-system-settings',
     '/buyer-profile-details': '/buyer-profile-details',
     '/buyer-company': '/buyer-company',
@@ -201,6 +203,7 @@ export function isBuyerAppRoute(firstSegment: string, pathname: string): boolean
     'buyer-rfq',
     'buyer-shipment',
     'buyer-notifications',
+    'buyer-activity',
     'buyer-system-settings',
     'buyer-profile-details',
     'buyer-company',

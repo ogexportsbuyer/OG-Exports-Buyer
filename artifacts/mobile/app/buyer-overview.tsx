@@ -516,11 +516,11 @@ function BuyerOverviewContent() {
 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9, marginTop: 6 }}>
             <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800' }}>Trade activity</Text>
-            <Pressable accessibilityRole="button" onPress={() => router.push('/buyer-orders')}>
-              <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '800' }}>View orders</Text>
+            <Pressable testID="buyer-dashboard-activity-view-all" accessibilityRole="button" accessibilityLabel="View all trade activity" onPress={() => router.push('/buyer-activity')}>
+              <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '800' }}>View all</Text>
             </Pressable>
           </View>
-          {activity.length ? activity.slice(0, 8).map((item, index) => {
+          {activity.length ? activity.slice(0, 4).map((item, index) => {
             const type = first(item, ['type'], 'order');
             const icon = type === 'rfq' ? 'file-plus' : type.includes('quotation') ? 'file-text' : type === 'shipment' ? 'truck' : type === 'document' ? 'folder' : 'shopping-bag';
             return (

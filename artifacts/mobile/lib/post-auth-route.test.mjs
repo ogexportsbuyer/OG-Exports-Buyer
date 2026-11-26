@@ -61,6 +61,8 @@ test('serializes legacy transaction route query details for post-auth navigation
 test('returns buyer sign-in to the requested marketplace destination', () => {
   assert.equal(resolveBuyerPostAuthHref('/buyer-cart'), '/buyer-cart');
   assert.equal(resolveBuyerPostAuthHref('/buyer-orders'), '/buyer-orders');
+  assert.equal(resolveBuyerPostAuthHref('/buyer-activity'), '/buyer-activity');
+  assert.equal(isBuyerAppRoute('buyer-activity', '/buyer-activity'), true);
   assert.deepEqual(resolveBuyerPostAuthHref('/buyer-orders?view=quotations'), {
     pathname: '/buyer-orders',
     params: { view: 'quotations' },
