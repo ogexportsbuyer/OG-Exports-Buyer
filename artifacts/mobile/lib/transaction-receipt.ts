@@ -230,7 +230,7 @@ export function transactionReceiptHtml(receipt: TransactionReceipt): string {
   <style>
     main{padding:0}
     .receipt-summary{width:100%;margin:0 0 16px;border-collapse:separate;border-spacing:8px 0}
-    .receipt-summary td{width:50%;padding:12px;border:1px solid #d9e5df;border-left:3px solid #B08D57;border-radius:8px;background:#F5F8F5}
+     .receipt-summary td{width:50%;padding:12px;border:1px solid #d9e5df;border-left:3px solid #F0B43D;border-radius:8px;background:#F5F8F5}
     .receipt-summary-label{display:block;margin-bottom:4px;color:#6a7a73;font-size:8px;font-weight:800;letter-spacing:.8px;text-transform:uppercase}
     .receipt-summary-value{display:block;color:#0A3637;font-size:15px;font-weight:800}
     .receipt-status-value{display:block;color:#0A5147;font-size:11px;font-weight:800;text-transform:capitalize}

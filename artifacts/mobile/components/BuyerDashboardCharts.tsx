@@ -40,7 +40,7 @@ export function BuyerSpendTrendCard({ points, currency, yearOverYear }: {
               const isLatest = index === series.length - 1;
               return (
                 <View key={`${point.month}-${index}`} style={{ flex: 1, height: '100%', justifyContent: 'flex-end', alignItems: 'center' }}>
-                  <View style={{ width: '72%', height, minHeight: 5, borderTopLeftRadius: 5, borderTopRightRadius: 5, backgroundColor: isLatest ? colors.accent : colors.primary, opacity: point.value > 0 ? 1 : 0.25 }} />
+                  <View style={{ width: '72%', height, minHeight: 5, borderTopLeftRadius: 5, borderTopRightRadius: 5, backgroundColor: isLatest ? colors.accentSurface : colors.primary, opacity: point.value > 0 ? 1 : 0.25 }} />
                 </View>
               );
             })}

@@ -90,7 +90,7 @@ export function BuyerRfqPicker({
             borderColor: colors.border,
           }}>
             <View style={{ alignItems: 'center', paddingBottom: 12 }}>
-              <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.accent }} />
+              <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.accentSurface }} />
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingBottom: 14 }}>
               <View style={{ flex: 1 }}>

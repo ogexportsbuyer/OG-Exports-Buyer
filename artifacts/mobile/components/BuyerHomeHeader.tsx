@@ -28,7 +28,7 @@ const brandSlides = [
     icon: 'globe' as const,
     backgroundColors: ['#07363A', '#0F6260'] as const,
     iconColors: ['#2A716C', '#0A3335'] as const,
-    accent: '#B08D57',
+    accent: '#F0B43D',
   },
   {
     id: 'catalogue',
@@ -38,7 +38,7 @@ const brandSlides = [
     icon: 'award' as const,
     backgroundColors: ['#0C4A35', '#1E8354'] as const,
     iconColors: ['#3C8A5C', '#0A3928'] as const,
-    accent: '#B08D57',
+    accent: '#F0B43D',
   },
   {
     id: 'supply',
@@ -48,7 +48,7 @@ const brandSlides = [
     icon: 'truck' as const,
     backgroundColors: ['#193F33', '#47735B'] as const,
     iconColors: ['#568B66', '#143C30'] as const,
-    accent: '#B08D57',
+    accent: '#F0B43D',
   },
   {
     id: 'trust',
@@ -58,7 +58,7 @@ const brandSlides = [
     icon: 'shield' as const,
     backgroundColors: ['#1D4033', '#4F7653'] as const,
     iconColors: ['#6A8962', '#1E3A32'] as const,
-    accent: '#B08D57',
+    accent: '#F0B43D',
   },
   {
     id: 'partnerships',
@@ -68,7 +68,7 @@ const brandSlides = [
     icon: 'users' as const,
     backgroundColors: ['#3B4025', '#6A7137'] as const,
     iconColors: ['#7C8150', '#343B25'] as const,
-    accent: '#B08D57',
+    accent: '#F0B43D',
   },
   {
     id: 'sgs-quality',
@@ -78,7 +78,7 @@ const brandSlides = [
     icon: 'file-text' as const,
     backgroundColors: ['#153C34', '#39725E'] as const,
     iconColors: ['#4F816B', '#13352D'] as const,
-    accent: '#B08D57',
+    accent: '#F0B43D',
   },
   {
     id: 'food-safety',
@@ -88,7 +88,7 @@ const brandSlides = [
     icon: 'check-circle' as const,
     backgroundColors: ['#214438', '#567557'] as const,
     iconColors: ['#6A8A64', '#1A382F'] as const,
-    accent: '#B08D57',
+    accent: '#F0B43D',
   },
   {
     id: 'halal-assurance',
@@ -98,7 +98,7 @@ const brandSlides = [
     icon: 'shield' as const,
     backgroundColors: ['#41472A', '#747D46'] as const,
     iconColors: ['#858B59', '#343A25'] as const,
-    accent: '#B08D57',
+    accent: '#F0B43D',
   },
 ] as const;
 
@@ -561,7 +561,7 @@ export default function BuyerHomeHeader({
                     paddingHorizontal: 3,
                     borderWidth: 1,
                     borderColor: colors.card,
-                    backgroundColor: colors.accent,
+                    backgroundColor: colors.accentSurface,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
@@ -599,7 +599,7 @@ export default function BuyerHomeHeader({
                     paddingHorizontal: 3,
                     borderWidth: 1,
                     borderColor: colors.card,
-                    backgroundColor: colors.accent,
+                    backgroundColor: colors.accentSurface,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
@@ -659,7 +659,7 @@ export default function BuyerHomeHeader({
             accessibilityRole="button"
             accessibilityLabel="Search catalogue"
             onPress={() => onBrowse(search)}
-            style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.accent, opacity: pressed ? 0.82 : 1 }]}
+            style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.accentSurface, opacity: pressed ? 0.82 : 1 }]}
           >
             <Feather name="search" size={19} color={colors.primary} />
           </Pressable>
@@ -791,7 +791,7 @@ export default function BuyerHomeHeader({
             onPress={() => showSlide(index)}
             style={[styles.dot, {
               width: activeDotIndex === index ? 20 : 6,
-              backgroundColor: activeDotIndex === index ? colors.accent : colors.border,
+              backgroundColor: activeDotIndex === index ? colors.accentSurface : colors.border,
             }]}
           />
         ))}

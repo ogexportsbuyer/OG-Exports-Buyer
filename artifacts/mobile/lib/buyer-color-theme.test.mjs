@@ -19,26 +19,27 @@ function contrastRatio(foreground, background) {
     / (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
 }
 
-test('buyer foreground accents use muted gold while original backgrounds remain unchanged', () => {
-  assert.equal(palette.light.accent, '#B08D57');
-  assert.equal(palette.dark.accent, '#B08D57');
-  assert.equal(palette.light.stageFunding, '#B08D57');
-  assert.equal(palette.dark.stageFunding, '#B08D57');
-  assert.equal(palette.light.allocationProfits, '#B08D57');
-  assert.equal(palette.dark.allocationProfits, '#B08D57');
-  assert.equal(palette.light.glassTintGold, 'rgba(247, 235, 210, 0.72)');
-  assert.equal(palette.dark.glassTintGold, 'rgba(56, 52, 42, 0.42)');
-  assert.equal(palette.light.canvasWashGold, 'rgba(214, 184, 124, 0.28)');
-  assert.equal(palette.dark.canvasWashGold, 'rgba(208, 180, 122, 0.12)');
+test('mobile accent and card surfaces use the new premium gold palette', () => {
+  assert.equal(palette.light.accent, '#825D18');
+  assert.equal(palette.dark.accent, '#E4B548');
+  assert.equal(palette.light.accentSurface, '#F0B43D');
+  assert.equal(palette.dark.accentSurface, '#F0B43D');
+  assert.equal(palette.light.stageFunding, palette.light.accent);
+  assert.equal(palette.dark.stageFunding, palette.dark.accent);
+  assert.equal(palette.light.allocationProfits, palette.light.accent);
+  assert.equal(palette.dark.allocationProfits, palette.dark.accent);
+  assert.equal(palette.light.glassFill, 'rgba(255, 249, 234, 0.74)');
+  assert.equal(palette.light.glassTintGold, 'rgba(249, 224, 173, 0.78)');
+  assert.equal(palette.dark.glassTintGold, 'rgba(104, 78, 32, 0.30)');
+  assert.equal(palette.light.canvasWashGold, 'rgba(231, 181, 75, 0.22)');
+  assert.equal(palette.dark.canvasWashGold, 'rgba(220, 174, 83, 0.10)');
   assert.equal(palette.light.statusPendingBackground, '#F3EFE4');
   assert.equal(palette.dark.statusPendingBackground, '#38342A');
 });
 
 test('gold accent labels maintain readable contrast in both appearances', () => {
-  for (const appearance of ['light', 'dark']) {
-    assert.ok(
-      contrastRatio(palette[appearance].accentForeground, palette[appearance].accent) >= 4.5,
-      `${appearance} gold accent should meet WCAG AA for normal text`,
-    );
-  }
+  assert.ok(contrastRatio(palette.light.accent, palette.light.background) >= 4.5, 'light gold labels remain readable on the app surface');
+  assert.ok(contrastRatio(palette.dark.accent, palette.dark.background) >= 4.5, 'dark gold labels remain readable on the app surface');
+  assert.ok(contrastRatio(palette.light.accentForeground, palette.light.accentSurface) >= 4.5, 'light gold fills keep dark readable labels');
+  assert.ok(contrastRatio(palette.dark.accentForeground, palette.dark.accentSurface) >= 4.5, 'dark gold fills keep dark readable labels');
 });

@@ -199,7 +199,7 @@ export default function BuyerNotifications() {
                   {createdAt ? <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 8 }}>{createdAt}</Text> : null}
                 </View>
                 <View style={{ alignItems: 'center', gap: 6, marginTop: 2 }}>
-                  {unread ? <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: colors.accent }} /> : null}
+                  {unread ? <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: colors.accentSurface }} /> : null}
                   <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
                 </View>
               </View>

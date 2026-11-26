@@ -451,7 +451,7 @@ function BuyerOverviewContent() {
             ) : (
               <>
                 <View style={{ height: 7, borderRadius: 5, overflow: 'hidden', backgroundColor: colors.secondary, marginTop: 13 }}>
-                  <View style={{ height: '100%', width: `${Math.min(100, Math.max(0, trustScore) / 10)}%`, backgroundColor: colors.accent }} />
+                  <View style={{ height: '100%', width: `${Math.min(100, Math.max(0, trustScore) / 10)}%`, backgroundColor: colors.accentSurface }} />
                 </View>
                 <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 7 }}>Based on the trust score provided for your buyer account.</Text>
               </>

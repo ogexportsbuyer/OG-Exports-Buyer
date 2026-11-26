@@ -152,7 +152,7 @@ export default function Wallet() {
         <Text style={{ color: colors.balanceCardText, fontSize: 11, fontWeight: '700', letterSpacing: 1.15 }}>OG EXPORTS WALLET</Text>
         <Feather name="credit-card" size={20} color={colors.accent} />
       </View>
-      <View style={{ height: 1, width: 34, backgroundColor: colors.accent, opacity: 0.8, marginTop: 25 }} />
+      <View style={{ height: 1, width: 34, backgroundColor: colors.accentSurface, opacity: 0.8, marginTop: 25 }} />
       {usdWalletReady || dashboard.isLoading || dashboard.isError || walletCurrencyLoading ? <>
         <Text style={{ color: colors.balanceCardText, fontSize: 11, fontWeight: '600', letterSpacing: 0.8, marginTop: 13, opacity: 0.9 }}>AVAILABLE BALANCE</Text>
         <MotionReveal key={balanceLabel(available, currency, dashboard.isLoading, dashboard.isError)}>

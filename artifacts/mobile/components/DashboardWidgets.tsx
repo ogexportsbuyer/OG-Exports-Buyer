@@ -196,7 +196,7 @@ export function PortfolioBenchmarkCard({ points, available, loading, hideValues 
         <Text style={{ color: colors.mutedForeground, fontSize: 10 }}>My Portfolio</Text>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <View style={{ width: 12, height: 3, borderRadius: 2, backgroundColor: colors.accent }} />
+        <View style={{ width: 12, height: 3, borderRadius: 2, backgroundColor: colors.accentSurface }} />
         <Text style={{ color: colors.mutedForeground, fontSize: 10 }}>Market Avg</Text>
       </View>
     </View>

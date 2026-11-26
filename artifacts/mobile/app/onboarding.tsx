@@ -103,7 +103,7 @@ function TravelingMarker({ kind, progress, width, height }: {
         width: diameter,
         height: diameter,
         borderRadius: diameter / 2,
-        backgroundColor: colors.accent,
+        backgroundColor: colors.accentSurface,
         pointerEvents: 'none',
         transform: [{ translateX }, { translateY }],
       }}

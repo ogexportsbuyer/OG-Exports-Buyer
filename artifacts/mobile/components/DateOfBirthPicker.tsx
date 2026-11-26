@@ -227,7 +227,7 @@ export function DateOfBirthPicker({
           elevation: 16,
         }}>
           <View style={{ alignItems: 'center', paddingBottom: 12 }}>
-            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.accent }} />
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.accentSurface }} />
           </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 14 }}>

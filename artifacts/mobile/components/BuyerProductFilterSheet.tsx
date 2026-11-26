@@ -404,7 +404,7 @@ export function BuyerProductFilterSheet({ visible, products, apiCategories, sear
           }}
         >
           <View style={{ alignItems: 'center', paddingBottom: 10 }}>
-            <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: colors.accent }} />
+            <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: colors.accentSurface }} />
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingBottom: 12 }}>
             <View style={{ flex: 1 }}>

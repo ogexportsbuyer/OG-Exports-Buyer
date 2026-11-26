@@ -129,7 +129,7 @@ export function BuyerDeliveryDatePicker({
             }}
           >
             <View style={{ alignItems: 'center', paddingBottom: 14 }}>
-              <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.accent }} />
+              <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.accentSurface }} />
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 20 }}>
               <View style={{ flex: 1 }}>

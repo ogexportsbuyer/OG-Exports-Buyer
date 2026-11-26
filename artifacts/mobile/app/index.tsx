@@ -113,7 +113,7 @@ export default function Entry() {
           >
             OG EXPORTS
           </Animated.Text>
-          <View style={[styles.rule, { backgroundColor: colors.accent }]} />
+          <View style={[styles.rule, { backgroundColor: colors.accentSurface }]} />
           <Animated.Text
             allowFontScaling={false}
             adjustsFontSizeToFit
@@ -131,7 +131,7 @@ export default function Entry() {
           accessibilityLabel={translateUi('Loading OG Exports', getUiLanguage())}
           style={[styles.track, { width: barWidth, backgroundColor: colors.splashTrack }]}
         >
-          <Animated.View style={[styles.fill, { width: barWidth, backgroundColor: colors.accent, transform: [{ translateX: -barWidth / 2 }, { scaleX: barScale }, { translateX: barWidth / 2 }] }]} />
+          <Animated.View style={[styles.fill, { width: barWidth, backgroundColor: colors.accentSurface, transform: [{ translateX: -barWidth / 2 }, { scaleX: barScale }, { translateX: barWidth / 2 }] }]} />
         </View>
         <Animated.Text
           adjustsFontSizeToFit

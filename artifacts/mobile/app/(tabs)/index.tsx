@@ -383,7 +383,7 @@ export default function InvestorHome() {
                 <Feather name="bell" size={17} color={colors.balanceCardText} />
                 {unreadNotificationCount > 0 ? <View
                   testID="home-notification-count"
-                  style={{ position: 'absolute', top: -3, right: -3, minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 3, borderWidth: 1, borderColor: colors.balanceCardStart, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' }}
+                  style={{ position: 'absolute', top: -3, right: -3, minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 3, borderWidth: 1, borderColor: colors.balanceCardStart, backgroundColor: colors.accentSurface, alignItems: 'center', justifyContent: 'center' }}
                 >
                   <Text numberOfLines={1} style={{ color: colors.accentForeground, fontSize: 8, lineHeight: 11, fontWeight: '700' }}>
                     {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
@@ -400,7 +400,7 @@ export default function InvestorHome() {
 
        <Pressable testID="home-account-selector" accessibilityRole="button" accessibilityLabel="Open investor account menu" onPress={() => setAccountMenuOpen(true)}
          style={({ pressed }) => ({ position: 'relative', zIndex: 1, alignSelf: 'center', minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 19, paddingHorizontal: 13, borderWidth: 1, borderColor: 'rgba(248, 251, 248, 0.2)', borderRadius: 999, backgroundColor: 'rgba(248, 251, 248, 0.11)', opacity: pressed ? 0.82 : 1 })}>
-         <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent }} />
+         <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accentSurface }} />
          <Text style={{ color: colors.balanceCardText, fontSize: 11, fontWeight: '700' }}>Investor account</Text>
          <Feather name="chevron-down" size={14} color={colors.balanceCardText} />
        </Pressable>

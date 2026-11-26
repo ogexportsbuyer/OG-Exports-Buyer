@@ -189,7 +189,7 @@ export default function BuyerProfile() {
     <Screen title="Profile" subtitle="Your OG Exports buyer account">
       <Card testID="buyer-profile-identity-card" style={{ padding: 0, marginBottom: 18, backgroundColor: colors.balanceCardStart }}>
         <View pointerEvents="none" style={[profileCardStyles.surfaceGlow, { backgroundColor: colors.balanceCardEnd }]} />
-        <View style={[profileCardStyles.accent, { backgroundColor: colors.accent }]} />
+        <View style={[profileCardStyles.accent, { backgroundColor: colors.accentSurface }]} />
         <View style={profileCardStyles.content}>
           <View style={profileCardStyles.brandLockup}>
             <BrandMark width={42} onBackground="dark" />

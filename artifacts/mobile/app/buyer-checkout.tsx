@@ -699,7 +699,7 @@ export default function BuyerCheckout() {
                     >
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
                         <View style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, borderColor: selected ? colors.accent : colors.mutedForeground, alignItems: 'center', justifyContent: 'center' }}>
-                          {selected ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent }} /> : null}
+                          {selected ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accentSurface }} /> : null}
                         </View>
                         <Text style={{ color: colors.foreground, flex: 1, fontSize: 12, fontWeight: '800' }}>{first(method, ['label'], code)}</Text>
                         {first(method, ['badge']) ? <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '800' }}>{first(method, ['badge'])}</Text> : null}
@@ -751,7 +751,7 @@ export default function BuyerCheckout() {
                     >
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
                         <View style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, borderColor: selected ? colors.accent : colors.mutedForeground, alignItems: 'center', justifyContent: 'center' }}>
-                          {selected ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent }} /> : null}
+                          {selected ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accentSurface }} /> : null}
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '800' }}>{first(account, ['bank_name', 'bankName'], 'OG Exports')}</Text>
