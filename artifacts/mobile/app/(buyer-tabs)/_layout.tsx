@@ -77,8 +77,8 @@ function NativeLayout() {
   const t = (value: string) => translateUi(value, preferences.language);
   return (
     <NativeTabs
-      tintColor={colors.accent}
-      iconColor={{ default: colors.mutedForeground, selected: colors.accent }}
+      tintColor={colors.navigationAccent}
+      iconColor={{ default: colors.mutedForeground, selected: colors.navigationAccent }}
       labelStyle={{ default: { color: colors.mutedForeground }, selected: { color: colors.accent, fontWeight: '600' } }}
       backgroundColor={colors.card}
       hidden={!visible || hideForBuyerMessages}

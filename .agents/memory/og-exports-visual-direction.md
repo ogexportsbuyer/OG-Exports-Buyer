@@ -9,7 +9,7 @@ Use premium glass-style cards throughout the mobile app, over soft branded colou
 
 **Why:** The user asked to make all app cards glassy and update backgrounds with branded colours for a full premium look.
 
-**How to apply:** Carry the treatment through shared and custom surfaces, authentication and detail screens, while preserving readable balances, distinct financial/status colours, the exact splash-teal primary buttons and smooth native scrolling. Use the existing cross-platform glass fallback constraints rather than requiring unsupported blur.
+**How to apply:** Carry the treatment through shared and custom surfaces, authentication and detail screens. Use the brighter reference gold for selected buyer-tab icons, while keeping text and labels contrast-safe; preserve readable balances, distinct financial/status colours, the exact splash-teal primary buttons and smooth native scrolling. Use the existing cross-platform glass fallback constraints rather than requiring unsupported blur.
 
 **Why:** The user supplied a new OG Exports splash reference and explicitly asked to replace the mobile app's green colour with its colour.
 
