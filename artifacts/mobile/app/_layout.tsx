@@ -39,6 +39,7 @@ import { homeRouteForAccount, hasBuyerAccount } from '@/lib/account-role';
 import { isBuyerAppRoute, isBuyerRoutePublicBeforeAuth } from '@/lib/post-auth-route';
 import { BuyerSessionHandoff } from '@/components/BuyerSessionHandoff';
 import { BrandedAlertProvider } from '@/components/BrandedAlertProvider';
+import { BrandHeaderBackground } from '@/components/BrandHeaderBackground';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -208,6 +209,8 @@ function RootLayoutNav() {
         headerBackTitle: t('Back'),
         headerTintColor: colors.primary,
         headerStyle: { backgroundColor: colors.background },
+        headerBackground: () => <BrandHeaderBackground />,
+        headerShadowVisible: false,
         headerTitleStyle: { color: colors.foreground },
         headerLeft: safeBackButton('/(buyer-tabs)/buyer-home', 'stack-header-back'),
         contentStyle: { backgroundColor: colors.background, direction: isRTL ? 'rtl' : 'ltr' },
