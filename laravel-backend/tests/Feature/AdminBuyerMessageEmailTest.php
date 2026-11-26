@@ -3,6 +3,7 @@
 use App\Models\AppNotification;
 use App\Models\Conversation;
 use App\Models\EmailTemplate;
+use App\Models\Message;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -93,6 +94,21 @@ it('emails a buyer when an admin sends a direct message while preserving in-app 
 
     expect($buyerEmailSent)->toBeTrue()
         ->and($investorEmailSent)->toBeFalse();
+});
+
+it('loads admin conversation previews when a buyer has sent a message', function () {
+    Message::query()->create([
+        'conversation_id' => $this->conversation->id,
+        'sender_id' => $this->buyer->id,
+        'body' => 'Please share the shipment update.',
+    ]);
+
+    $this->actingAs($this->admin)
+        ->getJson('/api/admin/conversations')
+        ->assertOk()
+        ->assertJsonPath('data.0.id', $this->conversation->id)
+        ->assertJsonPath('data.0.last_message.body', 'Please share the shipment update.')
+        ->assertJsonPath('data.0.last_message.sender_id', $this->buyer->id);
 });
 
 it('emails buyers about admin attachments without exposing a private file link', function () {

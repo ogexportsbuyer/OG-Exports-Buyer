@@ -63,7 +63,7 @@ class MessageController extends Controller
             }
         }
 
-        $items = $users->map(function (User $user) use ($byUserId) {
+        $items = $users->map(function (User $user) use ($byUserId, $admin) {
             $c = $byUserId[$user->id] ?? null;
             $last = $c?->messages->first();
             $unreadCount = (int) ($c?->unread_count ?? 0);
