@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text } from '@/components/LocalizedText';
+import { BuyerProductPrice } from '@/components/BuyerProductPrice';
 import { Action, Card, EmptyState, ErrorState, LoadingCard, Screen } from '@/components/InvestorUI';
 import { useAuth } from '@/context/AuthContext';
 import { useBuyerGuestFlow } from '@/context/BuyerGuestFlowContext';
@@ -171,6 +172,10 @@ export default function BuyerCartScreen() {
     const unitPrice = amount(item, ['unit_price']) ?? 0;
     return sum + quantity * unitPrice;
   }, 0);
+  const discountTotal = items.reduce((sum, item) => {
+    const quantity = amount(item, ['qty']) ?? 0;
+    return sum + quantity * (amount(item, ['discount_amount_per_unit']) ?? 0);
+  }, 0);
   const mutationPending = updateItem.isPending || removeItem.isPending || clearingAll || guestFlow.isMergingCart;
 
   async function changeQuantity(item: ReturnType<typeof record>, requestedQuantity: number): Promise<boolean> {
@@ -309,9 +314,9 @@ export default function BuyerCartScreen() {
                   {first(product, ['origin'], 'Origin not specified')}
                   {first(product, ['sku']) ? ` · ${first(product, ['sku'])}` : ''}
                 </Text>
-                <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700', marginTop: 7 }}>
-                  {unitPrice > 0 ? `${formatFobPrice(unitPrice, cartCurrency)} per unit` : 'Price confirmed by OG Exports'}
-                </Text>
+                <View style={{ marginTop: 7 }}>
+                  <BuyerProductPrice product={item} compact />
+                </View>
               </View>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border }}>
@@ -386,6 +391,12 @@ export default function BuyerCartScreen() {
               <Text style={{ color: colors.mutedForeground }}>Estimated subtotal</Text>
               <Text style={{ color: colors.foreground, fontWeight: '700' }}>{total > 0 ? formatFobPrice(total, cartCurrency) : 'Final price by quotation'}</Text>
             </View>
+            {discountTotal > 0 ? (
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -6, marginBottom: 12 }}>
+                <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>Product discounts saved</Text>
+                <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '800' }}>−{formatFobPrice(discountTotal, cartCurrency)}</Text>
+              </View>
+            ) : null}
             {items.some(item => (amount(item, ['unit_price']) ?? 0) <= 0) ? (
               <Text style={{ color: colors.accent, fontSize: 11, fontWeight: '600', marginBottom: 10 }}>
                 Some items need a confirmed quotation.

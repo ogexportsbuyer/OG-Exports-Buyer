@@ -2,6 +2,7 @@
 
 use App\Models\KycApplication;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\User;
 use App\Models\UserProfile;
 use Database\Seeders\RoleSeeder;
@@ -99,6 +100,62 @@ it('returns dashboard metrics and recent activity for a buyer with orders', func
         ->assertJsonPath('data.kpis.orders', 1)
         ->assertJsonPath('data.recent_activity.0.title', 'Order Confirmed')
         ->assertJsonPath('data.recent_activity.0.desc', fn ($description) => str_contains($description, 'ORD-BUYER-DASHBOARD-1'));
+});
+
+it('summarizes purchases, completed and processing trades, and recorded discounts in USD', function () {
+    $completed = Order::query()->create([
+        'order_number' => 'ORD-BUYER-DASH-COMPLETE',
+        'buyer_id' => $this->buyer->id,
+        'status' => 'delivered',
+        'payment_status' => 'paid',
+        'total_value' => 200,
+        'currency' => 'USD',
+        'total_value_usd' => 200,
+        'placed_at' => now()->subDays(2),
+    ]);
+    $processing = Order::query()->create([
+        'order_number' => 'ORD-BUYER-DASH-PROCESS',
+        'buyer_id' => $this->buyer->id,
+        'status' => 'in_transit',
+        'payment_status' => 'paid',
+        'total_value' => 300,
+        'currency' => 'USD',
+        'total_value_usd' => 300,
+        'placed_at' => now()->subDay(),
+    ]);
+    $cancelled = Order::query()->create([
+        'order_number' => 'ORD-BUYER-DASH-CANCEL',
+        'buyer_id' => $this->buyer->id,
+        'status' => 'canceled',
+        'payment_status' => 'unpaid',
+        'total_value' => 999,
+        'currency' => 'USD',
+        'total_value_usd' => 999,
+        'placed_at' => now(),
+    ]);
+
+    foreach ([[$completed, 5, 2], [$processing, 2, 3], [$cancelled, 80, 1]] as [$order, $discount, $quantity]) {
+        OrderItem::query()->create([
+            'order_id' => $order->id,
+            'product_name' => 'Trade item',
+            'qty' => $quantity,
+            'unit_price' => 100,
+            'list_unit_price' => 100 + $discount,
+            'discount_percentage' => 5,
+            'discount_amount' => $discount,
+            'unit_of_measure' => 'kg',
+            'line_total' => 100 * $quantity,
+        ]);
+    }
+
+    $this->actingAs($this->buyer)
+        ->getJson('/api/buyer/dashboard')
+        ->assertOk()
+        ->assertJsonPath('data.trade_value_summary.currency', 'USD')
+        ->assertJsonPath('data.trade_value_summary.total_purchase_value_usd', 500)
+        ->assertJsonPath('data.trade_value_summary.completed_trade_value_usd', 200)
+        ->assertJsonPath('data.trade_value_summary.processing_trade_value_usd', 300)
+        ->assertJsonPath('data.trade_value_summary.discount_savings_usd', 16);
 });
 
 it('marks company registration done on profile checklist when approved kyc has registration document', function () {

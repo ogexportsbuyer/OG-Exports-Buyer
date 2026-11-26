@@ -31,6 +31,7 @@ const STATUS_MAP: Record<string, { bg: string; color: string; label: string }> =
 
 const ORIGINS = ["Punjab, PK", "Sindh, PK", "KPK, PK", "Balochistan, PK", "Gilgit, PK"]
 const INCOTERMS_LIST = ["FOB", "CIF", "CFR", "DAP", "EXW"]
+const PRODUCT_UNITS = ["MT", "kg", "g", "L", "mL", "m²", "m³", "piece", "bag", "box", "letter", "dozen"]
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function Toast({ msg, type = "success", onClose }: { msg: string; type?: "success" | "error"; onClose: () => void }) {
@@ -125,6 +126,8 @@ const defaultForm = (p?: AdminProduct, categories: AdminCategory[] = []) => ({
   sku: p?.sku ?? "",
   price: p?.price ?? "",
   fob: p?.fob ?? "",
+  unitOfMeasure: p?.unitOfMeasure ?? "MT",
+  discountPercentage: String(p?.discountPercentage ?? 0),
   incoterms: p?.incoterms ?? "FOB",
   minOrder: p?.minOrder ?? "",
   origin: p?.origin ?? ORIGINS[0],
@@ -158,7 +161,8 @@ const defaultForm = (p?: AdminProduct, categories: AdminCategory[] = []) => ({
 
 type ProductFormState = ReturnType<typeof defaultForm>
 
-type SavePayload = ProductFormState & {
+type SavePayload = Omit<ProductFormState, "discountPercentage"> & {
+  discountPercentage: number
   imagePath: string
   galleryPaths: string[]
   categoryId: number | null
@@ -270,6 +274,7 @@ function ProductModal({
 
       await onSave({
         ...form,
+        discountPercentage: parsedDiscount,
         imagePath,
         imageUrl: resolveMediaUrl(imagePath),
         galleryPaths,
@@ -286,6 +291,11 @@ function ProductModal({
   }
 
   const primaryDisplay = primaryPreview || (existingPrimary ? resolveMediaUrl(existingPrimary) : "")
+  const parsedFob = Number(String(form.fob).replace(/[^0-9.-]/g, ""))
+  const parsedDiscount = Math.max(0, Math.min(99.99, Number(form.discountPercentage) || 0))
+  const discountedFobPreview = Number.isFinite(parsedFob) && parsedFob > 0
+    ? parsedFob * (1 - parsedDiscount / 100)
+    : null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={saving ? undefined : onClose}>
@@ -511,7 +521,49 @@ function ProductModal({
                 <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1">FOB Rate</label>
                 <input value={form.fob} onChange={e => set("fob", e.target.value)}
                   className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary bg-white"
-                  placeholder="e.g. $1,100/MT" />
+                  placeholder="e.g. $1,100" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1">Price unit *</label>
+                <select
+                  value={PRODUCT_UNITS.includes(form.unitOfMeasure) ? form.unitOfMeasure : "custom"}
+                  onChange={e => set("unitOfMeasure", e.target.value === "custom" ? "" : e.target.value)}
+                  className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none bg-white"
+                >
+                  {PRODUCT_UNITS.map(unit => <option key={unit} value={unit}>Per {unit}</option>)}
+                  <option value="custom">Custom measurement…</option>
+                </select>
+                {!PRODUCT_UNITS.includes(form.unitOfMeasure) ? (
+                  <input
+                    required
+                    maxLength={32}
+                    value={form.unitOfMeasure}
+                    onChange={e => set("unitOfMeasure", e.target.value)}
+                    className="w-full border border-border rounded-lg px-3 py-2 text-sm mt-2 focus:outline-none focus:border-primary bg-white"
+                    placeholder="Enter unit, e.g. carton"
+                  />
+                ) : null}
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1">Discount percentage</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="99.99"
+                    step="0.01"
+                    value={form.discountPercentage}
+                    onChange={e => set("discountPercentage", e.target.value)}
+                    className="w-full border border-border rounded-lg px-3 py-2 pr-9 text-sm focus:outline-none focus:border-primary bg-white"
+                    placeholder="0"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
+                </div>
+                {discountedFobPreview !== null ? (
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Buyer price: ${discountedFobPreview.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / {form.unitOfMeasure || "unit"}
+                  </p>
+                ) : null}
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1">Default Incoterm</label>
@@ -858,7 +910,8 @@ export default function AdminProducts() {
                         </td>
                         <td className="px-3 py-3">
                           {p.fob ? (
-                            <span className="text-[12px] font-bold" style={{ color: GOLD }}>{p.fob}</span>
+                            <span className="text-[12px] font-bold" style={{ color: GOLD }}>{p.fob} / {p.unitOfMeasure || "MT"}</span>
+                            {p.discountPercentage ? <span className="ml-2 text-[10px] font-bold text-emerald-700">{p.discountPercentage}% OFF</span> : null}
                           ) : (
                             <span className="text-[11px] text-muted-foreground italic">Not set — click Edit</span>
                           )}
@@ -918,7 +971,7 @@ export default function AdminProducts() {
                           <td className="px-3 py-3 text-[11px] text-muted-foreground">{p.category}</td>
                           <td className="px-3 py-3 text-[10px] font-mono text-muted-foreground">{p.sku}</td>
                           <td className="px-3 py-3">
-                            {p.fob ? <span className="text-[11px] font-bold" style={{ color: GOLD }}>{p.fob}</span>
+                            {p.fob ? <span className="text-[11px] font-bold" style={{ color: GOLD }}>{p.fob} / {p.unitOfMeasure || "MT"}{p.discountPercentage ? ` · ${p.discountPercentage}% OFF` : ""}</span>
                               : <span className="text-[10px] text-muted-foreground">—</span>}
                           </td>
                           <td className="px-3 py-3 text-[11px] text-muted-foreground">{p.minOrder}</td>

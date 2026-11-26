@@ -101,7 +101,9 @@ function BuyerOverviewContent() {
   const updateProfile = useUpdateInvestorMe();
   const dashboard = record(unwrapBuyerDashboardResponse(query.data));
   const kpis = record(dashboard.kpis);
+  const tradeValueSummary = record(dashboard.trade_value_summary);
   const currencyCode = first(dashboard, ['display_currency'], 'USD');
+  const tradeCurrency = first(tradeValueSummary, ['currency'], 'USD');
   const displayName = first(record(user), ['name', 'display_name'], 'Valued Buyer');
   const userProfile = record(record(user).profile);
   const avatarPath = first(record(user), ['avatar_url'], first(userProfile, ['avatar_url']));
@@ -110,7 +112,10 @@ function BuyerOverviewContent() {
       ? avatarPath
       : `${apiOrigin.replace(/\/+$/, '')}/${avatarPath.replace(/^\/+/, '')}`
     : '';
-  const spendTotal = amount(kpis, ['spend_total']);
+  const totalPurchaseValue = amount(tradeValueSummary, ['total_purchase_value_usd']);
+  const completedTradeValue = amount(tradeValueSummary, ['completed_trade_value_usd']);
+  const processingTradeValue = amount(tradeValueSummary, ['processing_trade_value_usd']);
+  const discountSavings = amount(tradeValueSummary, ['discount_savings_usd']);
   const orderStatuses = list(dashboard.orders_by_status);
   const upcoming = list(dashboard.upcoming_shipments);
   const activity = list(dashboard.recent_activity);
@@ -136,12 +141,39 @@ function BuyerOverviewContent() {
     },
     {
       label: 'Purchase value',
-      value: spendTotal === null ? '—' : money(spendTotal, currencyCode, { preserveSource: true }),
-      detail: first(kpis, ['spend_change']),
-      trend: first(kpis, ['spend_trend']),
+      value: totalPurchaseValue === null ? '—' : money(totalPurchaseValue, tradeCurrency, { preserveSource: true }),
+      detail: 'All non-cancelled orders',
+      trend: '',
       up: kpis.spend_trend_up !== false,
       icon: 'dollar-sign' as const,
       tone: colors.accent,
+    },
+    {
+      label: 'Completed trades',
+      value: completedTradeValue === null ? '—' : money(completedTradeValue, tradeCurrency, { preserveSource: true }),
+      detail: 'Delivered orders',
+      trend: '',
+      up: true,
+      icon: 'check-circle' as const,
+      tone: colors.primary,
+    },
+    {
+      label: 'In processing',
+      value: processingTradeValue === null ? '—' : money(processingTradeValue, tradeCurrency, { preserveSource: true }),
+      detail: 'Orders not yet delivered',
+      trend: '',
+      up: true,
+      icon: 'clock' as const,
+      tone: colors.accent,
+    },
+    {
+      label: 'Discount saved',
+      value: discountSavings === null ? '—' : money(discountSavings, tradeCurrency, { preserveSource: true }),
+      detail: 'Recorded at checkout',
+      trend: '',
+      up: true,
+      icon: 'tag' as const,
+      tone: colors.primary,
     },
     {
       label: 'Active shipments',
@@ -290,6 +322,9 @@ function BuyerOverviewContent() {
               </Card>
             ))}
           </View>
+          <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginBottom: 12 }}>
+            Purchase totals are shown in USD. Savings include only discounts recorded when an order was placed.
+          </Text>
 
           <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800', marginBottom: 9, marginTop: 5 }}>Market alerts</Text>
           {alerts.length ? alerts.slice(0, 3).map((alert, index) => {

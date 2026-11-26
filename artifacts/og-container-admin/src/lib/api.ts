@@ -632,13 +632,14 @@ function prefixCurrencyAmount(amount: string, symbol: string): string {
   return symbol === "Rs." ? `Rs. ${amount}` : `$${amount}`
 }
 
-export function formatFobRateLabel(fob: unknown, currencySymbol: string = "$"): string {
+export function formatFobRateLabel(fob: unknown, currencySymbol: string = "$", unitOfMeasure = "MT"): string {
   if (fob == null || fob === "") return ""
   const n = Number(fob)
-  if (Number.isFinite(n)) return prefixCurrencyAmount(n.toFixed(2), currencySymbol)
+  if (Number.isFinite(n)) return `${prefixCurrencyAmount(n.toFixed(2), currencySymbol)} / ${unitOfMeasure}`
   const raw = String(fob).trim()
   if (!raw) return ""
-  return prefixCurrencyAmount(raw, currencySymbol)
+  const withoutUnit = raw.replace(/\s*\/\s*(?:MT|kg|g|L|m²|m³|piece|bag|box|letter|dozen)$/i, "")
+  return `${prefixCurrencyAmount(withoutUnit, currencySymbol)} / ${unitOfMeasure}`
 }
 
 export function formatCifPriceLabel(price: unknown, currencySymbol: string = "$"): string {
@@ -692,8 +693,9 @@ export function mapProduct(p: any) {
   const categoryId = p.category_id ?? p.categoryId ?? p.category?.id ?? null
 
   const rawFob = p.fob
+  const unitOfMeasure = p.unit_of_measure || p.unitOfMeasure || "MT"
   const currencySymbol = resolvePriceCurrencySymbol(p.currency, rawFob)
-  const fobRate = formatFobRateLabel(rawFob, currencySymbol)
+  const fobRate = formatFobRateLabel(rawFob, currencySymbol, unitOfMeasure)
   // CIF/CFR catalog price is deprecated — listings show FOB only
   const fobDisplay = fobRate
 
@@ -709,6 +711,8 @@ export function mapProduct(p: any) {
     cifPrice: undefined,
     fobDisplay: fobDisplay || undefined,
     fob: rawFob != null ? String(rawFob) : undefined,
+    unitOfMeasure: String(unitOfMeasure),
+    discountPercentage: Number(p.discount_percentage ?? p.discountPercentage ?? 0) || 0,
     minOrder: p.min_order || p.moq || "",
     moq: p.moq || p.min_order || "",
     origin: p.origin || "",

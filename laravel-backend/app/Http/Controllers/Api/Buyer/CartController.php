@@ -26,7 +26,7 @@ class CartController extends Controller
 {
     public function show(Request $request): JsonResponse
     {
-        $cart = $this->cartFor($request)->load(['items.product']);
+        $cart = $this->presentCart($this->cartFor($request));
 
         return response()->json(['data' => $cart]);
     }
@@ -52,12 +52,12 @@ class CartController extends Controller
         } else {
             $item->qty = ($item->exists ? $item->qty : 0) + $data['qty'];
         }
-        $item->unit_price = $product->price ?? $product->fob ?? 0;
+        $item->unit_price = $product->buyerDiscountedUnitPrice() ?? 0;
         $item->save();
 
         return response()->json([
             'message' => 'Item added to cart.',
-            'data' => $cart->fresh()->load(['items.product']),
+            'data' => $this->presentCart($cart->fresh()),
         ]);
     }
 
@@ -73,7 +73,7 @@ class CartController extends Controller
 
         return response()->json([
             'message' => 'Cart updated.',
-            'data' => $cart->fresh()->load(['items.product']),
+            'data' => $this->presentCart($cart->fresh()),
         ]);
     }
 
@@ -84,7 +84,7 @@ class CartController extends Controller
 
         return response()->json([
             'message' => 'Item removed.',
-            'data' => $cart->fresh()->load(['items.product']),
+            'data' => $this->presentCart($cart->fresh()),
         ]);
     }
 
@@ -147,7 +147,32 @@ class CartController extends Controller
                 throw ValidationException::withMessages(['cart' => ['Cart is empty.']]);
             }
 
-            $total = $cart->items->sum(fn (CartItem $item) => (float) $item->unit_price * (int) $item->qty);
+            $pricedItems = $cart->items->map(function (CartItem $item) {
+                $product = $item->product;
+                $listUnitPrice = $product?->buyerBaseUnitPrice();
+                $unitPrice = $product?->buyerDiscountedUnitPrice();
+
+                if ($listUnitPrice === null || $unitPrice === null || $unitPrice <= 0) {
+                    throw ValidationException::withMessages([
+                        'cart' => ['Every FOB order item must have a confirmed positive price. Request a quotation for unpriced products.'],
+                    ]);
+                }
+
+                $discountAmount = $product->buyerDiscountAmountPerUnit();
+                $quantity = (int) $item->qty;
+
+                return [
+                    'item' => $item,
+                    'product' => $product,
+                    'list_unit_price' => $listUnitPrice,
+                    'discount_percentage' => $product->buyerDiscountPercentage(),
+                    'discount_amount' => $discountAmount,
+                    'unit_price' => $unitPrice,
+                    'unit_of_measure' => $product->unit_of_measure ?: 'MT',
+                    'line_total' => round($unitPrice * $quantity, 2),
+                ];
+            });
+            $total = $pricedItems->sum('line_total');
             $currency = 'USD';
             $snap = TradeAmountSnapshot::fromNative((float) $total, $currency);
 
@@ -173,14 +198,21 @@ class CartController extends Controller
                 'placed_at' => now(),
             ]);
 
-            foreach ($cart->items as $item) {
+            foreach ($pricedItems as $line) {
+                /** @var CartItem $item */
+                $item = $line['item'];
+                $product = $line['product'];
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $item->product_id,
-                    'product_name' => $item->product?->name ?? 'Product',
+                    'product_name' => $product->name ?: 'Product',
                     'qty' => $item->qty,
-                    'unit_price' => $item->unit_price,
-                    'line_total' => (float) $item->unit_price * (int) $item->qty,
+                    'unit_price' => $line['unit_price'],
+                    'list_unit_price' => $line['list_unit_price'],
+                    'discount_percentage' => $line['discount_percentage'],
+                    'discount_amount' => $line['discount_amount'],
+                    'unit_of_measure' => $line['unit_of_measure'],
+                    'line_total' => $line['line_total'],
                 ]);
             }
 
@@ -239,7 +271,8 @@ class CartController extends Controller
 
             foreach ($cart->items as $item) {
                 $productName = $item->product?->name ?? 'Product';
-                $qtyLabel = ((int) $item->qty).' MT';
+                $unitOfMeasure = $item->product?->unit_of_measure ?: 'MT';
+                $qtyLabel = ((int) $item->qty).' '.$unitOfMeasure;
                 $lineNote = "Checkout quotation request — {$productName} ({$qtyLabel})";
                 $notes = $userNotes !== '' ? $lineNote."\n---\n".$userNotes : $lineNote;
 
@@ -284,5 +317,26 @@ class CartController extends Controller
     private function cartFor(Request $request): Cart
     {
         return Cart::query()->firstOrCreate(['user_id' => $request->user()->id]);
+    }
+
+    private function presentCart(Cart $cart): Cart
+    {
+        $cart->load(['items.product']);
+
+        foreach ($cart->items as $item) {
+            $product = $item->product;
+            if (! $product) {
+                continue;
+            }
+
+            $item->setAttribute('list_unit_price', $product->buyerBaseUnitPrice());
+            $item->setAttribute('unit_price', $product->buyerDiscountedUnitPrice() ?? 0);
+            $item->setAttribute('discount_percentage', $product->buyerDiscountPercentage());
+            $item->setAttribute('discount_amount_per_unit', $product->buyerDiscountAmountPerUnit());
+            $item->setAttribute('unit_of_measure', $product->unit_of_measure ?: 'MT');
+            $item->setAttribute('currency', $product->currency ?: 'USD');
+        }
+
+        return $cart;
     }
 }

@@ -215,6 +215,8 @@ class ProductController extends Controller
             'fob' => ['nullable', 'numeric'],
             'price' => ['nullable', 'numeric'],
             'currency' => ['nullable', 'string', 'max:10'],
+            'unit_of_measure' => ['sometimes', 'required', 'string', 'max:32'],
+            'discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:99.99'],
             'min_order' => ['nullable', 'string', 'max:100'],
             'moq' => ['nullable', 'string', 'max:100'],
             'lead_time' => ['nullable', 'string', 'max:100'],

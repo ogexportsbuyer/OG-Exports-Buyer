@@ -25,6 +25,11 @@ test('guest cart rows retain product details, images, FOB price and MOQ quantity
     product_id: 42,
     qty: 20,
     unit_price: 1360,
+    list_unit_price: 1360,
+    discount_percentage: 0,
+    discount_amount_per_unit: 0,
+    unit_of_measure: 'MT',
+    currency: 'USD',
     product: entry.product,
   });
 });

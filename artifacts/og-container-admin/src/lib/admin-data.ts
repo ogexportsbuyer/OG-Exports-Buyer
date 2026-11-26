@@ -262,7 +262,8 @@ export interface AdminProduct {
   id: string; name: string; category: string; categoryId?: number | null; sku: string; price: string
   minOrder: string; origin: string; status: "approved" | "pending" | "rejected" | "draft"
   stock: string; rating: number; orders: number
-  fob?: string; description?: string; shortDescription?: string; incoterms?: string; videoUrl?: string
+  fob?: string; unitOfMeasure?: string; discountPercentage?: number
+  description?: string; shortDescription?: string; incoterms?: string; videoUrl?: string
   /** Resolved display URL for primary image */
   imageUrl?: string
   /** Raw relative/legacy path stored in DB */
@@ -1721,6 +1722,8 @@ function productToApi(p: Partial<AdminProduct>) {
   if (p.description !== undefined) payload.description = p.description
   if (p.origin !== undefined) payload.origin = p.origin
   if (p.fob !== undefined) payload.fob = parseMoney(p.fob)
+  if (p.unitOfMeasure !== undefined) payload.unit_of_measure = p.unitOfMeasure
+  if (p.discountPercentage !== undefined) payload.discount_percentage = Number(p.discountPercentage) || 0
   if (p.price !== undefined) {
     const n = parseMoney(p.price)
     if (n) payload.price = n

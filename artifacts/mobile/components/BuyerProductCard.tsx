@@ -3,9 +3,10 @@ import { ActivityIndicator, Image, Pressable, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Card } from '@/components/InvestorUI';
+import { BuyerProductPrice } from '@/components/BuyerProductPrice';
 import { useColors } from '@/hooks/useColors';
 import { amount, first, type Json } from '@/lib/data';
-import { categoryName, displayPrice } from '@/lib/buyer-data';
+import { categoryName } from '@/lib/buyer-data';
 import { buyerProductSpecs, buyerProductValues } from '@/lib/buyer-product-data';
 import { motionHaptic } from '@/lib/motion';
 
@@ -176,14 +177,18 @@ export function BuyerProductCard({
         {compact ? (
           <View style={{ marginTop: 9, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.border }}>
             <Text style={{ color: colors.mutedForeground, fontSize: 8, fontWeight: '800', letterSpacing: 0.5 }}>FOB PRICE</Text>
-            <Text numberOfLines={1} style={{ color: colors.primary, fontSize: 11, fontWeight: '800', marginTop: 3 }}>{displayPrice(product)}</Text>
+            <View style={{ marginTop: 4 }}>
+              <BuyerProductPrice product={product} compact />
+            </View>
             {minimumOrder ? <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 9, marginTop: 3 }}>MOQ: {minimumOrder}</Text> : null}
           </View>
         ) : (
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginTop: 13, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border }}>
           <View style={{ flex: 1 }}>
             <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '700', letterSpacing: 0.6 }}>PRODUCT PRICE</Text>
-            <Text style={{ color: colors.primary, fontSize: 15, fontWeight: '800', marginTop: 3 }}>{displayPrice(product)}</Text>
+            <View style={{ marginTop: 4 }}>
+              <BuyerProductPrice product={product} />
+            </View>
           </View>
           {minimumOrder ? (
             <View style={{ flex: 1, alignItems: 'flex-end' }}>

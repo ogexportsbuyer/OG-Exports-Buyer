@@ -113,6 +113,34 @@ it('stores relative image paths when creating a product', function () {
     ]);
 });
 
+it('saves product measurement units and discounts for buyer pricing', function () {
+    $admin = adminUser();
+
+    $this->actingAs($admin)->postJson('/api/admin/products', [
+        'name' => 'Premium Cocoa Butter',
+        'sku' => 'COCOA-UNIT-01',
+        'status' => 'approved',
+        'fob' => 125,
+        'currency' => 'USD',
+        'unit_of_measure' => 'kg',
+        'discount_percentage' => 12,
+    ])->assertCreated();
+
+    $product = Product::query()->where('sku', 'COCOA-UNIT-01')->firstOrFail();
+
+    expect($product->unit_of_measure)->toBe('kg')
+        ->and((float) $product->discount_percentage)->toBe(12.0)
+        ->and($product->buyerDiscountedUnitPrice())->toBe(110.0)
+        ->and($product->buyerDiscountAmountPerUnit())->toBe(15.0);
+
+    $this->getJson("/api/products/{$product->slug}")
+        ->assertOk()
+        ->assertJsonPath('data.unit_of_measure', 'kg')
+        ->assertJsonPath('data.discount_percentage', 12)
+        ->assertJsonPath('data.discounted_unit_price', 110)
+        ->assertJsonPath('data.discount_amount_per_unit', 15);
+});
+
 it('deletes replaced local product images during update', function () {
     $admin = adminUser();
     File::ensureDirectoryExists(public_path('product_images'));

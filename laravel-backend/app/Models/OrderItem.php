@@ -15,6 +15,10 @@ class OrderItem extends Model
         'product_name',
         'qty',
         'unit_price',
+        'list_unit_price',
+        'discount_percentage',
+        'discount_amount',
+        'unit_of_measure',
         'line_total',
     ];
 
@@ -22,6 +26,9 @@ class OrderItem extends Model
     {
         return [
             'unit_price' => 'decimal:2',
+            'list_unit_price' => 'decimal:2',
+            'discount_percentage' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
             'line_total' => 'decimal:2',
         ];
     }

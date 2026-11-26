@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Support\BuyerProfileChecklist;
 use App\Support\KycGate;
 use App\Support\OrderStatuses;
+use App\Support\TradeAmountSnapshot;
 use App\Support\UserDisplayCurrency;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -142,6 +143,7 @@ class DashboardController extends Controller
             ->where('buyer_id', $userId)
             ->whereIn('status', ['sent', 'pending', 'pending_admin'])
             ->count();
+        $tradeValueSummary = $this->buildTradeValueSummary($userId);
 
         return response()->json([
             'data' => [
@@ -194,6 +196,7 @@ class DashboardController extends Controller
                 'recent_activity' => $recentActivity,
                 'alerts' => $alerts,
                 'favourites' => $favourites,
+                'trade_value_summary' => $tradeValueSummary,
                 'trust_score' => $trustScore,
                 'trust_tier' => $trustTier,
                 'member_since' => $user->created_at?->format('F Y'),
@@ -215,6 +218,91 @@ class DashboardController extends Controller
         }
 
         return round((((float) $current - (float) $previous) / (float) $previous) * 100, 1);
+    }
+
+    /**
+     * New dashboard values use USD snapshots and exclude cancelled orders.
+     * Discount savings are counted only where a new order item stored them.
+     *
+     * @return array{currency: string, total_purchase_value_usd: float, completed_trade_value_usd: float, processing_trade_value_usd: float, discount_savings_usd: float}
+     */
+    private function buildTradeValueSummary(int $userId): array
+    {
+        $cancelledStatuses = OrderStatuses::dbVariantsFor(OrderStatuses::CANCELLED);
+        $completedStatuses = array_values(array_unique(array_merge(
+            OrderStatuses::dbVariantsFor(OrderStatuses::DELIVERED),
+            ['completed'],
+        )));
+
+        $orders = Order::query()
+            ->where('buyer_id', $userId)
+            ->whereNotIn('status', $cancelledStatuses)
+            ->get(['id', 'status', 'total_value', 'currency', 'total_value_usd', 'total_value_pkr', 'exchange_rate']);
+
+        $completedOrders = $orders->filter(
+            fn (Order $order) => in_array(strtolower((string) $order->status), $completedStatuses, true)
+        );
+        $processingOrders = $orders->reject(
+            fn (Order $order) => in_array(strtolower((string) $order->status), $completedStatuses, true)
+        );
+
+        return [
+            'currency' => 'USD',
+            'total_purchase_value_usd' => round($orders->sum(fn (Order $order) => $this->orderValueUsd($order)), 2),
+            'completed_trade_value_usd' => round($completedOrders->sum(fn (Order $order) => $this->orderValueUsd($order)), 2),
+            'processing_trade_value_usd' => round($processingOrders->sum(fn (Order $order) => $this->orderValueUsd($order)), 2),
+            'discount_savings_usd' => $this->recordedDiscountSavingsUsd($userId, $cancelledStatuses),
+        ];
+    }
+
+    private function orderValueUsd(Order $order): float
+    {
+        return TradeAmountSnapshot::resolve(
+            (float) $order->total_value,
+            (string) ($order->currency ?: 'USD'),
+            $order->total_value_usd !== null ? (float) $order->total_value_usd : null,
+            $order->total_value_pkr !== null ? (float) $order->total_value_pkr : null,
+            $order->exchange_rate !== null ? (float) $order->exchange_rate : null,
+        )['usd'];
+    }
+
+    /**
+     * @param  list<string>  $cancelledStatuses
+     */
+    private function recordedDiscountSavingsUsd(int $userId, array $cancelledStatuses): float
+    {
+        $items = OrderItem::query()
+            ->with(['order:id,buyer_id,status,total_value,currency,total_value_usd,total_value_pkr,exchange_rate'])
+            ->whereHas('order', function ($query) use ($userId, $cancelledStatuses) {
+                $query->where('buyer_id', $userId)
+                    ->whereNotIn('status', $cancelledStatuses);
+            })
+            ->get(['order_id', 'qty', 'discount_amount']);
+
+        $savingsUsd = $items->sum(function (OrderItem $item): float {
+            $order = $item->order;
+            $unitDiscount = (float) ($item->discount_amount ?? 0);
+            if (! $order || $unitDiscount <= 0) {
+                return 0.0;
+            }
+
+            $quantityText = (string) $item->qty;
+            if (! preg_match('/\d+(?:\.\d+)?/', $quantityText, $matches)) {
+                return 0.0;
+            }
+
+            $nativeSavings = round($unitDiscount * (float) $matches[0], 2);
+
+            return TradeAmountSnapshot::resolve(
+                $nativeSavings,
+                (string) ($order->currency ?: 'USD'),
+                null,
+                null,
+                $order->exchange_rate !== null ? (float) $order->exchange_rate : null,
+            )['usd'];
+        });
+
+        return round((float) $savingsUsd, 2);
     }
 
     private function formatTrend(float $pct, bool $withSign = false): string

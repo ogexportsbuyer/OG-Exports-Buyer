@@ -1,5 +1,8 @@
 import { amount, first, list, record, type Json } from '@/lib/data';
 import { formatFobPrice } from '@/lib/format-fob-price';
+import { buyerPriceDetails } from './buyer-pricing';
+export { buyerPriceDetails } from './buyer-pricing';
+export type { BuyerPriceDetails } from './buyer-pricing';
 export { productMinimumQuantity } from '@/lib/buyer-cart-flow';
 
 export function rowsFromResponse(response: unknown): Json[] {
@@ -12,9 +15,9 @@ export function categoryName(product: Json): string {
 }
 
 export function displayPrice(product: Json): string {
-  const price = amount(product, ['fob', 'price']);
-  if (price === null || price <= 0) return 'Request a quote';
-  return formatFobPrice(price, first(product, ['currency'], 'USD'));
+  const pricing = buyerPriceDetails(product);
+  if (pricing.salePrice === null || pricing.salePrice <= 0) return 'Request a quote';
+  return formatFobPrice(pricing.salePrice, pricing.currency, pricing.unitOfMeasure);
 }
 
 export function displayOrderNumber(order: Json): string {

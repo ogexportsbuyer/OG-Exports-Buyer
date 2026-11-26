@@ -89,6 +89,10 @@ class QuotationController extends Controller
                 'product_name' => $quotation->product_name,
                 'qty' => $quotation->qty_mt ?? 1,
                 'unit_price' => $quotation->fob_unit_price,
+                    'list_unit_price' => $quotation->fob_unit_price,
+                    'discount_percentage' => 0,
+                    'discount_amount' => 0,
+                    'unit_of_measure' => 'MT',
                 'line_total' => $lineTotal,
             ]);
 

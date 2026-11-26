@@ -10,18 +10,40 @@ import {
   resolveBuyerProductImageUrl,
 } from './buyer-product-data.ts';
 import { formatFobPrice } from './format-fob-price.ts';
+import { buyerPriceDetails } from './buyer-pricing.ts';
 
 test('catalogue product prices display their FOB basis and quote-only products stay unpriced', () => {
   assert.equal(formatFobPrice(1680, 'PKR'), 'FOB · PKR 1,680');
   assert.equal(formatFobPrice(1680, 'invalid'), 'FOB · USD 1,680');
+  assert.equal(formatFobPrice(1680, 'USD', 'kg'), 'FOB · USD 1,680 / kg');
+  assert.deepEqual(buyerPriceDetails({
+    fob: 100,
+    discount_percentage: 15,
+    unit_of_measure: 'kg',
+  }), {
+    basePrice: 100,
+    salePrice: 85,
+    discountPercentage: 15,
+    discountAmountPerUnit: 15,
+    currency: 'USD',
+    unitOfMeasure: 'kg',
+  });
+  assert.deepEqual(buyerPriceDetails({
+    fob: 100,
+    list_unit_price: 100,
+    unit_price: 85,
+    discount_percentage: 15,
+    discount_amount_per_unit: 15,
+  }).salePrice, 85);
   const buyerData = readFileSync(new URL('./buyer-data.ts', import.meta.url), 'utf8');
-  assert.match(buyerData, /return formatFobPrice\(price, first\(product, \['currency'\], 'USD'\)\)/);
+  assert.match(buyerData, /formatFobPrice\(pricing\.salePrice, pricing\.currency, pricing\.unitOfMeasure\)/);
   assert.match(buyerData, /return 'Request a quote'/);
 });
 
 test('buyer product price surfaces consistently show the FOB basis', () => {
   const homeCatalog = readFileSync(new URL('../components/BuyerHomeCatalog.tsx', import.meta.url), 'utf8');
   const productCard = readFileSync(new URL('../components/BuyerProductCard.tsx', import.meta.url), 'utf8');
+  const priceComponent = readFileSync(new URL('../components/BuyerProductPrice.tsx', import.meta.url), 'utf8');
   const productDetails = readFileSync(new URL('../app/buyer-product/[id].tsx', import.meta.url), 'utf8');
   const cart = readFileSync(new URL('../components/BuyerCartScreen.tsx', import.meta.url), 'utf8');
   const checkout = readFileSync(new URL('../app/buyer-checkout.tsx', import.meta.url), 'utf8');
@@ -29,9 +51,11 @@ test('buyer product price surfaces consistently show the FOB basis', () => {
 
   assert.match(homeCatalog, /displayPrice\(product\)/);
   assert.match(productCard, /PRODUCT PRICE/);
-  assert.match(productCard, /displayPrice\(product\)/);
-  assert.match(productDetails, /displayPrice\(product\)/);
-  assert.match(cart, /formatFobPrice\(/);
+  assert.match(productCard, /BuyerProductPrice product=\{product\}/);
+  assert.match(productDetails, /BuyerProductPrice product=\{product\}/);
+  assert.match(priceComponent, /FadeInDown/);
+  assert.match(priceComponent, /% OFF/);
+  assert.match(cart, /BuyerProductPrice product=\{item\}/);
   assert.match(checkout, /formatFobPrice\(/);
   assert.match(quotation, /FOB unit price:/);
 });

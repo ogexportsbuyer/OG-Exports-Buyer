@@ -19,7 +19,24 @@ export const GetProductsQueryParams = zod.object({
   "page": zod.coerce.number().int().optional()
 })
 
-export const GetProductsResponse = zod.record(zod.string(), zod.unknown())
+export const getProductsResponseDataItemUnitOfMeasureMax = 32;
+
+export const getProductsResponseDataItemDiscountPercentageMin = 0;
+export const getProductsResponseDataItemDiscountPercentageMax = 99.99;
+
+
+
+export const GetProductsResponse = zod.object({
+  "data": zod.array(zod.object({
+  "fob": zod.union([zod.number(),zod.string()]).nullish(),
+  "price": zod.union([zod.number(),zod.string()]).nullish(),
+  "currency": zod.string().nullish(),
+  "unit_of_measure": zod.string().max(getProductsResponseDataItemUnitOfMeasureMax).optional().describe('Unit used for the advertised FOB rate, such as MT, kg, m2, or piece.'),
+  "discount_percentage": zod.number().min(getProductsResponseDataItemDiscountPercentageMin).max(getProductsResponseDataItemDiscountPercentageMax).optional().describe('Admin-managed discount applied to the product\'s FOB unit price.'),
+  "discounted_unit_price": zod.number().nullish(),
+  "discount_amount_per_unit": zod.number().optional()
+})).optional()
+})
 
 
 /**
@@ -53,7 +70,17 @@ export const GetIncotermsResponse = zod.record(zod.string(), zod.unknown())
 /**
  * @summary Get the signed-in buyer executive dashboard
  */
-export const GetBuyerDashboardResponse = zod.record(zod.string(), zod.unknown())
+export const GetBuyerDashboardResponse = zod.object({
+  "data": zod.object({
+  "trade_value_summary": zod.object({
+  "currency": zod.enum(['USD']),
+  "total_purchase_value_usd": zod.number(),
+  "completed_trade_value_usd": zod.number(),
+  "processing_trade_value_usd": zod.number(),
+  "discount_savings_usd": zod.number().describe('Savings only from order items with a saved order-time discount snapshot.')
+}).optional()
+}).optional()
+})
 
 
 /**
@@ -71,7 +98,38 @@ export const GetPaymentMethodsResponse = zod.record(zod.string(), zod.unknown())
 /**
  * @summary Get the signed-in buyer cart
  */
-export const GetBuyerCartResponse = zod.record(zod.string(), zod.unknown())
+export const getBuyerCartResponseDataItemsItemDiscountPercentageMin = 0;
+export const getBuyerCartResponseDataItemsItemDiscountPercentageMax = 99.99;
+
+export const getBuyerCartResponseDataItemsItemProductUnitOfMeasureMax = 32;
+
+export const getBuyerCartResponseDataItemsItemProductDiscountPercentageMin = 0;
+export const getBuyerCartResponseDataItemsItemProductDiscountPercentageMax = 99.99;
+
+
+
+export const GetBuyerCartResponse = zod.object({
+  "data": zod.object({
+  "items": zod.array(zod.object({
+  "qty": zod.union([zod.number().int(),zod.number(),zod.string()]).optional(),
+  "currency": zod.string().nullish(),
+  "list_unit_price": zod.number().nullish(),
+  "unit_price": zod.union([zod.number().describe('Current server-calculated discounted FOB unit price.'),zod.string().describe('Current server-calculated discounted FOB unit price.')]).optional().describe('Current server-calculated discounted FOB unit price.'),
+  "discount_percentage": zod.number().min(getBuyerCartResponseDataItemsItemDiscountPercentageMin).max(getBuyerCartResponseDataItemsItemDiscountPercentageMax).optional(),
+  "discount_amount_per_unit": zod.number().optional(),
+  "unit_of_measure": zod.string().optional(),
+  "product": zod.object({
+  "fob": zod.union([zod.number(),zod.string()]).nullish(),
+  "price": zod.union([zod.number(),zod.string()]).nullish(),
+  "currency": zod.string().nullish(),
+  "unit_of_measure": zod.string().max(getBuyerCartResponseDataItemsItemProductUnitOfMeasureMax).optional().describe('Unit used for the advertised FOB rate, such as MT, kg, m2, or piece.'),
+  "discount_percentage": zod.number().min(getBuyerCartResponseDataItemsItemProductDiscountPercentageMin).max(getBuyerCartResponseDataItemsItemProductDiscountPercentageMax).optional().describe('Admin-managed discount applied to the product\'s FOB unit price.'),
+  "discounted_unit_price": zod.number().nullish(),
+  "discount_amount_per_unit": zod.number().optional()
+}).optional()
+})).optional()
+}).optional()
+})
 
 
 /**
@@ -79,7 +137,38 @@ export const GetBuyerCartResponse = zod.record(zod.string(), zod.unknown())
  */
 export const AddBuyerCartItemBody = zod.record(zod.string(), zod.unknown())
 
-export const AddBuyerCartItemResponse = zod.record(zod.string(), zod.unknown())
+export const addBuyerCartItemResponseDataItemsItemDiscountPercentageMin = 0;
+export const addBuyerCartItemResponseDataItemsItemDiscountPercentageMax = 99.99;
+
+export const addBuyerCartItemResponseDataItemsItemProductUnitOfMeasureMax = 32;
+
+export const addBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin = 0;
+export const addBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax = 99.99;
+
+
+
+export const AddBuyerCartItemResponse = zod.object({
+  "data": zod.object({
+  "items": zod.array(zod.object({
+  "qty": zod.union([zod.number().int(),zod.number(),zod.string()]).optional(),
+  "currency": zod.string().nullish(),
+  "list_unit_price": zod.number().nullish(),
+  "unit_price": zod.union([zod.number().describe('Current server-calculated discounted FOB unit price.'),zod.string().describe('Current server-calculated discounted FOB unit price.')]).optional().describe('Current server-calculated discounted FOB unit price.'),
+  "discount_percentage": zod.number().min(addBuyerCartItemResponseDataItemsItemDiscountPercentageMin).max(addBuyerCartItemResponseDataItemsItemDiscountPercentageMax).optional(),
+  "discount_amount_per_unit": zod.number().optional(),
+  "unit_of_measure": zod.string().optional(),
+  "product": zod.object({
+  "fob": zod.union([zod.number(),zod.string()]).nullish(),
+  "price": zod.union([zod.number(),zod.string()]).nullish(),
+  "currency": zod.string().nullish(),
+  "unit_of_measure": zod.string().max(addBuyerCartItemResponseDataItemsItemProductUnitOfMeasureMax).optional().describe('Unit used for the advertised FOB rate, such as MT, kg, m2, or piece.'),
+  "discount_percentage": zod.number().min(addBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin).max(addBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax).optional().describe('Admin-managed discount applied to the product\'s FOB unit price.'),
+  "discounted_unit_price": zod.number().nullish(),
+  "discount_amount_per_unit": zod.number().optional()
+}).optional()
+})).optional()
+}).optional()
+})
 
 
 /**
@@ -91,7 +180,38 @@ export const UpdateBuyerCartItemParams = zod.object({
 
 export const UpdateBuyerCartItemBody = zod.record(zod.string(), zod.unknown())
 
-export const UpdateBuyerCartItemResponse = zod.record(zod.string(), zod.unknown())
+export const updateBuyerCartItemResponseDataItemsItemDiscountPercentageMin = 0;
+export const updateBuyerCartItemResponseDataItemsItemDiscountPercentageMax = 99.99;
+
+export const updateBuyerCartItemResponseDataItemsItemProductUnitOfMeasureMax = 32;
+
+export const updateBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin = 0;
+export const updateBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax = 99.99;
+
+
+
+export const UpdateBuyerCartItemResponse = zod.object({
+  "data": zod.object({
+  "items": zod.array(zod.object({
+  "qty": zod.union([zod.number().int(),zod.number(),zod.string()]).optional(),
+  "currency": zod.string().nullish(),
+  "list_unit_price": zod.number().nullish(),
+  "unit_price": zod.union([zod.number().describe('Current server-calculated discounted FOB unit price.'),zod.string().describe('Current server-calculated discounted FOB unit price.')]).optional().describe('Current server-calculated discounted FOB unit price.'),
+  "discount_percentage": zod.number().min(updateBuyerCartItemResponseDataItemsItemDiscountPercentageMin).max(updateBuyerCartItemResponseDataItemsItemDiscountPercentageMax).optional(),
+  "discount_amount_per_unit": zod.number().optional(),
+  "unit_of_measure": zod.string().optional(),
+  "product": zod.object({
+  "fob": zod.union([zod.number(),zod.string()]).nullish(),
+  "price": zod.union([zod.number(),zod.string()]).nullish(),
+  "currency": zod.string().nullish(),
+  "unit_of_measure": zod.string().max(updateBuyerCartItemResponseDataItemsItemProductUnitOfMeasureMax).optional().describe('Unit used for the advertised FOB rate, such as MT, kg, m2, or piece.'),
+  "discount_percentage": zod.number().min(updateBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin).max(updateBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax).optional().describe('Admin-managed discount applied to the product\'s FOB unit price.'),
+  "discounted_unit_price": zod.number().nullish(),
+  "discount_amount_per_unit": zod.number().optional()
+}).optional()
+})).optional()
+}).optional()
+})
 
 
 /**
@@ -101,7 +221,38 @@ export const RemoveBuyerCartItemParams = zod.object({
   "item": zod.coerce.number().int()
 })
 
-export const RemoveBuyerCartItemResponse = zod.record(zod.string(), zod.unknown())
+export const removeBuyerCartItemResponseDataItemsItemDiscountPercentageMin = 0;
+export const removeBuyerCartItemResponseDataItemsItemDiscountPercentageMax = 99.99;
+
+export const removeBuyerCartItemResponseDataItemsItemProductUnitOfMeasureMax = 32;
+
+export const removeBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin = 0;
+export const removeBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax = 99.99;
+
+
+
+export const RemoveBuyerCartItemResponse = zod.object({
+  "data": zod.object({
+  "items": zod.array(zod.object({
+  "qty": zod.union([zod.number().int(),zod.number(),zod.string()]).optional(),
+  "currency": zod.string().nullish(),
+  "list_unit_price": zod.number().nullish(),
+  "unit_price": zod.union([zod.number().describe('Current server-calculated discounted FOB unit price.'),zod.string().describe('Current server-calculated discounted FOB unit price.')]).optional().describe('Current server-calculated discounted FOB unit price.'),
+  "discount_percentage": zod.number().min(removeBuyerCartItemResponseDataItemsItemDiscountPercentageMin).max(removeBuyerCartItemResponseDataItemsItemDiscountPercentageMax).optional(),
+  "discount_amount_per_unit": zod.number().optional(),
+  "unit_of_measure": zod.string().optional(),
+  "product": zod.object({
+  "fob": zod.union([zod.number(),zod.string()]).nullish(),
+  "price": zod.union([zod.number(),zod.string()]).nullish(),
+  "currency": zod.string().nullish(),
+  "unit_of_measure": zod.string().max(removeBuyerCartItemResponseDataItemsItemProductUnitOfMeasureMax).optional().describe('Unit used for the advertised FOB rate, such as MT, kg, m2, or piece.'),
+  "discount_percentage": zod.number().min(removeBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin).max(removeBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax).optional().describe('Admin-managed discount applied to the product\'s FOB unit price.'),
+  "discounted_unit_price": zod.number().nullish(),
+  "discount_amount_per_unit": zod.number().optional()
+}).optional()
+})).optional()
+}).optional()
+})
 
 
 /**

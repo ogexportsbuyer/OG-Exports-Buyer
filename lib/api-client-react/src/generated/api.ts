@@ -31,6 +31,9 @@ import type {
   AdminTwoFactorChallenge,
   AdminTwoFactorResend,
   BankAccountReviewInput,
+  BuyerCartResponse,
+  BuyerDashboardResponse,
+  BuyerProductPageResponse,
   BuyerQuotationMessageInput,
   BuyerVoiceTranslationConsentInput,
   ContainerTracking,
@@ -130,9 +133,9 @@ export const getGetProductsUrl = (params?: GetProductsParams,) => {
 /**
  * @summary List website-approved products
  */
-export const getProducts = async (params?: GetProductsParams, options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
+export const getProducts = async (params?: GetProductsParams, options?: Parameters<typeof customFetch>[1]): Promise<BuyerProductPageResponse> => {
 
-  return customFetch<JsonObject>(getGetProductsUrl(params),
+  return customFetch<BuyerProductPageResponse>(getGetProductsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -515,9 +518,9 @@ export const getGetBuyerDashboardUrl = () => {
 /**
  * @summary Get the signed-in buyer executive dashboard
  */
-export const getBuyerDashboard = async ( options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
+export const getBuyerDashboard = async ( options?: Parameters<typeof customFetch>[1]): Promise<BuyerDashboardResponse> => {
 
-  return customFetch<JsonObject>(getGetBuyerDashboardUrl(),
+  return customFetch<BuyerDashboardResponse>(getGetBuyerDashboardUrl(),
   {
     ...options,
     method: 'GET'
@@ -746,9 +749,9 @@ export const getGetBuyerCartUrl = () => {
 /**
  * @summary Get the signed-in buyer cart
  */
-export const getBuyerCart = async ( options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
+export const getBuyerCart = async ( options?: Parameters<typeof customFetch>[1]): Promise<BuyerCartResponse> => {
 
-  return customFetch<JsonObject>(getGetBuyerCartUrl(),
+  return customFetch<BuyerCartResponse>(getGetBuyerCartUrl(),
   {
     ...options,
     method: 'GET'
@@ -823,7 +826,7 @@ export const getAddBuyerCartItemUrl = () => {
 /**
  * @summary Add an approved product to the buyer cart
  */
-export const addBuyerCartItem = async (jsonObject: JsonObject, options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
+export const addBuyerCartItem = async (jsonObject: JsonObject, options?: Parameters<typeof customFetch>[1]): Promise<BuyerCartResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -839,7 +842,7 @@ export const addBuyerCartItem = async (jsonObject: JsonObject, options?: Paramet
     }
     return headers;
   };
-return customFetch<JsonObject>(getAddBuyerCartItemUrl(),
+return customFetch<BuyerCartResponse>(getAddBuyerCartItemUrl(),
   {
     ...options,
     method: 'POST',
@@ -912,7 +915,7 @@ export const getUpdateBuyerCartItemUrl = (item: number,) => {
  * @summary Update a buyer cart item quantity
  */
 export const updateBuyerCartItem = async (item: number,
-    jsonObject: JsonObject, options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
+    jsonObject: JsonObject, options?: Parameters<typeof customFetch>[1]): Promise<BuyerCartResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -928,7 +931,7 @@ export const updateBuyerCartItem = async (item: number,
     }
     return headers;
   };
-return customFetch<JsonObject>(getUpdateBuyerCartItemUrl(item),
+return customFetch<BuyerCartResponse>(getUpdateBuyerCartItemUrl(item),
   {
     ...options,
     method: 'PUT',
@@ -1000,9 +1003,9 @@ export const getRemoveBuyerCartItemUrl = (item: number,) => {
 /**
  * @summary Remove an item from the buyer cart
  */
-export const removeBuyerCartItem = async (item: number, options?: Parameters<typeof customFetch>[1]): Promise<JsonObject> => {
+export const removeBuyerCartItem = async (item: number, options?: Parameters<typeof customFetch>[1]): Promise<BuyerCartResponse> => {
 
-  return customFetch<JsonObject>(getRemoveBuyerCartItemUrl(item),
+  return customFetch<BuyerCartResponse>(getRemoveBuyerCartItemUrl(item),
   {
     ...options,
     method: 'DELETE'

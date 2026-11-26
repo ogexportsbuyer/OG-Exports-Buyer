@@ -48,7 +48,7 @@ paths:
           required: false
           schema: { type: integer }
       responses:
-        "200": { description: Approved product page, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "200": { description: Approved product page with server-calculated buyer pricing, content: { application/json: { schema: { $ref: "#/components/schemas/BuyerProductPageResponse" } } } }
   /categories:
     get:
       operationId: getProductCategories
@@ -89,7 +89,7 @@ paths:
       summary: Get the signed-in buyer executive dashboard
       security: [{ BearerAuth: [] }]
       responses:
-        "200": { description: Buyer dashboard totals and activity, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "200": { description: Buyer dashboard totals and activity, content: { application/json: { schema: { $ref: "#/components/schemas/BuyerDashboardResponse" } } } }
   /buyer/analytics:
     get:
       operationId: getBuyerAnalytics
@@ -112,7 +112,7 @@ paths:
       summary: Get the signed-in buyer cart
       security: [{ BearerAuth: [] }]
       responses:
-        "200": { description: Buyer cart, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "200": { description: Buyer cart with server-calculated item prices, content: { application/json: { schema: { $ref: "#/components/schemas/BuyerCartResponse" } } } }
     post:
       operationId: addBuyerCartItem
       tags: [buyer]
@@ -124,7 +124,7 @@ paths:
           application/json:
             schema: { $ref: "#/components/schemas/JsonObject" }
       responses:
-        "200": { description: Updated buyer cart, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "200": { description: Updated buyer cart, content: { application/json: { schema: { $ref: "#/components/schemas/BuyerCartResponse" } } } }
         "422": { description: Cart validation error, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
   /buyer/cart/{item}:
     parameters:
@@ -143,14 +143,14 @@ paths:
           application/json:
             schema: { $ref: "#/components/schemas/JsonObject" }
       responses:
-        "200": { description: Updated buyer cart, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "200": { description: Updated buyer cart, content: { application/json: { schema: { $ref: "#/components/schemas/BuyerCartResponse" } } } }
     delete:
       operationId: removeBuyerCartItem
       tags: [buyer]
       summary: Remove an item from the buyer cart
       security: [{ BearerAuth: [] }]
       responses:
-        "200": { description: Updated buyer cart, content: { application/json: { schema: { $ref: "#/components/schemas/JsonObject" } } } }
+        "200": { description: Updated buyer cart, content: { application/json: { schema: { $ref: "#/components/schemas/BuyerCartResponse" } } } }
   /buyer/cart/checkout:
     post:
       operationId: checkoutBuyerCart
@@ -3018,6 +3018,77 @@ components:
       required: [enabled]
       properties:
         enabled: { type: boolean }
+    BuyerProduct:
+      type: object
+      additionalProperties: true
+      properties:
+        fob: { type: ["number", "string", "null"] }
+        price: { type: ["number", "string", "null"] }
+        currency: { type: [string, "null"] }
+        unit_of_measure:
+          type: string
+          maxLength: 32
+          description: Unit used for the advertised FOB rate, such as MT, kg, m2, or piece.
+        discount_percentage:
+          type: number
+          minimum: 0
+          maximum: 99.99
+          description: Admin-managed discount applied to the product's FOB unit price.
+        discounted_unit_price: { type: ["number", "null"] }
+        discount_amount_per_unit: { type: number }
+    BuyerProductPageResponse:
+      type: object
+      additionalProperties: true
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/BuyerProduct" }
+    BuyerCartItemPricing:
+      type: object
+      additionalProperties: true
+      properties:
+        qty: { type: ["integer", "number", "string"] }
+        currency: { type: [string, "null"] }
+        list_unit_price: { type: ["number", "null"] }
+        unit_price:
+          type: ["number", "string"]
+          description: Current server-calculated discounted FOB unit price.
+        discount_percentage: { type: number, minimum: 0, maximum: 99.99 }
+        discount_amount_per_unit: { type: number }
+        unit_of_measure: { type: string }
+        product: { $ref: "#/components/schemas/BuyerProduct" }
+    BuyerCartResponse:
+      type: object
+      additionalProperties: true
+      properties:
+        data:
+          type: object
+          additionalProperties: true
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/BuyerCartItemPricing" }
+    BuyerTradeValueSummary:
+      type: object
+      additionalProperties: false
+      required: [currency, total_purchase_value_usd, completed_trade_value_usd, processing_trade_value_usd, discount_savings_usd]
+      properties:
+        currency: { type: string, enum: [USD] }
+        total_purchase_value_usd: { type: number }
+        completed_trade_value_usd: { type: number }
+        processing_trade_value_usd: { type: number }
+        discount_savings_usd:
+          type: number
+          description: Savings only from order items with a saved order-time discount snapshot.
+    BuyerDashboardResponse:
+      type: object
+      additionalProperties: true
+      properties:
+        data:
+          type: object
+          additionalProperties: true
+          properties:
+            trade_value_summary: { $ref: "#/components/schemas/BuyerTradeValueSummary" }
     JsonObject:
       type: object
       additionalProperties: true

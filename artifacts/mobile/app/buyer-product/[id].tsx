@@ -6,6 +6,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Card, EmptyState, ErrorState, LoadingCard, Screen } from '@/components/InvestorUI';
+import { BuyerProductPrice } from '@/components/BuyerProductPrice';
 import { useColors } from '@/hooks/useColors';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -15,7 +16,7 @@ import {
   useGetProducts,
 } from '@workspace/api-client-react';
 import { amount, first, messageOf, record } from '@/lib/data';
-import { categoryName, displayPrice, productMinimumQuantity, rowsFromResponse } from '@/lib/buyer-data';
+import { categoryName, productMinimumQuantity, rowsFromResponse } from '@/lib/buyer-data';
 import { buyerProductGalleryImages, buyerProductHasPdfReport, buyerProductReportDownloadPath, buyerProductSpecs, buyerProductValues } from '@/lib/buyer-product-data';
 import { downloadAndSharePublicPdf } from '@/lib/file-download';
 import { motionHaptic } from '@/lib/motion';
@@ -424,7 +425,9 @@ export default function BuyerProductDetails() {
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
             <Card style={{ flex: 1, marginBottom: 0, padding: 14, borderRadius: 18, backgroundColor: colors.glassTintGold }}>
               <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '800', letterSpacing: 0.8 }}>PRODUCT PRICE</Text>
-              <Text style={{ color: colors.primary, fontSize: 16, lineHeight: 21, fontWeight: '800', marginTop: 5 }}>{displayPrice(product)}</Text>
+              <View style={{ marginTop: 5 }}>
+                <BuyerProductPrice product={product} />
+              </View>
             </Card>
             <Card style={{ flex: 1, marginBottom: 0, padding: 14, borderRadius: 18 }}>
               <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '800', letterSpacing: 0.8 }}>MINIMUM ORDER</Text>

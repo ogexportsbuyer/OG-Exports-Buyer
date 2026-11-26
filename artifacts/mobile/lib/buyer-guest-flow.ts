@@ -1,3 +1,5 @@
+import { buyerPriceDetails } from './buyer-pricing.ts';
+
 export type BuyerGuestCartEntry = {
   productId: number;
   quantity: number;
@@ -93,11 +95,17 @@ export function isBuyerGuestFlowSnapshot(value: unknown): value is BuyerGuestFlo
 
 export function buyerGuestCartRow(entry: BuyerGuestCartEntry): Record<string, unknown> {
   const product = record(entry.product);
+  const pricing = buyerPriceDetails(product);
   return {
     id: `guest-${entry.productId}`,
     product_id: entry.productId,
     qty: entry.quantity,
-    unit_price: amount(product, ['price', 'fob']) ?? 0,
+    unit_price: pricing.salePrice ?? 0,
+    list_unit_price: pricing.basePrice,
+    discount_percentage: pricing.discountPercentage,
+    discount_amount_per_unit: pricing.discountAmountPerUnit,
+    unit_of_measure: pricing.unitOfMeasure,
+    currency: pricing.currency,
     product,
   };
 }

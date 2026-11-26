@@ -1348,6 +1348,90 @@ export interface BuyerVoiceTranslationConsentInput {
   enabled: boolean;
 }
 
+export interface BuyerProduct {
+  /** @nullable */
+  fob?: number | string | null;
+  /** @nullable */
+  price?: number | string | null;
+  /** @nullable */
+  currency?: string | null;
+  /**
+     * Unit used for the advertised FOB rate, such as MT, kg, m2, or piece.
+     * @maxLength 32
+     */
+  unit_of_measure?: string;
+  /**
+     * Admin-managed discount applied to the product's FOB unit price.
+     * @minimum 0
+     * @maximum 99.99
+     */
+  discount_percentage?: number;
+  /** @nullable */
+  discounted_unit_price?: number | null;
+  discount_amount_per_unit?: number;
+  [key: string]: unknown;
+ }
+
+export interface BuyerProductPageResponse {
+  data?: BuyerProduct[];
+  [key: string]: unknown;
+ }
+
+export interface BuyerCartItemPricing {
+  qty?: number | string;
+  /** @nullable */
+  currency?: string | null;
+  /** @nullable */
+  list_unit_price?: number | null;
+  /** Current server-calculated discounted FOB unit price. */
+  unit_price?: number | string;
+  /**
+     * @minimum 0
+     * @maximum 99.99
+     */
+  discount_percentage?: number;
+  discount_amount_per_unit?: number;
+  unit_of_measure?: string;
+  product?: BuyerProduct;
+  [key: string]: unknown;
+ }
+
+export type BuyerCartResponseData = {
+  items?: BuyerCartItemPricing[];
+  [key: string]: unknown;
+ };
+
+export interface BuyerCartResponse {
+  data?: BuyerCartResponseData;
+  [key: string]: unknown;
+ }
+
+export type BuyerTradeValueSummaryCurrency = typeof BuyerTradeValueSummaryCurrency[keyof typeof BuyerTradeValueSummaryCurrency];
+
+
+export const BuyerTradeValueSummaryCurrency = {
+  USD: 'USD',
+} as const;
+
+export interface BuyerTradeValueSummary {
+  currency: BuyerTradeValueSummaryCurrency;
+  total_purchase_value_usd: number;
+  completed_trade_value_usd: number;
+  processing_trade_value_usd: number;
+  /** Savings only from order items with a saved order-time discount snapshot. */
+  discount_savings_usd: number;
+}
+
+export type BuyerDashboardResponseData = {
+  trade_value_summary?: BuyerTradeValueSummary;
+  [key: string]: unknown;
+ };
+
+export interface BuyerDashboardResponse {
+  data?: BuyerDashboardResponseData;
+  [key: string]: unknown;
+ }
+
 export interface JsonObject { [key: string]: unknown }
 
 export type GetProductsParams = {

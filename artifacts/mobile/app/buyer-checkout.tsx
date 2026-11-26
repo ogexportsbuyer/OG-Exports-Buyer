@@ -7,6 +7,7 @@ import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Action, Card, EmptyState, ErrorState, Field, LoadingCard, Screen } from '@/components/InvestorUI';
 import { BuyerRfqPicker, type BuyerRfqOption } from '@/components/BuyerRfqPicker';
 import { BuyerDeliveryDatePicker } from '@/components/BuyerDeliveryDatePicker';
+import { BuyerProductPrice } from '@/components/BuyerProductPrice';
 import { useAuth } from '@/context/AuthContext';
 import { useBuyerGuestFlow } from '@/context/BuyerGuestFlowContext';
 import { useColors } from '@/hooks/useColors';
@@ -180,6 +181,9 @@ export default function BuyerCheckout() {
   const hasUnpricedItems = cartItems.some(item => (amount(item, ['unit_price']) ?? 0) <= 0);
   const subtotal = cartItems.reduce((sum, item) => {
     return sum + (amount(item, ['qty']) ?? 0) * (amount(item, ['unit_price']) ?? 0);
+  }, 0);
+  const discountTotal = cartItems.reduce((sum, item) => {
+    return sum + (amount(item, ['qty']) ?? 0) * (amount(item, ['discount_amount_per_unit']) ?? 0);
   }, 0);
   const waitingForGuestCart = Boolean(token && guestFlow.cart.length && !guestFlow.mergeError);
   const canRenderCart = !cartQuery.isLoading && !waitingForGuestCart
@@ -639,13 +643,22 @@ export default function BuyerCheckout() {
                   const unitPrice = amount(item, ['unit_price']) ?? 0;
                   return (
                     <View key={first(item, ['id'], String(index))} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10, marginTop: 10 }}>
-                      <Text style={{ color: colors.mutedForeground, flex: 1, fontSize: 11 }}>
-                        {first(product, ['name'], first(item, ['product_name'], 'Export product'))} × {quantity}
-                      </Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>
+                          {first(product, ['name'], first(item, ['product_name'], 'Export product'))} × {quantity} {first(item, ['unit_of_measure'], first(product, ['unit_of_measure'], 'MT'))}
+                        </Text>
+                        <View style={{ marginTop: 4 }}><BuyerProductPrice product={item} compact /></View>
+                      </View>
                       <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>{unitPrice > 0 ? formatFobPrice(quantity * unitPrice, cartCurrency) : 'Quote'}</Text>
                     </View>
                   );
                 })}
+                {discountTotal > 0 ? (
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 11 }}>
+                    <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>Product discounts saved</Text>
+                    <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '800' }}>−{formatFobPrice(discountTotal, cartCurrency)}</Text>
+                  </View>
+                ) : null}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.border, marginTop: 13, paddingTop: 11 }}>
                   <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '800' }}>Estimated subtotal</Text>
                   <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '800' }}>{subtotal > 0 ? formatFobPrice(subtotal, cartCurrency) : 'Price by quotation'}</Text>
@@ -814,12 +827,19 @@ export default function BuyerCheckout() {
                     <View key={first(item, ['id'], String(index))} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10, marginTop: 11 }}>
                       <View style={{ flex: 1 }}>
                         <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>{first(product, ['name'], first(item, ['product_name'], 'Export product'))}</Text>
-                        <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 3 }}>Quantity: {quantity}</Text>
+                        <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 3 }}>Quantity: {quantity} {first(item, ['unit_of_measure'], first(product, ['unit_of_measure'], 'MT'))}</Text>
+                        <View style={{ marginTop: 4 }}><BuyerProductPrice product={item} compact /></View>
                       </View>
                       <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>{unitPrice > 0 ? formatFobPrice(quantity * unitPrice, cartCurrency) : 'Quote'}</Text>
                     </View>
                   );
                 })}
+                {discountTotal > 0 ? (
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 11 }}>
+                    <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>Product discounts saved</Text>
+                    <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '800' }}>−{formatFobPrice(discountTotal, cartCurrency)}</Text>
+                  </View>
+                ) : null}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.border, marginTop: 13, paddingTop: 11 }}>
                   <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '800' }}>Estimated subtotal</Text>
                   <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '800' }}>{formatFobPrice(subtotal, cartCurrency)}</Text>

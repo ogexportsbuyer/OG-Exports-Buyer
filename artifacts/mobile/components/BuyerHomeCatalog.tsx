@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Card, EmptyState, ErrorState, LoadingCard } from '@/components/InvestorUI';
+import { BuyerProductPrice } from '@/components/BuyerProductPrice';
 import { useColors } from '@/hooks/useColors';
 import { first, record } from '@/lib/data';
 import { categoryName, displayPrice, rowsFromResponse } from '@/lib/buyer-data';
@@ -314,7 +315,9 @@ export default function BuyerHomeCatalog({
                         {categoryName(product)}
                       </Text>
                       <Text numberOfLines={2} style={[styles.recommendationName, { color: colors.foreground }]}>{name}</Text>
-                      <Text numberOfLines={1} style={[styles.recommendationPrice, { color: colors.primary }]}>{displayPrice(product)}</Text>
+                      <View style={{ marginTop: 4 }}>
+                        <BuyerProductPrice product={product} compact />
+                      </View>
                     </View>
                   </Card>
                 </Pressable>
@@ -539,7 +542,9 @@ function HomeProductCard({ product, index, width, testID, onBrowse, onSelectProd
             <Feather name="map-pin" size={10} color={colors.mutedForeground} />
             <Text numberOfLines={1} style={{ flex: 1, color: colors.mutedForeground, fontSize: 9 }}>{origin}</Text>
           </View>
-          <Text numberOfLines={1} style={[styles.productPrice, { color: colors.primary }]}>{displayPrice(product)}</Text>
+          <View style={{ marginTop: 5 }}>
+            <BuyerProductPrice product={product} compact />
+          </View>
           {minimumOrder ? (
             <Text numberOfLines={1} style={[styles.productMoq, { color: colors.mutedForeground }]}>MOQ: {minimumOrder}</Text>
           ) : null}
