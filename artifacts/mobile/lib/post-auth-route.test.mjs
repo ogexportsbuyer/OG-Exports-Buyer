@@ -233,17 +233,26 @@ test('buyer navigation uses Profile in both native and classic tab bars', () => 
   assert.match(layout, /NativeTabs\.Trigger\.Label>\{t\('Profile'\)\}/);
 });
 
-test('buyer selected tab uses the new gold icon fill and readable gold label', () => {
+test('buyer selected tab uses the new gold icon fill and a readable label', () => {
   const layout = readFileSync(new URL('../app/(buyer-tabs)/_layout.tsx', import.meta.url), 'utf8');
   assert.match(layout, /function BuyerTabIcon/);
   assert.match(layout, /focused \? colors\.accentForeground : colors\.mutedForeground/);
   assert.match(layout, /focused && \{ backgroundColor: colors\.accentSurface \}/);
-  assert.match(layout, /tabBarActiveTintColor: colors\.accent/);
+  assert.match(layout, /tabBarActiveTintColor: colors\.accentText/);
   assert.match(layout, /tintColor=\{colors\.navigationAccent\}/);
   assert.match(layout, /selected: colors\.navigationAccent/);
   assert.match(layout, /indicatorColor=\{colors\.accentSurface\}/);
-  assert.match(layout, /selected: \{ color: colors\.accent,/);
+  assert.match(layout, /selected: \{ color: colors\.accentText,/);
   assert.doesNotMatch(layout, /selectedTabIconBackdrop/);
+});
+
+test('notification back action is a compact arrow-only control', () => {
+  const notifications = readFileSync(new URL('../app/buyer-notifications.tsx', import.meta.url), 'utf8');
+  assert.match(notifications, /testID="buyer-notifications-back"/);
+  assert.match(notifications, /accessibilityLabel="Back to home"/);
+  assert.match(notifications, /<Feather name="arrow-left" size=\{18\} color=\{colors\.primary\} \/>/);
+  assert.match(notifications, /router\.replace\('\/\(buyer-tabs\)\/buyer-home'\)/);
+  assert.doesNotMatch(notifications, /Back to Home/);
 });
 
 test('buyer bottom navigation places Dashboard before Messages and keeps home cart shortcut', () => {

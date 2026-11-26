@@ -91,20 +91,13 @@ export default function BuyerNotifications() {
           accessibilityLabel="Back to home"
           onPress={() => router.replace('/(buyer-tabs)/buyer-home')}
           style={{
-            minHeight: 42,
-            flexDirection: 'row',
+            width: 44,
+            height: 44,
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 8,
-            paddingHorizontal: 14,
-            borderRadius: 15,
-            borderWidth: 1,
-            borderColor: colors.glassBorder,
-            backgroundColor: colors.secondary,
           }}
         >
-          <Feather name="home" size={15} color={colors.primary} />
-          <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '800' }}>Back to Home</Text>
+          <Feather name="arrow-left" size={18} color={colors.primary} />
         </Pressable>
       )}
       action={(
