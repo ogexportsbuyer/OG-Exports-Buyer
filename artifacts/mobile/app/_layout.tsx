@@ -208,7 +208,7 @@ function RootLayoutNav() {
         gestureEnabled: true,
         headerBackTitle: t('Back'),
         headerTintColor: colors.primary,
-        headerStyle: { backgroundColor: colors.background },
+        headerStyle: { backgroundColor: colors.glassTintTeal },
         headerBackground: () => <BrandHeaderBackground />,
         headerShadowVisible: false,
         headerTitleStyle: { color: colors.foreground },
