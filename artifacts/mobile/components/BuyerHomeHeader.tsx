@@ -632,7 +632,7 @@ export default function BuyerHomeHeader({
               accessibilityRole="button"
               accessibilityState={{ selected: active }}
               onPress={() => selectTab(label)}
-              style={[styles.topTab, { borderBottomColor: active ? colors.accent : 'transparent' }]}
+               style={[styles.topTab, { borderBottomColor: active ? colors.navigationAccent : 'transparent' }]}
             >
               <Text style={{ color: active ? colors.foreground : colors.mutedForeground, fontSize: 12, fontWeight: active ? '700' : '500' }}>
                 {label}
@@ -643,7 +643,7 @@ export default function BuyerHomeHeader({
       </ScrollView>
 
       <View style={{ paddingTop: 5 }}>
-        <View style={[styles.searchRow, { backgroundColor: colors.card, borderColor: colors.accent, borderRadius: colors.radius + 5 }]}>
+         <View style={[styles.searchRow, { backgroundColor: colors.card, borderColor: colors.navigationAccent, borderRadius: colors.radius + 5 }]}>
           <Feather name="search" size={17} color={colors.mutedForeground} />
           <TextInput
             testID="buyer-home-search-input"

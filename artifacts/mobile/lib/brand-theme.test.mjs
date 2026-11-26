@@ -143,6 +143,8 @@ test('screen and PDF branding share the transparent approved SVG mark', () => {
   assert.match(buyerHeader, /\['Worldwide'\]\.map\(label => \{/, 'the buyer homepage top navigation keeps only Worldwide');
   assert.doesNotMatch(buyerHeader, /'For you'|'Products'/, 'For you and Products are removed from the homepage top navigation');
   assert.match(buyerHeader, /const brandSlides = \[/);
+  assert.match(buyerHeader, /borderBottomColor: active \? colors\.navigationAccent : 'transparent'/, 'Worldwide uses the exact selected-navigation gold');
+  assert.match(buyerHeader, /borderColor: colors\.navigationAccent/, 'the homepage search border uses the same navigation gold');
   assert.match(buyerHeader, /<Feather name="shopping-cart" size=\{20\} color=\{colors\.primary\} \/>/, 'the homepage cart icon uses the dark-green primary color');
   assert.match(buyerHeader, /backgroundColor: colors\.accentSurface/, 'cart and notification count badges use the same gold surface');
   assert.match(buyerHeader, /const isFocused = usePathname\(\)\.split\('\/'\)\.includes\('buyer-home'\)/, 'autoplay follows the active buyer-home route');
