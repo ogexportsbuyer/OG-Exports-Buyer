@@ -43,7 +43,9 @@ class Shipment extends Model
 
     public function milestones(): HasMany
     {
-        return $this->hasMany(ShipmentMilestone::class);
+        return $this->hasMany(ShipmentMilestone::class)
+            ->orderBy('occurred_at')
+            ->orderBy('id');
     }
 
     public function tradeDocuments(): HasMany

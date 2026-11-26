@@ -51,6 +51,18 @@ export default function BuyerShipmentDetail() {
               <Status value={shipment.statusLabel} />
             </View>
 
+            <View style={{ marginTop: 13, padding: 11, borderRadius: 12, backgroundColor: colors.secondary }}>
+              <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '700', letterSpacing: 0.7, textTransform: 'uppercase' }}>
+                Current logistics milestone
+              </Text>
+              <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '800', marginTop: 4 }}>
+                {shipment.currentMilestone || 'Awaiting Booking'}
+              </Text>
+              <Text style={{ color: colors.mutedForeground, fontSize: 9, marginTop: 3 }}>
+                Separate from the order fulfilment status.
+              </Text>
+            </View>
+
             {shipment.trackingNumber ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 13 }}>
                 <Feather name="hash" size={13} color={colors.primary} />

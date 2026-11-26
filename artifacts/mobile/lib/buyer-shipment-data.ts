@@ -149,6 +149,28 @@ export function formatShipmentDate(value: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+export function formatShipmentTimestamp(value: string): string {
+  if (!value) return '—';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return formatShipmentDate(value);
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const dateLabel = formatShipmentDate(date.toISOString());
+  const timeLabel = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return `${dateLabel}, ${timeLabel}`;
+}
+
+function sortMilestonesChronologically(milestones: unknown[]): unknown[] {
+  return milestones
+    .map((value, index) => {
+      const milestone = asRecord(value);
+      const timestamp = fieldText(milestone, ['occurred_at', 'event_date', 'created_at', 'updated_at']);
+      const parsedTimestamp = Date.parse(timestamp);
+      return { value, index, timestamp: Number.isFinite(parsedTimestamp) ? parsedTimestamp : Number.NEGATIVE_INFINITY };
+    })
+    .sort((left, right) => left.timestamp - right.timestamp || left.index - right.index)
+    .map(item => item.value);
+}
+
 function milestoneRank(label: string): number {
   const key = normalizedWords(label);
   if (!key) return -1;
@@ -185,11 +207,11 @@ function timelineFor(status: string, milestones: unknown[], currentMilestone: st
   milestones.forEach((item, index) => {
     const milestone = asRecord(item);
     const title = fieldText(milestone, ['label', 'title', 'status'], 'Shipment update');
-    const date = formatShipmentDate(fieldText(milestone, ['occurred_at', 'event_date', 'created_at', 'updated_at']));
+    const date = formatShipmentTimestamp(fieldText(milestone, ['occurred_at', 'event_date', 'created_at', 'updated_at']));
     const description = fieldText(milestone, ['description', 'notes', 'note']);
     const rank = milestoneRank(title);
     if (rank >= 0 && rank < SHIPMENT_TIMELINE_STEPS.length) {
-      if (!events.has(rank)) events.set(rank, { date, description });
+      events.set(rank, { date, description });
     } else {
       updates.push({ id: fieldText(milestone, ['id'], String(index)), title, date, description });
     }
@@ -220,7 +242,10 @@ function shipmentProgress(status: string, currentMilestone: string, milestoneCou
   const normalized = normalizeShipmentStatus(status);
   if (normalized.includes('deliver')) return 100;
   const rank = milestoneRank(currentMilestone);
-  if (rank >= 0) return Math.min(95, Math.round(((rank + 1) / MILESTONE_ORDER.length) * 100));
+  if (rank >= 0 && rank < SHIPMENT_TIMELINE_STEPS.length) {
+    return Math.round(((rank + 1) / SHIPMENT_TIMELINE_STEPS.length) * 100);
+  }
+  if (rank === SHIPMENT_TIMELINE_STEPS.length) return 100;
   if (milestoneCount > 0) return Math.min(90, Math.round((milestoneCount / Math.max(milestoneCount + 1, 4)) * 100));
   if (normalized.includes('arriv')) return 85;
   if (normalized.includes('transit')) return 65;
@@ -268,9 +293,11 @@ function mapDocument(value: unknown, index: number): ShipmentDocument {
 export function mapBuyerShipment(value: unknown): BuyerShipmentView {
   const shipment = asRecord(value);
   const order = asRecord(shipment.order);
-  const milestones = list(shipment.milestones);
+  const milestones = sortMilestonesChronologically(list(shipment.milestones));
   const statusRaw = fieldText(shipment, ['status'], 'pending');
-  const currentMilestone = fieldText(shipment, ['current_milestone', 'milestone']);
+  const latestMilestone = asRecord(milestones[milestones.length - 1]);
+  const currentMilestone = fieldText(shipment, ['current_milestone', 'milestone'])
+    || fieldText(latestMilestone, ['label', 'title', 'status']);
   const documents = list(shipment.trade_documents ?? shipment.tradeDocuments).map(mapDocument);
   const product = fieldText(shipment, ['product_snapshot', 'product_name', 'product'])
     || fieldText(order, ['product_snapshot', 'product_name', 'product'], 'Export shipment');
@@ -282,7 +309,7 @@ export function mapBuyerShipment(value: unknown): BuyerShipmentView {
     return [{
       id: fieldText(milestone, ['id'], String(index)),
       title,
-      date: formatShipmentDate(fieldText(milestone, ['occurred_at', 'event_date', 'created_at', 'updated_at'])),
+      date: formatShipmentTimestamp(fieldText(milestone, ['occurred_at', 'event_date', 'created_at', 'updated_at'])),
       description: fieldText(milestone, ['description', 'notes', 'note']),
     }];
   });

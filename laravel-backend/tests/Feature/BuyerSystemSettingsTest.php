@@ -149,10 +149,47 @@ it('sends safe, actionable buyer quotation pushes with their related record IDs'
     InvestorPushBridge::sendNotification($this->buyer, $notification);
 
     Http::assertSent(fn ($request) => $request->url() === 'https://exp.host/--/api/v2/push/send'
-        && $request->data()[0]['title'] === 'Quotation response received'
+        && $request->data()[0]['title'] === 'Reply on quotation'
         && $request->data()[0]['data']['href'] === '/buyer/quotations'
         && $request->data()[0]['data']['quotation_id'] === '91'
         && $request->data()[0]['data']['rfq_id'] === '37');
+});
+
+it('sends shipment milestone push copy and shipment deep-link IDs to the buyer device', function () {
+    $token = InvestorPushToken::query()->create([
+        'user_id' => $this->buyer->id,
+        'expo_push_token' => 'ExponentPushToken[Buyerdeviceabcdefghijk123456789]',
+        'platform' => 'android',
+    ]);
+    Http::fake([
+        'https://exp.host/--/api/v2/push/send' => Http::response(['data' => [['status' => 'ok']]]),
+    ]);
+    $notification = AppNotification::query()->create([
+        'user_id' => $this->buyer->id,
+        'type' => PortalNotificationTypes::SHIPMENT_UPDATE,
+        'title' => 'Shipment Received at Port',
+        'body' => 'Your shipment for order ORD-92 has successfully entered the port terminal and is awaiting vessel loading. Shipment reference: OGX-92.',
+        'data' => [
+            'href' => '/buyer/shipments',
+            'shipment_id' => 92,
+            'order_id' => 31,
+            'order_number' => 'ORD-92',
+            'current_milestone' => 'Gate-In at Port',
+            'shipment_reference' => 'OGX-92',
+            'shipment_event' => 'logistics_milestone',
+        ],
+    ]);
+
+    InvestorPushBridge::sendNotification($this->buyer, $notification);
+
+    Http::assertSent(fn ($request) => $request->url() === 'https://exp.host/--/api/v2/push/send'
+        && $request->data()[0]['to'] === $token->expo_push_token
+        && $request->data()[0]['channelId'] === 'buyer-updates'
+        && $request->data()[0]['title'] === 'Shipment Received at Port'
+        && $request->data()[0]['body'] === $notification->body
+        && $request->data()[0]['data']['shipment_id'] === '92'
+        && $request->data()[0]['data']['order_id'] === '31'
+        && $request->data()[0]['data']['href'] === '/buyer/shipments');
 });
 
 it('uses buyer-specific private lock-screen copy for business verification updates', function () {
@@ -176,7 +213,7 @@ it('uses buyer-specific private lock-screen copy for business verification updat
 
     Http::assertSent(fn ($request) => $request->url() === 'https://exp.host/--/api/v2/push/send'
         && $request->data()[0]['title'] === 'Business verification needs attention'
-        && str_contains($request->data()[0]['body'], 'review your business profile')
+        && str_contains($request->data()[0]['body'], 'review your business verification status')
         && ! str_contains($request->data()[0]['body'], 'Private review details'));
 });
 

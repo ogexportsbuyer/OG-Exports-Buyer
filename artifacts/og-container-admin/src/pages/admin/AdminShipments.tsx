@@ -36,7 +36,7 @@ const STATUS: Record<string, { bg: string; color: string; label: string }> = {
   delivered: { bg: "#f0fdf4", color: GREEN, label: "Delivered" },
 }
 
-/** Pending + all 8 journey milestones for Update dropdown / Current Status select. */
+/** Nine logistics milestones, kept separate from order fulfilment status. */
 const STATUS_FLOW: { status: AdminShipment["status"]; milestone: string }[] = [
   { status: "pending", milestone: "Awaiting Booking" },
   { status: "booking", milestone: "Booking Confirmed" },
@@ -49,18 +49,15 @@ const STATUS_FLOW: { status: AdminShipment["status"]; milestone: string }[] = [
   { status: "delivered", milestone: "Final Delivery" },
 ]
 
-const MILESTONES = [
-  "Booking Confirmed", "Gate-In at Port", "Vessel Loaded", "Departed Origin",
-  "In Transit", "Arrived Destination", "Customs Cleared", "Final Delivery",
-]
+const MILESTONES = STATUS_FLOW.map(stage => stage.milestone)
 
-/** Fallback active index into MILESTONES for each coarse status. */
+/** Fallback active index into the logistics milestone flow for each shipment status. */
 const STATUS_ACTIVE_INDEX: Record<AdminShipment["status"], number> = {
   pending: 0,
-  booking: 0,
-  "in-transit": 4,
-  arrived: 5,
-  delivered: 7,
+  booking: 1,
+  "in-transit": 5,
+  arrived: 6,
+  delivered: 8,
 }
 
 function dashToEmpty(v: string | undefined) {
@@ -346,7 +343,7 @@ export default function AdminShipments() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border">
-                    {["Shipment", "Buyer", "Route", "Vessel", "ETD/ETA", "Status", "Actions"].map(h => (
+                    {["Shipment", "Buyer", "Route", "Vessel", "ETD/ETA", "Shipment Status", "Actions"].map(h => (
                       <th key={h} className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase">{h}</th>
                     ))}
                   </tr>
@@ -466,7 +463,7 @@ export default function AdminShipments() {
                     </div>
                   ))}
                   <div>
-                    <label className="text-[10px] font-semibold text-muted-foreground uppercase">Current Status</label>
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase">Current Logistics Milestone</label>
                     <select
                       className={inputClass}
                       value={detailForm.milestone}
@@ -476,6 +473,9 @@ export default function AdminShipments() {
                         <option key={sf.milestone} value={sf.milestone}>{sf.milestone}</option>
                       ))}
                     </select>
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      This shipment timeline is separate from the order fulfilment status.
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -491,7 +491,7 @@ export default function AdminShipments() {
 
                 {/* Milestone Progress */}
                 <div>
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-3">Shipment Journey</p>
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-3">Logistics Journey</p>
                   <div className="space-y-2">
                     {MILESTONES.map((m, i) => {
                       const activeIdx = getActiveMilestoneIndex(selected)
@@ -513,6 +513,37 @@ export default function AdminShipments() {
                       )
                     })}
                   </div>
+                </div>
+
+                <div className="pt-2 border-t border-border">
+                  <div className="flex items-baseline justify-between gap-2 mb-3">
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Milestone History</p>
+                    <p className="text-[9px] text-muted-foreground">Oldest to newest</p>
+                  </div>
+                  {selected.milestones?.length ? (
+                    <div className="space-y-2">
+                      {selected.milestones.map((entry, index) => {
+                        const isLatest = index === (selected.milestones?.length ?? 0) - 1
+                        return (
+                          <div key={`${entry.id}-${index}`} className="flex gap-2.5 rounded-lg border border-border/70 p-2.5">
+                            <div className="mt-1.5 w-2 h-2 shrink-0 rounded-full" style={{ background: isLatest ? EMERALD : "#94a3b8" }} />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                                <span className="text-[11px] font-semibold">{entry.label}</span>
+                                {isLatest ? <span className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: EMERALD }}>Latest</span> : null}
+                              </div>
+                              <p className="mt-0.5 text-[10px] text-muted-foreground">
+                                {entry.occurredAt || "Timestamp not recorded"}
+                              </p>
+                              {entry.notes ? <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">{entry.notes}</p> : null}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground">No shipment milestones have been recorded yet.</p>
+                  )}
                 </div>
 
                 {/* Shipping Documents */}

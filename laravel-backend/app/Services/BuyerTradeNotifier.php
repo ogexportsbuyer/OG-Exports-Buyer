@@ -8,6 +8,7 @@ use App\Models\Shipment;
 use App\Models\TradeDocument;
 use App\Models\User;
 use App\Support\DepositReviewStatuses;
+use App\Support\BuyerShipmentMilestones;
 use App\Support\NotifiesUsers;
 use App\Support\OrderStatuses;
 use App\Support\PortalNotificationTypes;
@@ -121,26 +122,36 @@ class BuyerTradeNotifier
             return;
         }
 
-        $label = $shipment->container ?: ($shipment->product_snapshot ?: 'Shipment #'.$shipment->id);
+        $milestone = filled($shipment->current_milestone)
+            ? trim((string) $shipment->current_milestone)
+            : 'Awaiting Booking';
+        $reference = self::shipmentReference($shipment);
+        $content = BuyerShipmentMilestones::notification(
+            $milestone,
+            self::orderNumberForShipment($shipment),
+            $reference,
+        );
         $href = '/buyer/shipments';
 
         NotifiesUsers::notifyAndEmail(
             $buyer,
             PortalNotificationTypes::SHIPMENT_UPDATE,
-            "Shipment Tracking Created — {$label}",
-            'A shipment has been created for your order. Track progress in your portal.',
+            $content['title'],
+            $content['body'],
             [
                 'shipment_id' => $shipment->id,
                 'order_id' => $shipment->order_id,
                 'order_number' => self::orderNumberForShipment($shipment),
                 'status' => $shipment->status,
-                'current_milestone' => $shipment->current_milestone,
+                'current_milestone' => $milestone,
+                'shipment_reference' => $reference,
+                'shipment_event' => 'logistics_milestone',
                 'href' => $href,
             ],
             'buyer_shipment_update',
             [
-                'container' => (string) ($shipment->container ?: $label),
-                'milestone' => (string) ($shipment->current_milestone ?: 'Created'),
+                'container' => (string) ($shipment->container ?: $reference),
+                'milestone' => $milestone,
                 'vessel' => (string) ($shipment->vessel ?: '—'),
                 'portal_url' => self::portalUrl($href),
             ]
@@ -161,36 +172,44 @@ class BuyerTradeNotifier
             return;
         }
 
-        $label = $shipment->container ?: ($shipment->product_snapshot ?: 'Shipment #'.$shipment->id);
-        $parts = [];
-        if (isset($changes['current_milestone'])) {
-            $parts[] = 'Milestone: '.$changes['current_milestone'];
-        }
-        if (isset($changes['status'])) {
-            $parts[] = 'Status: '.ucfirst(str_replace('_', ' ', (string) $changes['status']));
-        }
-        if (isset($changes['vessel'])) {
-            $parts[] = 'Vessel: '.$changes['vessel'];
-        }
-        if (isset($changes['eta'])) {
-            $parts[] = 'ETA: '.$changes['eta'];
-        }
-        if (isset($changes['etd'])) {
-            $parts[] = 'ETD: '.$changes['etd'];
-        }
-        if ($parts === []) {
-            $parts[] = 'Shipment details were updated.';
-        }
-
         $milestone = trim((string) ($changes['current_milestone'] ?? ''));
         $status = trim((string) ($changes['status'] ?? ''));
-        $title = $milestone !== ''
-            ? "Shipment Milestone: {$milestone} — {$label}"
-            : ($status !== ''
-                ? 'Shipment Status: '.ucfirst(str_replace('_', ' ', $status))." — {$label}"
-                : "Shipment Details Updated — {$label}");
+        $reference = self::shipmentReference($shipment);
+        $orderNumber = self::orderNumberForShipment($shipment);
+        $event = 'shipment_details';
+
+        if ($milestone !== '') {
+            $content = BuyerShipmentMilestones::notification($milestone, $orderNumber, $reference);
+            $title = $content['title'];
+            $body = $content['body'];
+            $event = 'logistics_milestone';
+        } else {
+            $parts = [];
+            if ($status !== '') {
+                $statusLabel = self::shipmentStatusLabel($status);
+                $parts[] = "Shipment status for order {$orderNumber} is now {$statusLabel}";
+                $title = "Shipment Status: {$statusLabel} — {$reference}";
+                $event = 'shipment_status';
+            } else {
+                $title = "Shipment Logistics Details Updated — {$reference}";
+            }
+            if (isset($changes['vessel'])) {
+                $parts[] = 'Vessel: '.$changes['vessel'];
+            }
+            if (isset($changes['eta'])) {
+                $parts[] = 'Estimated arrival: '.$changes['eta'];
+            }
+            if (isset($changes['etd'])) {
+                $parts[] = 'Estimated departure: '.$changes['etd'];
+            }
+            if ($parts === []) {
+                return;
+            }
+
+            $body = implode('. ', $parts).". Shipment reference: {$reference}.";
+        }
+
         $href = '/buyer/shipments';
-        $body = implode('. ', $parts).'.';
 
         NotifiesUsers::notifyAndEmail(
             $buyer,
@@ -200,14 +219,16 @@ class BuyerTradeNotifier
             [
                 'shipment_id' => $shipment->id,
                 'order_id' => $shipment->order_id,
-                'order_number' => self::orderNumberForShipment($shipment),
+                'order_number' => $orderNumber,
                 'status' => $shipment->status,
                 'current_milestone' => $shipment->current_milestone,
+                'shipment_reference' => $reference,
+                'shipment_event' => $event,
                 'href' => $href,
             ],
             'buyer_shipment_update',
             [
-                'container' => (string) ($shipment->container ?: $label),
+                'container' => (string) ($shipment->container ?: $reference),
                 'milestone' => (string) ($shipment->current_milestone ?: ($changes['current_milestone'] ?? 'Updated')),
                 'vessel' => (string) ($shipment->vessel ?: ($changes['vessel'] ?? '—')),
                 'portal_url' => self::portalUrl($href),
@@ -410,6 +431,18 @@ class BuyerTradeNotifier
 
         return $shipment->order?->order_number
             ?: ($shipment->order_id ? '#'.$shipment->order_id : 'Shipment #'.$shipment->id);
+    }
+
+    private static function shipmentReference(Shipment $shipment): string
+    {
+        return filled($shipment->container)
+            ? trim((string) $shipment->container)
+            : 'Shipment #'.$shipment->id;
+    }
+
+    private static function shipmentStatusLabel(string $status): string
+    {
+        return ucfirst(str_replace(['_', '-'], ' ', $status));
     }
 
     private static function orderStatusTitle(string $status): string

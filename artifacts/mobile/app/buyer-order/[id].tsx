@@ -139,6 +139,14 @@ export default function BuyerOrderDetail() {
                     </Text>
                     <Status value={first(shipment, ['status'], 'Pending')} />
                   </View>
+                  <View style={{ marginTop: 9, padding: 9, borderRadius: 10, backgroundColor: colors.secondary }}>
+                    <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      Current logistics milestone
+                    </Text>
+                    <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700', marginTop: 3 }}>
+                      {first(shipment, ['current_milestone'], 'Awaiting Booking')}
+                    </Text>
+                  </View>
                   {first(shipment, ['tracking_number', 'tracking_code']) ? (
                     <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 8 }}>
                       Tracking: {first(shipment, ['tracking_number', 'tracking_code'])}

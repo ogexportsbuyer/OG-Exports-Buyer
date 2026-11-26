@@ -11,10 +11,31 @@ export function BuyerShipmentTimeline({ steps, updates = [] }: {
   updates?: ShipmentUpdate[];
 }) {
   const colors = useColors();
+  const currentStep = steps.find(item => item.active)
+    || [...steps].reverse().find(item => item.done)
+    || steps[0];
 
   return (
     <>
       <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '800', marginBottom: 9 }}>Shipment timeline</Text>
+      {currentStep ? (
+        <Card style={{ padding: 14, marginBottom: 9, backgroundColor: colors.secondary }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card }}>
+              <Feather name={currentStep.done ? 'check-circle' : 'activity'} size={16} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '700', letterSpacing: 0.7, textTransform: 'uppercase' }}>
+                Latest logistics milestone
+              </Text>
+              <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '800', marginTop: 3 }}>{currentStep.step}</Text>
+              {currentStep.date !== '—' ? (
+                <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 3 }}>{currentStep.date}</Text>
+              ) : null}
+            </View>
+          </View>
+        </Card>
+      ) : null}
       <Card style={{ padding: 14, marginBottom: 13 }}>
         {steps.map((item, index) => {
           const completeColor = item.done ? colors.statusSuccess : colors.primary;

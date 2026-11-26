@@ -298,6 +298,13 @@ export interface AdminShipmentDocument {
   url?: string
 }
 
+export interface AdminShipmentMilestone {
+  id: number
+  label: string
+  occurredAt: string
+  notes?: string
+}
+
 export interface AdminShipment {
   id: string; order: string; buyer: string; product: string; vessel: string
   container: string; origin: string; destination: string; line: string
@@ -312,6 +319,7 @@ export interface AdminShipment {
   paymentStatus?: string
   paymentNotes?: string
   documents: AdminShipmentDocument[]
+  milestones?: AdminShipmentMilestone[]
 }
 
 export interface AdminKYC {
@@ -1192,6 +1200,19 @@ function toIsoDate(d?: string | Date | null): string {
   return `${y}-${mo}-${day}`
 }
 
+function formatShipmentMilestoneTimestamp(value: unknown): string {
+  if (typeof value !== "string" || !value.trim()) return ""
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
+}
+
 function mapShipment(s: any): AdminShipment {
   const statusRaw = String(s.status || "pending").toLowerCase().replace("_", "-")
   const statusMap: Record<string, AdminShipment["status"]> = {
@@ -1212,6 +1233,20 @@ function mapShipment(s: any): AdminShipment {
   const paymentMethod = order?.payment_method ? String(order.payment_method) : ""
   const paymentStatus = order?.payment_status ? String(order.payment_status) : ""
   const paymentNotes = order?.notes != null && order.notes !== "" ? String(order.notes) : ""
+  const milestones = (Array.isArray(s.milestones) ? s.milestones : [])
+    .map((milestone: any) => ({
+      id: Number(milestone.id),
+      label: String(milestone.label || milestone.title || "Shipment update"),
+      occurredAt: formatShipmentMilestoneTimestamp(
+        milestone.occurred_at || milestone.event_date || milestone.created_at || milestone.updated_at,
+      ),
+      notes: milestone.notes || milestone.note ? String(milestone.notes || milestone.note) : undefined,
+      sortAt: new Date(
+        milestone.occurred_at || milestone.event_date || milestone.created_at || milestone.updated_at || 0,
+      ).getTime(),
+    }))
+    .sort((a: { sortAt: number }, b: { sortAt: number }) => a.sortAt - b.sortAt)
+    .map(({ sortAt: _sortAt, ...milestone }: { sortAt: number; id: number; label: string; occurredAt: string; notes?: string }) => milestone)
   return {
     id: String(s.id),
     order: order?.order_number || (s.order_id != null ? String(s.order_id) : "—"),
@@ -1232,6 +1267,7 @@ function mapShipment(s: any): AdminShipment {
     paymentMethod: paymentMethod || undefined,
     paymentStatus: paymentStatus || undefined,
     paymentNotes: paymentNotes || undefined,
+    milestones,
     documents: Array.from(
       indexDocumentsByType(
         docsRaw.map((d: any) => ({

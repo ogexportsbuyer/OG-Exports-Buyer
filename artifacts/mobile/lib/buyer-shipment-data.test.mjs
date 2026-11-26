@@ -46,7 +46,7 @@ test('maps website shipment details and authenticated document routes', () => {
   assert.equal(shipment.eta, 'Dec 4, 2026');
   assert.equal(shipment.timeline.length, SHIPMENT_TIMELINE_STEPS.length);
   assert.equal(shipment.timeline[4].active, true);
-  assert.equal(shipment.timeline[4].date, 'Nov 20, 2026');
+  assert.match(shipment.timeline[4].date, /^Nov 20, 2026, \d{1,2}:\d{2} (AM|PM)$/);
   assert.equal(shipment.documents[0].viewUrl, '/api/buyer/documents/101/view');
   assert.equal(shipment.documents[0].downloadUrl, '/api/buyer/documents/101/download');
   assert.equal(shipment.documents[0].extension, 'pdf');
@@ -100,6 +100,28 @@ test('uses related order destination when shipment destination is absent and rec
   assert.equal(shipment.vessel, 'MV Buyer Route');
   assert.equal(shipment.shippingLine, 'Ocean Line');
   assert.equal(shipment.eta, 'Dec 18, 2026');
+});
+
+test('sorts the full milestone history chronologically and uses the latest event for the current stage', () => {
+  const shipment = mapBuyerShipment({
+    id: 92,
+    status: 'booking',
+    order: { status: 'delivered', order_number: 'ORD-92' },
+    milestones: [
+      { id: 3, label: 'Trade desk note', occurred_at: '2026-11-25T09:30:00Z' },
+      { id: 2, label: 'Gate-In at Port', occurred_at: '2026-11-24T09:00:00Z' },
+      { id: 1, label: 'Booking Confirmed', occurred_at: '2026-11-23T08:15:00Z' },
+      { id: 4, label: 'Gate-In at Port', occurred_at: '2026-11-25T10:00:00Z' },
+    ],
+  });
+
+  assert.equal(shipment.currentMilestone, 'Gate-In at Port');
+  assert.equal(shipment.statusLabel, 'Loading');
+  assert.equal(shipment.timeline[1].done, true);
+  assert.equal(shipment.timeline[2].active, true);
+  assert.match(shipment.timeline[1].date, /^Nov 23, 2026, \d{1,2}:\d{2} (AM|PM)$/);
+  assert.match(shipment.timeline[2].date, /^Nov 25, 2026, \d{1,2}:\d{2} (AM|PM)$/);
+  assert.match(shipment.recentUpdates[0].date, /^Nov 25, 2026, \d{1,2}:\d{2} (AM|PM)$/);
 });
 
 test('shipment details omit unavailable placeholders and keep reported values', () => {

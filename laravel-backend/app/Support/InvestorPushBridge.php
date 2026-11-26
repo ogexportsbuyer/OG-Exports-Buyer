@@ -302,7 +302,7 @@ final class InvestorPushBridge
         bool $isBuyer = false,
     ): array {
         if ($isBuyer) {
-            return self::buyerLockScreenContent($type, $data, $inAppTitle);
+            return self::buyerLockScreenContent($type, $data, $inAppTitle, $inAppBody);
         }
 
         if (self::isFinancialType($type)) {
@@ -396,7 +396,12 @@ final class InvestorPushBridge
      * @param  array<string, mixed>  $data
      * @return array{0: string, 1: string}
      */
-    private static function buyerLockScreenContent(string $type, array $data, ?string $inAppTitle): array
+    private static function buyerLockScreenContent(
+        string $type,
+        array $data,
+        ?string $inAppTitle,
+        ?string $inAppBody,
+    ): array
     {
         $title = filled($inAppTitle)
             ? Str::limit(trim(strip_tags((string) $inAppTitle)), 64, '')
@@ -430,6 +435,10 @@ final class InvestorPushBridge
         }
 
         if ($type === PortalNotificationTypes::SHIPMENT_UPDATE) {
+            if (filled($inAppBody)) {
+                return [$title, Str::limit(trim(strip_tags((string) $inAppBody)), 220, '…')];
+            }
+
             $milestone = trim(strip_tags((string) ($data['current_milestone'] ?? '')));
             $status = self::humanizedStatus($data['status'] ?? null);
             if ($milestone !== '') {

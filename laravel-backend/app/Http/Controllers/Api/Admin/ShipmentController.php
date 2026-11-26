@@ -8,6 +8,7 @@ use App\Models\Shipment;
 use App\Models\ShipmentMilestone;
 use App\Services\BuyerTradeNotifier;
 use App\Support\AuditsActions;
+use App\Support\BuyerShipmentMilestones;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -51,9 +52,21 @@ class ShipmentController extends Controller
             'current_milestone' => ['nullable', 'string', 'max:255'],
         ]);
 
+        $initialMilestone = trim((string) ($data['current_milestone'] ?? ''));
+        if ($initialMilestone === '') {
+            $initialMilestone = 'Awaiting Booking';
+        }
+        $initialMilestone = BuyerShipmentMilestones::canonicalLabel($initialMilestone) ?? $initialMilestone;
+
         $shipment = Shipment::create([
             ...$data,
             'status' => $data['status'] ?? 'pending',
+            'current_milestone' => $initialMilestone,
+        ]);
+        ShipmentMilestone::create([
+            'shipment_id' => $shipment->id,
+            'label' => $initialMilestone,
+            'occurred_at' => now(),
         ]);
 
         AuditsActions::log('shipment.created', 'shipments', $request->user(), [
@@ -104,26 +117,25 @@ class ShipmentController extends Controller
             'current_milestone' => ['nullable', 'string', 'max:255'],
         ]);
 
+        if (isset($data['current_milestone']) && is_string($data['current_milestone'])) {
+            $data['current_milestone'] = trim($data['current_milestone']);
+            $data['current_milestone'] = BuyerShipmentMilestones::canonicalLabel($data['current_milestone'])
+                ?? $data['current_milestone'];
+        }
+
         $shipment->update($data);
 
         $newMilestone = $data['current_milestone'] ?? null;
         if (
             is_string($newMilestone)
             && $newMilestone !== ''
-            && $newMilestone !== $previousMilestone
+            && ! BuyerShipmentMilestones::isSame($previousMilestone, $newMilestone)
         ) {
-            $alreadyLogged = ShipmentMilestone::query()
-                ->where('shipment_id', $shipment->id)
-                ->where('label', $newMilestone)
-                ->exists();
-
-            if (! $alreadyLogged) {
-                ShipmentMilestone::create([
-                    'shipment_id' => $shipment->id,
-                    'label' => $newMilestone,
-                    'occurred_at' => now(),
-                ]);
-            }
+            ShipmentMilestone::create([
+                'shipment_id' => $shipment->id,
+                'label' => $newMilestone,
+                'occurred_at' => now(),
+            ]);
         }
 
         $shipment = $shipment->fresh()->load(['milestones', 'buyer']);
@@ -132,6 +144,12 @@ class ShipmentController extends Controller
         foreach ($tracked as $field) {
             $old = $previous[$field] ?? null;
             $new = $shipment->{$field};
+            if (
+                $field === 'current_milestone'
+                && BuyerShipmentMilestones::isSame(is_string($old) ? $old : null, (string) $new)
+            ) {
+                continue;
+            }
             $oldStr = $old instanceof \DateTimeInterface ? $old->format('Y-m-d') : (string) $old;
             $newStr = $new instanceof \DateTimeInterface ? $new->format('Y-m-d') : (string) $new;
             if ($oldStr !== $newStr && filled($new)) {
@@ -160,9 +178,25 @@ class ShipmentController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
+        $label = trim($data['label']);
+        $label = BuyerShipmentMilestones::canonicalLabel($label) ?? $label;
+        if (BuyerShipmentMilestones::isSame($shipment->current_milestone, $label)) {
+            $existing = $shipment->milestones
+                ->first(fn (ShipmentMilestone $entry): bool => BuyerShipmentMilestones::isSame($entry->label, $label));
+
+            $milestone = $existing ?? ShipmentMilestone::create([
+                'shipment_id' => $shipment->id,
+                'label' => $label,
+                'occurred_at' => $data['occurred_at'] ?? now(),
+                'notes' => $data['notes'] ?? null,
+            ]);
+
+            return response()->json(['data' => $milestone, 'unchanged' => true]);
+        }
+
         $milestone = ShipmentMilestone::create([
             'shipment_id' => $shipment->id,
-            'label' => $data['label'],
+            'label' => $label,
             'occurred_at' => $data['occurred_at'] ?? now(),
             'notes' => $data['notes'] ?? null,
         ]);
@@ -187,27 +221,28 @@ class ShipmentController extends Controller
             ->findOrFail($milestoneId);
         $previousLabel = $milestone->label;
 
-        $milestone->update($request->validate([
-            'label' => ['sometimes', 'string', 'max:255'],
+        $changes = $request->validate([
+            'label' => ['sometimes', 'string', 'min:1', 'max:255'],
             'occurred_at' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
-        ]));
+        ]);
+        if (isset($changes['label'])) {
+            $changes['label'] = trim($changes['label']);
+            $changes['label'] = BuyerShipmentMilestones::canonicalLabel($changes['label']) ?? $changes['label'];
+        }
+        $milestone->update($changes);
 
-        if ($milestone->wasChanged()) {
-            $changes = ['milestone_details' => true];
-
+        if ($milestone->wasChanged('label')) {
             if (
-                $milestone->wasChanged('label')
-                && $shipment->current_milestone === $previousLabel
+                BuyerShipmentMilestones::isSame($shipment->current_milestone, $previousLabel)
+                && ! BuyerShipmentMilestones::isSame($previousLabel, $milestone->label)
             ) {
                 $shipment->update(['current_milestone' => $milestone->label]);
-                $changes = ['current_milestone' => $milestone->label];
+                BuyerTradeNotifier::shipmentUpdated(
+                    $shipment->fresh()->load('buyer'),
+                    ['current_milestone' => $milestone->label],
+                );
             }
-
-            BuyerTradeNotifier::shipmentUpdated(
-                $shipment->fresh()->load('buyer'),
-                $changes,
-            );
         }
 
         return response()->json(['data' => $milestone->fresh()]);

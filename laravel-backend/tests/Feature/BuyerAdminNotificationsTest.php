@@ -311,7 +311,188 @@ it('emails the buyer when an admin edits an existing shipment milestone', functi
         ->sole();
     $messages = Mail::mailer('array')->getSymfonyTransport()->messages();
 
-    expect($notification->body)->toContain('Vessel Loaded')
+    expect($notification->title)->toBe('Shipment Loaded on Vessel')
+        ->and($notification->body)->toBe(
+            'Your shipment for order ORD-SHIPMENT-EMAIL has been successfully loaded onto the designated vessel. Shipment reference: OGXU1234567.'
+        )
+        ->and($notification->data['shipment_id'] ?? null)->toBe($shipment->id)
+        ->and($notification->data['order_id'] ?? null)->toBe($order->id)
         ->and($messages)->toHaveCount(1)
         ->and($messages[0]->getEnvelope()->getRecipients()[0]->getAddress())->toBe($this->buyer->email);
+});
+
+it('starts shipment tracking at awaiting booking and sends the nine dedicated logistics alerts', function () {
+    $order = Order::query()->create([
+        'order_number' => 'ORD-SHIPMENT-FLOW',
+        'buyer_id' => $this->buyer->id,
+        'status' => OrderStatuses::ORDER_CONFIRMED,
+        'payment_status' => 'unpaid',
+        'total_value' => 5000,
+        'currency' => 'USD',
+        'placed_at' => now(),
+    ]);
+
+    $response = $this->actingAs($this->admin)
+        ->withHeader('Origin', 'http://localhost:5000')
+        ->postJson('/api/admin/shipments', [
+            'order_id' => $order->id,
+            'buyer_id' => $this->buyer->id,
+            'product_snapshot' => 'Premium Basmati Rice',
+            'container' => 'OGX-FLOW-001',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.current_milestone', 'Awaiting Booking');
+
+    $shipmentId = (int) $response->json('data.id');
+    $shipment = Shipment::query()->findOrFail($shipmentId);
+
+    $updates = [
+        ['Booking Confirmed', 'booking'],
+        ['Gate-In at Port', 'booking'],
+        ['Vessel Loaded', 'booking'],
+        ['Departed Origin', 'in_transit'],
+        ['In Transit', 'in_transit'],
+        ['Arrived Destination', 'arrived'],
+        ['Customs Cleared', 'arrived'],
+        ['Final Delivery', 'delivered'],
+    ];
+
+    foreach ($updates as [$milestone, $status]) {
+        $this->actingAs($this->admin)
+            ->withHeader('Origin', 'http://localhost:5000')
+            ->putJson("/api/admin/shipments/{$shipmentId}", [
+                'status' => $status,
+                'current_milestone' => $milestone,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.current_milestone', $milestone);
+    }
+
+    $expected = [
+        [
+            'Awaiting Shipment Booking',
+            'Your order ORD-SHIPMENT-FLOW is awaiting shipment booking. We are coordinating the shipping arrangements for your consignment. Shipment reference: OGX-FLOW-001.',
+        ],
+        [
+            'Shipment Booking Confirmed',
+            'The shipping booking for your order ORD-SHIPMENT-FLOW has been successfully confirmed. Your shipment is scheduled for the next stage. Shipment reference: OGX-FLOW-001.',
+        ],
+        [
+            'Shipment Received at Port',
+            'Your shipment for order ORD-SHIPMENT-FLOW has successfully entered the port terminal and is awaiting vessel loading. Shipment reference: OGX-FLOW-001.',
+        ],
+        [
+            'Shipment Loaded on Vessel',
+            'Your shipment for order ORD-SHIPMENT-FLOW has been successfully loaded onto the designated vessel. Shipment reference: OGX-FLOW-001.',
+        ],
+        [
+            'Vessel Departed from Origin Port',
+            'Your shipment for order ORD-SHIPMENT-FLOW has departed from the origin port and is officially on its international journey. Shipment reference: OGX-FLOW-001.',
+        ],
+        [
+            'Shipment In Transit',
+            'Your shipment for order ORD-SHIPMENT-FLOW is currently in transit to the destination port. Track your shipment for the latest updates. Shipment reference: OGX-FLOW-001.',
+        ],
+        [
+            'Vessel Arrived at Destination Port',
+            'Your shipment for order ORD-SHIPMENT-FLOW has arrived at the destination port and is awaiting the next clearance procedures. Shipment reference: OGX-FLOW-001.',
+        ],
+        [
+            'Customs Clearance Completed',
+            'Your shipment for order ORD-SHIPMENT-FLOW has successfully cleared customs at the destination and is ready for the next delivery stage. Shipment reference: OGX-FLOW-001.',
+        ],
+        [
+            'Final Delivery Completed',
+            'Your shipment for order ORD-SHIPMENT-FLOW has successfully reached its final delivery destination. Thank you for choosing OG Exports. Shipment reference: OGX-FLOW-001.',
+        ],
+    ];
+
+    $notifications = AppNotification::query()
+        ->where('user_id', $this->buyer->id)
+        ->where('type', PortalNotificationTypes::SHIPMENT_UPDATE)
+        ->orderBy('id')
+        ->get();
+
+    expect($notifications)->toHaveCount(9);
+    foreach ($expected as $index => [$title, $body]) {
+        expect($notifications[$index]->title)->toBe($title)
+            ->and($notifications[$index]->body)->toBe($body)
+            ->and($notifications[$index]->data['shipment_id'] ?? null)->toBe($shipmentId)
+            ->and($notifications[$index]->data['order_id'] ?? null)->toBe($order->id);
+    }
+
+    $shipment->refresh()->load('milestones');
+    expect($shipment->milestones->pluck('label')->all())->toBe([
+        'Awaiting Booking',
+        'Booking Confirmed',
+        'Gate-In at Port',
+        'Vessel Loaded',
+        'Departed Origin',
+        'In Transit',
+        'Arrived Destination',
+        'Customs Cleared',
+        'Final Delivery',
+    ]);
+    expect(Order::query()->whereKey($order->id)->value('status'))
+        ->toBe(OrderStatuses::ORDER_CONFIRMED);
+
+    $emails = Mail::mailer('array')->getSymfonyTransport()->messages();
+    expect($emails)->toHaveCount(9)
+        ->and(collect($emails)->every(
+            fn ($email) => $email->getEnvelope()->getRecipients()[0]->getAddress() === $this->buyer->email
+        ))->toBeTrue();
+});
+
+it('does not re-notify an unchanged milestone or edits to its timestamp and notes', function () {
+    $order = Order::query()->create([
+        'order_number' => 'ORD-SHIPMENT-UNCHANGED',
+        'buyer_id' => $this->buyer->id,
+        'status' => OrderStatuses::ORDER_CONFIRMED,
+        'payment_status' => 'unpaid',
+        'total_value' => 5000,
+        'currency' => 'USD',
+        'placed_at' => now(),
+    ]);
+    $shipment = Shipment::query()->create([
+        'order_id' => $order->id,
+        'buyer_id' => $this->buyer->id,
+        'container' => 'OGX-UNCHANGED-001',
+        'status' => 'pending',
+        'current_milestone' => 'Awaiting Booking',
+    ]);
+    $milestone = ShipmentMilestone::query()->create([
+        'shipment_id' => $shipment->id,
+        'label' => 'Awaiting Booking',
+        'occurred_at' => now()->subDay(),
+    ]);
+
+    $this->actingAs($this->admin)
+        ->withHeader('Origin', 'http://localhost:5000')
+        ->putJson("/api/admin/shipments/{$shipment->id}", [
+            'status' => 'pending',
+            'current_milestone' => 'Awaiting Booking',
+        ])
+        ->assertOk();
+
+    $this->actingAs($this->admin)
+        ->withHeader('Origin', 'http://localhost:5000')
+        ->postJson("/api/admin/shipments/{$shipment->id}/milestones", [
+            'label' => 'Awaiting Booking',
+        ])
+        ->assertOk()
+        ->assertJsonPath('unchanged', true);
+
+    $this->actingAs($this->admin)
+        ->withHeader('Origin', 'http://localhost:5000')
+        ->putJson("/api/admin/shipments/{$shipment->id}/milestones/{$milestone->id}", [
+            'occurred_at' => now()->toIso8601String(),
+            'notes' => 'Updated operations note',
+        ])
+        ->assertOk();
+
+    expect(AppNotification::query()
+        ->where('user_id', $this->buyer->id)
+        ->where('type', PortalNotificationTypes::SHIPMENT_UPDATE)
+        ->count())->toBe(0);
+    expect(ShipmentMilestone::query()->where('shipment_id', $shipment->id)->count())->toBe(1);
 });
