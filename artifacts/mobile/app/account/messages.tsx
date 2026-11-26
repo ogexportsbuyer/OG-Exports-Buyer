@@ -471,10 +471,6 @@ export function SupportMessages({
             <BuyerSupportChatExperience
               conversationId={conversationId}
               savedBuyerLanguage={first(conversation, ['buyer_language'], '')}
-              voiceTranslationConsented={Boolean(
-                first(conversation, ['buyer_voice_translation_consent_at'], '')
-                && !first(conversation, ['buyer_voice_translation_consent_revoked_at'], ''),
-              )}
               messages={messages}
               loading={messagesQuery.isLoading}
               error={messagesQuery.isError ? 'Messages could not be loaded.' : null}

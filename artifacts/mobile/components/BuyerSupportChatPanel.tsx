@@ -38,14 +38,6 @@ export type BuyerSupportMessage = {
   buyerTranslatedBody?: string;
   buyerTranslationLanguage?: string;
   buyerTranslationStatus?: string;
-  transcriptionBody?: string;
-  transcriptionTranslatedBody?: string;
-  transcriptionSourceLanguage?: string;
-  transcriptionTargetLanguage?: string;
-  transcriptionBuyerBody?: string;
-  transcriptionBuyerLanguage?: string;
-  transcriptionBuyerStatus?: string;
-  transcriptionStatus?: string;
 };
 
 export type BuyerSupportLanguage = { code: string; name: string };
@@ -89,15 +81,6 @@ export type BuyerSupportChatPanelProps = {
   languageUpdating: boolean;
   buyerLanguages: BuyerSupportLanguage[];
   onBuyerLanguageChange: (language: string) => void;
-  voiceTranslationEnabled: boolean;
-  voiceTranslationBusy: boolean;
-  voiceConsentPromptVisible: boolean;
-  voiceConsentWillSend: boolean;
-  onToggleVoiceTranslation: () => void;
-  onConfirmVoiceConsent: () => void;
-  onCancelVoiceConsent: () => void;
-  onRetryTranscription: (messageId: string) => void;
-  transcribingMessageId: string | null;
   sendProgressLabel?: string;
 };
 
@@ -144,15 +127,6 @@ export function BuyerSupportChatPanel({
   languageUpdating,
   buyerLanguages,
   onBuyerLanguageChange,
-  voiceTranslationEnabled,
-  voiceTranslationBusy,
-  voiceConsentPromptVisible,
-  voiceConsentWillSend,
-  onToggleVoiceTranslation,
-  onConfirmVoiceConsent,
-  onCancelVoiceConsent,
-  onRetryTranscription,
-  transcribingMessageId,
   sendProgressLabel,
   pendingMedia: pendingMediaValue,
 }: BuyerSupportChatPanelProps) {
@@ -197,23 +171,7 @@ export function BuyerSupportChatPanel({
       language: buyerLanguage,
     });
     const translatedBody = selectedBody && selectedBody !== item.body ? selectedBody : undefined;
-    const selectedTranscript = supportTextForSelectedLanguage({
-      original: item.transcriptionBody,
-      selectedTranslation: item.transcriptionBuyerBody,
-      selectedLanguage: item.transcriptionBuyerLanguage,
-      legacyTranslation: item.transcriptionTranslatedBody,
-      legacyLanguage: item.transcriptionTargetLanguage,
-      language: buyerLanguage,
-    });
-    const translatedTranscript = selectedTranscript && selectedTranscript !== item.transcriptionBody
-      ? selectedTranscript
-      : undefined;
-    const transcript = selectedTranscript || item.transcriptionBody;
-    const transcriptLanguage = translatedTranscript
-      ? buyerLanguage
-      : item.transcriptionSourceLanguage || item.sourceLanguage || buyerLanguage;
     const translatedMessageKey = `message:${item.id}`;
-    const transcriptMessageKey = `transcript:${item.id}`;
     const languageName = (code: string) => {
       const normalizedCode = code.toLowerCase();
       return buyerLanguages.find((language) => language.code.toLowerCase() === normalizedCode)?.name
@@ -324,124 +282,6 @@ export function BuyerSupportChatPanel({
                   {item.durationSeconds ? formatDuration(item.durationSeconds) : 'Voice note'}
                 </Text>
               </Pressable>
-              {item.transcriptionBody || item.transcriptionStatus ? (
-                <View style={{
-                  marginTop: 8,
-                  padding: 10,
-                  borderRadius: 12,
-                  borderWidth: StyleSheet.hairlineWidth,
-                  borderColor: colors.border,
-                  backgroundColor: own ? colors.card : colors.lightGreen,
-                }}>
-                  {item.transcriptionBody ? (
-                    <>
-                      <Text style={{ color: colors.primary, fontSize: 10, fontWeight: '700', letterSpacing: 0.6 }}>
-                        {translatedTranscript
-                          ? `${languageName(buyerLanguage).toLocaleUpperCase()} VOICE TRANSCRIPT`
-                          : 'VOICE TRANSCRIPT'}
-                      </Text>
-                      <Text style={{ color: colors.foreground, fontSize: 12, lineHeight: 18, marginTop: 4 }}>
-                        {transcript}
-                      </Text>
-                      {transcript ? (
-                        <Pressable
-                          testID={`buyer-chat-speak-transcript-${item.id}`}
-                          accessibilityRole="button"
-                          accessibilityLabel={speakingMessageKey === transcriptMessageKey
-                            ? 'Stop transcript audio'
-                            : `Listen to transcript in ${languageName(transcriptLanguage)}`}
-                          accessibilityState={{ selected: speakingMessageKey === transcriptMessageKey }}
-                          onPress={() => onSpeakText(transcript, transcriptLanguage, transcriptMessageKey)}
-                          style={styles.speechButton}
-                        >
-                          <Feather
-                            name={speakingMessageKey === transcriptMessageKey ? 'volume-x' : 'volume-2'}
-                            size={14}
-                            color={colors.primary}
-                          />
-                          <Text style={[styles.speechButtonText, { color: colors.primary }]}>
-                            {speakingMessageKey === transcriptMessageKey ? 'Stop audio' : 'Listen'}
-                          </Text>
-                        </Pressable>
-                      ) : null}
-                      {translatedTranscript && translatedTranscript !== item.transcriptionBody ? (
-                        <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginTop: 5 }}>
-                          Original · {item.transcriptionBody}
-                        </Text>
-                      ) : null}
-                      {!translatedTranscript && item.transcriptionBuyerStatus && !['not_needed', 'transcribed', 'translated'].includes(item.transcriptionBuyerStatus) ? (
-                        <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16, marginTop: 5 }}>
-                          {item.transcriptionBuyerStatus === 'quota_exceeded'
-                            ? 'Monthly translation limit reached; showing the original transcript.'
-                            : item.transcriptionBuyerStatus === 'disabled' || item.transcriptionBuyerStatus === 'not_configured'
-                              ? 'Translation setup is pending; showing the original transcript.'
-                              : 'Translation unavailable; showing the original transcript.'}
-                        </Text>
-                      ) : null}
-                    </>
-                  ) : null}
-                  {item.transcriptionStatus === 'not_requested' && !voiceTranslationEnabled ? (
-                    <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16 }}>
-                      This note was sent as audio only. Turn on voice translation to add a translated transcript.
-                    </Text>
-                  ) : null}
-                  {item.transcriptionStatus && !['translated', 'transcribed', 'not_requested'].includes(item.transcriptionStatus) ? (
-                    item.transcriptionStatus === 'unsupported_audio_format' ? (
-                      <View style={{
-                        marginTop: 8,
-                        padding: 10,
-                        borderRadius: 12,
-                        borderWidth: StyleSheet.hairlineWidth,
-                        borderColor: colors.border,
-                        backgroundColor: colors.secondary,
-                        flexDirection: 'row',
-                        alignItems: 'flex-start',
-                        gap: 8,
-                      }}>
-                        <Feather name="alert-circle" size={15} color={colors.mutedForeground} style={{ marginTop: 1 }} />
-                        <View style={{ flex: 1, gap: 3 }}>
-                          <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '700' }}>
-                            Voice translation unavailable
-                          </Text>
-                          <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16 }}>
-                            This recording can still be played, but its format cannot be translated. Record a new note here for a transcript in {languageName(buyerLanguage)}.
-                          </Text>
-                        </View>
-                      </View>
-                    ) : (
-                      <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16 }}>
-                        {item.transcriptionStatus === 'processing'
-                          ? 'Transcribing this voice note…'
-                          : item.transcriptionStatus === 'quota_exceeded'
-                            ? 'The monthly voice-processing limit has been reached.'
-                            : item.transcriptionStatus === 'audio_too_long'
-                              ? 'Voice translation supports notes up to 60 seconds.'
-                              : item.transcriptionStatus === 'not_configured' || item.transcriptionStatus === 'disabled'
-                                ? 'Voice translation setup is not active yet.'
-                                : item.transcriptionStatus === 'no_speech_detected'
-                                  ? 'No clear speech was detected in this recording.'
-                                  : 'Voice transcription could not be completed.'}
-                      </Text>
-                    )
-                  ) : null}
-                  {voiceTranslationEnabled && ['not_requested', 'failed', 'not_configured', 'disabled'].includes(item.transcriptionStatus || '') ? (
-                    <Pressable
-                      testID={`buyer-chat-retry-transcription-${item.id}`}
-                      accessibilityRole="button"
-                      disabled={voiceTranslationBusy || transcribingMessageId === item.id}
-                      onPress={() => onRetryTranscription(item.id)}
-                      style={{ alignSelf: 'flex-start', marginTop: 7, flexDirection: 'row', alignItems: 'center', gap: 5, opacity: voiceTranslationBusy || transcribingMessageId === item.id ? 0.55 : 1 }}
-                    >
-                      {transcribingMessageId === item.id
-                        ? <ActivityIndicator size="small" color={colors.primary} />
-                        : <Feather name="refresh-cw" size={12} color={colors.primary} />}
-                      <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>
-                        {transcribingMessageId === item.id ? 'Transcribing…' : 'Retry translation'}
-                      </Text>
-                    </Pressable>
-                  ) : null}
-                </View>
-              ) : null}
             </>
           ) : null}
           {item.attachmentUrl && (item.attachmentKind === 'video' || item.attachmentKind === 'file') ? (
@@ -492,101 +332,6 @@ export function BuyerSupportChatPanel({
           {!languageUpdating ? <Feather name="chevron-down" size={14} color={colors.primary} /> : null}
         </Pressable>
       </View>
-      <View style={{ paddingHorizontal: 14, paddingTop: 7, paddingBottom: 2 }}>
-        <Pressable
-          testID="buyer-chat-voice-translation-toggle"
-          accessibilityRole="button"
-          accessibilityState={{ disabled: voiceTranslationBusy }}
-          disabled={voiceTranslationBusy}
-          onPress={onToggleVoiceTranslation}
-          style={{
-            alignSelf: 'flex-start',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 7,
-            paddingHorizontal: 10,
-            paddingVertical: 7,
-            borderRadius: 999,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: voiceTranslationEnabled ? colors.primary : colors.border,
-            backgroundColor: voiceTranslationEnabled ? colors.lightGreen : colors.card,
-            opacity: voiceTranslationBusy ? 0.55 : 1,
-          }}
-        >
-          {voiceTranslationBusy
-            ? <ActivityIndicator size="small" color={colors.primary} />
-            : <Feather name={voiceTranslationEnabled ? 'check-circle' : 'mic'} size={13} color={voiceTranslationEnabled ? colors.primary : colors.mutedForeground} />}
-          <Text style={{ color: voiceTranslationEnabled ? colors.primary : colors.mutedForeground, fontSize: 11, fontWeight: '700' }}>
-            Translate voice to {buyerLanguages.find((language) => language.code.toLowerCase() === buyerLanguage.toLowerCase())?.name ?? buyerLanguage.toUpperCase()} · {voiceTranslationEnabled ? 'On' : 'Off'}
-          </Text>
-          {!voiceTranslationBusy ? <Feather name="chevron-down" size={13} color={voiceTranslationEnabled ? colors.primary : colors.mutedForeground} /> : null}
-        </Pressable>
-      </View>
-      {voiceConsentPromptVisible ? (
-        <View
-          testID="buyer-chat-voice-consent-card"
-          accessibilityLiveRegion="polite"
-          style={{
-            marginHorizontal: 14,
-            marginTop: 8,
-            marginBottom: 4,
-            padding: 12,
-            borderRadius: 16,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: colors.border,
-            backgroundColor: colors.card,
-            flexDirection: 'row',
-            alignItems: 'flex-start',
-            gap: 10,
-          }}
-        >
-          <View style={{ width: 32, height: 32, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }}>
-            <Feather name="shield" size={16} color={colors.primary} />
-          </View>
-          <View style={{ flex: 1, gap: 5 }}>
-            <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '700' }}>
-              Translate voice notes automatically
-            </Text>
-            <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 16 }}>
-              New voice notes are processed by Google Cloud Speech-to-Text to create a transcript in {buyerLanguages.find((language) => language.code.toLowerCase() === buyerLanguage.toLowerCase())?.name ?? buyerLanguage.toUpperCase()}. The original audio stays in this chat. You can turn this off any time.
-            </Text>
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginTop: 3 }}>
-              <Pressable
-                testID="buyer-chat-voice-consent-cancel"
-                accessibilityRole="button"
-                onPress={onCancelVoiceConsent}
-                style={{ minHeight: 34, paddingHorizontal: 10, borderRadius: 10, alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Text style={{ color: colors.mutedForeground, fontSize: 11, fontWeight: '600' }}>Not now</Text>
-              </Pressable>
-              <Pressable
-                testID="buyer-chat-voice-consent-confirm"
-                accessibilityRole="button"
-                accessibilityState={{ disabled: voiceTranslationBusy, busy: voiceTranslationBusy }}
-                disabled={voiceTranslationBusy}
-                onPress={onConfirmVoiceConsent}
-                style={({ pressed }) => ({
-                  minHeight: 34,
-                  paddingHorizontal: 12,
-                  borderRadius: 10,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                  backgroundColor: colors.primary,
-                  opacity: voiceTranslationBusy ? 0.55 : pressed ? 0.78 : 1,
-                })}
-              >
-                {voiceTranslationBusy ? <ActivityIndicator size="small" color={colors.primaryForeground} /> : null}
-                <Text style={{ color: colors.primaryForeground, fontSize: 11, fontWeight: '700' }}>
-                  {voiceConsentWillSend ? 'Enable & send' : 'Enable'}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      ) : null}
-
       <Modal
         visible={languagePickerOpen}
         transparent
@@ -898,9 +643,7 @@ export function BuyerSupportChatPanel({
             </View>
           ) : pendingMedia.length > 0 ? (
             <Text style={[styles.composerFootnote, { color: colors.mutedForeground }]}>
-              {pendingMedia.some((media) => media.kind === 'audio') && !voiceTranslationEnabled
-                ? 'Enable voice translation above to translate this note into your selected language.'
-                : pendingMedia.length === 1
+              {pendingMedia.length === 1
                 ? 'Tap Send once to share this attachment.'
                 : `Tap Send once to share all ${pendingMedia.length} attachments.`}
             </Text>

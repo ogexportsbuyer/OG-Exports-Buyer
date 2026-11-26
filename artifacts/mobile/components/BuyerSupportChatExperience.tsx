@@ -19,8 +19,6 @@ import {
   useGetBuyerSupportTranslationLanguages,
   useSendInvestorConversationMessage,
   useUpdateBuyerSupportLanguage,
-  useTranscribeBuyerVoiceMessage,
-  useUpdateBuyerVoiceTranslationConsent,
 } from '@workspace/api-client-react';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -50,7 +48,6 @@ import { useBrandedAlert } from '@/components/BrandedAlertProvider';
 type BuyerSupportChatExperienceProps = {
   conversationId: string;
   savedBuyerLanguage: string;
-  voiceTranslationConsented: boolean;
   messages: Json[];
   loading: boolean;
   error: string | null;
@@ -159,14 +156,6 @@ function normalizedMessages(rawMessages: Json[], ownId: string, apiOrigin: strin
       buyerTranslatedBody: first(item, ['buyer_translated_body'], '') || undefined,
       buyerTranslationLanguage: first(item, ['buyer_translation_language'], '') || undefined,
       buyerTranslationStatus: first(item, ['buyer_translation_status'], '') || undefined,
-      transcriptionBody: first(item, ['transcription_body'], '') || undefined,
-      transcriptionTranslatedBody: first(item, ['transcription_translated_body'], '') || undefined,
-      transcriptionSourceLanguage: first(item, ['transcription_language', 'transcription_source_language'], '') || undefined,
-      transcriptionTargetLanguage: first(item, ['transcription_target_language'], '') || undefined,
-      transcriptionBuyerBody: first(item, ['transcription_buyer_body'], '') || undefined,
-      transcriptionBuyerLanguage: first(item, ['transcription_buyer_language'], '') || undefined,
-      transcriptionBuyerStatus: first(item, ['transcription_buyer_status'], '') || undefined,
-      transcriptionStatus: first(item, ['transcription_status'], '') || undefined,
     };
   }).sort((left, right) => {
     const leftTime = Date.parse(left.createdAt);
@@ -178,7 +167,6 @@ function normalizedMessages(rawMessages: Json[], ownId: string, apiOrigin: strin
 export function BuyerSupportChatExperience({
   conversationId,
   savedBuyerLanguage,
-  voiceTranslationConsented,
   messages,
   loading,
   error,
@@ -214,8 +202,6 @@ export function BuyerSupportChatExperience({
   const [buyerLanguage, setBuyerLanguage] = useState(defaultBuyerLanguage);
   const [languageUpdating, setLanguageUpdating] = useState(false);
   const updateBuyerLanguage = useUpdateBuyerSupportLanguage();
-  const updateVoiceConsent = useUpdateBuyerVoiceTranslationConsent();
-  const transcribeVoiceMessage = useTranscribeBuyerVoiceMessage();
   const send = useSendInvestorConversationMessage();
   const [draft, setDraft] = useState('');
   const [pendingMedia, setPendingMedia] = useState<QueuedBuyerMedia[]>([]);
@@ -230,11 +216,6 @@ export function BuyerSupportChatExperience({
   const player = useAudioPlayer(null, { updateInterval: 300 });
   const playerStatus = useAudioPlayerStatus(player);
   const [playingAudioUrl, setPlayingAudioUrl] = useState<string | null>(null);
-  const [voiceTranslationEnabled, setVoiceTranslationEnabled] = useState(voiceTranslationConsented);
-  const [voiceTranslationBusy, setVoiceTranslationBusy] = useState(false);
-  const [voiceConsentPromptVisible, setVoiceConsentPromptVisible] = useState(false);
-  const [voiceConsentWillSend, setVoiceConsentWillSend] = useState(false);
-  const [transcribingMessageId, setTranscribingMessageId] = useState<string | null>(null);
   const [speakingMessageKey, setSpeakingMessageKey] = useState<string | null>(null);
   const speakingMessageKeyRef = useRef<string | null>(null);
   const speechRequestRef = useRef(0);
@@ -269,11 +250,6 @@ export function BuyerSupportChatExperience({
   }, []);
 
   useEffect(() => {
-    setVoiceTranslationEnabled(voiceTranslationConsented);
-    if (voiceTranslationConsented) setVoiceConsentPromptVisible(false);
-  }, [voiceTranslationConsented]);
-
-  useEffect(() => {
     if (!recorderState.isRecording) {
       autoStopRequested.current = false;
       return;
@@ -284,7 +260,7 @@ export function BuyerSupportChatExperience({
     void stopRecording().then(() => {
       showAlert({
         title: 'Voice note limit reached',
-        message: 'Voice translation supports recordings up to one minute. The recording has been stopped and is ready to send.',
+        message: 'Voice notes are limited to one minute. The recording has been stopped and is ready to send.',
         tone: 'warning',
         buttons: [{ label: 'OK' }],
       });
@@ -527,53 +503,7 @@ export function BuyerSupportChatExperience({
     setPendingMedia((current) => (Array.isArray(current) ? current : []).filter((media) => media.id !== mediaId));
   }
 
-  async function saveVoiceTranslationConsent(enabled: boolean): Promise<boolean> {
-    setVoiceTranslationBusy(true);
-    setActionError('');
-    try {
-      await updateVoiceConsent.mutateAsync({
-        conversation: conversationId,
-        data: { enabled },
-      });
-      setVoiceTranslationEnabled(enabled);
-      if (enabled) setVoiceConsentPromptVisible(false);
-      onSent();
-      return true;
-    } catch (err) {
-      setActionError(messageOf(err));
-      return false;
-    } finally {
-      setVoiceTranslationBusy(false);
-    }
-  }
-
-  function toggleVoiceTranslation() {
-    if (voiceTranslationEnabled) {
-      setVoiceConsentPromptVisible(false);
-      setVoiceConsentWillSend(false);
-      void saveVoiceTranslationConsent(false);
-      return;
-    }
-
-    setVoiceConsentWillSend(false);
-    setVoiceConsentPromptVisible((visible) => !visible);
-  }
-
-  async function transcribeMessage(messageId: string) {
-    if (!conversationId || !messageId || !voiceTranslationEnabled || transcribingMessageId) return;
-    setTranscribingMessageId(messageId);
-    setActionError('');
-    try {
-      await transcribeVoiceMessage.mutateAsync({ conversation: conversationId, messageId });
-      onSent();
-    } catch (err) {
-      setActionError(`Voice note is in the chat, but its transcript could not be loaded. ${messageOf(err)}`);
-    } finally {
-      setTranscribingMessageId(null);
-    }
-  }
-
-  async function sendMessage(translateVoice = voiceTranslationEnabled) {
+  async function sendMessage() {
     const body = draft.trim();
     const queuedMedia = [...queuedPendingMedia];
     if (!conversationId || (!body && queuedMedia.length === 0) || uploading || send.isPending || sendingRef.current) return;
@@ -599,7 +529,7 @@ export function BuyerSupportChatExperience({
             media.kind,
             apiOrigin,
           );
-          const sent = await send.mutateAsync({
+          await send.mutateAsync({
             conversation: conversationId,
             data: {
               body: index === 0 ? body : '',
@@ -611,18 +541,6 @@ export function BuyerSupportChatExperience({
             },
           });
           sentMessages += 1;
-          const sentMessage = record(record(sent).data);
-          const sentMessageId = first(sentMessage, ['id'], first(record(sent), ['id'], ''));
-          if (media.kind === 'audio' && translateVoice && sentMessageId) {
-            try {
-              await transcribeVoiceMessage.mutateAsync({
-                conversation: conversationId,
-                messageId: sentMessageId,
-              });
-            } catch {
-              setActionError('Your voice note was sent, but its transcript could not be completed. You can retry it later.');
-            }
-          }
           setPendingMedia((current) => (Array.isArray(current) ? current : []).filter((item) => item.id !== media.id));
           if (media.kind === 'audio' && playingAudioUrl === media.uri) {
             player.pause();
@@ -742,25 +660,6 @@ export function BuyerSupportChatExperience({
     }
   }
 
-  function sendWithConsentCheck() {
-    if (voiceTranslationEnabled || !queuedPendingMedia.some((media) => media.kind === 'audio')) {
-      void sendMessage(voiceTranslationEnabled);
-      return;
-    }
-
-    setActionError('');
-    setVoiceConsentWillSend(true);
-    setVoiceConsentPromptVisible(true);
-  }
-
-  async function confirmVoiceTranslationConsent() {
-    const shouldSend = voiceConsentWillSend;
-    setVoiceConsentWillSend(false);
-    if (await saveVoiceTranslationConsent(true) && shouldSend) {
-      await sendMessage(true);
-    }
-  }
-
   async function openMedia(url: string) {
     try {
       await Linking.openURL(url);
@@ -810,7 +709,7 @@ export function BuyerSupportChatExperience({
       }}
       draft={draft}
       onDraftChange={setDraft}
-      onSend={sendWithConsentCheck}
+      onSend={() => void sendMessage()}
       sendDisabled={!draft.trim() && queuedPendingMedia.length === 0}
       sending={uploading || send.isPending}
       cameraBusy={cameraBusy}
@@ -833,18 +732,6 @@ export function BuyerSupportChatExperience({
       languageUpdating={languageUpdating}
       buyerLanguages={buyerLanguages}
       onBuyerLanguageChange={(language) => void changeBuyerLanguage(language)}
-      voiceTranslationEnabled={voiceTranslationEnabled}
-      voiceTranslationBusy={voiceTranslationBusy}
-      voiceConsentPromptVisible={voiceConsentPromptVisible}
-      voiceConsentWillSend={voiceConsentWillSend}
-      onToggleVoiceTranslation={toggleVoiceTranslation}
-      onConfirmVoiceConsent={() => void confirmVoiceTranslationConsent()}
-      onCancelVoiceConsent={() => {
-        setVoiceConsentWillSend(false);
-        setVoiceConsentPromptVisible(false);
-      }}
-      onRetryTranscription={(messageId) => void transcribeMessage(messageId)}
-      transcribingMessageId={transcribingMessageId}
       sendProgressLabel={sendProgress ? `Sending ${sendProgress.current}/${sendProgress.total}` : undefined}
     />
   );
