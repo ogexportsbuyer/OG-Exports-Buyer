@@ -143,7 +143,7 @@ test('screen and PDF branding share the transparent approved SVG mark', () => {
   assert.match(buyerHeader, /\['Worldwide'\]\.map\(label => \{/, 'the buyer homepage top navigation keeps only Worldwide');
   assert.doesNotMatch(buyerHeader, /'For you'|'Products'/, 'For you and Products are removed from the homepage top navigation');
   assert.match(buyerHeader, /const brandSlides = \[/);
-  assert.match(buyerHeader, /const isFocused = useIsFocused\(\)/, 'autoplay follows the actual buyer-home navigation focus');
+  assert.match(buyerHeader, /const isFocused = usePathname\(\)\.split\('\/'\)\.includes\('buyer-home'\)/, 'autoplay follows the active buyer-home route');
   assert.doesNotMatch(buyerHeader, /<Image\b/, 'brand banners do not use product imagery');
   assert.doesNotMatch(buyerHeader, /promoAction|slide\.action/, 'brand banners do not show a product-browse button');
   assert.doesNotMatch(
@@ -151,7 +151,7 @@ test('screen and PDF branding share the transparent approved SVG mark', () => {
     /Your guide to export products from Pakistan|buyer-home-catalogue-guide/,
     'the buyer homepage omits the export guide banner',
   );
-  assert.match(buyerHeader, /}, 7000\);/, 'brand slides auto-advance every seven seconds');
+  assert.match(buyerHeader, /}, 5000\);/, 'brand slides auto-advance every five seconds');
   assert.match(buyerHeader, /!isFocused \|\| !motionSettingsReady \|\| reduceMotion \|\| carouselInteracting/, 'autoplay waits for motion preferences and pauses when reduced motion is enabled or the user is swiping');
   assert.match(buyerHeader, /if \(!motionSettingsReady\) return;/, 'slide entrance waits until motion preferences are known');
   assert.match(buyerHeader, /if \(!hasResolvedMotion\.current\) \{\s*progress\.setValue\(0\)/, 'the active banner animates into place after motion settings load');

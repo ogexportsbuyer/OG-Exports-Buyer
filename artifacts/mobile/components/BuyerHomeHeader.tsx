@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type ScrollViewInstance, type ViewStyle } from 'react-native';
-import { useIsFocused } from 'expo-router';
+import { usePathname } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { BrandMark } from '@/components/BrandMark';
@@ -415,7 +415,7 @@ export default function BuyerHomeHeader({
 }: Props) {
   const colors = useColors();
   const { reduceMotion, motionSettingsReady } = useMotion();
-  const isFocused = useIsFocused();
+  const isFocused = usePathname().split('/').includes('buyer-home');
   const { width: windowWidth } = useWindowDimensions();
   const [activeTopTab, setActiveTopTab] = useState('Worldwide');
   const [carouselPosition, setCarouselPosition] = useState(1);
@@ -452,7 +452,7 @@ export default function BuyerHomeHeader({
           : currentPosition + 1;
       updateCarouselPosition(nextPosition);
       featuredScrollRef.current?.scrollTo({ x: nextPosition * heroStep, animated: true });
-    }, 7000);
+    }, 5000);
     return () => clearTimeout(timer);
   }, [carouselInteracting, carouselPosition, heroStep, isFocused, motionSettingsReady, reduceMotion, updateCarouselPosition]);
 
