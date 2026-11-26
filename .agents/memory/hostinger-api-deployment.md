@@ -44,3 +44,9 @@ Production Laravel files can differ from the local checkout even when their rele
 **Why:** Replacing a whole production controller or route file can erase production-only changes.
 
 **How to apply:** Compare the remote code first, then use guarded, single-occurrence edits with remote backups. Run Artisan cache commands separately over SSH; redirect `route:clear` output before parsing `route:list --json`.
+
+Before deploying buyer dashboard metrics that depend on order-item pricing snapshots, compare Hostinger's migration state and verify the backing columns exist. Schema-gate optional metrics so an older production schema cannot fail the whole dashboard.
+
+**Why:** On 2026-11-26, Hostinger lacked `order_items.discount_amount` while the deployed dashboard query assumed it existed, causing dashboard requests to return 500.
+
+**How to apply:** Check migration state and required columns before shipping database-dependent queries. If an optional metric's migration is not applied, return it as unavailable instead of aborting the endpoint.
