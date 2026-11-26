@@ -24,47 +24,54 @@ final class BuyerShipmentMilestones
     public static function notification(string $milestone, string $orderReference, string $shipmentReference): array
     {
         $label = self::canonicalLabel($milestone) ?? trim(strip_tags($milestone));
+        $forOrder = $orderReference !== '' ? " for order {$orderReference}" : '';
         $shipmentSuffix = " Shipment reference: {$shipmentReference}.";
         $notification = match ($label) {
             'Awaiting Booking' => [
                 'Awaiting Shipment Booking',
-                "Your order {$orderReference} is awaiting shipment booking. We are coordinating the shipping arrangements for your consignment.",
+                $orderReference !== ''
+                    ? "Your order {$orderReference} is awaiting shipment booking. We are coordinating the shipping arrangements for your consignment."
+                    : 'Your consignment is awaiting shipment booking. We are coordinating the shipping arrangements for your consignment.',
             ],
             'Booking Confirmed' => [
                 'Shipment Booking Confirmed',
-                "The shipping booking for your order {$orderReference} has been successfully confirmed. Your shipment is scheduled for the next stage.",
+                $orderReference !== ''
+                    ? "The shipping booking for your order {$orderReference} has been successfully confirmed. Your shipment is scheduled for the next stage."
+                    : 'The shipping booking for your consignment has been successfully confirmed. Your shipment is scheduled for the next stage.',
             ],
             'Gate-In at Port' => [
                 'Shipment Received at Port',
-                "Your shipment for order {$orderReference} has successfully entered the port terminal and is awaiting vessel loading.",
+                "Your shipment{$forOrder} has successfully entered the port terminal and is awaiting vessel loading.",
             ],
             'Vessel Loaded' => [
                 'Shipment Loaded on Vessel',
-                "Your shipment for order {$orderReference} has been successfully loaded onto the designated vessel.",
+                "Your shipment{$forOrder} has been successfully loaded onto the designated vessel.",
             ],
             'Departed Origin' => [
                 'Vessel Departed from Origin Port',
-                "Your shipment for order {$orderReference} has departed from the origin port and is officially on its international journey.",
+                "Your shipment{$forOrder} has departed from the origin port and is officially on its international journey.",
             ],
             'In Transit' => [
                 'Shipment In Transit',
-                "Your shipment for order {$orderReference} is currently in transit to the destination port. Track your shipment for the latest updates.",
+                "Your shipment{$forOrder} is currently in transit to the destination port. Track your shipment for the latest updates.",
             ],
             'Arrived Destination' => [
                 'Vessel Arrived at Destination Port',
-                "Your shipment for order {$orderReference} has arrived at the destination port and is awaiting the next clearance procedures.",
+                "Your shipment{$forOrder} has arrived at the destination port and is awaiting the next clearance procedures.",
             ],
             'Customs Cleared' => [
                 'Customs Clearance Completed',
-                "Your shipment for order {$orderReference} has successfully cleared customs at the destination and is ready for the next delivery stage.",
+                "Your shipment{$forOrder} has successfully cleared customs at the destination and is ready for the next delivery stage.",
             ],
             'Final Delivery' => [
                 'Final Delivery Completed',
-                "Your shipment for order {$orderReference} has successfully reached its final delivery destination. Thank you for choosing OG Exports.",
+                "Your shipment{$forOrder} has successfully reached its final delivery destination. Thank you for choosing OG Exports.",
             ],
             default => [
                 'Shipment Milestone: '.Str::limit($label, 44, ''),
-                "Your shipment for order {$orderReference} has a new logistics milestone: {$label}.",
+                $orderReference !== ''
+                    ? "Your shipment for order {$orderReference} has a new logistics milestone: {$label}."
+                    : "Your shipment has a new logistics milestone: {$label}.",
             ],
         };
 

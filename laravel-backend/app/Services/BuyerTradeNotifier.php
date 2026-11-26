@@ -126,9 +126,10 @@ class BuyerTradeNotifier
             ? trim((string) $shipment->current_milestone)
             : 'Awaiting Booking';
         $reference = self::shipmentReference($shipment);
+        $orderReference = $shipment->order_id ? self::orderNumberForShipment($shipment) : '';
         $content = BuyerShipmentMilestones::notification(
             $milestone,
-            self::orderNumberForShipment($shipment),
+            $orderReference,
             $reference,
         );
         $href = '/buyer/shipments';
@@ -175,7 +176,7 @@ class BuyerTradeNotifier
         $milestone = trim((string) ($changes['current_milestone'] ?? ''));
         $status = trim((string) ($changes['status'] ?? ''));
         $reference = self::shipmentReference($shipment);
-        $orderNumber = self::orderNumberForShipment($shipment);
+        $orderNumber = $shipment->order_id ? self::orderNumberForShipment($shipment) : '';
         $event = 'shipment_details';
 
         if ($milestone !== '') {
@@ -187,7 +188,9 @@ class BuyerTradeNotifier
             $parts = [];
             if ($status !== '') {
                 $statusLabel = self::shipmentStatusLabel($status);
-                $parts[] = "Shipment status for order {$orderNumber} is now {$statusLabel}";
+                $parts[] = $orderNumber !== ''
+                    ? "Shipment status for order {$orderNumber} is now {$statusLabel}"
+                    : "Shipment status is now {$statusLabel}";
                 $title = "Shipment Status: {$statusLabel} — {$reference}";
                 $event = 'shipment_status';
             } else {
