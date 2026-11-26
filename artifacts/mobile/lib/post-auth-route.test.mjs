@@ -250,6 +250,8 @@ test('notification back action is a compact arrow-only control', () => {
   const notifications = readFileSync(new URL('../app/buyer-notifications.tsx', import.meta.url), 'utf8');
   assert.match(notifications, /testID="buyer-notifications-back"/);
   assert.match(notifications, /accessibilityLabel="Back to home"/);
+  assert.match(notifications, /<GlassPopupSurface style=\{StyleSheet\.absoluteFill\}>/);
+  assert.match(notifications, /borderRadius: 22/);
   assert.match(notifications, /<Feather name="arrow-left" size=\{18\} color=\{colors\.primary\} \/>/);
   assert.match(notifications, /router\.replace\('\/\(buyer-tabs\)\/buyer-home'\)/);
   assert.doesNotMatch(notifications, /Back to Home/);

@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -19,6 +19,7 @@ import { first, list, messageOf, record } from '@/lib/data';
 import { notificationHref } from '@/lib/notification-routing';
 import { BUYER_NOTIFICATION_CATEGORIES, notificationCategory, notificationCategoryLabel, type NotificationCategoryFilter } from '@/lib/notification-categories';
 import { formatNotificationTimestamp, isInvestorNotificationUnread } from '@/lib/notification-utils';
+import { GlassPopupSurface } from '@/components/GlassPopupSurface';
 
 export default function BuyerNotifications() {
   const colors = useColors();
@@ -93,11 +94,20 @@ export default function BuyerNotifications() {
           style={{
             width: 44,
             height: 44,
+            overflow: 'hidden',
             alignItems: 'center',
             justifyContent: 'center',
+            borderRadius: 22,
+            borderWidth: 1,
+            borderColor: colors.glassBorder,
+            backgroundColor: colors.glassFill,
           }}
         >
-          <Feather name="arrow-left" size={18} color={colors.primary} />
+          <GlassPopupSurface style={StyleSheet.absoluteFill}>
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <Feather name="arrow-left" size={18} color={colors.primary} />
+            </View>
+          </GlassPopupSurface>
         </Pressable>
       )}
       action={(
