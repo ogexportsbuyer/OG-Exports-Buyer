@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 const screen = readFileSync(new URL('../app/buyer-overview.tsx', import.meta.url), 'utf8');
 const charts = readFileSync(new URL('../components/BuyerDashboardCharts.tsx', import.meta.url), 'utf8');
+const strings = readFileSync(new URL('./strings.ts', import.meta.url), 'utf8');
 
 test('buyer dashboard has explicit loading, failure, and manual retry states', () => {
   assert.match(screen, /query\.isLoading\s*\?\s*<LoadingCard/);
@@ -42,5 +43,36 @@ test('dashboard actions include the buyer orders, quotations, RFQ, shipment and 
     '/buyer-trade-finance',
   ]) {
     assert.ok(screen.includes(route), `missing dashboard route: ${route}`);
+  }
+});
+
+test('dashboard prioritizes purchase value and preserves the recent activity preview', () => {
+  const purchaseOverview = screen.indexOf('Purchase overview');
+  const quickActions = screen.indexOf('Quick actions');
+  const tradeActivity = screen.indexOf('Trade activity');
+  const marketAlerts = screen.indexOf('Market alerts');
+
+  assert.ok(purchaseOverview > -1 && purchaseOverview < quickActions);
+  assert.ok(quickActions < tradeActivity && tradeActivity < marketAlerts);
+  assert.match(screen, /activity\.slice\(0,\s*4\)/);
+  assert.match(screen, /router\.push\('\/buyer-activity'\)/);
+  assert.equal((screen.match(/buyer-dashboard-activity-view-all/g) ?? []).length, 1);
+  assert.doesNotMatch(screen, /heroActions/);
+});
+
+test('new dashboard headings and purchase explanations have Urdu and Arabic translations', () => {
+  for (const phrase of [
+    'Buyer dashboard',
+    'Your sourcing and trade overview',
+    'Purchase overview',
+    'TOTAL PURCHASE VALUE',
+    'Across non-cancelled orders',
+    'In processing',
+    'Discount saved',
+    'Recorded at checkout',
+    'Order snapshot',
+    'Quick actions',
+  ]) {
+    assert.ok(strings.includes(`["${phrase}","`), `missing localized dashboard phrase: ${phrase}`);
   }
 });

@@ -35,12 +35,18 @@ const quickActions = [
   { label: 'Request quote', detail: 'Browse export products', route: '/(buyer-tabs)/buyer-products', icon: 'search' as const },
   { label: 'Orders', detail: 'Track order progress', route: '/buyer-orders', icon: 'shopping-bag' as const },
   { label: 'Quotations', detail: 'Review supplier quotes', route: '/buyer-orders?view=quotations', icon: 'clipboard' as const },
+  { label: 'Pay invoice', detail: 'Review payment terms', route: '/buyer-trade-finance', icon: 'credit-card' as const },
 ] as const;
-const heroActions = [
+const primaryQuickActions = [
   quickActions[0],
   quickActions[1],
+  quickActions[3],
+  quickActions[4],
+] as const;
+const supportingQuickActions = [
   quickActions[2],
-  { label: 'Pay invoice', detail: 'Review payment terms', route: '/buyer-trade-finance', icon: 'credit-card' as const },
+  quickActions[5],
+  quickActions[6],
 ] as const;
 
 const alertRoutes: Record<string, string> = {
@@ -106,6 +112,9 @@ function BuyerOverviewContent() {
   const tradeCurrency = first(tradeValueSummary, ['currency'], 'USD');
   const displayName = first(record(user), ['name', 'display_name'], 'Valued Buyer');
   const userProfile = record(record(user).profile);
+  const companyName = first(userProfile, ['company_name', 'business_name']);
+  const currentHour = new Date().getHours();
+  const greeting = currentHour < 12 ? 'Good morning' : currentHour < 17 ? 'Good afternoon' : 'Good evening';
   const avatarPath = first(record(user), ['avatar_url'], first(userProfile, ['avatar_url']));
   const avatarUri = avatarPath
     ? /^https?:\/\//i.test(avatarPath)
@@ -129,7 +138,7 @@ function BuyerOverviewContent() {
   const memberSince = first(dashboard, ['member_since']);
   const spendYoY = amount(dashboard, ['spend_yoy_pct']);
   const spendYearOverYear = spendYoY === null ? '—' : `${spendYoY > 0 ? '+' : ''}${spendYoY}% YoY`;
-  const metricCards = [
+  const activityMetricCards = [
     {
       label: 'Total orders',
       value: first(kpis, ['orders'], first(dashboard, ['orders'], '—')),
@@ -137,42 +146,6 @@ function BuyerOverviewContent() {
       trend: first(kpis, ['orders_trend']),
       up: kpis.orders_trend_up !== false,
       icon: 'shopping-bag' as const,
-      tone: colors.primary,
-    },
-    {
-      label: 'Purchase value',
-      value: totalPurchaseValue === null ? '—' : money(totalPurchaseValue, tradeCurrency, { preserveSource: true }),
-      detail: 'All non-cancelled orders',
-      trend: '',
-      up: kpis.spend_trend_up !== false,
-      icon: 'dollar-sign' as const,
-      tone: colors.accent,
-    },
-    {
-      label: 'Completed trades',
-      value: completedTradeValue === null ? '—' : money(completedTradeValue, tradeCurrency, { preserveSource: true }),
-      detail: 'Delivered orders',
-      trend: '',
-      up: true,
-      icon: 'check-circle' as const,
-      tone: colors.primary,
-    },
-    {
-      label: 'In processing',
-      value: processingTradeValue === null ? '—' : money(processingTradeValue, tradeCurrency, { preserveSource: true }),
-      detail: 'Orders not yet delivered',
-      trend: '',
-      up: true,
-      icon: 'clock' as const,
-      tone: colors.accent,
-    },
-    {
-      label: 'Discount saved',
-      value: discountSavings === null ? '—' : money(discountSavings, tradeCurrency, { preserveSource: true }),
-      detail: 'Recorded at checkout',
-      trend: '',
-      up: true,
-      icon: 'tag' as const,
       tone: colors.primary,
     },
     {
@@ -243,11 +216,11 @@ function BuyerOverviewContent() {
   }
 
   if (!token) {
-    return <BuyerAuthGate title="Executive dashboard" body="Sign in to view your live orders, quotations, shipments, and trade activity." returnTo="/(buyer-tabs)/dashboard" />;
+    return <BuyerAuthGate title="Buyer dashboard" body="Sign in to view your live orders, quotations, shipments, and trade activity." returnTo="/(buyer-tabs)/dashboard" />;
   }
 
   return (
-    <Screen title="Executive dashboard" subtitle="Your buyer account at a glance" refreshable>
+    <Screen title="Buyer dashboard" subtitle="Your sourcing and trade overview" refreshable>
       {query.isLoading ? <LoadingCard label="Loading your trade overview…" lines={3} /> : null}
       {query.isError ? <ErrorState message={buyerDashboardErrorMessage(query.error)} error={query.error} onRetry={() => void query.refetch()} /> : null}
       {query.isSuccess ? (
@@ -263,11 +236,12 @@ function BuyerOverviewContent() {
                 </View>
               </Pressable>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 10, fontWeight: '700' }}>Good day,</Text>
-                <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '800', marginTop: 3 }}>{displayName}</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 10, fontWeight: '700' }}>{greeting}</Text>
+                <Text numberOfLines={1} style={{ color: colors.primaryForeground, fontSize: 18, fontWeight: '800', marginTop: 3 }}>{displayName}</Text>
+                <Text numberOfLines={1} style={{ color: 'rgba(255,255,255,0.72)', fontSize: 10, marginTop: 2 }}>{companyName || 'OG Exports buyer account'}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 7, marginTop: 8 }}>
                   <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.14)' }}>
-                    <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '800' }}>{buyerDashboardKycLabel(first(dashboard, ['kyc_status']))}</Text>
+                    <Text style={{ color: colors.primaryForeground, fontSize: 9, fontWeight: '800' }}>{buyerDashboardKycLabel(first(dashboard, ['kyc_status']))}</Text>
                   </View>
                   {trustTier ? <Text style={{ color: colors.accent, fontSize: 9, fontWeight: '800' }}>{trustTier} buyer</Text> : null}
                   {memberSince ? <Text style={{ color: 'rgba(255,255,255,0.68)', fontSize: 9 }}>Member since {memberSince}</Text> : null}
@@ -275,56 +249,151 @@ function BuyerOverviewContent() {
               </View>
             </View>
             {avatarError ? <Text accessibilityRole="alert" style={{ color: '#FFE1DC', fontSize: 11, lineHeight: 16, marginTop: 10 }}>{avatarError}</Text> : null}
-            {avatarMessage ? <Text accessibilityLiveRegion="polite" style={{ color: '#FFFFFF', fontSize: 11, marginTop: 9 }}>{avatarMessage}</Text> : null}
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 15 }}>
-              {heroActions.map(action => (
-                <Pressable key={action.label} testID={`buyer-dashboard-hero-${action.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} accessibilityRole="button" onPress={() => navigateTo(action.route)} style={{ width: '48%', minHeight: 44, borderRadius: 12, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: action.label === 'New RFQ' ? colors.accent : 'rgba(255,255,255,0.14)' }}>
-                  <Feather name={action.icon} size={14} color={action.label === 'New RFQ' ? colors.primaryForeground : '#FFFFFF'} />
-                  <Text numberOfLines={1} style={{ color: action.label === 'New RFQ' ? colors.primaryForeground : '#FFFFFF', fontSize: 10, fontWeight: '800' }}>{action.label}</Text>
-                </Pressable>
-              ))}
-            </View>
+            {avatarMessage ? <Text accessibilityLiveRegion="polite" style={{ color: colors.primaryForeground, fontSize: 11, marginTop: 9 }}>{avatarMessage}</Text> : null}
           </Card>
 
-          <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800', marginBottom: 9 }}>Quick actions</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 15 }}>
-            {quickActions.map(action => (
-              <Pressable key={action.label} testID={`buyer-dashboard-action-${action.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} accessibilityRole="button" onPress={() => navigateTo(action.route)} style={{ width: '48%', marginBottom: 9 }}>
-                <Card style={{ minHeight: 86, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <View style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }}>
+          <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800', marginBottom: 9, marginTop: 4 }}>Purchase overview</Text>
+          <Card testID="buyer-dashboard-purchase-overview" style={{ padding: 15, marginBottom: 7, backgroundColor: colors.primary, borderColor: colors.primary }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: 'rgba(255,255,255,0.74)', fontSize: 9, fontWeight: '800', letterSpacing: 0.7 }}>TOTAL PURCHASE VALUE</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.primaryForeground, fontSize: 24, fontWeight: '800', marginTop: 5 }}>
+                  {totalPurchaseValue === null ? '—' : money(totalPurchaseValue, tradeCurrency, { preserveSource: true })}
+                </Text>
+                <Text style={{ color: 'rgba(255,255,255,0.72)', fontSize: 9, marginTop: 3 }}>Across non-cancelled orders</Text>
+              </View>
+              <View style={{ width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' }}>
+                <Feather name="briefcase" size={17} color={colors.accent} />
+              </View>
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
+              <View style={{ flex: 1, minWidth: 0, padding: 10, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <Feather name="check-circle" size={12} color={colors.accent} />
+                  <Text style={{ color: 'rgba(255,255,255,0.76)', fontSize: 9, fontWeight: '700' }}>Completed</Text>
+                </View>
+                <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.primaryForeground, fontSize: 13, fontWeight: '800', marginTop: 5 }}>
+                  {completedTradeValue === null ? '—' : money(completedTradeValue, tradeCurrency, { preserveSource: true })}
+                </Text>
+              </View>
+              <View style={{ flex: 1, minWidth: 0, padding: 10, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <Feather name="clock" size={12} color={colors.accent} />
+                  <Text style={{ color: 'rgba(255,255,255,0.76)', fontSize: 9, fontWeight: '700' }}>In processing</Text>
+                </View>
+                <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.primaryForeground, fontSize: 13, fontWeight: '800', marginTop: 5 }}>
+                  {processingTradeValue === null ? '—' : money(processingTradeValue, tradeCurrency, { preserveSource: true })}
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.16)', marginTop: 12, paddingTop: 11 }}>
+              <Feather name="tag" size={14} color={colors.accent} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.primaryForeground, fontSize: 10, fontWeight: '800' }}>Discount saved</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.68)', fontSize: 9, marginTop: 1 }}>Recorded at checkout</Text>
+              </View>
+              <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.accent, fontSize: 13, fontWeight: '800' }}>
+                {discountSavings === null ? '—' : money(discountSavings, tradeCurrency, { preserveSource: true })}
+              </Text>
+            </View>
+          </Card>
+          <Text style={{ color: colors.mutedForeground, fontSize: 9, lineHeight: 14, marginBottom: 12 }}>
+            Values reflect purchase data reported by OG Exports. Savings include only discounts recorded when an order was placed.
+          </Text>
+
+          <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800', marginBottom: 9 }}>Order snapshot</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 7, marginBottom: 12 }}>
+            {activityMetricCards.map(metric => (
+              <Card key={metric.label} style={{ flex: 1, minWidth: 0, minHeight: 103, padding: 9, marginBottom: 2 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 3 }}>
+                  <View style={{ width: 27, height: 27, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: metric.tone === colors.accent ? colors.secondary : colors.lightGreen }}>
+                    <Feather name={metric.icon} size={13} color={metric.tone} />
+                  </View>
+                  {metric.trend ? <Feather name={metric.up ? 'trending-up' : 'trending-down'} size={11} color={metric.up ? colors.primary : colors.destructive} /> : null}
+                </View>
+                <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.foreground, fontSize: 17, fontWeight: '800', marginTop: 9 }}>{metric.value}</Text>
+                <Text numberOfLines={2} style={{ color: colors.mutedForeground, fontSize: 9, lineHeight: 12, marginTop: 2 }}>{metric.label}</Text>
+                {metric.detail ? <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 8, marginTop: 3 }}>{metric.detail}</Text> : null}
+              </Card>
+            ))}
+          </View>
+
+          <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800', marginBottom: 9, marginTop: 2 }}>Quick actions</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 2 }}>
+            {primaryQuickActions.map(action => (
+              <Pressable
+                key={action.label}
+                testID={`buyer-dashboard-action-${action.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                accessibilityRole="button"
+                accessibilityLabel={`${action.label}. ${action.detail}`}
+                onPress={() => navigateTo(action.route)}
+                style={({ pressed }) => ({ width: '48%', marginBottom: 8, opacity: pressed ? 0.86 : 1 })}
+              >
+                <Card style={{ minHeight: 76, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <View style={{ width: 32, height: 32, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }}>
                     <Feather name={action.icon} size={15} color={colors.primary} />
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '800' }}>{action.label}</Text>
-                    <Text numberOfLines={2} style={{ color: colors.mutedForeground, fontSize: 9, lineHeight: 13, marginTop: 3 }}>{action.detail}</Text>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text numberOfLines={1} style={{ color: colors.foreground, fontSize: 10, fontWeight: '800' }}>{action.label}</Text>
+                    <Text numberOfLines={2} style={{ color: colors.mutedForeground, fontSize: 8, lineHeight: 11, marginTop: 3 }}>{action.detail}</Text>
                   </View>
+                  <Feather name="chevron-right" size={13} color={colors.mutedForeground} />
+                </Card>
+              </Pressable>
+            ))}
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 7, marginBottom: 13 }}>
+            {supportingQuickActions.map(action => (
+              <Pressable
+                key={action.label}
+                testID={`buyer-dashboard-support-action-${action.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                accessibilityRole="button"
+                accessibilityLabel={`${action.label}. ${action.detail}`}
+                onPress={() => navigateTo(action.route)}
+                style={({ pressed }) => ({ flex: 1, minWidth: 0, opacity: pressed ? 0.82 : 1 })}
+              >
+                <Card style={{ minHeight: 46, paddingHorizontal: 5, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                  <Feather name={action.icon} size={12} color={colors.primary} />
+                  <Text numberOfLines={1} style={{ color: colors.foreground, fontSize: 8, fontWeight: '700' }}>{action.label}</Text>
                 </Card>
               </Pressable>
             ))}
           </View>
 
-          <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800', marginBottom: 9 }}>Trade summary</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 6 }}>
-            {metricCards.map(metric => (
-              <Card key={metric.label} style={{ width: '48%', minHeight: 116, padding: 12, marginBottom: 9 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 5 }}>
-                  <View style={{ width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: metric.tone === colors.accent ? colors.secondary : colors.lightGreen }}>
-                    <Feather name={metric.icon} size={14} color={metric.tone} />
-                  </View>
-                  {metric.trend ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                    <Feather name={metric.up ? 'trending-up' : 'trending-down'} size={11} color={metric.up ? colors.primary : colors.destructive} />
-                    <Text style={{ color: metric.up ? colors.primary : colors.destructive, fontSize: 9, fontWeight: '800' }}>{metric.trend}</Text>
-                  </View> : null}
-                </View>
-                <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.foreground, fontSize: 16, fontWeight: '800', marginTop: 10 }}>{metric.value}</Text>
-                <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 2 }}>{metric.label}</Text>
-                {metric.detail ? <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 9, marginTop: 3 }}>{metric.detail}</Text> : null}
-              </Card>
-            ))}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9, marginTop: 2 }}>
+            <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800' }}>Trade activity</Text>
+            <Pressable testID="buyer-dashboard-activity-view-all" accessibilityRole="button" accessibilityLabel="View all trade activity" onPress={() => router.push('/buyer-activity')} hitSlop={8}>
+              <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '800' }}>View all</Text>
+            </Pressable>
           </View>
-          <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginBottom: 12 }}>
-            Purchase totals are shown in USD. Savings include only discounts recorded when an order was placed.
-          </Text>
+          {activity.length ? activity.slice(0, 4).map((item, index) => {
+            const type = first(item, ['type'], 'order');
+            const icon = type === 'rfq' ? 'file-plus' : type.includes('quotation') ? 'file-text' : type === 'shipment' ? 'truck' : type === 'document' ? 'folder' : 'shopping-bag';
+            return (
+              <Pressable
+                key={`${type}-${first(item, ['at'], String(index))}`}
+                testID={`buyer-dashboard-activity-${type}-${index}`}
+                accessibilityRole="button"
+                accessibilityLabel={`${first(item, ['title'], 'Trade update')}. ${first(item, ['desc'], '')}. ${first(item, ['time'], '')}`}
+                onPress={() => navigateTo(activityRoutes[type] || '/buyer-orders')}
+                style={({ pressed }) => ({ opacity: pressed ? 0.84 : 1 })}
+              >
+                <Card style={{ padding: 11, marginBottom: 7, flexDirection: 'row', alignItems: 'flex-start', gap: 9 }}>
+                  <View style={{ width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }}>
+                    <Feather name={icon} size={14} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: colors.foreground, fontSize: 10, fontWeight: '800' }}>{first(item, ['title'], 'Trade update')}</Text>
+                    <Text numberOfLines={2} style={{ color: colors.mutedForeground, fontSize: 9, lineHeight: 13, marginTop: 2 }}>{first(item, ['desc'], '')}</Text>
+                    <Text style={{ color: colors.mutedForeground, fontSize: 8, marginTop: 4 }}>{first(item, ['time'], '')}</Text>
+                  </View>
+                  <Feather name="chevron-right" size={13} color={colors.mutedForeground} />
+                </Card>
+              </Pressable>
+            );
+          }) : <EmptyState title="No recent trade activity" body="RFQs, quotations, orders and shipments will appear here." icon="activity" />}
 
           <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800', marginBottom: 9, marginTop: 5 }}>Market alerts</Text>
           {alerts.length ? alerts.slice(0, 3).map((alert, index) => {
@@ -514,31 +583,6 @@ function BuyerOverviewContent() {
             </Card>
           )}
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9, marginTop: 6 }}>
-            <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800' }}>Trade activity</Text>
-            <Pressable testID="buyer-dashboard-activity-view-all" accessibilityRole="button" accessibilityLabel="View all trade activity" onPress={() => router.push('/buyer-activity')}>
-              <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '800' }}>View all</Text>
-            </Pressable>
-          </View>
-          {activity.length ? activity.slice(0, 4).map((item, index) => {
-            const type = first(item, ['type'], 'order');
-            const icon = type === 'rfq' ? 'file-plus' : type.includes('quotation') ? 'file-text' : type === 'shipment' ? 'truck' : type === 'document' ? 'folder' : 'shopping-bag';
-            return (
-              <Pressable key={`${type}-${first(item, ['at'], String(index))}`} accessibilityRole="button" onPress={() => navigateTo(activityRoutes[type] || '/buyer-orders')}>
-                <Card style={{ padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-                  <View style={{ width: 31, height: 31, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }}>
-                    <Feather name={icon} size={14} color={colors.primary} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: colors.foreground, fontSize: 11, fontWeight: '800' }}>{first(item, ['title'], 'Trade update')}</Text>
-                    <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginTop: 3 }}>{first(item, ['desc'], '')}</Text>
-                    <Text style={{ color: colors.mutedForeground, fontSize: 9, marginTop: 5 }}>{first(item, ['time'], '')}</Text>
-                  </View>
-                  <Feather name="chevron-right" size={14} color={colors.mutedForeground} />
-                </Card>
-              </Pressable>
-            );
-          }) : <EmptyState title="No recent trade activity" body="RFQs, quotations, orders and shipments will appear here." icon="activity" />}
         </>
       ) : null}
     </Screen>

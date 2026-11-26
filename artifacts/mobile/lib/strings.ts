@@ -1199,6 +1199,19 @@ const phrases: ReadonlyArray<readonly [string, string, string]> = [
   ["Browse all","سب دیکھیں","تصفّح الكل"],
   ["No categories published","ابھی کوئی زمرہ شائع نہیں ہوا","لم تُنشر فئات بعد"],
   ["Categories will appear here when OG Exports publishes them.","OG Exports کے زمرے شائع کرنے پر وہ یہاں دکھائی دیں گے۔","ستظهر الفئات هنا عندما تنشرها OG Exports."],
+  ["Buyer dashboard","خریدار ڈیش بورڈ","لوحة المشتري"],
+  ["Your sourcing and trade overview","آپ کی خریداری اور تجارت کا جائزہ","نظرة عامة على التوريد والتجارة"],
+  ["OG Exports buyer account","OG Exports خریدار اکاؤنٹ","حساب المشتري لدى OG Exports"],
+  ["Sign in to view your live orders, quotations, shipments, and trade activity.","اپنے موجودہ آرڈرز، کوٹیشنز، شپمنٹس اور تجارتی سرگرمی دیکھنے کے لیے سائن اِن کریں۔","سجّل الدخول لعرض طلباتك وطلبات الأسعار والشحنات وأنشطة التداول."],
+  ["Purchase overview","خریداری کا جائزہ","نظرة عامة على المشتريات"],
+  ["TOTAL PURCHASE VALUE","کل خریداری کی مالیت","إجمالي قيمة المشتريات"],
+  ["Across non-cancelled orders","منسوخ نہ کیے گئے تمام آرڈرز","لجميع الطلبات غير الملغاة"],
+  ["In processing","پروسیسنگ میں","قيد المعالجة"],
+  ["Discount saved","محفوظ شدہ رعایت","الخصم المحفوظ"],
+  ["Recorded at checkout","آرڈر کے وقت درج شدہ","المسجل عند إتمام الطلب"],
+  ["Values reflect purchase data reported by OG Exports. Savings include only discounts recorded when an order was placed.","یہ اعدادوشمار OG Exports کے فراہم کردہ خریداری کے ریکارڈز پر مبنی ہیں۔ بچت میں صرف آرڈر دیتے وقت درج کی گئی رعایتیں شامل ہیں۔","تعكس القيم بيانات الشراء التي أبلغت عنها OG Exports. تشمل الوفورات الخصومات المسجلة عند تقديم الطلب فقط."],
+  ["Order snapshot","آرڈرز کا خلاصہ","ملخص الطلبات"],
+  ["Quick actions","فوری اقدامات","إجراءات سريعة"],
 ];
 
 const translations = new Map<string, Readonly<Record<Exclude<AppLanguage, 'en'>, string>>>(
