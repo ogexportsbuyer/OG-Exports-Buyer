@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type ScrollViewInstance, type ViewStyle } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useIsFocused } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { BrandMark } from '@/components/BrandMark';
@@ -109,20 +109,28 @@ function getHeroCardWidth(viewportWidth: number) {
 function BrandSlideMotion({
   active,
   reduceMotion,
+  motionSettingsReady,
   style,
   children,
 }: {
   active: boolean;
   reduceMotion: boolean;
+  motionSettingsReady: boolean;
   style: ViewStyle;
   children: React.ReactNode;
 }) {
   const progress = useRef(new Animated.Value(active ? 1 : 0)).current;
+  const hasResolvedMotion = useRef(false);
 
   useEffect(() => {
+    if (!motionSettingsReady) return;
     if (reduceMotion) {
       progress.setValue(active ? 1 : 0);
       return;
+    }
+    if (!hasResolvedMotion.current) {
+      progress.setValue(0);
+      hasResolvedMotion.current = true;
     }
     const animation = Animated.spring(progress, {
       toValue: active ? 1 : 0,
@@ -134,7 +142,7 @@ function BrandSlideMotion({
     });
     animation.start();
     return () => animation.stop();
-  }, [active, progress, reduceMotion]);
+  }, [active, motionSettingsReady, progress, reduceMotion]);
 
   const scaleX = progress.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.045] });
   const scaleY = progress.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.015] });
@@ -406,8 +414,8 @@ export default function BuyerHomeHeader({
   onSelectTab,
 }: Props) {
   const colors = useColors();
-  const { reduceMotion } = useMotion();
-  const [isFocused, setIsFocused] = useState(false);
+  const { reduceMotion, motionSettingsReady } = useMotion();
+  const isFocused = useIsFocused();
   const { width: windowWidth } = useWindowDimensions();
   const [activeTopTab, setActiveTopTab] = useState('Worldwide');
   const [carouselPosition, setCarouselPosition] = useState(1);
@@ -428,18 +436,13 @@ export default function BuyerHomeHeader({
       ? brandSlides.length - 1
       : carouselPosition - 1;
 
-  useFocusEffect(useCallback(() => {
-    setIsFocused(true);
-    return () => setIsFocused(false);
-  }, []));
-
   const updateCarouselPosition = useCallback((position: number) => {
     carouselPositionRef.current = position;
     setCarouselPosition(position);
   }, []);
 
   useEffect(() => {
-    if (!isFocused || reduceMotion || carouselInteracting) return;
+    if (!isFocused || !motionSettingsReady || reduceMotion || carouselInteracting) return;
     const timer = setTimeout(() => {
       const currentPosition = carouselPositionRef.current;
       const nextPosition = currentPosition === brandSlides.length + 1
@@ -451,7 +454,7 @@ export default function BuyerHomeHeader({
       featuredScrollRef.current?.scrollTo({ x: nextPosition * heroStep, animated: true });
     }, 7000);
     return () => clearTimeout(timer);
-  }, [carouselInteracting, carouselPosition, heroStep, isFocused, reduceMotion, updateCarouselPosition]);
+  }, [carouselInteracting, carouselPosition, heroStep, isFocused, motionSettingsReady, reduceMotion, updateCarouselPosition]);
 
   useEffect(() => {
     if (!isFocused || carouselPosition !== brandSlides.length + 1 || carouselInteracting) return;
@@ -692,6 +695,7 @@ export default function BuyerHomeHeader({
               key={`${slide.id}-${index}`}
               active={isActive}
               reduceMotion={reduceMotion}
+              motionSettingsReady={motionSettingsReady}
               style={{
                 width: heroCardWidth,
                 marginRight: -heroCardOverlap,
