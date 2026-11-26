@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Card, EmptyState, ErrorState, LoadingCard, Screen } from '@/components/InvestorUI';
 import { BuyerProductPrice } from '@/components/BuyerProductPrice';
+import { BuyerProductImage } from '@/components/BuyerProductImage';
 import { useColors } from '@/hooks/useColors';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -99,7 +100,6 @@ export default function BuyerProductDetails() {
   );
   const galleryRef = useRef<ScrollViewInstance | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [failedImageUrls, setFailedImageUrls] = useState<string[]>([]);
   const [added, setAdded] = useState(false);
   const [actionError, setActionError] = useState('');
   const [reportError, setReportError] = useState('');
@@ -157,7 +157,6 @@ export default function BuyerProductDetails() {
 
   useEffect(() => {
     setActiveImageIndex(0);
-    setFailedImageUrls([]);
     setAdded(false);
     setActionError('');
     setReportError('');
@@ -257,21 +256,14 @@ export default function BuyerProductDetails() {
               >
                 {galleryImages.map((uri, index) => (
                   <View key={`${uri}-${index}`} style={{ width: galleryWidth, height: 246 }}>
-                    {failedImageUrls.includes(uri) ? (
-                      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }}>
-                        <Feather name="package" size={42} color={colors.primary} />
-                        <Text style={{ color: colors.mutedForeground, fontSize: 11, marginTop: 8 }}>OG Exports product</Text>
-                      </View>
-                    ) : (
-                      <Image
-                        testID={`buyer-product-gallery-image-${index + 1}`}
-                        source={{ uri }}
-                        accessibilityLabel={`${name} product photo ${index + 1} of ${galleryImages.length}`}
-                        resizeMode="cover"
-                        onError={() => setFailedImageUrls(current => current.includes(uri) ? current : [...current, uri])}
-                        style={{ width: '100%', height: '100%' }}
-                      />
-                    )}
+                    <BuyerProductImage
+                      testID={`buyer-product-gallery-image-${index + 1}`}
+                      uri={uri}
+                      label={`${name} product photo ${index + 1} of ${galleryImages.length}`}
+                      fallbackLabel="OG Exports product"
+                      priority={index === activeImageIndex ? 'high' : 'low'}
+                      style={{ width: '100%', height: '100%' }}
+                    />
                   </View>
                 ))}
               </ScrollView>
@@ -345,13 +337,12 @@ export default function BuyerProductDetails() {
                     backgroundColor: colors.lightGreen,
                   }}
                 >
-                  {failedImageUrls.includes(uri) ? (
-                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                      <Feather name="package" size={17} color={colors.primary} />
-                    </View>
-                  ) : (
-                    <Image source={{ uri }} accessibilityLabel={`${name} photo thumbnail ${index + 1}`} resizeMode="cover" onError={() => setFailedImageUrls(current => current.includes(uri) ? current : [...current, uri])} style={{ width: '100%', height: '100%' }} />
-                  )}
+                  <BuyerProductImage
+                    uri={uri}
+                    label={`${name} photo thumbnail ${index + 1}`}
+                    priority="low"
+                    style={{ width: '100%', height: '100%' }}
+                  />
                 </Pressable>
               ))}
             </ScrollView>

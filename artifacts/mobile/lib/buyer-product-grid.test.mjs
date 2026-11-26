@@ -26,3 +26,11 @@ test('grid cards reduce image height while preserving product actions and detail
   assert.match(repeatOrders, /<BuyerProductCard/);
   assert.doesNotMatch(repeatOrders, /layout="grid"/);
 });
+
+test('tapping the product card opens details without hijacking favorite or cart actions', () => {
+  assert.match(productCard, /testID=\{`buyer-product-open-card-\$\{id\}`\}/);
+  assert.match(productCard, /accessible=\{false\}[\s\S]*?onPress=\{\(\) => \{[\s\S]*?onOpenDetails\(\);/);
+  assert.match(productCard, /event\.stopPropagation\(\);[\s\S]*?onToggleFavorite\(\);/);
+  assert.match(productCard, /testID=\{`buyer-product-details-\$\{id\}`\}[\s\S]*?onOpenDetails\(\);/);
+  assert.match(productCard, /testID=\{`buyer-product-add-\$\{id\}`\}[\s\S]*?onPress=\{onAddToCart\}/);
+});

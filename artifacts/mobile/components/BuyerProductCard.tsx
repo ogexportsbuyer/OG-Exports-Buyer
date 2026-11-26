@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, View } from 'react-native';
+import React from 'react';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Card } from '@/components/InvestorUI';
+import { BuyerProductImage } from '@/components/BuyerProductImage';
 import { BuyerProductPrice } from '@/components/BuyerProductPrice';
 import { useColors } from '@/hooks/useColors';
 import { amount, first, type Json } from '@/lib/data';
@@ -62,7 +63,6 @@ export function BuyerProductCard({
 }: BuyerProductCardProps) {
   const colors = useColors();
   const compact = layout === 'grid';
-  const [imageFailed, setImageFailed] = useState(false);
   const id = first(product, ['id'], 'product');
   const name = first(product, ['name'], 'Export product');
   const imageUrl = first(product, ['image_url', 'imageUrl']);
@@ -91,42 +91,47 @@ export function BuyerProductCard({
         overflow: compact ? 'hidden' : 'visible',
       }}
     >
-      <View style={{ height: imageHeight, overflow: 'hidden', backgroundColor: colors.secondary }}>
-        {imageUrl && !imageFailed ? (
-          <Image
-            source={{ uri: imageUrl }}
-            accessibilityLabel={`${name} product image`}
-            resizeMode="cover"
-            onError={() => setImageFailed(true)}
+      <Pressable
+        testID={`buyer-product-open-card-${id}`}
+        accessible={false}
+        onPress={() => {
+          motionHaptic('micro');
+          onOpenDetails();
+        }}
+        style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
+      >
+        <View style={{ height: imageHeight, overflow: 'hidden', backgroundColor: colors.secondary }}>
+          <BuyerProductImage
+            uri={imageUrl}
+            label={`${name} product image`}
+            fallbackLabel="OG Exports product"
+            priority="low"
             style={{ width: '100%', height: '100%' }}
           />
-        ) : (
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }}>
-            <Feather name="package" size={40} color={colors.primary} />
-            <Text style={{ color: colors.mutedForeground, fontSize: 11, marginTop: 8 }}>OG Exports product</Text>
+          <View style={{ position: 'absolute', top: 12, left: 12 }}>
+            <Tag label={category} tone="accent" compact={compact} />
           </View>
-        )}
-        <View style={{ position: 'absolute', top: 12, left: 12 }}>
-          <Tag label={category} tone="accent" compact={compact} />
+          {approved ? (
+            <View style={{ position: 'absolute', top: 12, right: 12 }}>
+              <Tag label={compact ? 'Approved' : 'OG approved'} tone="green" compact={compact} />
+            </View>
+          ) : null}
+          <Pressable
+            testID={`buyer-product-favorite-${id}`}
+            accessibilityRole="button"
+            accessibilityLabel={favorite ? `Remove ${name} from saved products` : `Save ${name}`}
+            accessibilityState={{ selected: favorite }}
+            onPress={(event) => {
+              event.stopPropagation();
+              onToggleFavorite();
+            }}
+            style={{ position: 'absolute', top: compact ? 44 : 49, right: 12, width: compact ? 32 : 36, height: compact ? 32 : 36, borderRadius: compact ? 16 : 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }}
+          >
+            <Feather name="heart" size={compact ? 15 : 17} color={favorite ? colors.accent : colors.mutedForeground} />
+          </Pressable>
         </View>
-        {approved ? (
-          <View style={{ position: 'absolute', top: 12, right: 12 }}>
-            <Tag label={compact ? 'Approved' : 'OG approved'} tone="green" compact={compact} />
-          </View>
-        ) : null}
-        <Pressable
-          testID={`buyer-product-favorite-${id}`}
-          accessibilityRole="button"
-          accessibilityLabel={favorite ? `Remove ${name} from saved products` : `Save ${name}`}
-          accessibilityState={{ selected: favorite }}
-          onPress={onToggleFavorite}
-          style={{ position: 'absolute', top: compact ? 44 : 49, right: 12, width: compact ? 32 : 36, height: compact ? 32 : 36, borderRadius: compact ? 16 : 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }}
-        >
-          <Feather name="heart" size={compact ? 15 : 17} color={favorite ? colors.accent : colors.mutedForeground} />
-        </Pressable>
-      </View>
 
-      <View style={{ padding: compact ? 11 : 15 }}>
+      <View style={{ paddingHorizontal: compact ? 11 : 15, paddingTop: compact ? 11 : 15 }}>
         <Text numberOfLines={compact ? 2 : undefined} style={{ color: colors.foreground, fontSize: compact ? 13 : 19, lineHeight: compact ? 18 : 25, fontWeight: '800', minHeight: compact ? 36 : undefined }}>{name}</Text>
         {origin ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 }}>
@@ -205,6 +210,10 @@ export function BuyerProductCard({
         </View>
         )}
 
+      </View>
+      </Pressable>
+
+      <View style={{ paddingHorizontal: compact ? 11 : 15, paddingBottom: compact ? 11 : 15 }}>
         <View style={{ flexDirection: 'row', gap: compact ? 6 : 9, marginTop: compact ? 10 : 14 }}>
           <Pressable
             testID={`buyer-product-details-${id}`}

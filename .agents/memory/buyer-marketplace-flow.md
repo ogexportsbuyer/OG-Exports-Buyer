@@ -56,3 +56,15 @@ For Buyer trade pricing, admins set a product's unit and discount percentage aga
 **Why:** The user chose total purchase value and admin-entered percentages, and historical orders have no reliable discount snapshots.
 
 **How to apply:** Keep catalogue, cart, checkout, and new order lines on the same FOB-per-unit basis. Treat negotiated quotation prices separately from catalogue discounts, and leave legacy savings unestimated.
+
+Buyer catalogue photos should load from their API/CDN URLs rather than being bundled into the app. Normalize relative paths to the configured API origin and use memory/disk caching for repeat views.
+
+**Why:** The user asked for product photos to stay URL-based so the app package remains light and product screens feel faster.
+
+**How to apply:** Use the shared cached remote-image component across home, catalogue, detail gallery, and cart. Keep real API images; do not replace missing photos with invented product art.
+
+Tapping a Buyer product card's image or product information opens its details; favorite and cart controls remain independent actions.
+
+**Why:** The user asked that tapping a product card open its detail page, not only the explicit Details button.
+
+**How to apply:** Apply this behavior to shared Buyer product cards and preserve separate, accessible favorite and cart controls.

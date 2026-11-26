@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Card, EmptyState, ErrorState, LoadingCard } from '@/components/InvestorUI';
 import { BuyerProductPrice } from '@/components/BuyerProductPrice';
+import { BuyerProductImage } from '@/components/BuyerProductImage';
 import { useColors } from '@/hooks/useColors';
 import { first, record } from '@/lib/data';
 import { categoryName, displayPrice, rowsFromResponse } from '@/lib/buyer-data';
@@ -299,16 +300,7 @@ export default function BuyerHomeCatalog({
                 >
                   <Card style={{ width: 112, padding: 0, overflow: 'hidden', borderRadius: colors.radius + 2, marginBottom: 0 }}>
                     <View style={[styles.recommendationImage, { backgroundColor: colors.secondary }]}>
-                      {image ? (
-                        <Image
-                          source={{ uri: image }}
-                          accessibilityLabel={`${name} product`}
-                          resizeMode="cover"
-                          style={StyleSheet.absoluteFill}
-                        />
-                      ) : (
-                        <Feather name="package" size={22} color={colors.primary} />
-                      )}
+                      <BuyerProductImage uri={image} label={`${name} product`} style={StyleSheet.absoluteFill} priority="low" />
                     </View>
                     <View style={styles.recommendationBody}>
                       <Text numberOfLines={1} style={[styles.recommendationCategory, { color: colors.accent }]}>
@@ -395,13 +387,7 @@ export default function BuyerHomeCatalog({
               style={({ pressed }) => ({ width: 137, opacity: pressed ? 0.84 : 1 })}
             >
               <View style={[styles.categoryImage, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
-                {image ? (
-                  <Image source={{ uri: image }} accessibilityLabel={`${category} product`} resizeMode="cover" style={StyleSheet.absoluteFill} />
-                ) : (
-                  <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }]}>
-                    <Feather name="grid" size={23} color={colors.primary} />
-                  </View>
-                )}
+                  <BuyerProductImage uri={image} label={`${category} product`} fallbackIcon="grid" style={StyleSheet.absoluteFill} priority="low" />
                 <LinearGradient
                   colors={['transparent', colors.splashEnd] as const}
                   start={{ x: 0, y: 0.15 }}
@@ -518,18 +504,12 @@ function HomeProductCard({ product, index, width, testID, onBrowse, onSelectProd
       style={({ pressed }) => ({ width, opacity: pressed ? 0.88 : 1 })}
     >
       <Card style={{ width, padding: 0, overflow: 'hidden', borderRadius: colors.radius + 2, marginBottom: 0 }}>
-        {image ? (
-          <Image
-            source={{ uri: image }}
-            accessibilityLabel={`${name} product image`}
-            resizeMode="cover"
-            style={[styles.productImage, { height: imageHeight, backgroundColor: colors.secondary }]}
-          />
-        ) : (
-          <View style={{ height: imageHeight, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
-            <Feather name="package" size={25} color={colors.mutedForeground} />
-          </View>
-        )}
+        <BuyerProductImage
+          uri={image}
+          label={`${name} product image`}
+          style={[styles.productImage, { height: imageHeight, backgroundColor: colors.secondary }]}
+          priority="low"
+        />
         <View style={styles.productBody}>
           <View style={{ minHeight: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
             <Text numberOfLines={1} style={[styles.productCategory, { flex: 1, color: colors.mutedForeground }]}>

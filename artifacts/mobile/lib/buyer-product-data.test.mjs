@@ -166,3 +166,22 @@ test('product image paths resolve to the API host for native image loading', () 
   );
   assert.equal(resolveBuyerProductImageUrl('', 'https://api.example.test'), '');
 });
+
+test('all Buyer product photos use URL normalization, lazy requests, and disk caching', () => {
+  const imageComponent = readFileSync(new URL('../components/BuyerProductImage.tsx', import.meta.url), 'utf8');
+  const productSurfaces = [
+    readFileSync(new URL('../components/BuyerProductCard.tsx', import.meta.url), 'utf8'),
+    readFileSync(new URL('../components/BuyerHomeCatalog.tsx', import.meta.url), 'utf8'),
+    readFileSync(new URL('../components/BuyerCartScreen.tsx', import.meta.url), 'utf8'),
+    readFileSync(new URL('../app/buyer-product/[id].tsx', import.meta.url), 'utf8'),
+  ];
+
+  assert.match(imageComponent, /resolveBuyerProductImageUrl\(uri \?\? '', apiOrigin\)/);
+  assert.match(imageComponent, /cachePolicy="memory-disk"/);
+  assert.match(imageComponent, /loading="lazy"/);
+  assert.match(imageComponent, /recyclingKey=\{imageUrl\}/);
+  for (const surface of productSurfaces) {
+    assert.match(surface, /BuyerProductImage/);
+    assert.doesNotMatch(surface, /<Image\b/, 'product surfaces should share the cached remote-image component');
+  }
+});

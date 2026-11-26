@@ -1,10 +1,11 @@
 import React, { useRef, useState } from 'react';
-import { Image, Pressable, TextInput, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { BuyerProductPrice } from '@/components/BuyerProductPrice';
+import { BuyerProductImage } from '@/components/BuyerProductImage';
 import { Action, Card, EmptyState, ErrorState, LoadingCard, Screen } from '@/components/InvestorUI';
 import { useAuth } from '@/context/AuthContext';
 import { useBuyerGuestFlow } from '@/context/BuyerGuestFlowContext';
@@ -13,28 +14,10 @@ import { useGetBuyerCart, useRemoveBuyerCartItem, useUpdateBuyerCartItem, getGet
 import { amount, first, list, messageOf, record } from '@/lib/data';
 import { buyerCartItemMinimumQuantity, nextBuyerCartQuantity, parseBuyerCartQuantityInput } from '@/lib/buyer-cart-flow';
 import { buyerGuestCartRow } from '@/lib/buyer-guest-flow';
-import { resolveBuyerProductImageUrl } from '@/lib/buyer-product-data';
 import { formatFobPrice } from '@/lib/format-fob-price';
 
 function CartThumbnail({ uri, label }: { uri: string; label: string }) {
-  const colors = useColors();
-  const [failed, setFailed] = useState(false);
-
-  return (
-    <View style={{ width: 78, height: 78, borderRadius: 13, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lightGreen }}>
-      {uri && !failed ? (
-        <Image
-          source={{ uri }}
-          accessibilityLabel={`${label} product image`}
-          resizeMode="cover"
-          onError={() => setFailed(true)}
-          style={{ width: '100%', height: '100%' }}
-        />
-      ) : (
-        <Feather name="package" size={25} color={colors.primary} />
-      )}
-    </View>
-  );
+  return <BuyerProductImage uri={uri} label={`${label} product image`} style={{ width: 78, height: 78, borderRadius: 13 }} />;
 }
 
 function CartQuantityControl({
@@ -140,7 +123,7 @@ function CartQuantityControl({
 export default function BuyerCartScreen() {
   const colors = useColors();
   const queryClient = useQueryClient();
-  const { token, apiOrigin } = useAuth();
+  const { token } = useAuth();
   const guestFlow = useBuyerGuestFlow();
   const cartQuery = useGetBuyerCart({ query: { queryKey: getGetBuyerCartQueryKey(), enabled: !!token, staleTime: 15_000 } });
   const updateItem = useUpdateBuyerCartItem();
@@ -289,12 +272,11 @@ export default function BuyerCartScreen() {
           ['image_url', 'imageUrl', 'image_path', 'imagePath'],
           first(item, ['product_image_url', 'productImageUrl']),
         );
-        const image = resolveBuyerProductImageUrl(imagePath, apiOrigin);
         const subtotal = quantity * unitPrice;
         return (
           <Card key={itemId} testID={`buyer-cart-item-${itemId}`} style={{ padding: 16, marginBottom: 12 }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-              <CartThumbnail uri={image} label={name} />
+              <CartThumbnail uri={imagePath} label={name} />
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 5 }}>
                   <Text style={{ flex: 1, color: colors.foreground, fontSize: 14, lineHeight: 19, fontWeight: '700' }}>{name}</Text>
