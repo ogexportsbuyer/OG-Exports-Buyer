@@ -44,6 +44,18 @@ test('onboarding keeps animated copy in normal flow and scrolls when the screen 
   assert.doesNotMatch(onboarding, /copyOffset/);
 });
 
+test('onboarding illustration no longer overlays its animation with a duplicate top label', () => {
+  const illustrationStart = onboarding.indexOf('<Card testID={`onboarding-illustration-');
+  const illustrationEnd = onboarding.indexOf('</Card>', illustrationStart);
+  const illustration = onboarding.slice(illustrationStart, illustrationEnd);
+
+  assert.ok(illustrationStart >= 0 && illustrationEnd > illustrationStart);
+  assert.match(illustration, /<OnboardingIllustration/);
+  assert.doesNotMatch(illustration, /slide\.eyebrow|artLabel|artRule/);
+  assert.doesNotMatch(onboarding, /artLabel: \{|artRule: \{/);
+  assert.match(onboarding, /slide\.eyebrow\.split\('\/'\)\[1\]\.trim\(\)/);
+});
+
 test('first-run splash routing honors the persisted onboarding completion state', () => {
   assert.match(entryScreen, /buyerEntryDestination\(onboardingComplete\)/);
   assert.match(authContext, /AsyncStorage\.getItem\(ONBOARDING_KEY\)/);

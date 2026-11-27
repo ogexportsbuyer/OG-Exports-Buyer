@@ -477,11 +477,6 @@ export default function Onboarding() {
           <Animated.View style={{ opacity: illustrationOpacity, transform: [{ scale: illustrationScale }] }}>
             <Card testID={`onboarding-illustration-${step + 1}`} style={[styles.illustrationCard, { height: compact ? 158 : 232, backgroundColor: colors.secondary, borderColor: colors.border, marginBottom: compact ? 13 : 27 }]}>
               <OnboardingIllustration kind={slide.illustration} stageA={illustrationStages[0]} stageB={illustrationStages[1]} stageC={illustrationStages[2]} reduceMotion={reduceMotion} />
-              <View pointerEvents="none" style={styles.artLabel}>
-                <Feather name={step === 0 ? 'globe' : step === 1 ? 'file-text' : 'navigation'} size={13} color={colors.primary} />
-                <Text style={{ color: colors.primary, fontSize: 10, fontWeight: '700', letterSpacing: 1.1 }}>{slide.eyebrow}</Text>
-              </View>
-              <View pointerEvents="none" style={[styles.artRule, { backgroundColor: colors.border }]} />
             </Card>
           </Animated.View>
           <Animated.View style={{ opacity: copyOpacity }}>
@@ -546,8 +541,6 @@ const styles = StyleSheet.create({
   brandLockup: { flexDirection: 'row', alignItems: 'center', gap: 11 },
   stepPill: { minHeight: 30, borderRadius: 15, paddingHorizontal: 11, alignItems: 'center', justifyContent: 'center' },
   illustrationCard: { padding: 0, overflow: 'hidden', borderWidth: 1, borderRadius: 22, position: 'relative' },
-  artLabel: { position: 'absolute', left: 15, top: 14, flexDirection: 'row', alignItems: 'center', gap: 7 },
-  artRule: { position: 'absolute', left: 15, right: 15, bottom: 13, height: StyleSheet.hairlineWidth },
   detailLine: { alignSelf: 'center', borderTopWidth: StyleSheet.hairlineWidth, marginTop: 17, paddingTop: 11, paddingHorizontal: 8 },
   controlsBlock: { marginBottom: 5 },
   controlTopline: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 42, marginBottom: 10 },
