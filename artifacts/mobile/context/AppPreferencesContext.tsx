@@ -1,7 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { I18nManager, Platform, useColorScheme } from 'react-native';
-import { isRunningInExpoGo, reloadAppAsync } from 'expo';
+import { Platform, useColorScheme } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getInvestorMe,
@@ -17,7 +16,7 @@ import { useAuth } from '@/context/AuthContext';
 import { hasBuyerAccount } from '@/lib/account-role';
 import { configureMoneyDisplay, first, messageOf, record, unwrap } from '@/lib/data';
 import { configureUiLanguage, isRightToLeftLanguage, translateUi } from '@/lib/strings';
-import { createPreferenceHydrator, createPreferenceSyncQueue, defaultPreferences, nextNativeDirectionKey, parsePreferences,
+import { createPreferenceHydrator, createPreferenceSyncQueue, defaultPreferences, parsePreferences,
   persistPreferences, PreferenceSaveError, preferenceAccountId,
   type AppPreferences, type PreferencePatch } from '@/lib/app-preferences';
 export type { AppearancePreference, DisplayCurrency, AppPreferences } from '@/lib/app-preferences';
@@ -71,7 +70,6 @@ export function AppPreferencesProvider({ children }: { children: React.ReactNode
   const currentPreferences = useRef<AppPreferences>(defaultPreferences);
   const pendingPreferences = useRef<PreferencePatch>({});
   const savingSession = useRef<string | null>(null);
-  const directionAppliedFor = useRef<string | null>(null);
   const saveRevision = useRef(0);
   const activeSession = `${userId}:${token ?? ''}`;
   const sessionRef = useRef(activeSession);
@@ -204,31 +202,12 @@ export function AppPreferencesProvider({ children }: { children: React.ReactNode
   }, [preferencesLoaded, isBuyer, buyerMeQuery.data, investorProfileQuery.data, userId, apply, store, activeSession]);
 
   useEffect(() => {
-    if (!preferencesLoaded) return;
-    if (Platform.OS === 'web') {
-      if (typeof document !== 'undefined') {
-        document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
-        document.documentElement.lang = preferences.language;
-      }
-      return;
+    if (!preferencesLoaded || Platform.OS !== 'web') return;
+    if (typeof document !== 'undefined') {
+      document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+      document.documentElement.lang = preferences.language;
     }
-    if (!preferencesLoaded || !userId) return;
-    // Do not restart an installed app before the new language is stored durably.
-    if (isSaving || isSyncing) return;
-    // Appearance/currency/notification saves also change isSaving. Do not
-    // re-apply the same native direction and accidentally restart Expo Go.
-    const directionKey = nextNativeDirectionKey(directionAppliedFor.current, userId, isRTL);
-    if (!directionKey) return;
-    directionAppliedFor.current = directionKey;
-    if (I18nManager.isRTL !== isRTL) {
-      I18nManager.allowRTL(true);
-      I18nManager.forceRTL(isRTL);
-      // Avoid restarting Expo Go while the authenticated app tree is mounting.
-      // The persisted RTL direction will be applied the next time Expo Go is
-      // manually reloaded; installed builds can still reload immediately.
-      if (!isRunningInExpoGo()) void reloadAppAsync().catch(() => undefined);
-    }
-  }, [preferencesLoaded, userId, preferences.language, isRTL, isSaving, isSyncing]);
+  }, [preferencesLoaded, preferences.language, isRTL]);
 
   const savePreferences = useCallback(async (patch: Partial<AppPreferences>) => {
     if (!userId || !token) {

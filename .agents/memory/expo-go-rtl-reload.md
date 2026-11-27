@@ -1,10 +1,10 @@
 ---
-name: Expo Go RTL reload behavior
-description: Avoid repeated Expo Go project restarts when account language preferences enable RTL.
+name: Language switching without app restarts
+description: Apply Urdu/Arabic direction changes reactively without reloading the mobile app.
 ---
 
-Do not call `reloadAppAsync()` from a language-direction effect while running inside Expo Go. `I18nManager.forceRTL()` can request an app reload; in Expo Go that reload can reopen the development project during authenticated startup. Keep the preference and let the user reload Expo Go manually if the native direction has not applied.
+Do not call `I18nManager.forceRTL()` or `reloadAppAsync()` when a signed-in user changes language. Derive RTL from the saved preference and apply it through reactive layout and text styles, preserving the current route and session.
 
-**Why:** An investor login followed by loading Urdu/Arabic profile preferences can trigger the direction effect, repeatedly restarting the Expo Go preview before the signed-in screen appears.
+**Why:** Forcing native RTL direction can restart both installed builds and Expo Go, interrupting the signed-in user and their current work.
 
-**How to apply:** When changing mobile RTL handling, use `isRunningInExpoGo()` to avoid automatic Expo Go restarts. Preserve deliberate direction application for installed builds and verify authenticated startup with RTL preferences.
+**How to apply:** Keep language and direction state in the preferences provider, set web `document.dir` where needed, and use React Native `direction`/`writingDirection` styles on native screens. Verify Urdu/Arabic switching without leaving the current screen.

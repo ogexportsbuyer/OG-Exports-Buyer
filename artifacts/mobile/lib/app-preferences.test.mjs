@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   createPreferenceHydrator, createPreferenceSyncQueue, defaultPreferences, parsePreferences,
-  nextNativeDirectionKey, persistPreferences, preferenceAccountId, readPreferenceSnapshot,
+  persistPreferences, preferenceAccountId, readPreferenceSnapshot,
 } from './app-preferences.ts';
 import {
   APP_LANGUAGE_OPTIONS, configureUiLanguage, formatAppDate, formatAppNumber,
@@ -69,13 +69,15 @@ test('every phrase used by the app has all five additional UI translations', () 
   }
 });
 
-test('appearance saves do not reapply an already handled native layout direction', () => {
-  const applied = nextNativeDirectionKey(null, '42', true);
-  assert.equal(applied, '42:rtl');
-  assert.equal(nextNativeDirectionKey(applied, '42', true), null);
-  assert.equal(nextNativeDirectionKey(applied, '42', false), '42:ltr');
-  assert.equal(nextNativeDirectionKey(applied, '43', true), '43:rtl');
-  assert.equal(nextNativeDirectionKey(applied, '', true), null);
+test('language changes update direction without forcing a native app restart', () => {
+  const provider = readFileSync(new URL('../context/AppPreferencesContext.tsx', import.meta.url), 'utf8');
+  const layout = readFileSync(new URL('../app/_layout.tsx', import.meta.url), 'utf8');
+  const localizedText = readFileSync(new URL('../components/LocalizedText.tsx', import.meta.url), 'utf8');
+
+  assert.match(provider, /const isRTL = isRightToLeftLanguage\(preferences\.language\)/);
+  assert.doesNotMatch(provider, /I18nManager\.forceRTL|reloadAppAsync/);
+  assert.match(layout, /direction: isRTL \? 'rtl' : 'ltr'/);
+  assert.match(localizedText, /writingDirection: direction/);
 });
 
 test('selection applies immediately, then stores before network, and clears pending only after confirmation', async () => {
@@ -151,8 +153,6 @@ test('profile ingestion preserves pending fields, saves are bounded, and failure
   assert.match(provider, /first\(record\(profile\.user\), \['id'\]\) !== userId/);
   assert.match(provider, /isLoading: Boolean\(token\) && \(!userId \|\| !preferencesLoaded\)/);
   assert.doesNotMatch(provider, /invalidateQueries\(\)|await profileQuery\.refetch/);
-  assert.match(provider, /if \(isSaving \|\| isSyncing\) return/);
-  assert.match(provider, /if \(!isRunningInExpoGo\(\)\)/);
   const error = settings.indexOf('testID="app-preferences-save-error"');
   assert.ok(error > settings.indexOf('>App preferences</Text>') && error < settings.indexOf('>In-app alert preferences</Text>'));
   assert.match(settings, /title="Retry saving preferences"/);
