@@ -1365,26 +1365,12 @@ export interface BuyerProduct {
      * @maxLength 32
      */
   unit_of_measure?: string;
-  /** @nullable */
-  list_unit_price?: number | null;
   /**
-     * Combined product and buyer VIP discount percentage, calculated from the displayed list price.
+     * Admin-managed discount applied to the product's FOB unit price.
      * @minimum 0
      * @maximum 99.99
      */
   discount_percentage?: number;
-  /**
-     * @minimum 0
-     * @maximum 99.99
-     */
-  product_discount_percentage?: number;
-  /**
-     * @minimum 0
-     * @maximum 99.99
-     */
-  vip_discount_percentage?: number;
-  /** @nullable */
-  vip_tier_name?: string | null;
   /** @nullable */
   discounted_unit_price?: number | null;
   discount_amount_per_unit?: number;
@@ -1393,11 +1379,6 @@ export interface BuyerProduct {
 
 export interface BuyerProductPageResponse {
   data?: BuyerProduct[];
-  [key: string]: unknown;
- }
-
-export interface BuyerProductResponse {
-  data?: BuyerProduct;
   [key: string]: unknown;
  }
 
@@ -1415,18 +1396,6 @@ export interface BuyerCartItemPricing {
      */
   discount_percentage?: number;
   discount_amount_per_unit?: number;
-  /**
-     * @minimum 0
-     * @maximum 99.99
-     */
-  product_discount_percentage?: number;
-  /**
-     * @minimum 0
-     * @maximum 99.99
-     */
-  vip_discount_percentage?: number;
-  /** @nullable */
-  vip_tier_name?: string | null;
   unit_of_measure?: string;
   product?: BuyerProduct;
   [key: string]: unknown;
@@ -1454,236 +1423,11 @@ export interface BuyerTradeValueSummary {
   total_purchase_value_usd: number;
   completed_trade_value_usd: number;
   processing_trade_value_usd: number;
-  /** Savings only from order items with a saved order-time discount snapshot. */
-  discount_savings_usd: number;
-}
-
-export interface BuyerReward {
-  id?: number;
-  tier_id?: number;
-  title?: string;
-  /** @nullable */
-  description?: string | null;
-  type?: string;
-  is_active?: boolean;
-  requires_admin_approval?: boolean;
-  sort_order?: number;
-  [key: string]: unknown;
- }
-
-export interface BuyerRewardTier {
-  id?: number;
-  slug?: string;
-  name?: string;
-  /** @minimum 0 */
-  minimum_spend_usd?: number;
   /**
-     * @minimum 0
-     * @maximum 99.99
-     */
-  discount_percentage?: number;
-  sort_order?: number;
-  is_active?: boolean;
-  rewards?: BuyerReward[];
-  [key: string]: unknown;
- }
-
-export type BuyerRewardProgramSummaryCurrency = typeof BuyerRewardProgramSummaryCurrency[keyof typeof BuyerRewardProgramSummaryCurrency];
-
-
-export const BuyerRewardProgramSummaryCurrency = {
-  USD: 'USD',
-} as const;
-
-export interface BuyerRewardProgramSummary {
-  currency?: BuyerRewardProgramSummaryCurrency;
-  /** @minimum 0 */
-  qualifying_spend_usd?: number;
-  current_tier?: BuyerRewardTier | null;
-  earned_tier?: BuyerRewardTier | null;
-  is_manually_assigned?: boolean;
-  next_tier?: BuyerRewardTier | null;
-  /** @nullable */
-  spend_to_next_tier_usd?: number | null;
-  /**
-     * @minimum 0
-     * @maximum 100
-     */
-  progress_percentage?: number;
-  active_rewards?: BuyerReward[];
-  tiers?: BuyerRewardTier[];
-  [key: string]: unknown;
- }
-
-export interface BuyerRewardProgramResponse {
-  data?: BuyerRewardProgramSummary;
-  [key: string]: unknown;
- }
-
-export type AdminBuyerRewardTier = BuyerRewardTier;
-
-export interface AdminBuyerRewardTierResponse {
-  data?: AdminBuyerRewardTier;
-  [key: string]: unknown;
- }
-
-export interface AdminBuyerRewardTiersResponse {
-  data?: AdminBuyerRewardTier[];
-  [key: string]: unknown;
- }
-
-export interface AdminBuyerRewardResponse {
-  data?: BuyerReward;
-  [key: string]: unknown;
- }
-
-export interface AdminBuyerRewardsResponse {
-  data?: BuyerReward[];
-  [key: string]: unknown;
- }
-
-export type AdminBuyerRewardBuyer = BuyerRewardProgramSummary & ({
-  buyer?: {
-  id?: number;
-  name?: string;
-  email?: string;
-};
-  /** @nullable */
-  override_reason?: string | null;
-  /** @nullable */
-  override_changed_at?: string | null;
-  [key: string]: unknown;
- });
-
-export type AdminBuyerRewardBuyersResponseMeta = {
-  current_page?: number;
-  last_page?: number;
-  per_page?: number;
-  total?: number;
-};
-
-export interface AdminBuyerRewardBuyersResponse {
-  data?: AdminBuyerRewardBuyer[];
-  meta?: AdminBuyerRewardBuyersResponseMeta;
-  [key: string]: unknown;
- }
-
-export interface AdminBuyerRewardBuyerResponse {
-  data?: AdminBuyerRewardBuyer;
-  [key: string]: unknown;
- }
-
-export interface BuyerRewardTierInput {
-  /**
-     * @minLength 1
-     * @maxLength 120
-     */
-  name: string;
-  /**
-     * @maxLength 100
+     * Savings only from order items with a saved order-time discount snapshot.
      * @nullable
      */
-  slug?: string | null;
-  /** @minimum 0 */
-  minimum_spend_usd: number;
-  /**
-     * @minimum 0
-     * @maximum 99.99
-     */
-  discount_percentage: number;
-  /** @minimum 0 */
-  sort_order?: number;
-  is_active?: boolean;
-}
-
-export interface BuyerRewardTierUpdateInput {
-  /**
-     * @minLength 1
-     * @maxLength 120
-     */
-  name?: string;
-  /**
-     * @minLength 1
-     * @maxLength 100
-     */
-  slug?: string;
-  /** @minimum 0 */
-  minimum_spend_usd?: number;
-  /**
-     * @minimum 0
-     * @maximum 99.99
-     */
-  discount_percentage?: number;
-  /** @minimum 0 */
-  sort_order?: number;
-  is_active?: boolean;
-}
-
-export type BuyerRewardTierReorderInputTiersItem = {
-  id: number;
-  /** @minimum 0 */
-  sort_order: number;
-};
-
-export interface BuyerRewardTierReorderInput {
-  /** @minItems 1 */
-  tiers: BuyerRewardTierReorderInputTiersItem[];
-}
-
-export interface BuyerRewardInput {
-  tier_id: number;
-  /**
-     * @minLength 1
-     * @maxLength 160
-     */
-  title: string;
-  /**
-     * @maxLength 2000
-     * @nullable
-     */
-  description?: string | null;
-  /**
-     * @minLength 1
-     * @maxLength 40
-     */
-  type: string;
-  is_active?: boolean;
-  requires_admin_approval?: boolean;
-  /** @minimum 0 */
-  sort_order?: number;
-}
-
-export interface BuyerRewardUpdateInput {
-  tier_id?: number;
-  /**
-     * @minLength 1
-     * @maxLength 160
-     */
-  title?: string;
-  /**
-     * @maxLength 2000
-     * @nullable
-     */
-  description?: string | null;
-  /**
-     * @minLength 1
-     * @maxLength 40
-     */
-  type?: string;
-  is_active?: boolean;
-  requires_admin_approval?: boolean;
-  /** @minimum 0 */
-  sort_order?: number;
-}
-
-export interface BuyerRewardTierOverrideInput {
-  /** @nullable */
-  tier_id: number | null;
-  /**
-     * @minLength 4
-     * @maxLength 2000
-     */
-  reason: string;
+  discount_savings_usd: number | null;
 }
 
 export type BuyerDashboardResponseData = {
@@ -1699,14 +1443,6 @@ export interface BuyerDashboardResponse {
 export interface JsonObject { [key: string]: unknown }
 
 export type GetProductsParams = {
-search?: string;
-category?: string;
-featured?: boolean;
-per_page?: number;
-page?: number;
-};
-
-export type GetBuyerProductsParams = {
 search?: string;
 category?: string;
 featured?: boolean;
@@ -1754,19 +1490,6 @@ export type GetInvestorProjectsParams = {
 status?: string;
 type?: string;
 per_page?: number;
-};
-
-export type GetAdminBuyerRewardBuyersParams = {
-search?: string;
-/**
- * @minimum 1
- * @maximum 100
- */
-per_page?: number;
-/**
- * @minimum 1
- */
-page?: number;
 };
 
 export type GetInvestorInvestmentsParams = {

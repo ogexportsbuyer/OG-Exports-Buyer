@@ -237,7 +237,6 @@ function RootLayoutNav() {
         <Stack.Screen name="buyer-order/[id]" options={{ title: t('Order details') }} />
         <Stack.Screen name="buyer-quotation/[id]" options={{ title: t('Quotation') }} />
         <Stack.Screen name="buyer-overview" options={{ title: t('Executive dashboard') }} />
-        <Stack.Screen name="buyer-rewards" options={{ title: t('VIP rewards') }} />
         <Stack.Screen name="buyer-analytics" options={{ title: t('Analytics') }} />
         <Stack.Screen name="buyer-profile-details" options={{ title: t('My profile') }} />
         <Stack.Screen name="buyer-company" options={{ title: t('Company profile') }} />

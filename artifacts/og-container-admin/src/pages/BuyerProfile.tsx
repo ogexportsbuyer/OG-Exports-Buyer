@@ -1,5 +1,4 @@
 import { useRef, useState } from "react"
-import { Link } from "wouter"
 import { BuyerPortalLayout } from "@/components/buyer/BuyerPortalLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -61,9 +60,6 @@ export default function BuyerProfile() {
   return (
     <BuyerPortalLayout title="My Profile" subtitle="Manage your personal information and profile photo">
       <div className="max-w-3xl space-y-6">
-        <Button variant="outline" asChild className="gap-2">
-          <Link href="/buyer/rewards">View VIP rewards status</Link>
-        </Button>
 
         {/* Avatar + identity */}
         <Card className="glass-card">

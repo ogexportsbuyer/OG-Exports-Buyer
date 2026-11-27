@@ -17,8 +17,7 @@ import {
   Eye, Search, Upload, Calendar, Package,
   MapPin, Send, RotateCcw, ArrowLeft, X,
 } from "lucide-react"
-import { getGetBuyerProductsQueryKey, useGetBuyerProducts } from "@workspace/api-client-react"
-import { useSafeAuth } from "@/lib/use-safe-auth"
+import { useProducts } from "@workspace/api-client-react"
 import { api, unwrapPage, resolveAttachmentUrl, isImageMime } from "@/lib/api"
 import { notify } from "@/lib/notify"
 import { useCountries, usePorts, useIncoterms } from "@/hooks/useLocations"
@@ -115,11 +114,7 @@ function attachmentIsImage(a: RfqAttachmentView): boolean {
 export default function BuyerRFQ() {
   const [location, setLocation] = useLocation()
   const queryClient = useQueryClient()
-  const { userId } = useSafeAuth()
-  const buyerId = String(userId ?? "")
-  const { data: productPage, isLoading: productsLoading } = useGetBuyerProducts({ per_page: 100 }, {
-    query: { enabled: !!buyerId, queryKey: [...getGetBuyerProductsQueryKey({ per_page: 100 }), buyerId], retry: false },
-  })
+  const { data: productPage, isLoading: productsLoading } = useProducts({ per_page: 100 })
   const products = productPage?.data || []
   const { data: countries = [], isLoading: countriesLoading, isError: countriesError } = useCountries()
   const { data: incoterms = [], isLoading: incotermsLoading } = useIncoterms()

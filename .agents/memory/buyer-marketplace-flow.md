@@ -68,9 +68,3 @@ Tapping a Buyer product card's image or product information opens its details; f
 **Why:** The user asked that tapping a product card open its detail page, not only the explicit Details button.
 
 **How to apply:** Apply this behavior to shared Buyer product cards and preserve separate, accessible favorite and cart controls.
-
-Buyer VIP progress counts only paid or completed orders in USD. Apply the configured VIP discount after the product sale discount to signed-in catalog prices, quote snapshots, and checkout; leave guest prices public and unchanged. Manual tier assignments must not alter earned spend, and new tiers start with no VIP discount until an administrator configures one.
-
-**Why:** The user chose paid/completed orders for eligibility, personalized prices through quote and checkout, and VIP discounts after product discounts.
-
-**How to apply:** Keep earned spend separate from manual overrides, calculate the final price on the server, and store that buyer-specific price with quotes and orders.

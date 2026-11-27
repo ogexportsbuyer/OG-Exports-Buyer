@@ -12,7 +12,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Support\MediaStorage;
-use App\Support\BuyerProductPricing;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -88,9 +87,7 @@ class RfqController extends Controller
         if ($product && ! $productName) {
             $productName = $product->name;
         }
-        $catalogUnitPriceSnapshot = $product
-            ? app(BuyerProductPricing::class)->forProduct($product, $request->user(), $request)['discounted_unit_price']
-            : null;
+        $catalogUnitPriceSnapshot = $product?->buyerDiscountedUnitPrice();
 
         $port = Port::query()->with('country:id,name')->findOrFail($data['port_id']);
         $attachments = $this->normalizeAttachments($data['attachments'] ?? []);

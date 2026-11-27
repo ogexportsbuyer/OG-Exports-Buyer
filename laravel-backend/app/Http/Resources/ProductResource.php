@@ -3,7 +3,6 @@
 namespace App\Http\Resources;
 
 use App\Support\MediaStorage;
-use App\Support\BuyerProductPricing;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,8 +11,6 @@ class ProductResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $pricing = app(BuyerProductPricing::class)->forProduct($this->resource, $request->user(), $request);
-
         return [
             'id' => $this->id,
             'category_id' => $this->category_id,
@@ -33,13 +30,9 @@ class ProductResource extends JsonResource
             'price' => $this->price,
             'currency' => $this->currency,
             'unit_of_measure' => $this->unit_of_measure ?: 'MT',
-            'list_unit_price' => $pricing['list_unit_price'],
-            'discount_percentage' => $pricing['discount_percentage'],
-            'product_discount_percentage' => $pricing['product_discount_percentage'],
-            'vip_discount_percentage' => $pricing['vip_discount_percentage'],
-            'vip_tier_name' => $pricing['vip_tier_name'],
-            'discounted_unit_price' => $pricing['discounted_unit_price'],
-            'discount_amount_per_unit' => $pricing['discount_amount_per_unit'],
+            'discount_percentage' => $this->buyerDiscountPercentage(),
+            'discounted_unit_price' => $this->buyerDiscountedUnitPrice(),
+            'discount_amount_per_unit' => $this->buyerDiscountAmountPerUnit(),
             'min_order' => $this->min_order,
             'moq' => $this->moq,
             'lead_time' => $this->lead_time,

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react"
 import { useParams, Link } from "wouter"
-import { getGetBuyerProductQueryKey, useGetBuyerProduct, useProduct, useProducts } from "@workspace/api-client-react"
-import { useSafeAuth } from "@/lib/use-safe-auth"
+import { useProduct, useProducts } from "@workspace/api-client-react"
 import { API_URL } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,13 +15,7 @@ import {
 export default function ProductDetail() {
   const params = useParams<{ slug: string }>()
   const slug = params.slug || ""
-  const { userId } = useSafeAuth()
-  const buyerId = String(userId ?? "")
   const { data: product, isLoading, isError } = useProduct(slug)
-  const buyerProductQuery = useGetBuyerProduct(slug, {
-    query: { enabled: !!buyerId && !!slug, queryKey: [...getGetBuyerProductQueryKey(slug), buyerId], retry: false },
-  })
-  const buyerProduct = buyerProductQuery.data?.data
   const { data: productsPage } = useProducts({ per_page: 12 })
   const allProducts = productsPage?.data ?? []
 
@@ -215,17 +208,7 @@ export default function ProductDetail() {
             {/* Key trade info strip */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               {[
-                { icon: DollarSign, label: buyerProduct?.vip_tier_name ? `${buyerProduct.vip_tier_name} price` : "FOB Price", value: buyerId
-                  ? buyerProductQuery.isLoading
-                    ? "Loading buyer price…"
-                    : buyerProductQuery.isError || !buyerProduct
-                      ? "Price unavailable"
-                      : buyerProduct.discounted_unit_price != null
-                        ? `${buyerProduct.currency || "USD"} ${Number(buyerProduct.discounted_unit_price).toLocaleString()} / ${buyerProduct.unit_of_measure || "MT"}`
-                        : "On request"
-                  : buyerProduct?.discounted_unit_price != null
-                  ? `${buyerProduct.currency || "USD"} ${Number(buyerProduct.discounted_unit_price).toLocaleString()} / ${buyerProduct.unit_of_measure || "MT"}`
-                  : product.fobDisplay || "On request" },
+                { icon: DollarSign, label: "FOB Price", value: product.fobDisplay || "On request" },
                 { icon: Package, label: "MOQ", value: product.moq },
                 { icon: Clock, label: "Lead Time", value: product.leadTime },
                 { icon: FileText, label: "HS Code", value: product.hsCode },
@@ -240,17 +223,6 @@ export default function ProductDetail() {
                 </div>
               ))}
             </div>
-            {buyerProduct?.vip_tier_name && (
-              <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
-                <Award className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <div>
-                  <p className="text-sm font-semibold">{buyerProduct.vip_tier_name} buyer pricing</p>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    Server-calculated price includes {buyerProduct.product_discount_percentage ?? 0}% product discount and {buyerProduct.vip_discount_percentage ?? 0}% VIP discount; combined discount {buyerProduct.discount_percentage ?? 0}%.
-                  </p>
-                </div>
-              </div>
-            )}
 
             {/* CTA card */}
             <Card className="border-primary/20 bg-primary/5">

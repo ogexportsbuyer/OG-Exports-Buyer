@@ -11,13 +11,11 @@ import {
   getGetCountryPortsQueryKey,
   getGetIncotermsQueryKey,
   getGetProductsQueryKey,
-  getGetBuyerProductsQueryKey,
   useCreateBuyerRfq,
   useGetCountries,
   useGetCountryPorts,
   useGetIncoterms,
   useGetProducts,
-  useGetBuyerProducts,
 } from '@workspace/api-client-react';
 import { Action, Card, ErrorState, Field, LoadingCard, Screen } from '@/components/InvestorUI';
 import { BuyerRfqPicker, type BuyerRfqOption } from '@/components/BuyerRfqPicker';
@@ -38,7 +36,6 @@ import {
 } from '@/lib/buyer-rfq';
 import { amount, first, messageOf, record } from '@/lib/data';
 import { rowsFromResponse } from '@/lib/buyer-data';
-import { shouldUsePublicCatalogFallback } from '@/lib/buyer-pricing';
 import type { BuyerGuestRfqAttachment, BuyerGuestRfqDraft } from '@/lib/buyer-guest-flow';
 
 const MAX_RFQ_FILES = 5;
@@ -102,7 +99,7 @@ export function BuyerRfqForm({
 }) {
   const colors = useColors();
   const queryClient = useQueryClient();
-  const { ready, token, apiOrigin, user } = useAuth();
+  const { ready, token, apiOrigin } = useAuth();
   const guestFlow = useBuyerGuestFlow();
   const [productId, setProductId] = useState(initialDraft?.productId ?? '');
   const [quantity, setQuantity] = useState(initialDraft?.quantity ?? '');
@@ -127,24 +124,14 @@ export function BuyerRfqForm({
   const busy = createRfq.isPending || Boolean(uploadProgress);
   const resumeAttempted = useRef(false);
 
-  const buyerProductsQuery = useGetBuyerProducts({ per_page: 100 }, {
-    query: {
-      queryKey: [...getGetBuyerProductsQueryKey({ per_page: 100 }), first(record(user), ['id'])],
-      enabled: ready && Boolean(apiOrigin) && !!token,
-      staleTime: 300_000,
-      retry: false,
-    },
-  });
-  const usePublicCatalog = shouldUsePublicCatalogFallback(!!token, buyerProductsQuery.isError);
-  const publicProductsQuery = useGetProducts({ per_page: 100 }, {
+  const productsQuery = useGetProducts({ per_page: 100 }, {
     query: {
       queryKey: getGetProductsQueryKey({ per_page: 100 }),
-      enabled: ready && Boolean(apiOrigin) && (!token || usePublicCatalog),
+      enabled: ready && Boolean(apiOrigin),
       staleTime: 300_000,
       retry: false,
     },
   });
-  const productsQuery = token && !usePublicCatalog ? buyerProductsQuery : publicProductsQuery;
   const countriesQuery = useGetCountries({
     query: { queryKey: getGetCountriesQueryKey(), enabled: ready && Boolean(apiOrigin), staleTime: 300_000, retry: false },
   });
@@ -363,7 +350,6 @@ export function BuyerRfqForm({
 
       <Card style={{ padding: 15, marginBottom: 14 }}>
         <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '800', marginBottom: 10 }}>Product requirements</Text>
-        {usePublicCatalog ? <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginBottom: 9 }}>VIP pricing is temporarily unavailable; showing published catalogue prices.</Text> : null}
         <BuyerRfqPicker
           label="Product *"
           value={productId}

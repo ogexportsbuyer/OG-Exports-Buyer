@@ -21,7 +21,6 @@ const accountSections = [
     links: [
       ['Executive dashboard', '/(buyer-tabs)/dashboard', 'bar-chart-2'],
       ['Analytics', '/buyer-analytics', 'bar-chart-2'],
-      ['VIP rewards', '/buyer-rewards', 'award'],
     ],
   },
   {

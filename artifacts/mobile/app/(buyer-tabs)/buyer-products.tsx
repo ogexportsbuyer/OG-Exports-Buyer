@@ -9,7 +9,7 @@ import { EmptyState, ErrorState, Field, LoadingCard, Screen } from '@/components
 import { BuyerProductCard } from '@/components/BuyerProductCard';
 import { BuyerProductFilterSheet } from '@/components/BuyerProductFilterSheet';
 import { useColors } from '@/hooks/useColors';
-import { useAddBuyerCartItem, useGetProductCategories, useGetProducts, useGetBuyerProducts, getGetBuyerProductsQueryKey, getGetBuyerCartQueryKey, getGetProductCategoriesQueryKey, getGetProductsQueryKey } from '@workspace/api-client-react';
+import { useAddBuyerCartItem, useGetProductCategories, useGetProducts, getGetBuyerCartQueryKey, getGetProductCategoriesQueryKey, getGetProductsQueryKey } from '@workspace/api-client-react';
 import { amount, first, messageOf, record } from '@/lib/data';
 import { productMinimumQuantity, rowsFromResponse } from '@/lib/buyer-data';
 import { buyerCartRouteAfterProductAdd, claimPendingBuyerProduct } from '@/lib/buyer-auth-flow';
@@ -23,7 +23,6 @@ import {
 import { motionHaptic } from '@/lib/motion';
 import { useAuth } from '@/context/AuthContext';
 import { useBuyerGuestFlow } from '@/context/BuyerGuestFlowContext';
-import { shouldUsePublicCatalogFallback } from '@/lib/buyer-pricing';
 
 export default function BuyerProducts() {
   const colors = useColors();
@@ -32,7 +31,6 @@ export default function BuyerProducts() {
   const { ready, token, apiOrigin, user } = useAuth();
   const guestFlow = useBuyerGuestFlow();
   const userId = first(record(user), ['id'], 'guest');
-  const buyerId = token ? String(userId) : '';
   const favoritesKey = `buyer-product-favourites:${userId}`;
   const { category: routeCategory, search: routeSearch, pendingProduct: routePendingProduct } = useLocalSearchParams<{
     category?: string | string[];
@@ -43,10 +41,7 @@ export default function BuyerProducts() {
   const initialSearch = Array.isArray(routeSearch) ? routeSearch[0] : routeSearch;
   const pendingProduct = Array.isArray(routePendingProduct) ? routePendingProduct[0] : routePendingProduct;
   const catalogEnabled = ready && !!apiOrigin;
-  const personalizedProductsQuery = useGetBuyerProducts({ per_page: 100 }, { query: { queryKey: [...getGetBuyerProductsQueryKey({ per_page: 100 }), buyerId], enabled: catalogEnabled && !!token, retry: false, staleTime: 60_000 } });
-  const usePublicCatalog = shouldUsePublicCatalogFallback(!!token, personalizedProductsQuery.isError);
-  const publicProductsQuery = useGetProducts({ per_page: 100 }, { query: { queryKey: getGetProductsQueryKey({ per_page: 100 }), enabled: catalogEnabled && (!token || usePublicCatalog), retry: false, staleTime: 60_000 } });
-  const productsQuery = token && !usePublicCatalog ? personalizedProductsQuery : publicProductsQuery;
+  const productsQuery = useGetProducts({ per_page: 100 }, { query: { queryKey: getGetProductsQueryKey({ per_page: 100 }), enabled: catalogEnabled, retry: false, staleTime: 60_000 } });
   const categoriesQuery = useGetProductCategories({ query: { queryKey: getGetProductCategoriesQueryKey(), enabled: catalogEnabled, retry: false, staleTime: 300_000 } });
   const addToCart = useAddBuyerCartItem();
   const products = rowsFromResponse(productsQuery.data);
@@ -250,10 +245,9 @@ export default function BuyerProducts() {
           {actionError}
         </Text>
       ) : null}
-      {usePublicCatalog ? <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginBottom: 10 }}>{'VIP pricing is temporarily unavailable; showing published catalogue prices.'}</Text> : null}
       {productsQuery.isLoading ? <LoadingCard label="Loading approved products…" /> : null}
       {productsQuery.isError ? (
-        <ErrorState message="The product catalogue could not be loaded." error={productsQuery.error} onRetry={() => { if (token) void personalizedProductsQuery.refetch(); void publicProductsQuery.refetch(); }} />
+        <ErrorState message="The product catalogue could not be loaded." error={productsQuery.error} onRetry={() => void productsQuery.refetch()} />
       ) : null}
       {!productsQuery.isLoading && !productsQuery.isError && filteredProducts.length === 0 ? (
         <EmptyState

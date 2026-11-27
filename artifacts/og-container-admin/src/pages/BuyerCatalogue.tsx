@@ -7,8 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { useCart } from "@/hooks/useCart"
 import { notify } from "@/lib/notify"
-import { getGetBuyerProductsQueryKey, useGetBuyerProducts, useListProductCategories, useProducts } from "@workspace/api-client-react"
-import { useSafeAuth } from "@/lib/use-safe-auth"
+import { useListProductCategories, useProducts } from "@workspace/api-client-react"
 import {
   Search, Star, Download, Plus, GitCompare,
   Package, Grid3X3, List, Scale, ShoppingCart, Check
@@ -18,7 +17,6 @@ interface Product {
   id: string; name: string; category: string; origin: string; imageUrl: string
   slug?: string
   moq: number; moqLabel: string; priceRange: string; unitPrice: number
-  vipTierName?: string; vipDiscountPercentage: number; combinedDiscountPercentage: number
   packaging: string[]; availability: "In Stock" | "Contact Us"
   certifications: string[]; grade: string; description: string; saved: boolean
 }
@@ -38,16 +36,12 @@ export default function BuyerCatalogue() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [saved, setSaved]       = useState<Set<string>>(new Set())
   const [added, setAdded]       = useState<Set<string>>(new Set())
-  const { userId } = useSafeAuth()
-  const buyerId = String(userId ?? "")
-  const buyerProductsQuery = useGetBuyerProducts({ per_page: 50 }, { query: { enabled: !!buyerId, queryKey: [...getGetBuyerProductsQueryKey({ per_page: 50 }), buyerId], retry: false } })
-  const { data: productPage } = useProducts({ per_page: 50 }, { query: { enabled: !buyerId } })
+  const { data: productPage } = useProducts({ per_page: 50 })
   const { data: categoryData = [] } = useListProductCategories()
   const categories = ["All", ...(categoryData as any[]).map(item => item.name).filter(Boolean)]
   const PRODUCTS: Product[] = useMemo(() => {
-    const catalogData = (buyerId ? buyerProductsQuery.data?.data : productPage?.data) || []
-    return catalogData.map((p: any) => {
-      const unitPrice = Number(p.discounted_unit_price ?? p.fob ?? 0)
+    return (productPage?.data || []).map((p: any) => {
+      const unitPrice = Number(p.fob || 0)
       const grade = p.specs?.find((spec: any) => String(spec.label).toLowerCase() === "grade")?.value || ""
       return {
         id: String(p.id),
@@ -58,13 +52,8 @@ export default function BuyerCatalogue() {
         slug: p.slug || undefined,
         moq: Number(String(p.moq || "1").replace(/[^0-9.]/g, "")) || 1,
         moqLabel: p.moq || p.minOrder || "1 MT",
-        priceRange: p.discounted_unit_price != null
-          ? `${p.currency || "USD"} ${Number(p.discounted_unit_price).toLocaleString()}/${p.unit_of_measure || "MT"}`
-          : p.fobDisplay || "Ask quote",
+        priceRange: p.fobDisplay || "Ask quote",
         unitPrice: unitPrice || 0,
-        vipTierName: p.vip_tier_name || undefined,
-        vipDiscountPercentage: Number(p.vip_discount_percentage || 0),
-        combinedDiscountPercentage: Number(p.discount_percentage || 0),
         packaging: p.packagingOptions?.length ? p.packagingOptions : ["25 kg PP Bag"],
         availability: Number(p.stock) > 0 ? "In Stock" as const : "Contact Us" as const,
         certifications: p.certifications || [],
@@ -73,7 +62,7 @@ export default function BuyerCatalogue() {
         saved: false,
       }
     })
-  }, [buyerId, buyerProductsQuery.data, productPage])
+  }, [productPage])
 
   const { addToCart, itemCount } = useCart()
 
@@ -284,10 +273,9 @@ export default function BuyerCatalogue() {
                       <span className="font-semibold">{p.moqLabel}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{p.vipTierName ? `${p.vipTierName} price` : "FOB Price"}</span>
+                      <span className="text-muted-foreground">FOB Price</span>
                       <span className="font-bold text-accent">{p.priceRange}</span>
                     </div>
-                    {p.vipTierName && p.vipDiscountPercentage > 0 && <p className="text-right text-[10px] font-semibold text-primary">VIP {p.vipDiscountPercentage}% · combined discount {p.combinedDiscountPercentage}%</p>}
                     {p.grade && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Grade</span>

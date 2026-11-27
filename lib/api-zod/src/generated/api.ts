@@ -24,12 +24,6 @@ export const getProductsResponseDataItemUnitOfMeasureMax = 32;
 export const getProductsResponseDataItemDiscountPercentageMin = 0;
 export const getProductsResponseDataItemDiscountPercentageMax = 99.99;
 
-export const getProductsResponseDataItemProductDiscountPercentageMin = 0;
-export const getProductsResponseDataItemProductDiscountPercentageMax = 99.99;
-
-export const getProductsResponseDataItemVipDiscountPercentageMin = 0;
-export const getProductsResponseDataItemVipDiscountPercentageMax = 99.99;
-
 
 
 export const GetProductsResponse = zod.object({
@@ -38,11 +32,7 @@ export const GetProductsResponse = zod.object({
   "price": zod.union([zod.number(),zod.string()]).nullish(),
   "currency": zod.string().nullish(),
   "unit_of_measure": zod.string().max(getProductsResponseDataItemUnitOfMeasureMax).optional().describe('Unit used for the advertised FOB rate, such as MT, kg, m2, or piece.'),
-  "list_unit_price": zod.number().nullish(),
-  "discount_percentage": zod.number().min(getProductsResponseDataItemDiscountPercentageMin).max(getProductsResponseDataItemDiscountPercentageMax).optional().describe('Combined product and buyer VIP discount percentage, calculated from the displayed list price.'),
-  "product_discount_percentage": zod.number().min(getProductsResponseDataItemProductDiscountPercentageMin).max(getProductsResponseDataItemProductDiscountPercentageMax).optional(),
-  "vip_discount_percentage": zod.number().min(getProductsResponseDataItemVipDiscountPercentageMin).max(getProductsResponseDataItemVipDiscountPercentageMax).optional(),
-  "vip_tier_name": zod.string().nullish(),
+  "discount_percentage": zod.number().min(getProductsResponseDataItemDiscountPercentageMin).max(getProductsResponseDataItemDiscountPercentageMax).optional().describe('Admin-managed discount applied to the product\'s FOB unit price.'),
   "discounted_unit_price": zod.number().nullish(),
   "discount_amount_per_unit": zod.number().optional()
 })).optional()
@@ -87,213 +77,8 @@ export const GetBuyerDashboardResponse = zod.object({
   "total_purchase_value_usd": zod.number(),
   "completed_trade_value_usd": zod.number(),
   "processing_trade_value_usd": zod.number(),
-  "discount_savings_usd": zod.number().describe('Savings only from order items with a saved order-time discount snapshot.')
+  "discount_savings_usd": zod.number().nullable().describe('Savings only from order items with a saved order-time discount snapshot.')
 }).optional()
-}).optional()
-})
-
-
-/**
- * @summary List approved products with the signed-in buyer's VIP pricing
- */
-export const GetBuyerProductsQueryParams = zod.object({
-  "search": zod.coerce.string().optional(),
-  "category": zod.coerce.string().optional(),
-  "featured": zod.coerce.boolean().optional(),
-  "per_page": zod.coerce.number().int().optional(),
-  "page": zod.coerce.number().int().optional()
-})
-
-export const getBuyerProductsResponseDataItemUnitOfMeasureMax = 32;
-
-export const getBuyerProductsResponseDataItemDiscountPercentageMin = 0;
-export const getBuyerProductsResponseDataItemDiscountPercentageMax = 99.99;
-
-export const getBuyerProductsResponseDataItemProductDiscountPercentageMin = 0;
-export const getBuyerProductsResponseDataItemProductDiscountPercentageMax = 99.99;
-
-export const getBuyerProductsResponseDataItemVipDiscountPercentageMin = 0;
-export const getBuyerProductsResponseDataItemVipDiscountPercentageMax = 99.99;
-
-
-
-export const GetBuyerProductsResponse = zod.object({
-  "data": zod.array(zod.object({
-  "fob": zod.union([zod.number(),zod.string()]).nullish(),
-  "price": zod.union([zod.number(),zod.string()]).nullish(),
-  "currency": zod.string().nullish(),
-  "unit_of_measure": zod.string().max(getBuyerProductsResponseDataItemUnitOfMeasureMax).optional().describe('Unit used for the advertised FOB rate, such as MT, kg, m2, or piece.'),
-  "list_unit_price": zod.number().nullish(),
-  "discount_percentage": zod.number().min(getBuyerProductsResponseDataItemDiscountPercentageMin).max(getBuyerProductsResponseDataItemDiscountPercentageMax).optional().describe('Combined product and buyer VIP discount percentage, calculated from the displayed list price.'),
-  "product_discount_percentage": zod.number().min(getBuyerProductsResponseDataItemProductDiscountPercentageMin).max(getBuyerProductsResponseDataItemProductDiscountPercentageMax).optional(),
-  "vip_discount_percentage": zod.number().min(getBuyerProductsResponseDataItemVipDiscountPercentageMin).max(getBuyerProductsResponseDataItemVipDiscountPercentageMax).optional(),
-  "vip_tier_name": zod.string().nullish(),
-  "discounted_unit_price": zod.number().nullish(),
-  "discount_amount_per_unit": zod.number().optional()
-})).optional()
-})
-
-
-/**
- * @summary Get one approved product with the signed-in buyer's VIP pricing
- */
-export const GetBuyerProductParams = zod.object({
-  "slug": zod.coerce.string()
-})
-
-export const getBuyerProductResponseDataUnitOfMeasureMax = 32;
-
-export const getBuyerProductResponseDataDiscountPercentageMin = 0;
-export const getBuyerProductResponseDataDiscountPercentageMax = 99.99;
-
-export const getBuyerProductResponseDataProductDiscountPercentageMin = 0;
-export const getBuyerProductResponseDataProductDiscountPercentageMax = 99.99;
-
-export const getBuyerProductResponseDataVipDiscountPercentageMin = 0;
-export const getBuyerProductResponseDataVipDiscountPercentageMax = 99.99;
-
-
-
-export const GetBuyerProductResponse = zod.object({
-  "data": zod.object({
-  "fob": zod.union([zod.number(),zod.string()]).nullish(),
-  "price": zod.union([zod.number(),zod.string()]).nullish(),
-  "currency": zod.string().nullish(),
-  "unit_of_measure": zod.string().max(getBuyerProductResponseDataUnitOfMeasureMax).optional().describe('Unit used for the advertised FOB rate, such as MT, kg, m2, or piece.'),
-  "list_unit_price": zod.number().nullish(),
-  "discount_percentage": zod.number().min(getBuyerProductResponseDataDiscountPercentageMin).max(getBuyerProductResponseDataDiscountPercentageMax).optional().describe('Combined product and buyer VIP discount percentage, calculated from the displayed list price.'),
-  "product_discount_percentage": zod.number().min(getBuyerProductResponseDataProductDiscountPercentageMin).max(getBuyerProductResponseDataProductDiscountPercentageMax).optional(),
-  "vip_discount_percentage": zod.number().min(getBuyerProductResponseDataVipDiscountPercentageMin).max(getBuyerProductResponseDataVipDiscountPercentageMax).optional(),
-  "vip_tier_name": zod.string().nullish(),
-  "discounted_unit_price": zod.number().nullish(),
-  "discount_amount_per_unit": zod.number().optional()
-}).optional()
-})
-
-
-/**
- * @summary Get the signed-in buyer's VIP tier, progress, and active rewards
- */
-export const getBuyerRewardsResponseDataQualifyingSpendUsdMin = 0;
-
-export const getBuyerRewardsResponseDataCurrentTierOneMinimumSpendUsdMin = 0;
-
-export const getBuyerRewardsResponseDataCurrentTierOneDiscountPercentageMin = 0;
-export const getBuyerRewardsResponseDataCurrentTierOneDiscountPercentageMax = 99.99;
-
-export const getBuyerRewardsResponseDataEarnedTierOneMinimumSpendUsdMin = 0;
-
-export const getBuyerRewardsResponseDataEarnedTierOneDiscountPercentageMin = 0;
-export const getBuyerRewardsResponseDataEarnedTierOneDiscountPercentageMax = 99.99;
-
-export const getBuyerRewardsResponseDataNextTierOneMinimumSpendUsdMin = 0;
-
-export const getBuyerRewardsResponseDataNextTierOneDiscountPercentageMin = 0;
-export const getBuyerRewardsResponseDataNextTierOneDiscountPercentageMax = 99.99;
-
-export const getBuyerRewardsResponseDataProgressPercentageMin = 0;
-export const getBuyerRewardsResponseDataProgressPercentageMax = 100;
-
-export const getBuyerRewardsResponseDataTiersItemMinimumSpendUsdMin = 0;
-
-export const getBuyerRewardsResponseDataTiersItemDiscountPercentageMin = 0;
-export const getBuyerRewardsResponseDataTiersItemDiscountPercentageMax = 99.99;
-
-
-
-export const GetBuyerRewardsResponse = zod.object({
-  "data": zod.object({
-  "currency": zod.enum(['USD']).optional(),
-  "qualifying_spend_usd": zod.number().min(getBuyerRewardsResponseDataQualifyingSpendUsdMin).optional(),
-  "current_tier": zod.union([zod.object({
-  "id": zod.number().int().optional(),
-  "slug": zod.string().optional(),
-  "name": zod.string().optional(),
-  "minimum_spend_usd": zod.number().min(getBuyerRewardsResponseDataCurrentTierOneMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(getBuyerRewardsResponseDataCurrentTierOneDiscountPercentageMin).max(getBuyerRewardsResponseDataCurrentTierOneDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().optional(),
-  "is_active": zod.boolean().optional(),
-  "rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-}),zod.null()]).optional(),
-  "earned_tier": zod.union([zod.object({
-  "id": zod.number().int().optional(),
-  "slug": zod.string().optional(),
-  "name": zod.string().optional(),
-  "minimum_spend_usd": zod.number().min(getBuyerRewardsResponseDataEarnedTierOneMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(getBuyerRewardsResponseDataEarnedTierOneDiscountPercentageMin).max(getBuyerRewardsResponseDataEarnedTierOneDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().optional(),
-  "is_active": zod.boolean().optional(),
-  "rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-}),zod.null()]).optional(),
-  "is_manually_assigned": zod.boolean().optional(),
-  "next_tier": zod.union([zod.object({
-  "id": zod.number().int().optional(),
-  "slug": zod.string().optional(),
-  "name": zod.string().optional(),
-  "minimum_spend_usd": zod.number().min(getBuyerRewardsResponseDataNextTierOneMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(getBuyerRewardsResponseDataNextTierOneDiscountPercentageMin).max(getBuyerRewardsResponseDataNextTierOneDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().optional(),
-  "is_active": zod.boolean().optional(),
-  "rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-}),zod.null()]).optional(),
-  "spend_to_next_tier_usd": zod.number().nullish(),
-  "progress_percentage": zod.number().min(getBuyerRewardsResponseDataProgressPercentageMin).max(getBuyerRewardsResponseDataProgressPercentageMax).optional(),
-  "active_rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional(),
-  "tiers": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "slug": zod.string().optional(),
-  "name": zod.string().optional(),
-  "minimum_spend_usd": zod.number().min(getBuyerRewardsResponseDataTiersItemMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(getBuyerRewardsResponseDataTiersItemDiscountPercentageMin).max(getBuyerRewardsResponseDataTiersItemDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().optional(),
-  "is_active": zod.boolean().optional(),
-  "rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-})).optional()
 }).optional()
 })
 
@@ -316,22 +101,10 @@ export const GetPaymentMethodsResponse = zod.record(zod.string(), zod.unknown())
 export const getBuyerCartResponseDataItemsItemDiscountPercentageMin = 0;
 export const getBuyerCartResponseDataItemsItemDiscountPercentageMax = 99.99;
 
-export const getBuyerCartResponseDataItemsItemProductDiscountPercentageMin = 0;
-export const getBuyerCartResponseDataItemsItemProductDiscountPercentageMax = 99.99;
-
-export const getBuyerCartResponseDataItemsItemVipDiscountPercentageMin = 0;
-export const getBuyerCartResponseDataItemsItemVipDiscountPercentageMax = 99.99;
-
 export const getBuyerCartResponseDataItemsItemProductUnitOfMeasureMax = 32;
 
-export const getBuyerCartResponseDataItemsItemProductDiscountPercentageMinOne = 0;
-export const getBuyerCartResponseDataItemsItemProductDiscountPercentageMaxOne = 99.99;
-
-export const getBuyerCartResponseDataItemsItemProductProductDiscountPercentageMin = 0;
-export const getBuyerCartResponseDataItemsItemProductProductDiscountPercentageMax = 99.99;
-
-export const getBuyerCartResponseDataItemsItemProductVipDiscountPercentageMin = 0;
-export const getBuyerCartResponseDataItemsItemProductVipDiscountPercentageMax = 99.99;
+export const getBuyerCartResponseDataItemsItemProductDiscountPercentageMin = 0;
+export const getBuyerCartResponseDataItemsItemProductDiscountPercentageMax = 99.99;
 
 
 
@@ -344,20 +117,13 @@ export const GetBuyerCartResponse = zod.object({
   "unit_price": zod.union([zod.number().describe('Current server-calculated discounted FOB unit price.'),zod.string().describe('Current server-calculated discounted FOB unit price.')]).optional().describe('Current server-calculated discounted FOB unit price.'),
   "discount_percentage": zod.number().min(getBuyerCartResponseDataItemsItemDiscountPercentageMin).max(getBuyerCartResponseDataItemsItemDiscountPercentageMax).optional(),
   "discount_amount_per_unit": zod.number().optional(),
-  "product_discount_percentage": zod.number().min(getBuyerCartResponseDataItemsItemProductDiscountPercentageMin).max(getBuyerCartResponseDataItemsItemProductDiscountPercentageMax).optional(),
-  "vip_discount_percentage": zod.number().min(getBuyerCartResponseDataItemsItemVipDiscountPercentageMin).max(getBuyerCartResponseDataItemsItemVipDiscountPercentageMax).optional(),
-  "vip_tier_name": zod.string().nullish(),
   "unit_of_measure": zod.string().optional(),
   "product": zod.object({
   "fob": zod.union([zod.number(),zod.string()]).nullish(),
   "price": zod.union([zod.number(),zod.string()]).nullish(),
   "currency": zod.string().nullish(),
   "unit_of_measure": zod.string().max(getBuyerCartResponseDataItemsItemProductUnitOfMeasureMax).optional().describe('Unit used for the advertised FOB rate, such as MT, kg, m2, or piece.'),
-  "list_unit_price": zod.number().nullish(),
-  "discount_percentage": zod.number().min(getBuyerCartResponseDataItemsItemProductDiscountPercentageMinOne).max(getBuyerCartResponseDataItemsItemProductDiscountPercentageMaxOne).optional().describe('Combined product and buyer VIP discount percentage, calculated from the displayed list price.'),
-  "product_discount_percentage": zod.number().min(getBuyerCartResponseDataItemsItemProductProductDiscountPercentageMin).max(getBuyerCartResponseDataItemsItemProductProductDiscountPercentageMax).optional(),
-  "vip_discount_percentage": zod.number().min(getBuyerCartResponseDataItemsItemProductVipDiscountPercentageMin).max(getBuyerCartResponseDataItemsItemProductVipDiscountPercentageMax).optional(),
-  "vip_tier_name": zod.string().nullish(),
+  "discount_percentage": zod.number().min(getBuyerCartResponseDataItemsItemProductDiscountPercentageMin).max(getBuyerCartResponseDataItemsItemProductDiscountPercentageMax).optional().describe('Admin-managed discount applied to the product\'s FOB unit price.'),
   "discounted_unit_price": zod.number().nullish(),
   "discount_amount_per_unit": zod.number().optional()
 }).optional()
@@ -374,22 +140,10 @@ export const AddBuyerCartItemBody = zod.record(zod.string(), zod.unknown())
 export const addBuyerCartItemResponseDataItemsItemDiscountPercentageMin = 0;
 export const addBuyerCartItemResponseDataItemsItemDiscountPercentageMax = 99.99;
 
-export const addBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin = 0;
-export const addBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax = 99.99;
-
-export const addBuyerCartItemResponseDataItemsItemVipDiscountPercentageMin = 0;
-export const addBuyerCartItemResponseDataItemsItemVipDiscountPercentageMax = 99.99;
-
 export const addBuyerCartItemResponseDataItemsItemProductUnitOfMeasureMax = 32;
 
-export const addBuyerCartItemResponseDataItemsItemProductDiscountPercentageMinOne = 0;
-export const addBuyerCartItemResponseDataItemsItemProductDiscountPercentageMaxOne = 99.99;
-
-export const addBuyerCartItemResponseDataItemsItemProductProductDiscountPercentageMin = 0;
-export const addBuyerCartItemResponseDataItemsItemProductProductDiscountPercentageMax = 99.99;
-
-export const addBuyerCartItemResponseDataItemsItemProductVipDiscountPercentageMin = 0;
-export const addBuyerCartItemResponseDataItemsItemProductVipDiscountPercentageMax = 99.99;
+export const addBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin = 0;
+export const addBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax = 99.99;
 
 
 
@@ -402,20 +156,13 @@ export const AddBuyerCartItemResponse = zod.object({
   "unit_price": zod.union([zod.number().describe('Current server-calculated discounted FOB unit price.'),zod.string().describe('Current server-calculated discounted FOB unit price.')]).optional().describe('Current server-calculated discounted FOB unit price.'),
   "discount_percentage": zod.number().min(addBuyerCartItemResponseDataItemsItemDiscountPercentageMin).max(addBuyerCartItemResponseDataItemsItemDiscountPercentageMax).optional(),
   "discount_amount_per_unit": zod.number().optional(),
-  "product_discount_percentage": zod.number().min(addBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin).max(addBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax).optional(),
-  "vip_discount_percentage": zod.number().min(addBuyerCartItemResponseDataItemsItemVipDiscountPercentageMin).max(addBuyerCartItemResponseDataItemsItemVipDiscountPercentageMax).optional(),
-  "vip_tier_name": zod.string().nullish(),
   "unit_of_measure": zod.string().optional(),
   "product": zod.object({
   "fob": zod.union([zod.number(),zod.string()]).nullish(),
   "price": zod.union([zod.number(),zod.string()]).nullish(),
   "currency": zod.string().nullish(),
   "unit_of_measure": zod.string().max(addBuyerCartItemResponseDataItemsItemProductUnitOfMeasureMax).optional().describe('Unit used for the advertised FOB rate, such as MT, kg, m2, or piece.'),
-  "list_unit_price": zod.number().nullish(),
-  "discount_percentage": zod.number().min(addBuyerCartItemResponseDataItemsItemProductDiscountPercentageMinOne).max(addBuyerCartItemResponseDataItemsItemProductDiscountPercentageMaxOne).optional().describe('Combined product and buyer VIP discount percentage, calculated from the displayed list price.'),
-  "product_discount_percentage": zod.number().min(addBuyerCartItemResponseDataItemsItemProductProductDiscountPercentageMin).max(addBuyerCartItemResponseDataItemsItemProductProductDiscountPercentageMax).optional(),
-  "vip_discount_percentage": zod.number().min(addBuyerCartItemResponseDataItemsItemProductVipDiscountPercentageMin).max(addBuyerCartItemResponseDataItemsItemProductVipDiscountPercentageMax).optional(),
-  "vip_tier_name": zod.string().nullish(),
+  "discount_percentage": zod.number().min(addBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin).max(addBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax).optional().describe('Admin-managed discount applied to the product\'s FOB unit price.'),
   "discounted_unit_price": zod.number().nullish(),
   "discount_amount_per_unit": zod.number().optional()
 }).optional()
@@ -436,22 +183,10 @@ export const UpdateBuyerCartItemBody = zod.record(zod.string(), zod.unknown())
 export const updateBuyerCartItemResponseDataItemsItemDiscountPercentageMin = 0;
 export const updateBuyerCartItemResponseDataItemsItemDiscountPercentageMax = 99.99;
 
-export const updateBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin = 0;
-export const updateBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax = 99.99;
-
-export const updateBuyerCartItemResponseDataItemsItemVipDiscountPercentageMin = 0;
-export const updateBuyerCartItemResponseDataItemsItemVipDiscountPercentageMax = 99.99;
-
 export const updateBuyerCartItemResponseDataItemsItemProductUnitOfMeasureMax = 32;
 
-export const updateBuyerCartItemResponseDataItemsItemProductDiscountPercentageMinOne = 0;
-export const updateBuyerCartItemResponseDataItemsItemProductDiscountPercentageMaxOne = 99.99;
-
-export const updateBuyerCartItemResponseDataItemsItemProductProductDiscountPercentageMin = 0;
-export const updateBuyerCartItemResponseDataItemsItemProductProductDiscountPercentageMax = 99.99;
-
-export const updateBuyerCartItemResponseDataItemsItemProductVipDiscountPercentageMin = 0;
-export const updateBuyerCartItemResponseDataItemsItemProductVipDiscountPercentageMax = 99.99;
+export const updateBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin = 0;
+export const updateBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax = 99.99;
 
 
 
@@ -464,20 +199,13 @@ export const UpdateBuyerCartItemResponse = zod.object({
   "unit_price": zod.union([zod.number().describe('Current server-calculated discounted FOB unit price.'),zod.string().describe('Current server-calculated discounted FOB unit price.')]).optional().describe('Current server-calculated discounted FOB unit price.'),
   "discount_percentage": zod.number().min(updateBuyerCartItemResponseDataItemsItemDiscountPercentageMin).max(updateBuyerCartItemResponseDataItemsItemDiscountPercentageMax).optional(),
   "discount_amount_per_unit": zod.number().optional(),
-  "product_discount_percentage": zod.number().min(updateBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin).max(updateBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax).optional(),
-  "vip_discount_percentage": zod.number().min(updateBuyerCartItemResponseDataItemsItemVipDiscountPercentageMin).max(updateBuyerCartItemResponseDataItemsItemVipDiscountPercentageMax).optional(),
-  "vip_tier_name": zod.string().nullish(),
   "unit_of_measure": zod.string().optional(),
   "product": zod.object({
   "fob": zod.union([zod.number(),zod.string()]).nullish(),
   "price": zod.union([zod.number(),zod.string()]).nullish(),
   "currency": zod.string().nullish(),
   "unit_of_measure": zod.string().max(updateBuyerCartItemResponseDataItemsItemProductUnitOfMeasureMax).optional().describe('Unit used for the advertised FOB rate, such as MT, kg, m2, or piece.'),
-  "list_unit_price": zod.number().nullish(),
-  "discount_percentage": zod.number().min(updateBuyerCartItemResponseDataItemsItemProductDiscountPercentageMinOne).max(updateBuyerCartItemResponseDataItemsItemProductDiscountPercentageMaxOne).optional().describe('Combined product and buyer VIP discount percentage, calculated from the displayed list price.'),
-  "product_discount_percentage": zod.number().min(updateBuyerCartItemResponseDataItemsItemProductProductDiscountPercentageMin).max(updateBuyerCartItemResponseDataItemsItemProductProductDiscountPercentageMax).optional(),
-  "vip_discount_percentage": zod.number().min(updateBuyerCartItemResponseDataItemsItemProductVipDiscountPercentageMin).max(updateBuyerCartItemResponseDataItemsItemProductVipDiscountPercentageMax).optional(),
-  "vip_tier_name": zod.string().nullish(),
+  "discount_percentage": zod.number().min(updateBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin).max(updateBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax).optional().describe('Admin-managed discount applied to the product\'s FOB unit price.'),
   "discounted_unit_price": zod.number().nullish(),
   "discount_amount_per_unit": zod.number().optional()
 }).optional()
@@ -496,22 +224,10 @@ export const RemoveBuyerCartItemParams = zod.object({
 export const removeBuyerCartItemResponseDataItemsItemDiscountPercentageMin = 0;
 export const removeBuyerCartItemResponseDataItemsItemDiscountPercentageMax = 99.99;
 
-export const removeBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin = 0;
-export const removeBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax = 99.99;
-
-export const removeBuyerCartItemResponseDataItemsItemVipDiscountPercentageMin = 0;
-export const removeBuyerCartItemResponseDataItemsItemVipDiscountPercentageMax = 99.99;
-
 export const removeBuyerCartItemResponseDataItemsItemProductUnitOfMeasureMax = 32;
 
-export const removeBuyerCartItemResponseDataItemsItemProductDiscountPercentageMinOne = 0;
-export const removeBuyerCartItemResponseDataItemsItemProductDiscountPercentageMaxOne = 99.99;
-
-export const removeBuyerCartItemResponseDataItemsItemProductProductDiscountPercentageMin = 0;
-export const removeBuyerCartItemResponseDataItemsItemProductProductDiscountPercentageMax = 99.99;
-
-export const removeBuyerCartItemResponseDataItemsItemProductVipDiscountPercentageMin = 0;
-export const removeBuyerCartItemResponseDataItemsItemProductVipDiscountPercentageMax = 99.99;
+export const removeBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin = 0;
+export const removeBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax = 99.99;
 
 
 
@@ -524,20 +240,13 @@ export const RemoveBuyerCartItemResponse = zod.object({
   "unit_price": zod.union([zod.number().describe('Current server-calculated discounted FOB unit price.'),zod.string().describe('Current server-calculated discounted FOB unit price.')]).optional().describe('Current server-calculated discounted FOB unit price.'),
   "discount_percentage": zod.number().min(removeBuyerCartItemResponseDataItemsItemDiscountPercentageMin).max(removeBuyerCartItemResponseDataItemsItemDiscountPercentageMax).optional(),
   "discount_amount_per_unit": zod.number().optional(),
-  "product_discount_percentage": zod.number().min(removeBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin).max(removeBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax).optional(),
-  "vip_discount_percentage": zod.number().min(removeBuyerCartItemResponseDataItemsItemVipDiscountPercentageMin).max(removeBuyerCartItemResponseDataItemsItemVipDiscountPercentageMax).optional(),
-  "vip_tier_name": zod.string().nullish(),
   "unit_of_measure": zod.string().optional(),
   "product": zod.object({
   "fob": zod.union([zod.number(),zod.string()]).nullish(),
   "price": zod.union([zod.number(),zod.string()]).nullish(),
   "currency": zod.string().nullish(),
   "unit_of_measure": zod.string().max(removeBuyerCartItemResponseDataItemsItemProductUnitOfMeasureMax).optional().describe('Unit used for the advertised FOB rate, such as MT, kg, m2, or piece.'),
-  "list_unit_price": zod.number().nullish(),
-  "discount_percentage": zod.number().min(removeBuyerCartItemResponseDataItemsItemProductDiscountPercentageMinOne).max(removeBuyerCartItemResponseDataItemsItemProductDiscountPercentageMaxOne).optional().describe('Combined product and buyer VIP discount percentage, calculated from the displayed list price.'),
-  "product_discount_percentage": zod.number().min(removeBuyerCartItemResponseDataItemsItemProductProductDiscountPercentageMin).max(removeBuyerCartItemResponseDataItemsItemProductProductDiscountPercentageMax).optional(),
-  "vip_discount_percentage": zod.number().min(removeBuyerCartItemResponseDataItemsItemProductVipDiscountPercentageMin).max(removeBuyerCartItemResponseDataItemsItemProductVipDiscountPercentageMax).optional(),
-  "vip_tier_name": zod.string().nullish(),
+  "discount_percentage": zod.number().min(removeBuyerCartItemResponseDataItemsItemProductDiscountPercentageMin).max(removeBuyerCartItemResponseDataItemsItemProductDiscountPercentageMax).optional().describe('Admin-managed discount applied to the product\'s FOB unit price.'),
   "discounted_unit_price": zod.number().nullish(),
   "discount_amount_per_unit": zod.number().optional()
 }).optional()
@@ -1586,614 +1295,6 @@ export const DeleteAdminAutoInvestCommodityParams = zod.object({
 })
 
 export const DeleteAdminAutoInvestCommodityResponse = zod.record(zod.string(), zod.unknown())
-
-
-/**
- * @summary List buyer reward tiers and their rewards
- */
-export const getAdminBuyerRewardTiersResponseDataItemOneMinimumSpendUsdMin = 0;
-
-export const getAdminBuyerRewardTiersResponseDataItemOneDiscountPercentageMin = 0;
-export const getAdminBuyerRewardTiersResponseDataItemOneDiscountPercentageMax = 99.99;
-
-
-
-export const GetAdminBuyerRewardTiersResponse = zod.object({
-  "data": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "slug": zod.string().optional(),
-  "name": zod.string().optional(),
-  "minimum_spend_usd": zod.number().min(getAdminBuyerRewardTiersResponseDataItemOneMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(getAdminBuyerRewardTiersResponseDataItemOneDiscountPercentageMin).max(getAdminBuyerRewardTiersResponseDataItemOneDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().optional(),
-  "is_active": zod.boolean().optional(),
-  "rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-})).optional()
-})
-
-
-/**
- * @summary Create a buyer reward tier
- */
-export const createAdminBuyerRewardTierBodyNameMax = 120;
-
-export const createAdminBuyerRewardTierBodySlugMax = 100;
-
-export const createAdminBuyerRewardTierBodyMinimumSpendUsdMin = 0;
-
-export const createAdminBuyerRewardTierBodyDiscountPercentageMin = 0;
-export const createAdminBuyerRewardTierBodyDiscountPercentageMax = 99.99;
-
-export const createAdminBuyerRewardTierBodySortOrderMin = 0;
-
-
-
-export const CreateAdminBuyerRewardTierBody = zod.object({
-  "name": zod.string().min(1).max(createAdminBuyerRewardTierBodyNameMax),
-  "slug": zod.string().max(createAdminBuyerRewardTierBodySlugMax).nullish(),
-  "minimum_spend_usd": zod.number().min(createAdminBuyerRewardTierBodyMinimumSpendUsdMin),
-  "discount_percentage": zod.number().min(createAdminBuyerRewardTierBodyDiscountPercentageMin).max(createAdminBuyerRewardTierBodyDiscountPercentageMax),
-  "sort_order": zod.number().int().min(createAdminBuyerRewardTierBodySortOrderMin).optional(),
-  "is_active": zod.boolean().optional()
-})
-
-export const createAdminBuyerRewardTierResponseDataOneMinimumSpendUsdMin = 0;
-
-export const createAdminBuyerRewardTierResponseDataOneDiscountPercentageMin = 0;
-export const createAdminBuyerRewardTierResponseDataOneDiscountPercentageMax = 99.99;
-
-
-
-export const CreateAdminBuyerRewardTierResponse = zod.object({
-  "data": zod.object({
-  "id": zod.number().int().optional(),
-  "slug": zod.string().optional(),
-  "name": zod.string().optional(),
-  "minimum_spend_usd": zod.number().min(createAdminBuyerRewardTierResponseDataOneMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(createAdminBuyerRewardTierResponseDataOneDiscountPercentageMin).max(createAdminBuyerRewardTierResponseDataOneDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().optional(),
-  "is_active": zod.boolean().optional(),
-  "rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-}).optional()
-})
-
-
-/**
- * @summary Save the display order for buyer reward tiers
- */
-export const reorderAdminBuyerRewardTiersBodyTiersItemSortOrderMin = 0;
-
-
-
-
-export const ReorderAdminBuyerRewardTiersBody = zod.object({
-  "tiers": zod.array(zod.object({
-  "id": zod.number().int(),
-  "sort_order": zod.number().int().min(reorderAdminBuyerRewardTiersBodyTiersItemSortOrderMin)
-})).min(1)
-})
-
-export const reorderAdminBuyerRewardTiersResponseDataItemOneMinimumSpendUsdMin = 0;
-
-export const reorderAdminBuyerRewardTiersResponseDataItemOneDiscountPercentageMin = 0;
-export const reorderAdminBuyerRewardTiersResponseDataItemOneDiscountPercentageMax = 99.99;
-
-
-
-export const ReorderAdminBuyerRewardTiersResponse = zod.object({
-  "data": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "slug": zod.string().optional(),
-  "name": zod.string().optional(),
-  "minimum_spend_usd": zod.number().min(reorderAdminBuyerRewardTiersResponseDataItemOneMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(reorderAdminBuyerRewardTiersResponseDataItemOneDiscountPercentageMin).max(reorderAdminBuyerRewardTiersResponseDataItemOneDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().optional(),
-  "is_active": zod.boolean().optional(),
-  "rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-})).optional()
-})
-
-
-/**
- * @summary Update buyer reward tier thresholds, discount, or status
- */
-export const UpdateAdminBuyerRewardTierParams = zod.object({
-  "id": zod.coerce.number().int()
-})
-
-export const updateAdminBuyerRewardTierBodyNameMax = 120;
-
-export const updateAdminBuyerRewardTierBodySlugMax = 100;
-
-export const updateAdminBuyerRewardTierBodyMinimumSpendUsdMin = 0;
-
-export const updateAdminBuyerRewardTierBodyDiscountPercentageMin = 0;
-export const updateAdminBuyerRewardTierBodyDiscountPercentageMax = 99.99;
-
-export const updateAdminBuyerRewardTierBodySortOrderMin = 0;
-
-
-
-export const UpdateAdminBuyerRewardTierBody = zod.object({
-  "name": zod.string().min(1).max(updateAdminBuyerRewardTierBodyNameMax).optional(),
-  "slug": zod.string().min(1).max(updateAdminBuyerRewardTierBodySlugMax).optional(),
-  "minimum_spend_usd": zod.number().min(updateAdminBuyerRewardTierBodyMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(updateAdminBuyerRewardTierBodyDiscountPercentageMin).max(updateAdminBuyerRewardTierBodyDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().min(updateAdminBuyerRewardTierBodySortOrderMin).optional(),
-  "is_active": zod.boolean().optional()
-})
-
-export const updateAdminBuyerRewardTierResponseDataOneMinimumSpendUsdMin = 0;
-
-export const updateAdminBuyerRewardTierResponseDataOneDiscountPercentageMin = 0;
-export const updateAdminBuyerRewardTierResponseDataOneDiscountPercentageMax = 99.99;
-
-
-
-export const UpdateAdminBuyerRewardTierResponse = zod.object({
-  "data": zod.object({
-  "id": zod.number().int().optional(),
-  "slug": zod.string().optional(),
-  "name": zod.string().optional(),
-  "minimum_spend_usd": zod.number().min(updateAdminBuyerRewardTierResponseDataOneMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(updateAdminBuyerRewardTierResponseDataOneDiscountPercentageMin).max(updateAdminBuyerRewardTierResponseDataOneDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().optional(),
-  "is_active": zod.boolean().optional(),
-  "rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-}).optional()
-})
-
-
-/**
- * @summary Remove a buyer reward tier that has no manual assignments
- */
-export const DeleteAdminBuyerRewardTierParams = zod.object({
-  "id": zod.coerce.number().int()
-})
-
-export const DeleteAdminBuyerRewardTierResponse = zod.record(zod.string(), zod.unknown())
-
-
-/**
- * @summary List rewards available to manage
- */
-export const GetAdminBuyerRewardsResponse = zod.object({
-  "data": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-})
-
-
-/**
- * @summary Add a reward to a buyer tier
- */
-export const createAdminBuyerRewardBodyTitleMax = 160;
-
-export const createAdminBuyerRewardBodyDescriptionMax = 2000;
-
-export const createAdminBuyerRewardBodyTypeMax = 40;
-
-export const createAdminBuyerRewardBodySortOrderMin = 0;
-
-
-
-export const CreateAdminBuyerRewardBody = zod.object({
-  "tier_id": zod.number().int(),
-  "title": zod.string().min(1).max(createAdminBuyerRewardBodyTitleMax),
-  "description": zod.string().max(createAdminBuyerRewardBodyDescriptionMax).nullish(),
-  "type": zod.string().min(1).max(createAdminBuyerRewardBodyTypeMax),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().min(createAdminBuyerRewardBodySortOrderMin).optional()
-})
-
-export const CreateAdminBuyerRewardResponse = zod.object({
-  "data": zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-}).optional()
-})
-
-
-/**
- * @summary Edit or activate a buyer reward
- */
-export const UpdateAdminBuyerRewardParams = zod.object({
-  "id": zod.coerce.number().int()
-})
-
-export const updateAdminBuyerRewardBodyTitleMax = 160;
-
-export const updateAdminBuyerRewardBodyDescriptionMax = 2000;
-
-export const updateAdminBuyerRewardBodyTypeMax = 40;
-
-export const updateAdminBuyerRewardBodySortOrderMin = 0;
-
-
-
-export const UpdateAdminBuyerRewardBody = zod.object({
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().min(1).max(updateAdminBuyerRewardBodyTitleMax).optional(),
-  "description": zod.string().max(updateAdminBuyerRewardBodyDescriptionMax).nullish(),
-  "type": zod.string().min(1).max(updateAdminBuyerRewardBodyTypeMax).optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().min(updateAdminBuyerRewardBodySortOrderMin).optional()
-})
-
-export const UpdateAdminBuyerRewardResponse = zod.object({
-  "data": zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-}).optional()
-})
-
-
-/**
- * @summary Remove a buyer reward
- */
-export const DeleteAdminBuyerRewardParams = zod.object({
-  "id": zod.coerce.number().int()
-})
-
-export const DeleteAdminBuyerRewardResponse = zod.record(zod.string(), zod.unknown())
-
-
-/**
- * @summary Search buyer VIP status and qualifying spend
- */
-export const getAdminBuyerRewardBuyersQueryPerPageMax = 100;
-
-
-
-
-export const GetAdminBuyerRewardBuyersQueryParams = zod.object({
-  "search": zod.coerce.string().optional(),
-  "per_page": zod.coerce.number().int().min(1).max(getAdminBuyerRewardBuyersQueryPerPageMax).optional(),
-  "page": zod.coerce.number().int().min(1).optional()
-})
-
-export const getAdminBuyerRewardBuyersResponseDataItemOneQualifyingSpendUsdMin = 0;
-
-export const getAdminBuyerRewardBuyersResponseDataItemOneCurrentTierOneMinimumSpendUsdMin = 0;
-
-export const getAdminBuyerRewardBuyersResponseDataItemOneCurrentTierOneDiscountPercentageMin = 0;
-export const getAdminBuyerRewardBuyersResponseDataItemOneCurrentTierOneDiscountPercentageMax = 99.99;
-
-export const getAdminBuyerRewardBuyersResponseDataItemOneEarnedTierOneMinimumSpendUsdMin = 0;
-
-export const getAdminBuyerRewardBuyersResponseDataItemOneEarnedTierOneDiscountPercentageMin = 0;
-export const getAdminBuyerRewardBuyersResponseDataItemOneEarnedTierOneDiscountPercentageMax = 99.99;
-
-export const getAdminBuyerRewardBuyersResponseDataItemOneNextTierOneMinimumSpendUsdMin = 0;
-
-export const getAdminBuyerRewardBuyersResponseDataItemOneNextTierOneDiscountPercentageMin = 0;
-export const getAdminBuyerRewardBuyersResponseDataItemOneNextTierOneDiscountPercentageMax = 99.99;
-
-export const getAdminBuyerRewardBuyersResponseDataItemOneProgressPercentageMin = 0;
-export const getAdminBuyerRewardBuyersResponseDataItemOneProgressPercentageMax = 100;
-
-export const getAdminBuyerRewardBuyersResponseDataItemOneTiersItemMinimumSpendUsdMin = 0;
-
-export const getAdminBuyerRewardBuyersResponseDataItemOneTiersItemDiscountPercentageMin = 0;
-export const getAdminBuyerRewardBuyersResponseDataItemOneTiersItemDiscountPercentageMax = 99.99;
-
-
-
-export const GetAdminBuyerRewardBuyersResponse = zod.object({
-  "data": zod.array(zod.object({
-  "currency": zod.enum(['USD']).optional(),
-  "qualifying_spend_usd": zod.number().min(getAdminBuyerRewardBuyersResponseDataItemOneQualifyingSpendUsdMin).optional(),
-  "current_tier": zod.union([zod.object({
-  "id": zod.number().int().optional(),
-  "slug": zod.string().optional(),
-  "name": zod.string().optional(),
-  "minimum_spend_usd": zod.number().min(getAdminBuyerRewardBuyersResponseDataItemOneCurrentTierOneMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(getAdminBuyerRewardBuyersResponseDataItemOneCurrentTierOneDiscountPercentageMin).max(getAdminBuyerRewardBuyersResponseDataItemOneCurrentTierOneDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().optional(),
-  "is_active": zod.boolean().optional(),
-  "rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-}),zod.null()]).optional(),
-  "earned_tier": zod.union([zod.object({
-  "id": zod.number().int().optional(),
-  "slug": zod.string().optional(),
-  "name": zod.string().optional(),
-  "minimum_spend_usd": zod.number().min(getAdminBuyerRewardBuyersResponseDataItemOneEarnedTierOneMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(getAdminBuyerRewardBuyersResponseDataItemOneEarnedTierOneDiscountPercentageMin).max(getAdminBuyerRewardBuyersResponseDataItemOneEarnedTierOneDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().optional(),
-  "is_active": zod.boolean().optional(),
-  "rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-}),zod.null()]).optional(),
-  "is_manually_assigned": zod.boolean().optional(),
-  "next_tier": zod.union([zod.object({
-  "id": zod.number().int().optional(),
-  "slug": zod.string().optional(),
-  "name": zod.string().optional(),
-  "minimum_spend_usd": zod.number().min(getAdminBuyerRewardBuyersResponseDataItemOneNextTierOneMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(getAdminBuyerRewardBuyersResponseDataItemOneNextTierOneDiscountPercentageMin).max(getAdminBuyerRewardBuyersResponseDataItemOneNextTierOneDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().optional(),
-  "is_active": zod.boolean().optional(),
-  "rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-}),zod.null()]).optional(),
-  "spend_to_next_tier_usd": zod.number().nullish(),
-  "progress_percentage": zod.number().min(getAdminBuyerRewardBuyersResponseDataItemOneProgressPercentageMin).max(getAdminBuyerRewardBuyersResponseDataItemOneProgressPercentageMax).optional(),
-  "active_rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional(),
-  "tiers": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "slug": zod.string().optional(),
-  "name": zod.string().optional(),
-  "minimum_spend_usd": zod.number().min(getAdminBuyerRewardBuyersResponseDataItemOneTiersItemMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(getAdminBuyerRewardBuyersResponseDataItemOneTiersItemDiscountPercentageMin).max(getAdminBuyerRewardBuyersResponseDataItemOneTiersItemDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().optional(),
-  "is_active": zod.boolean().optional(),
-  "rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-})).optional()
-}).and(zod.object({
-  "buyer": zod.object({
-  "id": zod.number().int().optional(),
-  "name": zod.string().optional(),
-  "email": zod.string().optional()
-}).optional(),
-  "override_reason": zod.string().nullish(),
-  "override_changed_at": zod.coerce.date().nullish()
-}))).optional(),
-  "meta": zod.object({
-  "current_page": zod.number().int().optional(),
-  "last_page": zod.number().int().optional(),
-  "per_page": zod.number().int().optional(),
-  "total": zod.number().int().optional()
-}).optional()
-})
-
-
-/**
- * @summary Manually assign or clear a buyer reward tier with an audit reason
- */
-export const UpdateAdminBuyerRewardBuyerTierParams = zod.object({
-  "id": zod.coerce.number().int()
-})
-
-export const updateAdminBuyerRewardBuyerTierBodyReasonMin = 4;
-export const updateAdminBuyerRewardBuyerTierBodyReasonMax = 2000;
-
-
-
-export const UpdateAdminBuyerRewardBuyerTierBody = zod.object({
-  "tier_id": zod.number().int().nullable(),
-  "reason": zod.string().min(updateAdminBuyerRewardBuyerTierBodyReasonMin).max(updateAdminBuyerRewardBuyerTierBodyReasonMax)
-})
-
-export const updateAdminBuyerRewardBuyerTierResponseDataOneQualifyingSpendUsdMin = 0;
-
-export const updateAdminBuyerRewardBuyerTierResponseDataOneCurrentTierOneMinimumSpendUsdMin = 0;
-
-export const updateAdminBuyerRewardBuyerTierResponseDataOneCurrentTierOneDiscountPercentageMin = 0;
-export const updateAdminBuyerRewardBuyerTierResponseDataOneCurrentTierOneDiscountPercentageMax = 99.99;
-
-export const updateAdminBuyerRewardBuyerTierResponseDataOneEarnedTierOneMinimumSpendUsdMin = 0;
-
-export const updateAdminBuyerRewardBuyerTierResponseDataOneEarnedTierOneDiscountPercentageMin = 0;
-export const updateAdminBuyerRewardBuyerTierResponseDataOneEarnedTierOneDiscountPercentageMax = 99.99;
-
-export const updateAdminBuyerRewardBuyerTierResponseDataOneNextTierOneMinimumSpendUsdMin = 0;
-
-export const updateAdminBuyerRewardBuyerTierResponseDataOneNextTierOneDiscountPercentageMin = 0;
-export const updateAdminBuyerRewardBuyerTierResponseDataOneNextTierOneDiscountPercentageMax = 99.99;
-
-export const updateAdminBuyerRewardBuyerTierResponseDataOneProgressPercentageMin = 0;
-export const updateAdminBuyerRewardBuyerTierResponseDataOneProgressPercentageMax = 100;
-
-export const updateAdminBuyerRewardBuyerTierResponseDataOneTiersItemMinimumSpendUsdMin = 0;
-
-export const updateAdminBuyerRewardBuyerTierResponseDataOneTiersItemDiscountPercentageMin = 0;
-export const updateAdminBuyerRewardBuyerTierResponseDataOneTiersItemDiscountPercentageMax = 99.99;
-
-
-
-export const UpdateAdminBuyerRewardBuyerTierResponse = zod.object({
-  "data": zod.object({
-  "currency": zod.enum(['USD']).optional(),
-  "qualifying_spend_usd": zod.number().min(updateAdminBuyerRewardBuyerTierResponseDataOneQualifyingSpendUsdMin).optional(),
-  "current_tier": zod.union([zod.object({
-  "id": zod.number().int().optional(),
-  "slug": zod.string().optional(),
-  "name": zod.string().optional(),
-  "minimum_spend_usd": zod.number().min(updateAdminBuyerRewardBuyerTierResponseDataOneCurrentTierOneMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(updateAdminBuyerRewardBuyerTierResponseDataOneCurrentTierOneDiscountPercentageMin).max(updateAdminBuyerRewardBuyerTierResponseDataOneCurrentTierOneDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().optional(),
-  "is_active": zod.boolean().optional(),
-  "rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-}),zod.null()]).optional(),
-  "earned_tier": zod.union([zod.object({
-  "id": zod.number().int().optional(),
-  "slug": zod.string().optional(),
-  "name": zod.string().optional(),
-  "minimum_spend_usd": zod.number().min(updateAdminBuyerRewardBuyerTierResponseDataOneEarnedTierOneMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(updateAdminBuyerRewardBuyerTierResponseDataOneEarnedTierOneDiscountPercentageMin).max(updateAdminBuyerRewardBuyerTierResponseDataOneEarnedTierOneDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().optional(),
-  "is_active": zod.boolean().optional(),
-  "rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-}),zod.null()]).optional(),
-  "is_manually_assigned": zod.boolean().optional(),
-  "next_tier": zod.union([zod.object({
-  "id": zod.number().int().optional(),
-  "slug": zod.string().optional(),
-  "name": zod.string().optional(),
-  "minimum_spend_usd": zod.number().min(updateAdminBuyerRewardBuyerTierResponseDataOneNextTierOneMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(updateAdminBuyerRewardBuyerTierResponseDataOneNextTierOneDiscountPercentageMin).max(updateAdminBuyerRewardBuyerTierResponseDataOneNextTierOneDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().optional(),
-  "is_active": zod.boolean().optional(),
-  "rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-}),zod.null()]).optional(),
-  "spend_to_next_tier_usd": zod.number().nullish(),
-  "progress_percentage": zod.number().min(updateAdminBuyerRewardBuyerTierResponseDataOneProgressPercentageMin).max(updateAdminBuyerRewardBuyerTierResponseDataOneProgressPercentageMax).optional(),
-  "active_rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional(),
-  "tiers": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "slug": zod.string().optional(),
-  "name": zod.string().optional(),
-  "minimum_spend_usd": zod.number().min(updateAdminBuyerRewardBuyerTierResponseDataOneTiersItemMinimumSpendUsdMin).optional(),
-  "discount_percentage": zod.number().min(updateAdminBuyerRewardBuyerTierResponseDataOneTiersItemDiscountPercentageMin).max(updateAdminBuyerRewardBuyerTierResponseDataOneTiersItemDiscountPercentageMax).optional(),
-  "sort_order": zod.number().int().optional(),
-  "is_active": zod.boolean().optional(),
-  "rewards": zod.array(zod.object({
-  "id": zod.number().int().optional(),
-  "tier_id": zod.number().int().optional(),
-  "title": zod.string().optional(),
-  "description": zod.string().nullish(),
-  "type": zod.string().optional(),
-  "is_active": zod.boolean().optional(),
-  "requires_admin_approval": zod.boolean().optional(),
-  "sort_order": zod.number().int().optional()
-})).optional()
-})).optional()
-}).and(zod.object({
-  "buyer": zod.object({
-  "id": zod.number().int().optional(),
-  "name": zod.string().optional(),
-  "email": zod.string().optional()
-}).optional(),
-  "override_reason": zod.string().nullish(),
-  "override_changed_at": zod.coerce.date().nullish()
-})).optional()
-})
 
 
 /**
