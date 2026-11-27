@@ -238,7 +238,7 @@ test('buyer Android selected tab uses a gold icon without a colored backdrop', (
   assert.match(layout, /function BuyerTabIcon/);
   assert.match(layout, /Platform\.OS === 'android' \? colors\.navigationAccent : colors\.accentForeground/);
   assert.match(layout, /focused && Platform\.OS !== 'android' && \{ backgroundColor: colors\.accentSurface \}/);
-  assert.match(layout, /tabBarActiveTintColor: colors\.accentText/);
+  assert.match(layout, /tabBarActiveTintColor: isAndroid \? colors\.navigationAccent : colors\.accentText/);
   assert.match(layout, /tintColor=\{colors\.navigationAccent\}/);
   assert.match(layout, /selected: colors\.navigationAccent/);
   assert.match(layout, /indicatorColor=\{colors\.accentSurface\}/);

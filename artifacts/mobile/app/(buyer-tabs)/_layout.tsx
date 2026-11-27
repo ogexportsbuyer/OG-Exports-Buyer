@@ -124,7 +124,7 @@ function ClassicLayout() {
   return (
     <Tabs screenOptions={{
       headerShown: false,
-      tabBarActiveTintColor: colors.accentText,
+      tabBarActiveTintColor: isAndroid ? colors.navigationAccent : colors.accentText,
       tabBarInactiveTintColor: colors.mutedForeground,
       tabBarStyle: {
         display: hideForBuyerMessages ? 'none' : 'flex',
