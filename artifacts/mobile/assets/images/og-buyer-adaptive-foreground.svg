@@ -55,7 +55,5 @@
   <g stroke-width="7"><line x1="-6" y1="-36" x2="-2" y2="30"/><line x1="26" y1="-36" x2="30" y2="30"/><line x1="58" y1="-36" x2="62" y2="30"/></g>
  </g>
  <circle cx="-25" cy="73" r="19" fill="#093a3a"/><circle cx="61" cy="73" r="19" fill="#093a3a"/>
- <g transform="translate(111 -111)"><circle r="66" fill="#083032"/><circle r="62" fill="none" stroke="url(#rim)" stroke-width="4"/><circle r="54" fill="url(#emer)"/><path d="M-36 -20 A42 42 0 0 1 20 -38" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
-  <text y="20" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-weight="700" font-size="58" fill="#fff">3</text></g>
 </g>
-</defs><g transform="translate(512 512) scale(.62) translate(-512 -512)"><g transform="translate(512 428) translate(-512 -510)"><use href="#ogmark" xlink:href="#ogmark"/></g><g transform="translate(828 675) scale(.66)"><use href="#cart" xlink:href="#cart"/></g></g></svg>
+</defs><defs><clipPath id="safe-zone"><circle cx="512" cy="512" r="313"/></clipPath></defs><image href="og-buyer-launcher-icon.png" x="0" y="0" width="1024" height="1024" clip-path="url(#safe-zone)"/></svg>

@@ -100,24 +100,37 @@ function pngDimensions(relativePath) {
   return [data.readUInt32BE(16), data.readUInt32BE(20)];
 }
 
-test('buyer launcher uses the supplied full icon as its Android background without a duplicate foreground', () => {
+test('buyer launcher uses separate branded foreground and background layers on Android', () => {
   const config = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8')).expo;
   assert.equal(config.name, 'OG Buyer');
+  assert.equal(config.version, '2.3.8');
+  assert.equal(config.android.versionCode, 8);
   assert.equal(config.icon, './assets/images/og-buyer-launcher-icon.png');
   assert.equal(config.ios.icon, config.icon);
   assert.equal(config.android.icon, config.icon);
   assert.deepEqual(pngDimensions(config.icon), [1024, 1024]);
-  assert.equal(config.android.adaptiveIcon.foregroundImage, './assets/images/og-adaptive-empty-foreground.png');
+  assert.equal(config.android.adaptiveIcon.foregroundImage, './assets/images/og-adaptive-foreground.png');
   assert.deepEqual(pngDimensions(config.android.adaptiveIcon.foregroundImage), [1024, 1024]);
   assert.equal(config.android.adaptiveIcon.backgroundColor, colors.light.splashEnd);
-  assert.equal(config.android.adaptiveIcon.backgroundImage, config.icon);
+  assert.equal(config.android.adaptiveIcon.backgroundImage, './assets/images/og-icon-background.png');
+  assert.notEqual(config.android.adaptiveIcon.foregroundImage, './assets/images/og-adaptive-empty-foreground.png');
+  assert.notEqual(config.android.adaptiveIcon.backgroundImage, config.icon);
   assert.deepEqual(pngDimensions(config.android.adaptiveIcon.backgroundImage), [1024, 1024]);
+  const launcherPng = readFileSync(new URL(`../${config.icon.replace(/^\.\//, '')}`, import.meta.url));
+  const backgroundPng = readFileSync(new URL(`../${config.android.adaptiveIcon.backgroundImage.replace(/^\.\//, '')}`, import.meta.url));
+  const foregroundPng = readFileSync(new URL(`../${config.android.adaptiveIcon.foregroundImage.replace(/^\.\//, '')}`, import.meta.url));
+  assert.deepEqual(backgroundPng, launcherPng, 'Android background preserves the exact supplied icon artwork');
+  assert.equal(foregroundPng[25], 6, 'Android foreground is a transparent RGBA PNG');
   const launcherSvg = readFileSync(new URL('../assets/images/og-buyer-launcher-icon.svg', import.meta.url), 'utf8');
   const adaptiveSvg = readFileSync(new URL('../assets/images/og-buyer-adaptive-foreground.svg', import.meta.url), 'utf8');
   assert.match(launcherSvg, /xlink:href="#ogmark"/);
   assert.match(launcherSvg, /xlink:href="#cart"/);
-  assert.match(launcherSvg, /<text[^>]*>3<\/text>/);
-  assert.match(adaptiveSvg, /xlink:href="#ogmark"/);
+  assert.doesNotMatch(launcherSvg, /<text[^>]*>3<\/text>/);
+  assert.doesNotMatch(launcherSvg, /translate\(111 -111\)/);
+  assert.match(adaptiveSvg, /<image href="og-buyer-launcher-icon\.png"/);
+  assert.match(adaptiveSvg, /<clipPath id="safe-zone"><circle cx="512" cy="512" r="313"\/><\/clipPath>/);
+  assert.doesNotMatch(adaptiveSvg, /<text[^>]*>3<\/text>/);
+  assert.doesNotMatch(adaptiveSvg, /translate\(111 -111\)/);
   assert.equal(config.web.favicon, './assets/images/og-favicon.png');
   assert.deepEqual(pngDimensions(config.web.favicon), [128, 128]);
   const splash = config.plugins.find(plugin => Array.isArray(plugin) && plugin[0] === 'expo-splash-screen')?.[1];
