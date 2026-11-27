@@ -6,13 +6,20 @@ import { hasUiTranslation, translateUi } from './strings.ts';
 const component = readFileSync(new URL('../components/GlobalPageLoadingIndicator.tsx', import.meta.url), 'utf8');
 const layout = readFileSync(new URL('../app/_layout.tsx', import.meta.url), 'utf8');
 
-test('global top loader follows route transitions and initial page requests', () => {
+test('global centered loader follows route transitions and initial page requests', () => {
   assert.match(component, /usePathname\(\)/);
   assert.match(component, /useIsFetching\(\{\s*predicate: query => query\.state\.status === 'pending'/);
   assert.match(component, /accessibilityRole="progressbar"/);
   assert.match(component, /pointerEvents="none"/);
   assert.match(component, /top: insets\.top/);
-  assert.match(component, /backgroundColor: colors\.accent/);
+  assert.match(component, /bottom: insets\.bottom/);
+  assert.match(component, /alignItems: 'center'/);
+  assert.match(component, /justifyContent: 'center'/);
+  assert.match(component, /borderTopColor: colors\.accent/);
+  assert.match(component, /transform: \[\{ rotate: rotation \}\]/);
+  assert.match(component, /reduceMotion/);
+  assert.match(component, /testID="global-page-loading-card"/);
+  assert.doesNotMatch(component, /segmentWidth|translateX|height: 3,/);
 });
 
 test('root mounts the global loader inside the query and motion providers', () => {

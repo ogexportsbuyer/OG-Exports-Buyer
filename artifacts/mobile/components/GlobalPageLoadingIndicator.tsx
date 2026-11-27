@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Platform, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, Platform, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useIsFetching } from '@tanstack/react-query';
 import { usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LocalizedText as Text } from '@/components/LocalizedText';
 import { useColors } from '@/hooks/useColors';
 import { useMotion } from '@/lib/motion';
 
@@ -15,7 +17,6 @@ export function GlobalPageLoadingIndicator() {
   const insets = useSafeAreaInsets();
   const { reduceMotion } = useMotion();
   const pathname = usePathname();
-  const { width } = useWindowDimensions();
   const progress = useRef(new Animated.Value(0)).current;
   const previousPath = useRef(pathname);
   const [routeLoading, setRouteLoading] = useState(false);
@@ -38,6 +39,15 @@ export function GlobalPageLoadingIndicator() {
     return () => clearTimeout(timer);
   }, [shouldShow]);
 
+  const rotation = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+  const shimmerOpacity = progress.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.45, 1, 0.45],
+  });
+
   useEffect(() => {
     if (!visible) {
       progress.stopAnimation();
@@ -45,13 +55,13 @@ export function GlobalPageLoadingIndicator() {
       return;
     }
     if (reduceMotion) {
-      progress.setValue(0.5);
+      progress.setValue(0.36);
       return;
     }
 
     const animation = Animated.loop(Animated.timing(progress, {
       toValue: 1,
-      duration: 1050,
+      duration: 1250,
       easing: Easing.linear,
       useNativeDriver: Platform.OS !== 'web',
     }));
@@ -60,12 +70,6 @@ export function GlobalPageLoadingIndicator() {
   }, [progress, reduceMotion, visible]);
 
   if (!visible) return null;
-
-  const segmentWidth = Math.max(76, width * 0.34);
-  const translateX = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-segmentWidth, width],
-  });
 
   return (
     <View
@@ -76,24 +80,88 @@ export function GlobalPageLoadingIndicator() {
       style={{
         position: 'absolute',
         top: insets.top,
+        bottom: insets.bottom,
         left: 0,
         right: 0,
-        height: 3,
-        overflow: 'hidden',
-        backgroundColor: colors.secondary,
+        alignItems: 'center',
+        justifyContent: 'center',
         zIndex: 999,
         elevation: 10,
       }}
     >
-      <Animated.View
+      <View
+        testID="global-page-loading-card"
         style={{
-          width: segmentWidth,
-          height: '100%',
-          borderRadius: 3,
-          backgroundColor: colors.accent,
-          transform: [{ translateX }],
+          minWidth: 148,
+          alignItems: 'center',
+          paddingHorizontal: 22,
+          paddingVertical: 17,
+          borderRadius: 22,
+          borderWidth: 1,
+          borderColor: colors.glassBorder,
+          backgroundColor: colors.glassFill,
+          shadowColor: colors.shadowColor,
+          shadowOpacity: 0.14,
+          shadowRadius: 16,
+          shadowOffset: { width: 0, height: 7 },
+          elevation: 8,
         }}
-      />
+      >
+        <View
+          style={{
+            width: 70,
+            height: 70,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 35,
+            backgroundColor: colors.glassTintGold,
+          }}
+        >
+          <Animated.View
+            testID="global-page-loading-spinner"
+            style={{
+              position: 'absolute',
+              width: 58,
+              height: 58,
+              borderRadius: 29,
+              borderWidth: 2,
+              borderColor: colors.border,
+              borderTopColor: colors.accent,
+              borderRightColor: colors.accent,
+              transform: [{ rotate: rotation }],
+            }}
+          />
+          <View
+            style={{
+              width: 38,
+              height: 38,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 19,
+              borderWidth: 1,
+              borderColor: colors.glassBorder,
+              backgroundColor: colors.card,
+            }}
+          >
+            <Feather name="package" size={17} color={colors.primary} />
+          </View>
+          <Animated.View
+            style={{
+              position: 'absolute',
+              top: 5,
+              right: 12,
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: colors.accent,
+              opacity: shimmerOpacity,
+            }}
+          />
+        </View>
+        <Text style={{ marginTop: 11, color: colors.foreground, fontSize: 12, fontWeight: '700', letterSpacing: 0.2 }}>
+          Loading page
+        </Text>
+      </View>
     </View>
   );
 }
