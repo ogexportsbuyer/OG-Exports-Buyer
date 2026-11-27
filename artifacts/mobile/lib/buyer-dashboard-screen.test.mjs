@@ -21,7 +21,7 @@ test('partial and empty API data stays explicit rather than becoming invented me
   assert.match(screen, /completedTradeValue === null \? '—'/);
   assert.match(screen, /processingTradeValue === null \? '—'/);
   assert.match(screen, /discountSavings === null \? '—'/);
-  assert.match(screen, /discountSavingsPercentage === null \? '—'/);
+  assert.match(screen, /displayDiscountPercentage = discountSavingsPercentage \?\? \(discountSavings === 0 \? 0 : null\)/);
   assert.match(screen, /discount_savings_percentage/);
   assert.match(screen, /Discounts compare confirmed order prices with saved product-card FOB prices/);
   assert.match(screen, /completion === null \? '—'/);
@@ -60,6 +60,16 @@ test('dashboard prioritizes purchase value and preserves the recent activity pre
   assert.match(screen, /router\.push\('\/buyer-activity'\)/);
   assert.equal((screen.match(/buyer-dashboard-activity-view-all/g) ?? []).length, 1);
   assert.doesNotMatch(screen, /heroActions/);
+});
+
+test('discount percentage is shown above the saved dollar amount', () => {
+  const rowStart = screen.indexOf('Discount saved');
+  const rowEnd = screen.indexOf('Order snapshot', rowStart);
+  const discountRow = screen.slice(rowStart, rowEnd);
+
+  assert.ok(rowStart >= 0 && rowEnd > rowStart);
+  assert.ok(discountRow.indexOf('displayDiscountPercentage') < discountRow.indexOf('money(discountSavings'));
+  assert.match(discountRow, /displayDiscountPercentage\.toFixed\(2\).*%/);
 });
 
 test('dashboard opens with a professional localized heading and no profile hero card', () => {

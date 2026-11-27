@@ -50,3 +50,9 @@ Before deploying buyer dashboard metrics that depend on order-item pricing snaps
 **Why:** On 2026-11-26, Hostinger lacked `order_items.discount_amount` while the deployed dashboard query assumed it existed, causing dashboard requests to return 500.
 
 **How to apply:** Check migration state and required columns before shipping database-dependent queries. If an optional metric's migration is not applied, return it as unavailable instead of aborting the endpoint.
+
+When production is behind the local checkout, deploy only the ordered migrations directly required by the approved feature. Confirm each target column is absent first; do not run every pending migration or backfill historical prices from the current catalogue.
+
+**Why:** Hostinger can lag the workspace in both source and schema, so an all-pending migration run may include unrelated changes and current catalogue prices are not reliable historical evidence.
+
+**How to apply:** Compare live source and schema, preserve production-only edits with guarded patches and backups, then apply just the required additive migrations and verify their status and columns.

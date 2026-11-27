@@ -104,6 +104,7 @@ function BuyerOverviewContent() {
   const processingTradeValue = amount(tradeValueSummary, ['processing_trade_value_usd']);
   const discountSavings = amount(tradeValueSummary, ['discount_savings_usd']);
   const discountSavingsPercentage = amount(tradeValueSummary, ['discount_savings_percentage']);
+  const displayDiscountPercentage = discountSavingsPercentage ?? (discountSavings === 0 ? 0 : null);
   const orderStatuses = list(dashboard.orders_by_status);
   const upcoming = list(dashboard.upcoming_shipments);
   const activity = list(dashboard.recent_activity);
@@ -200,10 +201,10 @@ function BuyerOverviewContent() {
               </View>
               <View style={{ alignItems: 'flex-end', flexShrink: 0, maxWidth: 132 }}>
                 <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.accentSurface, fontSize: 13, fontWeight: '800' }}>
-                  {discountSavings === null ? '—' : money(discountSavings, tradeCurrency, { preserveSource: true })}
+                  {displayDiscountPercentage === null ? '—' : `${displayDiscountPercentage.toFixed(2)}%`}
                 </Text>
                 <Text style={{ color: 'rgba(255,255,255,0.76)', fontSize: 9, fontWeight: '700', marginTop: 2 }}>
-                  {discountSavingsPercentage === null ? '—' : `${discountSavingsPercentage.toFixed(2)}%`}
+                  {discountSavings === null ? '—' : money(discountSavings, tradeCurrency, { preserveSource: true })}
                 </Text>
               </View>
             </View>
