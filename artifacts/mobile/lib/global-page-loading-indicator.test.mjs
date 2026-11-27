@@ -7,6 +7,8 @@ const component = readFileSync(new URL('../components/GlobalPageLoadingIndicator
 const layout = readFileSync(new URL('../app/_layout.tsx', import.meta.url), 'utf8');
 
 test('global centered loader follows route transitions and initial page requests', () => {
+  assert.match(component, /const SHOW_DELAY_MS = 4_000/);
+  assert.match(component, /shouldShow \? SHOW_DELAY_MS : HIDE_DELAY_MS/);
   assert.match(component, /usePathname\(\)/);
   assert.match(component, /useIsFetching\(\{\s*predicate: query => query\.state\.status === 'pending'/);
   assert.match(component, /accessibilityRole="progressbar"/);
@@ -18,6 +20,7 @@ test('global centered loader follows route transitions and initial page requests
   assert.match(component, /borderTopColor: colors\.accent/);
   assert.match(component, /transform: \[\{ rotate: rotation \}\]/);
   assert.match(component, /reduceMotion/);
+  assert.match(component, /Animated\.loop\(Animated\.timing\(progress/);
   assert.match(component, /testID="global-page-loading-content"/);
   assert.doesNotMatch(component, /segmentWidth|translateX|height: 3,/);
   assert.doesNotMatch(component, /backgroundColor: colors\.(glassFill|glassTintGold|card)/);

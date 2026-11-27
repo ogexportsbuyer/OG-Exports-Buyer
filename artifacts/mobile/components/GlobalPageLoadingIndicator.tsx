@@ -9,7 +9,7 @@ import { useColors } from '@/hooks/useColors';
 import { useMotion } from '@/lib/motion';
 
 const ROUTE_TRANSITION_MS = 420;
-const SHOW_DELAY_MS = 90;
+const SHOW_DELAY_MS = 4_000;
 const HIDE_DELAY_MS = 180;
 
 export function GlobalPageLoadingIndicator() {
