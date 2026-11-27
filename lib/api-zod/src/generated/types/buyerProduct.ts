@@ -18,12 +18,26 @@ export interface BuyerProduct {
      * @maxLength 32
      */
   unit_of_measure?: string;
+  /** @nullable */
+  list_unit_price?: number | null;
   /**
-     * Admin-managed discount applied to the product's FOB unit price.
+     * Combined product and buyer VIP discount percentage, calculated from the displayed list price.
      * @minimum 0
      * @maximum 99.99
      */
   discount_percentage?: number;
+  /**
+     * @minimum 0
+     * @maximum 99.99
+     */
+  product_discount_percentage?: number;
+  /**
+     * @minimum 0
+     * @maximum 99.99
+     */
+  vip_discount_percentage?: number;
+  /** @nullable */
+  vip_tier_name?: string | null;
   /** @nullable */
   discounted_unit_price?: number | null;
   discount_amount_per_unit?: number;

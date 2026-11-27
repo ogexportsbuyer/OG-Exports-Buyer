@@ -22,9 +22,9 @@ test('catalogue product prices display their FOB basis and quote-only products s
     unit_of_measure: 'kg',
   }), {
     basePrice: 100,
-    salePrice: 85,
+    salePrice: null,
     discountPercentage: 15,
-    discountAmountPerUnit: 15,
+    discountAmountPerUnit: 0,
     currency: 'USD',
     unitOfMeasure: 'kg',
   });
@@ -35,6 +35,10 @@ test('catalogue product prices display their FOB basis and quote-only products s
     discount_percentage: 15,
     discount_amount_per_unit: 15,
   }).salePrice, 85);
+  assert.equal(buyerPriceDetails({
+    fob: 100,
+    discount_percentage: 15,
+  }).salePrice, null, 'discounted prices must come from the server');
   const buyerData = readFileSync(new URL('./buyer-data.ts', import.meta.url), 'utf8');
   assert.match(buyerData, /formatFobPrice\(pricing\.salePrice, pricing\.currency, pricing\.unitOfMeasure\)/);
   assert.match(buyerData, /return 'Request a quote'/);

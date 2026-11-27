@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\Admin\InvestmentProjectDocumentController as AdminI
 use App\Http\Controllers\Api\Admin\InvestmentProjectContainerTrackingController;
 use App\Http\Controllers\Api\Admin\InvestmentProjectStageUpdateController;
 use App\Http\Controllers\Api\Admin\InvestmentProjectTradeUpdateController;
+use App\Http\Controllers\Api\Admin\BuyerRewardsController as AdminBuyerRewardsController;
 use App\Http\Controllers\Api\Admin\MessageController as AdminMessageController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
@@ -47,6 +48,7 @@ use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
 use App\Http\Controllers\Api\Buyer\PaymentController as BuyerPaymentController;
 use App\Http\Controllers\Api\Buyer\QuotationController as BuyerQuotationController;
 use App\Http\Controllers\Api\Buyer\RfqController as BuyerRfqController;
+use App\Http\Controllers\Api\Buyer\RewardProgramController as BuyerRewardProgramController;
 use App\Http\Controllers\Api\Buyer\ShipmentController as BuyerShipmentController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\MaintController;
@@ -205,6 +207,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Buyer
     Route::middleware('role:buyer')->prefix('buyer')->group(function () {
+        Route::get('/products', [PublicProductController::class, 'index']);
+        Route::get('/products/{slug}', [PublicProductController::class, 'show']);
+        Route::get('/rewards', BuyerRewardProgramController::class);
         Route::get('/dashboard', BuyerDashboardController::class);
         Route::get('/analytics', BuyerAnalyticsController::class);
 
@@ -363,6 +368,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/users/{id}/impersonate', [AdminUserController::class, 'impersonate']);
         Route::put('/users/{id}', [AdminUserController::class, 'update']);
         Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
+
+        Route::get('/buyer-reward-tiers', [AdminBuyerRewardsController::class, 'tiers']);
+        Route::post('/buyer-reward-tiers', [AdminBuyerRewardsController::class, 'storeTier']);
+        Route::put('/buyer-reward-tiers/reorder', [AdminBuyerRewardsController::class, 'reorderTiers']);
+        Route::put('/buyer-reward-tiers/{id}', [AdminBuyerRewardsController::class, 'updateTier']);
+        Route::delete('/buyer-reward-tiers/{id}', [AdminBuyerRewardsController::class, 'destroyTier']);
+        Route::get('/buyer-rewards', [AdminBuyerRewardsController::class, 'rewards']);
+        Route::post('/buyer-rewards', [AdminBuyerRewardsController::class, 'storeReward']);
+        Route::put('/buyer-rewards/{id}', [AdminBuyerRewardsController::class, 'updateReward']);
+        Route::delete('/buyer-rewards/{id}', [AdminBuyerRewardsController::class, 'destroyReward']);
+        Route::get('/buyer-reward-buyers', [AdminBuyerRewardsController::class, 'buyers']);
+        Route::patch('/buyer-reward-buyers/{id}/tier', [AdminBuyerRewardsController::class, 'updateBuyerTier']);
 
         Route::get('/products', [AdminProductController::class, 'index']);
         Route::post('/products', [AdminProductController::class, 'store']);

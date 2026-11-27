@@ -68,6 +68,7 @@ const LocalAccount         = lazy(() => import('@/pages/LocalAccount'));
 const AdminLoginPage       = lazy(() => import('@/pages/AdminLogin'));
 
 const BuyerDashboard       = lazy(() => import('@/pages/BuyerDashboard'));
+const BuyerRewards          = lazy(() => import('@/pages/BuyerRewards'));
 const BuyerCompanyProfile  = lazy(() => import('@/pages/BuyerCompanyProfile'));
 const BuyerCatalogue       = lazy(() => import('@/pages/BuyerCatalogue'));
 const BuyerRFQ             = lazy(() => import('@/pages/BuyerRFQ'));
@@ -123,6 +124,7 @@ const AdminSuppliers       = lazy(() => import('@/pages/admin/AdminSuppliers'));
 const AdminOfferDocs       = lazy(() => import('@/pages/admin/AdminOfferDocs'));
 const AdminCMS             = lazy(() => import('@/pages/admin/AdminCMS'));
 const AdminQuotations      = lazy(() => import('@/pages/admin/AdminQuotations'));
+const AdminBuyerRewards    = lazy(() => import('@/pages/admin/AdminBuyerRewards'));
 
 // ─── Branded page-load fallback ────────────────────────────────────────────────
 function PageLoader() {
@@ -360,6 +362,7 @@ const SHARED_ROUTES = (
     <Route path="/admin">{() => <Redirect to="/admin/dashboard" />}</Route>
     <Route path="/admin/dashboard">{() => <Guarded roles={['admin']} Page={AdminDashboard} />}</Route>
     <Route path="/admin/users">{() => <Guarded roles={['admin']} Page={AdminUsers} />}</Route>
+    <Route path="/admin/buyer-rewards">{() => <Guarded roles={['admin']} Page={AdminBuyerRewards} />}</Route>
     <Route path="/admin/investments">{() => <GuardedAdminInvestment Page={AdminInvestments} />}</Route>
     <Route path="/admin/container-projects">{() => <Redirect to="/admin/container-investments?view=projects" />}</Route>
     <Route path="/admin/project-deposits">{() => <GuardedAdminInvestment Page={AdminProjectDeposits} />}</Route>
@@ -404,6 +407,7 @@ const SHARED_ROUTES = (
     <Route path="/company-profile" component={CompanyProfile} />
     <Route path="/buyer">{() => <Redirect to="/buyer/dashboard" />}</Route>
     <Route path="/buyer/dashboard">{() => <Guarded roles={['buyer']} Page={BuyerDashboard} />}</Route>
+    <Route path="/buyer/rewards">{() => <Guarded roles={['buyer']} Page={BuyerRewards} />}</Route>
     <Route path="/buyer/company">{() => <Guarded roles={['buyer']} Page={BuyerCompanyProfile} />}</Route>
     <Route path="/buyer/catalogue">{() => <Guarded roles={['buyer']} Page={BuyerCatalogue} />}</Route>
     <Route path="/buyer/rfq">{() => <Guarded roles={['buyer']} Page={BuyerRFQ} />}</Route>

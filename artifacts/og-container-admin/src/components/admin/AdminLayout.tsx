@@ -13,7 +13,7 @@ import {
   MessageSquare, BarChart2, Lock, Settings, Menu, X, ChevronDown,
   ChevronRight, Globe, LogOut, Layers, Newspaper, Landmark, Megaphone, MessagesSquare, Banknote, DollarSign,
     Sprout, TrendingUp,
-  CalendarClock,
+  CalendarClock, Award,
 } from "lucide-react"
 
 const GOLD = "#c5b487"
@@ -32,6 +32,7 @@ const NAV = [
     group: "USER MANAGEMENT",
     items: [
       { label: "Users", icon: Users, href: "/admin/users" },
+      { label: "Buyer VIP Rewards", icon: Award, href: "/admin/buyer-rewards" },
     ],
   },
   {

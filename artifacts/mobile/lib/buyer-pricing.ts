@@ -39,15 +39,11 @@ export function buyerPriceDetails(product: Json): BuyerPriceDetails {
   const rawPercentage = numeric(row, ['discount_percentage', 'discountPercent']) ?? 0;
   const discountPercentage = Math.max(0, Math.min(99.99, rawPercentage));
   const suppliedSalePrice = numeric(row, ['unit_price', 'discounted_unit_price', 'discounted_price']);
-  const salePrice = suppliedSalePrice ?? (basePrice === null
-    ? null
-    : Math.round(basePrice * (1 - discountPercentage / 100) * 100) / 100);
+  // Prices and savings are authoritative server snapshots. Never reconstruct a
+  // discounted unit price on-device; undiscounted public list price is safe.
+  const salePrice = suppliedSalePrice ?? (discountPercentage === 0 ? basePrice : null);
   const suppliedDiscount = numeric(row, ['discount_amount_per_unit', 'discount_amount']);
-  const discountAmountPerUnit = suppliedDiscount ?? (
-    basePrice !== null && salePrice !== null
-      ? Math.round(Math.max(0, basePrice - salePrice) * 100) / 100
-      : 0
-  );
+  const discountAmountPerUnit = suppliedDiscount ?? 0;
 
   return {
     basePrice,

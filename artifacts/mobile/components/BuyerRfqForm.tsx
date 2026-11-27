@@ -11,11 +11,13 @@ import {
   getGetCountryPortsQueryKey,
   getGetIncotermsQueryKey,
   getGetProductsQueryKey,
+  getGetBuyerProductsQueryKey,
   useCreateBuyerRfq,
   useGetCountries,
   useGetCountryPorts,
   useGetIncoterms,
   useGetProducts,
+  useGetBuyerProducts,
 } from '@workspace/api-client-react';
 import { Action, Card, ErrorState, Field, LoadingCard, Screen } from '@/components/InvestorUI';
 import { BuyerRfqPicker, type BuyerRfqOption } from '@/components/BuyerRfqPicker';
@@ -99,7 +101,7 @@ export function BuyerRfqForm({
 }) {
   const colors = useColors();
   const queryClient = useQueryClient();
-  const { ready, token, apiOrigin } = useAuth();
+  const { ready, token, apiOrigin, user } = useAuth();
   const guestFlow = useBuyerGuestFlow();
   const [productId, setProductId] = useState(initialDraft?.productId ?? '');
   const [quantity, setQuantity] = useState(initialDraft?.quantity ?? '');
@@ -124,14 +126,23 @@ export function BuyerRfqForm({
   const busy = createRfq.isPending || Boolean(uploadProgress);
   const resumeAttempted = useRef(false);
 
-  const productsQuery = useGetProducts({ per_page: 100 }, {
+  const publicProductsQuery = useGetProducts({ per_page: 100 }, {
     query: {
       queryKey: getGetProductsQueryKey({ per_page: 100 }),
-      enabled: ready && Boolean(apiOrigin),
+      enabled: ready && Boolean(apiOrigin) && !token,
       staleTime: 300_000,
       retry: false,
     },
   });
+  const buyerProductsQuery = useGetBuyerProducts({ per_page: 100 }, {
+    query: {
+      queryKey: [...getGetBuyerProductsQueryKey({ per_page: 100 }), first(record(user), ['id'])],
+      enabled: ready && Boolean(apiOrigin) && !!token,
+      staleTime: 300_000,
+      retry: false,
+    },
+  });
+  const productsQuery = token ? buyerProductsQuery : publicProductsQuery;
   const countriesQuery = useGetCountries({
     query: { queryKey: getGetCountriesQueryKey(), enabled: ready && Boolean(apiOrigin), staleTime: 300_000, retry: false },
   });

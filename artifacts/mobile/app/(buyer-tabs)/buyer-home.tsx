@@ -13,10 +13,12 @@ import {
   getGetBuyerOrdersQueryKey,
   getGetProductCategoriesQueryKey,
   getGetProductsQueryKey,
+  getGetBuyerProductsQueryKey,
   getGetSharedUnreadNotificationCountQueryKey,
   useGetBuyerOrders,
   useGetProductCategories,
   useGetProducts,
+  useGetBuyerProducts,
   useGetSharedUnreadNotificationCount,
 } from '@workspace/api-client-react';
 import { first, record } from '@/lib/data';
@@ -58,7 +60,8 @@ const styles = StyleSheet.create({
 });
 
 export default function BuyerHome() {
-  const { ready, token, apiOrigin } = useAuth();
+  const { ready, token, apiOrigin, user } = useAuth();
+  const buyerId = first(record(user), ['id', 'user_id']);
   const { cartItemCount } = useBuyerGuestFlow();
   const colors = useColors();
   const [search, setSearch] = useState('');
@@ -77,10 +80,15 @@ export default function BuyerHome() {
     },
   });
   const catalogEnabled = ready && !!apiOrigin;
-  const productsQuery = useGetProducts(
+  const publicProductsQuery = useGetProducts(
     { per_page: 100 },
-    { query: { queryKey: getGetProductsQueryKey({ per_page: 100 }), enabled: catalogEnabled, retry: false, staleTime: 60_000 } },
+    { query: { queryKey: getGetProductsQueryKey({ per_page: 100 }), enabled: catalogEnabled && !token, retry: false, staleTime: 60_000 } },
   );
+  const buyerProductsQuery = useGetBuyerProducts(
+    { per_page: 100 },
+    { query: { queryKey: [...getGetBuyerProductsQueryKey({ per_page: 100 }), buyerId], enabled: catalogEnabled && !!token, retry: false, staleTime: 60_000 } },
+  );
+  const productsQuery = token ? buyerProductsQuery : publicProductsQuery;
   const categoriesQuery = useGetProductCategories(
     { query: { queryKey: getGetProductCategoriesQueryKey(), enabled: catalogEnabled, retry: false, staleTime: 300_000 } },
   );

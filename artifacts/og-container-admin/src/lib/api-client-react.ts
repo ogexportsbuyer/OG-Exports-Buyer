@@ -518,9 +518,10 @@ function useUnsupportedMutation<TVariables>() {
 }
 
 // Extra helpers used by dynamic pages
-export function useProducts(params?: Record<string, any>) {
+export function useProducts(params?: Record<string, any>, options?: { query?: { enabled?: boolean; queryKey?: readonly unknown[] } }) {
   return useQuery({
-    queryKey: ["products", params],
+    queryKey: options?.query?.queryKey || ["products", params],
+    enabled: options?.query?.enabled ?? true,
     queryFn: async () => {
       const res = await api.get<any>("/api/products", params)
       const page = unwrapPage(res)
@@ -528,6 +529,25 @@ export function useProducts(params?: Record<string, any>) {
     },
   })
 }
+
+// Keep the portal's legacy helpers while exposing the contract-generated VIP
+// hooks through the same alias used by this artifact.
+export {
+  getGetBuyerProductsQueryKey, useGetBuyerProducts, getGetBuyerProductQueryKey, useGetBuyerProduct,
+  getGetBuyerRewardsQueryKey, useGetBuyerRewards,
+  getGetAdminBuyerRewardTiersQueryKey, useGetAdminBuyerRewardTiers,
+  getGetAdminBuyerRewardsQueryKey, useGetAdminBuyerRewards,
+  getGetAdminBuyerRewardBuyersQueryKey, useGetAdminBuyerRewardBuyers,
+  useCreateAdminBuyerRewardTier, useUpdateAdminBuyerRewardTier,
+  useReorderAdminBuyerRewardTiers, useCreateAdminBuyerReward,
+  useUpdateAdminBuyerReward, useDeleteAdminBuyerReward,
+  useUpdateAdminBuyerRewardBuyerTier, useDeleteAdminBuyerRewardTier,
+} from "../../../../lib/api-client-react/src/generated/api";
+export type {
+  BuyerReward, BuyerRewardTier, BuyerRewardTierInput, BuyerRewardTierUpdateInput,
+  BuyerRewardTierReorderInput, BuyerRewardInput, BuyerRewardUpdateInput,
+  BuyerRewardTierOverrideInput,
+} from "../../../../lib/api-client-react/src/generated/api.schemas";
 
 export function useProduct(slug?: string) {
   return useQuery({

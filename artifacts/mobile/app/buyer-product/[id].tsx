@@ -12,8 +12,10 @@ import { useColors } from '@/hooks/useColors';
 import { useAuth } from '@/context/AuthContext';
 import {
   getGetBuyerCartQueryKey,
+  getGetBuyerProductsQueryKey,
   getGetProductsQueryKey,
   useAddBuyerCartItem,
+  useGetBuyerProducts,
   useGetProducts,
 } from '@workspace/api-client-react';
 import { amount, first, messageOf, record } from '@/lib/data';
@@ -79,20 +81,30 @@ export default function BuyerProductDetails() {
   const { width: windowWidth } = useWindowDimensions();
   const queryClient = useQueryClient();
   const { ready, token, apiOrigin, user } = useAuth();
+  const userId = first(record(user), ['id'], '');
   const guestFlow = useBuyerGuestFlow();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const numericId = Number(rawId);
   const validId = !!rawId && /^\d+$/.test(rawId) && Number.isSafeInteger(numericId) && numericId > 0;
   const catalogEnabled = ready && !!apiOrigin && validId;
-  const productsQuery = useGetProducts({ per_page: 100 }, {
+  const publicProductsQuery = useGetProducts({ per_page: 100 }, {
     query: {
       queryKey: getGetProductsQueryKey({ per_page: 100 }),
-      enabled: catalogEnabled,
+      enabled: catalogEnabled && !token,
       retry: false,
       staleTime: 60_000,
     },
   });
+  const buyerProductsQuery = useGetBuyerProducts({ per_page: 100 }, {
+    query: {
+      queryKey: [...getGetBuyerProductsQueryKey({ per_page: 100 }), String(userId)],
+      enabled: catalogEnabled && !!token,
+      retry: false,
+      staleTime: 60_000,
+    },
+  });
+  const productsQuery = token ? buyerProductsQuery : publicProductsQuery;
   const products = rowsFromResponse(productsQuery.data);
   const product = useMemo(
     () => validId ? products.find(item => amount(item, ['id']) === numericId) ?? null : null,

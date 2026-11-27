@@ -21,6 +21,18 @@ export interface BuyerCartItemPricing {
      */
   discount_percentage?: number;
   discount_amount_per_unit?: number;
+  /**
+     * @minimum 0
+     * @maximum 99.99
+     */
+  product_discount_percentage?: number;
+  /**
+     * @minimum 0
+     * @maximum 99.99
+     */
+  vip_discount_percentage?: number;
+  /** @nullable */
+  vip_tier_name?: string | null;
   unit_of_measure?: string;
   product?: BuyerProduct;
   [key: string]: unknown;

@@ -13,6 +13,7 @@ use App\Models\Port;
 use App\Models\Product;
 use App\Models\Rfq;
 use App\Support\OrderStatuses;
+use App\Support\BuyerProductPricing;
 use App\Support\TradeAmountSnapshot;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,9 +25,11 @@ use Illuminate\Validation\ValidationException;
 
 class CartController extends Controller
 {
+    public function __construct(private readonly BuyerProductPricing $pricing) {}
+
     public function show(Request $request): JsonResponse
     {
-        $cart = $this->presentCart($this->cartFor($request));
+        $cart = $this->presentCart($this->cartFor($request), $request);
 
         return response()->json(['data' => $cart]);
     }
@@ -52,12 +55,12 @@ class CartController extends Controller
         } else {
             $item->qty = ($item->exists ? $item->qty : 0) + $data['qty'];
         }
-        $item->unit_price = $product->buyerDiscountedUnitPrice() ?? 0;
+        $item->unit_price = $this->pricing->forProduct($product, $request->user(), $request)['discounted_unit_price'] ?? 0;
         $item->save();
 
         return response()->json([
             'message' => 'Item added to cart.',
-            'data' => $this->presentCart($cart->fresh()),
+            'data' => $this->presentCart($cart->fresh(), $request),
         ]);
     }
 
@@ -73,7 +76,7 @@ class CartController extends Controller
 
         return response()->json([
             'message' => 'Cart updated.',
-            'data' => $this->presentCart($cart->fresh()),
+            'data' => $this->presentCart($cart->fresh(), $request),
         ]);
     }
 
@@ -84,7 +87,7 @@ class CartController extends Controller
 
         return response()->json([
             'message' => 'Item removed.',
-            'data' => $this->presentCart($cart->fresh()),
+            'data' => $this->presentCart($cart->fresh(), $request),
         ]);
     }
 
@@ -147,10 +150,13 @@ class CartController extends Controller
                 throw ValidationException::withMessages(['cart' => ['Cart is empty.']]);
             }
 
-            $pricedItems = $cart->items->map(function (CartItem $item) {
+            $pricedItems = $cart->items->map(function (CartItem $item) use ($request) {
                 $product = $item->product;
-                $listUnitPrice = $product?->buyerBaseUnitPrice();
-                $unitPrice = $product?->buyerDiscountedUnitPrice();
+                $pricing = $product
+                    ? $this->pricing->forProduct($product, $request->user(), $request)
+                    : null;
+                $listUnitPrice = $pricing['list_unit_price'] ?? null;
+                $unitPrice = $pricing['discounted_unit_price'] ?? null;
 
                 if ($listUnitPrice === null || $unitPrice === null || $unitPrice <= 0) {
                     throw ValidationException::withMessages([
@@ -158,14 +164,14 @@ class CartController extends Controller
                     ]);
                 }
 
-                $discountAmount = $product->buyerDiscountAmountPerUnit();
+                $discountAmount = $pricing['discount_amount_per_unit'];
                 $quantity = (int) $item->qty;
 
                 return [
                     'item' => $item,
                     'product' => $product,
                     'list_unit_price' => $listUnitPrice,
-                    'discount_percentage' => $product->buyerDiscountPercentage(),
+                    'discount_percentage' => $pricing['discount_percentage'],
                     'discount_amount' => $discountAmount,
                     'unit_price' => $unitPrice,
                     'unit_of_measure' => $product->unit_of_measure ?: 'MT',
@@ -276,11 +282,15 @@ class CartController extends Controller
                 $lineNote = "Checkout quotation request — {$productName} ({$qtyLabel})";
                 $notes = $userNotes !== '' ? $lineNote."\n---\n".$userNotes : $lineNote;
 
+                $pricing = $item->product
+                    ? $this->pricing->forProduct($item->product, $request->user(), $request)
+                    : null;
+
                 $created->push(Rfq::create([
                     'buyer_id' => $request->user()->id,
                     'product_id' => $item->product_id,
                     'product_name' => $productName,
-                    'catalog_unit_price_snapshot' => $item->product?->buyerDiscountedUnitPrice(),
+                    'catalog_unit_price_snapshot' => $pricing['discounted_unit_price'] ?? null,
                     'qty' => $qtyLabel,
                     'packaging' => null,
                     'destination' => $destination,
@@ -320,7 +330,7 @@ class CartController extends Controller
         return Cart::query()->firstOrCreate(['user_id' => $request->user()->id]);
     }
 
-    private function presentCart(Cart $cart): Cart
+    private function presentCart(Cart $cart, Request $request): Cart
     {
         $cart->load(['items.product']);
 
@@ -330,10 +340,14 @@ class CartController extends Controller
                 continue;
             }
 
-            $item->setAttribute('list_unit_price', $product->buyerBaseUnitPrice());
-            $item->setAttribute('unit_price', $product->buyerDiscountedUnitPrice() ?? 0);
-            $item->setAttribute('discount_percentage', $product->buyerDiscountPercentage());
-            $item->setAttribute('discount_amount_per_unit', $product->buyerDiscountAmountPerUnit());
+            $pricing = $this->pricing->forProduct($product, $request->user(), $request);
+            $item->setAttribute('list_unit_price', $pricing['list_unit_price']);
+            $item->setAttribute('unit_price', $pricing['discounted_unit_price'] ?? 0);
+            $item->setAttribute('discount_percentage', $pricing['discount_percentage']);
+            $item->setAttribute('product_discount_percentage', $pricing['product_discount_percentage']);
+            $item->setAttribute('vip_discount_percentage', $pricing['vip_discount_percentage']);
+            $item->setAttribute('vip_tier_name', $pricing['vip_tier_name']);
+            $item->setAttribute('discount_amount_per_unit', $pricing['discount_amount_per_unit']);
             $item->setAttribute('unit_of_measure', $product->unit_of_measure ?: 'MT');
             $item->setAttribute('currency', $product->currency ?: 'USD');
         }

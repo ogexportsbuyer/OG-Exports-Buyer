@@ -51,7 +51,7 @@ class ProductController extends Controller
         );
     }
 
-    public function show(string $slug): ProductResource
+    public function show(Request $request, string $slug): ProductResource
     {
         $product = Product::query()
             ->with(['category', 'specs', 'media'])

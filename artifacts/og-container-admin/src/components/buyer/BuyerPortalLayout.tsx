@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Building2, Package, FileText, ClipboardList,
   ShoppingCart, Ship, FolderOpen, CreditCard, RefreshCw, BarChart3,
   MessageSquare, Settings, ChevronRight, LogOut, Menu, X,
-  Globe, ShoppingBag, UserCircle2, LogIn, BellRing
+  Globe, ShoppingBag, UserCircle2, LogIn, BellRing, Award
 } from "lucide-react"
 import { useSafeAuth } from "@/lib/use-safe-auth"
 import { ImpersonationBanner } from "@/components/ImpersonationBanner"
@@ -22,6 +22,7 @@ const BUYER_LINKS = [
   { href: "/buyer/messages",       label: "Messages",              icon: MessageSquare,   group: "main", badgeKey: "messages" as const },
   { href: "/buyer/notifications",  label: "Notifications",         icon: BellRing,        group: "main", badgeKey: "notifications" as const },
   { href: "/buyer/profile",        label: "My Profile",            icon: UserCircle2,     group: "account"  },
+  { href: "/buyer/rewards",        label: "VIP Rewards",            icon: Award,           group: "account"  },
   { href: "/buyer/company",        label: "Company Profile",       icon: Building2,       group: "account"  },
   { href: "/buyer/settings",       label: "Security & Settings",   icon: Settings,        group: "account"  },
   { href: "/buyer/catalogue",      label: "Product Catalogue",     icon: Package,         group: "trade"    },
