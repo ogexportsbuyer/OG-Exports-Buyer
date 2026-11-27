@@ -60,7 +60,19 @@ class QuotationController extends Controller
         $order = DB::transaction(function () use ($quotation, $request) {
             $quotation->update(['status' => 'accepted']);
 
-            $lineTotal = ((float) $quotation->fob_unit_price * (float) ($quotation->qty_mt ?: 1))
+            $quantity = (float) ($quotation->qty_mt ?: 1);
+            $quotedUnitPrice = round((float) $quotation->fob_unit_price, 2);
+            $catalogUnitPrice = is_numeric($quotation->rfq?->catalog_unit_price_snapshot)
+                ? (float) $quotation->rfq->catalog_unit_price_snapshot
+                : null;
+            $discountAmount = $catalogUnitPrice !== null
+                ? round(max(0, $catalogUnitPrice - $quotedUnitPrice), 2)
+                : 0.0;
+            $discountPercentage = $catalogUnitPrice !== null && $catalogUnitPrice > 0
+                ? round(($discountAmount / $catalogUnitPrice) * 100, 2)
+                : 0.0;
+
+            $lineTotal = ($quotedUnitPrice * $quantity)
                 + (float) $quotation->freight
                 + (float) $quotation->insurance
                 + (float) $quotation->doc_fee;
@@ -87,12 +99,12 @@ class QuotationController extends Controller
                 'order_id' => $order->id,
                 'product_id' => $quotation->rfq?->product_id,
                 'product_name' => $quotation->product_name,
-                'qty' => $quotation->qty_mt ?? 1,
-                'unit_price' => $quotation->fob_unit_price,
-                    'list_unit_price' => $quotation->fob_unit_price,
-                    'discount_percentage' => 0,
-                    'discount_amount' => 0,
-                    'unit_of_measure' => 'MT',
+                'qty' => $quantity,
+                'unit_price' => $quotedUnitPrice,
+                'list_unit_price' => $catalogUnitPrice,
+                'discount_percentage' => $discountPercentage,
+                'discount_amount' => $discountAmount,
+                'unit_of_measure' => 'MT',
                 'line_total' => $lineTotal,
             ]);
 

@@ -12,6 +12,7 @@ class Rfq extends Model
         'buyer_id',
         'product_id',
         'product_name',
+        'catalog_unit_price_snapshot',
         'qty',
         'packaging',
         'destination',
@@ -28,6 +29,7 @@ class Rfq extends Model
     protected function casts(): array
     {
         return [
+            'catalog_unit_price_snapshot' => 'decimal:2',
             'submitted_at' => 'datetime',
             'required_delivery_date' => 'date',
         ];

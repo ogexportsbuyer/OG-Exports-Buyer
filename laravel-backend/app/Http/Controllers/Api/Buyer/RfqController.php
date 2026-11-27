@@ -80,19 +80,24 @@ class RfqController extends Controller
             'attachments.*.size' => ['nullable', 'integer', 'min:0'],
         ]);
 
+        $product = ! empty($data['product_id'])
+            ? Product::query()->find($data['product_id'])
+            : null;
         $productName = $data['product_name'] ?? null;
-        if (! empty($data['product_id']) && ! $productName) {
-            $productName = Product::query()->find($data['product_id'])?->name;
+        if ($product && ! $productName) {
+            $productName = $product->name;
         }
+        $catalogUnitPriceSnapshot = $product?->buyerDiscountedUnitPrice();
 
         $port = Port::query()->with('country:id,name')->findOrFail($data['port_id']);
         $attachments = $this->normalizeAttachments($data['attachments'] ?? []);
 
-        $rfq = DB::transaction(function () use ($request, $data, $productName, $port, $attachments) {
+        $rfq = DB::transaction(function () use ($request, $data, $productName, $catalogUnitPriceSnapshot, $port, $attachments) {
             $rfq = Rfq::create([
                 'buyer_id' => $request->user()->id,
                 'product_id' => $data['product_id'] ?? null,
                 'product_name' => $productName,
+                'catalog_unit_price_snapshot' => $catalogUnitPriceSnapshot,
                 'qty' => $data['qty'],
                 'packaging' => $data['packaging'] ?? null,
                 'destination' => "{$port->name}, {$port->country->name}",

@@ -21,7 +21,9 @@ test('partial and empty API data stays explicit rather than becoming invented me
   assert.match(screen, /completedTradeValue === null \? '—'/);
   assert.match(screen, /processingTradeValue === null \? '—'/);
   assert.match(screen, /discountSavings === null \? '—'/);
-  assert.match(screen, /Savings include only discounts recorded when an order was placed/);
+  assert.match(screen, /discountSavingsPercentage === null \? '—'/);
+  assert.match(screen, /discount_savings_percentage/);
+  assert.match(screen, /Discounts compare confirmed order prices with saved product-card FOB prices/);
   assert.match(screen, /completion === null \? '—'/);
   assert.match(screen, /Profile completion is not available yet/);
   assert.match(screen, /Trust score is not available yet/);
@@ -75,7 +77,7 @@ test('new dashboard headings and purchase explanations have Urdu and Arabic tran
     'Across non-cancelled orders',
     'In processing',
     'Discount saved',
-    'Recorded at checkout',
+    'Compared with product-card FOB price',
     'Order snapshot',
     'Quick actions',
   ]) {

@@ -223,9 +223,9 @@ class DashboardController extends Controller
 
     /**
      * New dashboard values use USD snapshots and exclude cancelled orders.
-     * Discount savings are counted only where a new order item stored them.
+     * Discount savings are counted only from saved order-item snapshots.
      *
-     * @return array{currency: string, total_purchase_value_usd: float, completed_trade_value_usd: float, processing_trade_value_usd: float, discount_savings_usd: float|null}
+     * @return array{currency: string, total_purchase_value_usd: float, completed_trade_value_usd: float, processing_trade_value_usd: float, discount_savings_usd: float|null, discount_savings_percentage: float|null}
      */
     private function buildTradeValueSummary(int $userId): array
     {
@@ -246,13 +246,15 @@ class DashboardController extends Controller
         $processingOrders = $orders->reject(
             fn (Order $order) => in_array(strtolower((string) $order->status), $completedStatuses, true)
         );
+        $discountSummary = $this->recordedDiscountSummaryUsd($userId, $cancelledStatuses);
 
         return [
             'currency' => 'USD',
             'total_purchase_value_usd' => round($orders->sum(fn (Order $order) => $this->orderValueUsd($order)), 2),
             'completed_trade_value_usd' => round($completedOrders->sum(fn (Order $order) => $this->orderValueUsd($order)), 2),
             'processing_trade_value_usd' => round($processingOrders->sum(fn (Order $order) => $this->orderValueUsd($order)), 2),
-            'discount_savings_usd' => $this->recordedDiscountSavingsUsd($userId, $cancelledStatuses),
+            'discount_savings_usd' => $discountSummary['amount_usd'],
+            'discount_savings_percentage' => $discountSummary['percentage'],
         ];
     }
 
@@ -270,10 +272,16 @@ class DashboardController extends Controller
     /**
      * @param  list<string>  $cancelledStatuses
      */
-    private function recordedDiscountSavingsUsd(int $userId, array $cancelledStatuses): ?float
+    private function recordedDiscountSummaryUsd(int $userId, array $cancelledStatuses): array
     {
         if (! Schema::hasColumn('order_items', 'discount_amount')) {
-            return null;
+            return ['amount_usd' => null, 'percentage' => null];
+        }
+
+        $hasReferencePrice = Schema::hasColumn('order_items', 'list_unit_price');
+        $columns = ['order_id', 'qty', 'discount_amount'];
+        if ($hasReferencePrice) {
+            $columns[] = 'list_unit_price';
         }
 
         $items = OrderItem::query()
@@ -282,32 +290,61 @@ class DashboardController extends Controller
                 $query->where('buyer_id', $userId)
                     ->whereNotIn('status', $cancelledStatuses);
             })
-            ->get(['order_id', 'qty', 'discount_amount']);
+            ->get($columns);
 
-        $savingsUsd = $items->sum(function (OrderItem $item): float {
+        $savingsUsd = 0.0;
+        $comparableSavingsUsd = 0.0;
+        $referenceValueUsd = 0.0;
+
+        foreach ($items as $item) {
             $order = $item->order;
-            $unitDiscount = (float) ($item->discount_amount ?? 0);
-            if (! $order || $unitDiscount <= 0) {
-                return 0.0;
+            if (! $order) {
+                continue;
             }
 
             $quantityText = (string) $item->qty;
-            if (! preg_match('/\d+(?:\.\d+)?/', $quantityText, $matches)) {
-                return 0.0;
+            if (! preg_match('/\d+(?:\.\d+)?/', $quantityText, $matches) || (float) $matches[0] <= 0) {
+                continue;
+            }
+            $quantity = (float) $matches[0];
+            $unitDiscount = max(0, (float) ($item->discount_amount ?? 0));
+
+            if ($unitDiscount > 0) {
+                $nativeSavings = round($unitDiscount * $quantity, 2);
+                $savingsUsd += $this->orderAmountUsd($order, $nativeSavings);
             }
 
-            $nativeSavings = round($unitDiscount * (float) $matches[0], 2);
+            $referenceUnitPrice = $hasReferencePrice ? (float) ($item->list_unit_price ?? 0) : 0.0;
+            if ($referenceUnitPrice <= 0) {
+                continue;
+            }
 
-            return TradeAmountSnapshot::resolve(
-                $nativeSavings,
-                (string) ($order->currency ?: 'USD'),
-                null,
-                null,
-                $order->exchange_rate !== null ? (float) $order->exchange_rate : null,
-            )['usd'];
-        });
+            $referenceNative = round($referenceUnitPrice * $quantity, 2);
+            $referenceValueUsd += $this->orderAmountUsd($order, $referenceNative);
 
-        return round((float) $savingsUsd, 2);
+            if ($unitDiscount > 0) {
+                $comparableSavingsNative = round(min($unitDiscount, $referenceUnitPrice) * $quantity, 2);
+                $comparableSavingsUsd += $this->orderAmountUsd($order, $comparableSavingsNative);
+            }
+        }
+
+        return [
+            'amount_usd' => round($savingsUsd, 2),
+            'percentage' => $referenceValueUsd > 0
+                ? round(($comparableSavingsUsd / $referenceValueUsd) * 100, 2)
+                : null,
+        ];
+    }
+
+    private function orderAmountUsd(Order $order, float $amount): float
+    {
+        return TradeAmountSnapshot::resolve(
+            $amount,
+            (string) ($order->currency ?: 'USD'),
+            null,
+            null,
+            $order->exchange_rate !== null ? (float) $order->exchange_rate : null,
+        )['usd'];
     }
 
     private function formatTrend(float $pct, bool $withSign = false): string

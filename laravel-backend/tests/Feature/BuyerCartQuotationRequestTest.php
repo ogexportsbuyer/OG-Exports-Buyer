@@ -6,8 +6,10 @@ use App\Models\Country;
 use App\Models\Order;
 use App\Models\Port;
 use App\Models\Product;
+use App\Models\Quotation;
 use App\Models\Rfq;
 use App\Models\User;
+use App\Models\UserProfile;
 use Database\Seeders\PaymentMethodSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -83,6 +85,69 @@ it('creates an RFQ per cart line for non-FOB and clears the cart', function () {
     expect($created->pluck('incoterm')->unique()->values()->all())->toBe(['CIF']);
     expect($created->pluck('payment_terms')->unique()->values()->all())->toBe(['To be agreed']);
     expect($created->pluck('status')->unique()->values()->all())->toBe(['pending']);
+});
+
+it('records the card FOB price and calculates savings when a quotation is accepted', function () {
+    $this->productA->update([
+        'fob' => 1250,
+        'unit_of_measure' => 'MT',
+        'discount_percentage' => 10,
+    ]);
+    CartItem::query()->where('cart_id', $this->cart->id)->delete();
+    CartItem::query()->create([
+        'cart_id' => $this->cart->id,
+        'product_id' => $this->productA->id,
+        'qty' => 10,
+        'unit_price' => 1250,
+    ]);
+
+    $this->actingAs($this->buyer)
+        ->postJson('/api/buyer/cart/request-quotation', $this->quotePayload)
+        ->assertCreated();
+
+    $rfq = Rfq::query()->where('buyer_id', $this->buyer->id)->firstOrFail();
+    expect((float) $rfq->catalog_unit_price_snapshot)->toBe(1125.0);
+
+    // A later catalogue edit must not change the comparison price for this deal.
+    $this->productA->update(['fob' => 1400]);
+
+    $quotation = Quotation::query()->create([
+        'rfq_id' => $rfq->id,
+        'buyer_id' => $this->buyer->id,
+        'product_name' => $rfq->product_name,
+        'qty_mt' => 10,
+        'incoterm' => 'CIF',
+        'destination' => $rfq->destination,
+        'payment_terms' => 'To be agreed',
+        'status' => 'sent',
+        'source' => 'admin',
+        'fob_unit_price' => 1000,
+        'freight' => 250,
+    ]);
+
+    $this->actingAs($this->buyer)
+        ->postJson("/api/buyer/quotations/{$quotation->id}/accept")
+        ->assertOk()
+        ->assertJsonPath('data.quotation.status', 'accepted');
+
+    $order = Order::query()->where('quotation_id', $quotation->id)->with('items')->firstOrFail();
+    $item = $order->items->firstOrFail();
+    expect((float) $item->list_unit_price)->toBe(1125.0)
+        ->and((float) $item->unit_price)->toBe(1000.0)
+        ->and((float) $item->discount_amount)->toBe(125.0)
+        ->and((float) $item->discount_percentage)->toBe(11.11);
+
+    UserProfile::query()->create([
+        'user_id' => $this->buyer->id,
+        'company_name' => 'Buyer Co',
+        'country' => 'Afghanistan',
+    ]);
+
+    $this->actingAs($this->buyer)
+        ->getJson('/api/buyer/dashboard')
+        ->assertOk()
+        ->assertJsonPath('data.trade_value_summary.discount_savings_usd', 1250)
+        ->assertJsonPath('data.trade_value_summary.discount_savings_percentage', 11.11);
 });
 
 it('rejects FOB on request-quotation', function () {

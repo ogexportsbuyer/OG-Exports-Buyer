@@ -103,6 +103,7 @@ function BuyerOverviewContent() {
   const completedTradeValue = amount(tradeValueSummary, ['completed_trade_value_usd']);
   const processingTradeValue = amount(tradeValueSummary, ['processing_trade_value_usd']);
   const discountSavings = amount(tradeValueSummary, ['discount_savings_usd']);
+  const discountSavingsPercentage = amount(tradeValueSummary, ['discount_savings_percentage']);
   const orderStatuses = list(dashboard.orders_by_status);
   const upcoming = list(dashboard.upcoming_shipments);
   const activity = list(dashboard.recent_activity);
@@ -195,15 +196,20 @@ function BuyerOverviewContent() {
               <Feather name="tag" size={14} color={colors.accentSurface} />
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.primaryForeground, fontSize: 10, fontWeight: '800' }}>Discount saved</Text>
-                <Text style={{ color: 'rgba(255,255,255,0.68)', fontSize: 9, marginTop: 1 }}>Recorded at checkout</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.68)', fontSize: 9, marginTop: 1 }}>Compared with product-card FOB price</Text>
               </View>
-              <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.accentSurface, fontSize: 13, fontWeight: '800' }}>
-                {discountSavings === null ? '—' : money(discountSavings, tradeCurrency, { preserveSource: true })}
-              </Text>
+              <View style={{ alignItems: 'flex-end', flexShrink: 0, maxWidth: 132 }}>
+                <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.accentSurface, fontSize: 13, fontWeight: '800' }}>
+                  {discountSavings === null ? '—' : money(discountSavings, tradeCurrency, { preserveSource: true })}
+                </Text>
+                <Text style={{ color: 'rgba(255,255,255,0.76)', fontSize: 9, fontWeight: '700', marginTop: 2 }}>
+                  {discountSavingsPercentage === null ? '—' : `${discountSavingsPercentage.toFixed(2)}%`}
+                </Text>
+              </View>
             </View>
           </Card>
           <Text style={{ color: colors.mutedForeground, fontSize: 9, lineHeight: 14, marginBottom: 12 }}>
-            Values reflect purchase data reported by OG Exports. Savings include only discounts recorded when an order was placed.
+            Discounts compare confirmed order prices with saved product-card FOB prices; cancelled orders are excluded.
           </Text>
 
           <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800', marginBottom: 9 }}>Order snapshot</Text>

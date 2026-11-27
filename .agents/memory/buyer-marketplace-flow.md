@@ -51,11 +51,11 @@ An FOB order must not be placed when any cart item has no positive, confirmed pr
 
 **How to apply:** Keep the FOB order path blocked until every line has a price, while leaving non-FOB quotation requests available.
 
-For Buyer trade pricing, admins set a product's unit and discount percentage against its displayed FOB price. Dashboard purchase value is order value, not wallet balance; savings count only discounts saved with new orders, never estimates from current product prices.
+Buyer dashboard savings include recorded checkout discounts and confirmed quotation savings. Quote savings compare the accepted FOB unit price with the product card's displayed FOB unit price saved when the RFQ was submitted; aggregate percentage is weighted by saved reference product value. Exclude cancelled orders and never estimate legacy deals without snapshots.
 
-**Why:** The user chose total purchase value and admin-entered percentages, and historical orders have no reliable discount snapshots.
+**Why:** The user asked for accepted quotation deals to automatically contribute their discount amount and percentage using the price shown on the product card.
 
-**How to apply:** Keep catalogue, cart, checkout, and new order lines on the same FOB-per-unit basis. Treat negotiated quotation prices separately from catalogue discounts, and leave legacy savings unestimated.
+**How to apply:** Snapshot the server-calculated buyer-discounted FOB price on product-linked RFQs, persist the comparison and negotiated discount on the confirmed order line, and keep legacy records without a snapshot out of the percentage estimate.
 
 Buyer catalogue photos should load from their API/CDN URLs rather than being bundled into the app. Normalize relative paths to the configured API origin and use memory/disk caching for repeat views.
 

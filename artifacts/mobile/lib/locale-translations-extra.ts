@@ -7869,19 +7869,19 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "es": "Ahorro obtenido",
     "de": "Ersparnis"
   },
-  "Recorded at checkout": {
-    "ru": "Зафиксировано при оформлении",
-    "zh-CN": "结账时记录",
-    "fr": "Enregistré lors du paiement",
-    "es": "Registrado al finalizar la compra",
-    "de": "Beim Checkout erfasst"
+  "Compared with product-card FOB price": {
+    "ru": "По сравнению с ценой FOB в карточке товара",
+    "zh-CN": "与商品卡片 FOB 价格比较",
+    "fr": "Comparé au prix FOB affiché sur la fiche produit",
+    "es": "Comparado con el precio FOB de la ficha del producto",
+    "de": "Verglichen mit dem FOB-Preis auf der Produktkarte"
   },
-  "Values reflect purchase data reported by OG Exports. Savings include only discounts recorded when an order was placed.": {
-    "ru": "Данные основаны на отчетности OG Exports. Экономия включает только скидки, примененные при оформлении заказа.",
-    "zh-CN": "数值反映了 OG Exports 报告的采购数据。节省金额仅包含下单时记录的折扣。",
-    "fr": "Les valeurs reflètent les données d'achat communiquées par OG Exports. Les économies incluent uniquement les remises enregistrées lors de la passation de la commande.",
-    "es": "Los valores reflejan los datos de compra reportados por OG Exports. Los ahorros incluyen solo los descuentos registrados al realizar el pedido.",
-    "de": "Die Werte spiegeln die von OG Exports gemeldeten Einkaufsdaten wider. Die Ersparnisse beinhalten nur Rabatte, die bei der Bestellung erfasst wurden."
+  "Discounts compare confirmed order prices with saved product-card FOB prices; cancelled orders are excluded.": {
+    "ru": "Скидки рассчитываются по подтвержденным заказам относительно сохраненных цен FOB из карточек товаров; отмененные заказы не учитываются.",
+    "zh-CN": "折扣根据已确认订单价格与已保存的商品卡片 FOB 价格比较计算；已取消订单不计入。",
+    "fr": "Les remises comparent les prix des commandes confirmées aux prix FOB enregistrés sur les fiches produit ; les commandes annulées sont exclues.",
+    "es": "Los descuentos comparan los precios de pedidos confirmados con los precios FOB guardados en las fichas de producto; se excluyen los pedidos cancelados.",
+    "de": "Rabatte vergleichen bestätigte Bestellpreise mit gespeicherten FOB-Preisen der Produktkarten; stornierte Bestellungen sind ausgeschlossen."
   },
   "Order snapshot": {
     "ru": "Сводка заказов",

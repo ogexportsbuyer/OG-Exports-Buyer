@@ -280,6 +280,7 @@ class CartController extends Controller
                     'buyer_id' => $request->user()->id,
                     'product_id' => $item->product_id,
                     'product_name' => $productName,
+                    'catalog_unit_price_snapshot' => $item->product?->buyerDiscountedUnitPrice(),
                     'qty' => $qtyLabel,
                     'packaging' => null,
                     'destination' => $destination,

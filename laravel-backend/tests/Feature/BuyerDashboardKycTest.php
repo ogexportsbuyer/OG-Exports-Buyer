@@ -173,7 +173,8 @@ it('summarizes purchases, completed and processing trades, and recorded discount
         ->assertJsonPath('data.trade_value_summary.total_purchase_value_usd', 600)
         ->assertJsonPath('data.trade_value_summary.completed_trade_value_usd', 300)
         ->assertJsonPath('data.trade_value_summary.processing_trade_value_usd', 300)
-        ->assertJsonPath('data.trade_value_summary.discount_savings_usd', 18);
+        ->assertJsonPath('data.trade_value_summary.discount_savings_usd', 18)
+        ->assertJsonPath('data.trade_value_summary.discount_savings_percentage', 3.47);
 });
 
 it('keeps trade totals available when the optional discount snapshot column is missing', function () {
@@ -208,7 +209,8 @@ it('keeps trade totals available when the optional discount snapshot column is m
         ->assertOk()
         ->assertJsonPath('data.trade_value_summary.completed_trade_value_usd', 38100)
         ->assertJsonPath('data.trade_value_summary.processing_trade_value_usd', 12750)
-        ->assertJsonPath('data.trade_value_summary.discount_savings_usd', null);
+        ->assertJsonPath('data.trade_value_summary.discount_savings_usd', null)
+        ->assertJsonPath('data.trade_value_summary.discount_savings_percentage', null);
 });
 
 it('marks company registration done on profile checklist when approved kyc has registration document', function () {

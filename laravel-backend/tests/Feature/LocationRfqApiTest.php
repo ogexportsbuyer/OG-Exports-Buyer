@@ -57,6 +57,8 @@ it('allows a buyer to save a complete RFQ', function () {
         'name' => 'Basmati Rice',
         'slug' => 'basmati-rice-test',
         'status' => 'approved',
+        'fob' => 1250,
+        'discount_percentage' => 10,
     ]);
     $deliveryDate = now()->addMonth()->toDateString();
 
@@ -85,6 +87,7 @@ it('allows a buyer to save a complete RFQ', function () {
         'country_id' => $this->country->id,
         'port_id' => $this->port->id,
         'destination' => 'Jebel Ali, United Arab Emirates',
+        'catalog_unit_price_snapshot' => 1125,
         'status' => 'pending',
     ]);
 
