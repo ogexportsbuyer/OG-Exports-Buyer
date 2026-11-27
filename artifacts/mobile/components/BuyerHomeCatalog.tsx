@@ -123,9 +123,21 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingBottom: 10,
   },
-  productImage: {
-    width: '100%',
-    backgroundColor: 'transparent',
+  landscapeCard: {
+    flexDirection: 'row',
+    minHeight: 136,
+    overflow: 'hidden',
+  },
+  landscapeImage: {
+    minHeight: 136,
+    overflow: 'hidden',
+  },
+  landscapeBody: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 11,
   },
   productBody: {
     paddingHorizontal: 10,
@@ -231,6 +243,7 @@ export default function BuyerHomeCatalog({
     ? products
     : products.filter(product => first(product, ['origin']) === selectedOrigin);
   const productGridCardWidth = Math.min(224, (windowWidth - 54) / 2);
+  const landscapeCardWidth = Math.max(0, Math.min(620, windowWidth - 40));
 
   return (
     <>
@@ -330,23 +343,6 @@ export default function BuyerHomeCatalog({
         <EmptyState title={`No products from ${selectedOrigin}`} body="Choose another origin to explore the current catalogue." icon="package" />
       ) : null}
 
-      <View style={styles.productGrid}>
-        {filteredProducts.slice(0, 8).map((product, index) => {
-          const id = first(product, ['id'], `product-${index}`);
-          return (
-            <HomeProductCard
-              key={id}
-              product={product}
-              index={index}
-              width={productGridCardWidth}
-              testID={`buyer-home-product-${id}`}
-              onBrowse={onBrowse}
-              onSelectProduct={onSelectProduct}
-            />
-          );
-        })}
-      </View>
-
       <View style={[styles.sectionHeader, { marginTop: 12, marginBottom: 12 }]}>
         <View>
           <Text style={[styles.eyebrow, { color: colors.accentText }]}>Browse by trade</Text>
@@ -430,15 +426,17 @@ export default function BuyerHomeCatalog({
                 <Feather name="arrow-up-right" size={13} color={colors.accent} />
               </Pressable>
             </View>
-            <View style={styles.productGrid}>
+            <View style={section.products.length === 1 ? { alignItems: 'flex-start' } : styles.productGrid}>
               {section.products.map((product, index) => {
                 const productId = first(product, ['id'], `${categorySlug}-${index}`);
+                const landscape = section.products.length === 1;
                 return (
                   <HomeProductCard
                     key={`${section.name}-${productId}`}
                     product={product}
                     index={index}
-                    width={productGridCardWidth}
+                    width={landscape ? landscapeCardWidth : productGridCardWidth}
+                    layout={landscape ? 'landscape' : 'grid'}
                     testID={`buyer-home-category-product-${categorySlug}-${productId}`}
                     onBrowse={onBrowse}
                     onSelectProduct={onSelectProduct}
@@ -481,19 +479,22 @@ type HomeProductCardProps = {
   product: Product;
   index: number;
   width: number;
+  layout?: 'grid' | 'landscape';
   testID: string;
   onBrowse: (searchTerm?: string) => void;
   onSelectProduct: (productId: string) => void;
 };
 
-function HomeProductCard({ product, index, width, testID, onBrowse, onSelectProduct }: HomeProductCardProps) {
+function HomeProductCard({ product, index, width, layout = 'grid', testID, onBrowse, onSelectProduct }: HomeProductCardProps) {
   const colors = useColors();
+  const landscape = layout === 'landscape';
   const id = first(product, ['id'], `product-${index}`);
   const image = first(product, ['image_url', 'imageUrl']);
   const name = first(product, ['name'], 'Export product');
   const origin = first(product, ['origin'], 'Origin not specified');
   const minimumOrder = first(product, ['moq', 'min_order']);
   const imageHeight = Math.min(190, Math.round(width * 1.02));
+  const imageWidth = Math.min(138, Math.max(102, Math.round(width * 0.33)));
 
   return (
     <Pressable
@@ -504,30 +505,41 @@ function HomeProductCard({ product, index, width, testID, onBrowse, onSelectProd
       style={({ pressed }) => ({ width, opacity: pressed ? 0.88 : 1 })}
     >
       <Card style={{ width, padding: 0, overflow: 'hidden', borderRadius: colors.radius + 2, marginBottom: 0 }}>
-        <BuyerProductImage
-          uri={image}
-          label={`${name} product image`}
-          style={[styles.productImage, { height: imageHeight, backgroundColor: colors.secondary }]}
-          priority="low"
-        />
-        <View style={styles.productBody}>
-          <View style={{ minHeight: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
-            <Text numberOfLines={1} style={[styles.productCategory, { flex: 1, color: colors.mutedForeground }]}>
-              {categoryName(product)}
-            </Text>
-            {recordFeatured(product) ? <Text style={{ color: colors.accentText, fontSize: 8, fontWeight: '800' }}>FEATURED</Text> : null}
+        <View style={landscape ? styles.landscapeCard : undefined}>
+          <View
+            style={[
+              landscape ? styles.landscapeImage : { width: '100%', height: imageHeight },
+              { width: landscape ? imageWidth : '100%', backgroundColor: colors.secondary },
+            ]}
+          >
+            <BuyerProductImage
+              uri={image}
+              label={`${name} product image`}
+              style={StyleSheet.absoluteFill}
+              priority="low"
+            />
           </View>
-          <Text numberOfLines={2} style={[styles.productName, { color: colors.foreground }]}>{name}</Text>
-          <View style={styles.productOrigin}>
-            <Feather name="map-pin" size={10} color={colors.mutedForeground} />
-            <Text numberOfLines={1} style={{ flex: 1, color: colors.mutedForeground, fontSize: 9 }}>{origin}</Text>
+          <View style={landscape ? [styles.productBody, styles.landscapeBody] : styles.productBody}>
+            <View style={{ minHeight: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+              <Text numberOfLines={1} style={[styles.productCategory, { flex: 1, color: colors.mutedForeground }]}>
+                {categoryName(product)}
+              </Text>
+              {recordFeatured(product) ? <Text style={{ color: colors.accentText, fontSize: 8, fontWeight: '800' }}>FEATURED</Text> : null}
+            </View>
+            <Text numberOfLines={2} style={[styles.productName, landscape ? { minHeight: 0, fontSize: 14, lineHeight: 18 } : undefined, { color: colors.foreground }]}>{name}</Text>
+            <View style={[styles.productOrigin, landscape ? { marginTop: 4 } : undefined]}>
+              <Feather name="map-pin" size={10} color={colors.mutedForeground} />
+              <Text numberOfLines={1} style={{ flex: 1, color: colors.mutedForeground, fontSize: 9 }}>{origin}</Text>
+            </View>
+            <View style={{ marginTop: landscape ? 8 : 5 }}>
+              <BuyerProductPrice product={product} compact />
+            </View>
+            {minimumOrder ? (
+              <Text numberOfLines={landscape ? 2 : 1} style={[styles.productMoq, { color: colors.mutedForeground }]}>
+                {landscape ? 'Minimum order: ' : 'MOQ: '}{minimumOrder}
+              </Text>
+            ) : null}
           </View>
-          <View style={{ marginTop: 5 }}>
-            <BuyerProductPrice product={product} compact />
-          </View>
-          {minimumOrder ? (
-            <Text numberOfLines={1} style={[styles.productMoq, { color: colors.mutedForeground }]}>MOQ: {minimumOrder}</Text>
-          ) : null}
         </View>
       </Card>
     </Pressable>

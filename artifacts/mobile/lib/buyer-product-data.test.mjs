@@ -72,6 +72,19 @@ test('buyer homepage product sections use consistent premium spacing', () => {
   assert.match(homeCatalog, /marginTop: 14, marginBottom: 16/);
 });
 
+test('buyer homepage avoids a duplicate product grid and gives single-item categories landscape cards', () => {
+  const homeCatalog = readFileSync(new URL('../components/BuyerHomeCatalog.tsx', import.meta.url), 'utf8');
+
+  assert.match(homeCatalog, /filteredProducts\.slice\(0, 6\)/, 'the Products to explore row remains');
+  assert.doesNotMatch(homeCatalog, /filteredProducts\.slice\(0,\s*8\)/, 'the second homepage-wide product grid is removed');
+  assert.match(homeCatalog, /section\.products\.length === 1/);
+  assert.match(homeCatalog, /const landscapeCardWidth = Math\.max\(0, Math\.min\(620, windowWidth - 40\)\)/);
+  assert.match(homeCatalog, /layout=\{landscape \? 'landscape' : 'grid'\}/);
+  assert.match(homeCatalog, /styles\.landscapeCard/);
+  assert.match(homeCatalog, /Minimum order:/);
+  assert.match(homeCatalog, /onSelectCategory\(section\.name\)/, 'category navigation stays connected');
+});
+
 test('product specs keep only complete label and value pairs', () => {
   assert.deepEqual(buyerProductSpecs({
     specs: [
