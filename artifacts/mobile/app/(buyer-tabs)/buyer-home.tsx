@@ -24,6 +24,7 @@ import {
 import { first, record } from '@/lib/data';
 import { displayOrderNumber, rowsFromResponse } from '@/lib/buyer-data';
 import { buyerUnreadNotificationCount } from '@/lib/buyer-dashboard-data';
+import { shouldUsePublicCatalogFallback } from '@/lib/buyer-pricing';
 
 const styles = StyleSheet.create({
   ordersSection: {
@@ -80,15 +81,16 @@ export default function BuyerHome() {
     },
   });
   const catalogEnabled = ready && !!apiOrigin;
-  const publicProductsQuery = useGetProducts(
-    { per_page: 100 },
-    { query: { queryKey: getGetProductsQueryKey({ per_page: 100 }), enabled: catalogEnabled && !token, retry: false, staleTime: 60_000 } },
-  );
   const buyerProductsQuery = useGetBuyerProducts(
     { per_page: 100 },
     { query: { queryKey: [...getGetBuyerProductsQueryKey({ per_page: 100 }), buyerId], enabled: catalogEnabled && !!token, retry: false, staleTime: 60_000 } },
   );
-  const productsQuery = token ? buyerProductsQuery : publicProductsQuery;
+  const usePublicCatalog = shouldUsePublicCatalogFallback(!!token, buyerProductsQuery.isError);
+  const publicProductsQuery = useGetProducts(
+    { per_page: 100 },
+    { query: { queryKey: getGetProductsQueryKey({ per_page: 100 }), enabled: catalogEnabled && (!token || usePublicCatalog), retry: false, staleTime: 60_000 } },
+  );
+  const productsQuery = token && !usePublicCatalog ? buyerProductsQuery : publicProductsQuery;
   const categoriesQuery = useGetProductCategories(
     { query: { queryKey: getGetProductCategoriesQueryKey(), enabled: catalogEnabled, retry: false, staleTime: 300_000 } },
   );
@@ -151,7 +153,11 @@ export default function BuyerHome() {
         productsLoading={productsQuery.isLoading}
         productsError={productsQuery.isError}
         productsErrorValue={productsQuery.error}
-        onRetryProducts={() => void productsQuery.refetch()}
+        onRetryProducts={() => {
+          if (token) void buyerProductsQuery.refetch();
+          void publicProductsQuery.refetch();
+        }}
+        buyerPricingFallback={usePublicCatalog}
         categoriesLoading={categoriesQuery.isLoading}
         categoriesError={categoriesQuery.isError}
         categoriesErrorValue={categoriesQuery.error}

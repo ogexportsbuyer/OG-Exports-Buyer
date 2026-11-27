@@ -38,6 +38,7 @@ import {
 } from '@/lib/buyer-rfq';
 import { amount, first, messageOf, record } from '@/lib/data';
 import { rowsFromResponse } from '@/lib/buyer-data';
+import { shouldUsePublicCatalogFallback } from '@/lib/buyer-pricing';
 import type { BuyerGuestRfqAttachment, BuyerGuestRfqDraft } from '@/lib/buyer-guest-flow';
 
 const MAX_RFQ_FILES = 5;
@@ -126,14 +127,6 @@ export function BuyerRfqForm({
   const busy = createRfq.isPending || Boolean(uploadProgress);
   const resumeAttempted = useRef(false);
 
-  const publicProductsQuery = useGetProducts({ per_page: 100 }, {
-    query: {
-      queryKey: getGetProductsQueryKey({ per_page: 100 }),
-      enabled: ready && Boolean(apiOrigin) && !token,
-      staleTime: 300_000,
-      retry: false,
-    },
-  });
   const buyerProductsQuery = useGetBuyerProducts({ per_page: 100 }, {
     query: {
       queryKey: [...getGetBuyerProductsQueryKey({ per_page: 100 }), first(record(user), ['id'])],
@@ -142,7 +135,16 @@ export function BuyerRfqForm({
       retry: false,
     },
   });
-  const productsQuery = token ? buyerProductsQuery : publicProductsQuery;
+  const usePublicCatalog = shouldUsePublicCatalogFallback(!!token, buyerProductsQuery.isError);
+  const publicProductsQuery = useGetProducts({ per_page: 100 }, {
+    query: {
+      queryKey: getGetProductsQueryKey({ per_page: 100 }),
+      enabled: ready && Boolean(apiOrigin) && (!token || usePublicCatalog),
+      staleTime: 300_000,
+      retry: false,
+    },
+  });
+  const productsQuery = token && !usePublicCatalog ? buyerProductsQuery : publicProductsQuery;
   const countriesQuery = useGetCountries({
     query: { queryKey: getGetCountriesQueryKey(), enabled: ready && Boolean(apiOrigin), staleTime: 300_000, retry: false },
   });
@@ -361,6 +363,7 @@ export function BuyerRfqForm({
 
       <Card style={{ padding: 15, marginBottom: 14 }}>
         <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '800', marginBottom: 10 }}>Product requirements</Text>
+        {usePublicCatalog ? <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginBottom: 9 }}>VIP pricing is temporarily unavailable; showing published catalogue prices.</Text> : null}
         <BuyerRfqPicker
           label="Product *"
           value={productId}

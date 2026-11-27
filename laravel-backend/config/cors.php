@@ -29,13 +29,16 @@ return [
         $envOrigins,
     )))),
 
-    'allowed_origins_patterns' => in_array(
-        parse_url(env('APP_URL', ''), PHP_URL_HOST),
-        ['localhost', '127.0.0.1'],
-        true,
-    )
-        ? ['#^https?://(?:localhost|127\.0\.0\.1)(?::\d+)?$#']
-        : [],
+    'allowed_origins_patterns' => array_values(array_filter(array_merge(
+        ['#^https://[a-z0-9-]+\.expo\.pike\.replit\.dev$#i'],
+        in_array(
+            parse_url(env('APP_URL', ''), PHP_URL_HOST),
+            ['localhost', '127.0.0.1'],
+            true,
+        )
+            ? ['#^https?://(?:localhost|127\.0\.0\.1)(?::\d+)?$#']
+            : [],
+    ))),
 
     'allowed_headers' => ['*'],
 

@@ -23,6 +23,7 @@ import {
 import { motionHaptic } from '@/lib/motion';
 import { useAuth } from '@/context/AuthContext';
 import { useBuyerGuestFlow } from '@/context/BuyerGuestFlowContext';
+import { shouldUsePublicCatalogFallback } from '@/lib/buyer-pricing';
 
 export default function BuyerProducts() {
   const colors = useColors();
@@ -42,9 +43,10 @@ export default function BuyerProducts() {
   const initialSearch = Array.isArray(routeSearch) ? routeSearch[0] : routeSearch;
   const pendingProduct = Array.isArray(routePendingProduct) ? routePendingProduct[0] : routePendingProduct;
   const catalogEnabled = ready && !!apiOrigin;
-  const publicProductsQuery = useGetProducts({ per_page: 100 }, { query: { queryKey: getGetProductsQueryKey({ per_page: 100 }), enabled: catalogEnabled && !token, retry: false, staleTime: 60_000 } });
   const personalizedProductsQuery = useGetBuyerProducts({ per_page: 100 }, { query: { queryKey: [...getGetBuyerProductsQueryKey({ per_page: 100 }), buyerId], enabled: catalogEnabled && !!token, retry: false, staleTime: 60_000 } });
-  const productsQuery = token ? personalizedProductsQuery : publicProductsQuery;
+  const usePublicCatalog = shouldUsePublicCatalogFallback(!!token, personalizedProductsQuery.isError);
+  const publicProductsQuery = useGetProducts({ per_page: 100 }, { query: { queryKey: getGetProductsQueryKey({ per_page: 100 }), enabled: catalogEnabled && (!token || usePublicCatalog), retry: false, staleTime: 60_000 } });
+  const productsQuery = token && !usePublicCatalog ? personalizedProductsQuery : publicProductsQuery;
   const categoriesQuery = useGetProductCategories({ query: { queryKey: getGetProductCategoriesQueryKey(), enabled: catalogEnabled, retry: false, staleTime: 300_000 } });
   const addToCart = useAddBuyerCartItem();
   const products = rowsFromResponse(productsQuery.data);
@@ -248,9 +250,10 @@ export default function BuyerProducts() {
           {actionError}
         </Text>
       ) : null}
+      {usePublicCatalog ? <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginBottom: 10 }}>{'VIP pricing is temporarily unavailable; showing published catalogue prices.'}</Text> : null}
       {productsQuery.isLoading ? <LoadingCard label="Loading approved products…" /> : null}
       {productsQuery.isError ? (
-        <ErrorState message="The product catalogue could not be loaded." error={productsQuery.error} onRetry={() => void productsQuery.refetch()} />
+        <ErrorState message="The product catalogue could not be loaded." error={productsQuery.error} onRetry={() => { if (token) void personalizedProductsQuery.refetch(); void publicProductsQuery.refetch(); }} />
       ) : null}
       {!productsQuery.isLoading && !productsQuery.isError && filteredProducts.length === 0 ? (
         <EmptyState

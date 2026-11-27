@@ -46,6 +46,17 @@ beforeEach(function () {
     };
 });
 
+it('allows the Expo browser preview origin through the API CORS policy', function () {
+    $origin = 'https://session-preview.expo.pike.replit.dev';
+
+    $this->withHeaders([
+        'Origin' => $origin,
+        'Access-Control-Request-Method' => 'GET',
+        'Access-Control-Request-Headers' => 'authorization,content-type',
+    ])->options('/api/products')
+        ->assertHeader('Access-Control-Allow-Origin', $origin);
+});
+
 it('seeds the requested ten tiers with discounts left for admin configuration', function () {
     $tiers = BuyerRewardTier::query()->with('rewards')->orderBy('sort_order')->get();
 

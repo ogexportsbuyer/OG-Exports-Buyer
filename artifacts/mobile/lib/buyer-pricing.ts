@@ -9,6 +9,10 @@ export type BuyerPriceDetails = {
   unitOfMeasure: string;
 };
 
+export function shouldUsePublicCatalogFallback(isSignedIn: boolean, buyerCatalogFailed: boolean): boolean {
+  return isSignedIn && buyerCatalogFailed;
+}
+
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? value as Record<string, unknown>

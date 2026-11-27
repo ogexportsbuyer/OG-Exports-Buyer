@@ -24,6 +24,7 @@ import { buyerProductGalleryImages, buyerProductHasPdfReport, buyerProductReport
 import { downloadAndSharePublicPdf } from '@/lib/file-download';
 import { motionHaptic } from '@/lib/motion';
 import { useBuyerGuestFlow } from '@/context/BuyerGuestFlowContext';
+import { shouldUsePublicCatalogFallback } from '@/lib/buyer-pricing';
 
 function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
   const colors = useColors();
@@ -88,14 +89,6 @@ export default function BuyerProductDetails() {
   const numericId = Number(rawId);
   const validId = !!rawId && /^\d+$/.test(rawId) && Number.isSafeInteger(numericId) && numericId > 0;
   const catalogEnabled = ready && !!apiOrigin && validId;
-  const publicProductsQuery = useGetProducts({ per_page: 100 }, {
-    query: {
-      queryKey: getGetProductsQueryKey({ per_page: 100 }),
-      enabled: catalogEnabled && !token,
-      retry: false,
-      staleTime: 60_000,
-    },
-  });
   const buyerProductsQuery = useGetBuyerProducts({ per_page: 100 }, {
     query: {
       queryKey: [...getGetBuyerProductsQueryKey({ per_page: 100 }), String(userId)],
@@ -104,7 +97,16 @@ export default function BuyerProductDetails() {
       staleTime: 60_000,
     },
   });
-  const productsQuery = token ? buyerProductsQuery : publicProductsQuery;
+  const usePublicCatalog = shouldUsePublicCatalogFallback(!!token, buyerProductsQuery.isError);
+  const publicProductsQuery = useGetProducts({ per_page: 100 }, {
+    query: {
+      queryKey: getGetProductsQueryKey({ per_page: 100 }),
+      enabled: catalogEnabled && (!token || usePublicCatalog),
+      retry: false,
+      staleTime: 60_000,
+    },
+  });
+  const productsQuery = token && !usePublicCatalog ? buyerProductsQuery : publicProductsQuery;
   const products = rowsFromResponse(productsQuery.data);
   const product = useMemo(
     () => validId ? products.find(item => amount(item, ['id']) === numericId) ?? null : null,
@@ -241,8 +243,9 @@ export default function BuyerProductDetails() {
       {ready && !apiOrigin ? <ErrorState message="The product catalogue is not connected. Please try again later." /> : null}
       {ready && !!apiOrigin && productsQuery.isLoading ? <LoadingCard label="Loading product details…" lines={3} /> : null}
       {productsQuery.isError ? (
-        <ErrorState message="Product details could not be loaded." error={productsQuery.error} onRetry={() => void productsQuery.refetch()} />
+        <ErrorState message="Product details could not be loaded." error={productsQuery.error} onRetry={() => { if (token) void buyerProductsQuery.refetch(); void publicProductsQuery.refetch(); }} />
       ) : null}
+      {usePublicCatalog ? <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15 }}>VIP pricing is temporarily unavailable; showing published catalogue prices.</Text> : null}
       {ready && !!apiOrigin && !productsQuery.isLoading && !productsQuery.isError && !product ? (
         <EmptyState
           title={validId ? 'Product is no longer available' : 'Product not found'}

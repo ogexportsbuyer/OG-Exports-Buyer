@@ -10,7 +10,7 @@ import {
   resolveBuyerProductImageUrl,
 } from './buyer-product-data.ts';
 import { formatFobPrice } from './format-fob-price.ts';
-import { buyerPriceDetails } from './buyer-pricing.ts';
+import { buyerPriceDetails, shouldUsePublicCatalogFallback } from './buyer-pricing.ts';
 
 test('catalogue product prices display their FOB basis and quote-only products stay unpriced', () => {
   assert.equal(formatFobPrice(1680, 'PKR'), 'FOB · PKR 1,680');
@@ -42,6 +42,12 @@ test('catalogue product prices display their FOB basis and quote-only products s
   const buyerData = readFileSync(new URL('./buyer-data.ts', import.meta.url), 'utf8');
   assert.match(buyerData, /formatFobPrice\(pricing\.salePrice, pricing\.currency, pricing\.unitOfMeasure\)/);
   assert.match(buyerData, /return 'Request a quote'/);
+});
+
+test('signed-in catalogue falls back to real public products only after the VIP endpoint fails', () => {
+  assert.equal(shouldUsePublicCatalogFallback(false, true), false);
+  assert.equal(shouldUsePublicCatalogFallback(true, false), false);
+  assert.equal(shouldUsePublicCatalogFallback(true, true), true);
 });
 
 test('buyer product price surfaces consistently show the FOB basis', () => {

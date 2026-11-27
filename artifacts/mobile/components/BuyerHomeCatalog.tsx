@@ -26,6 +26,7 @@ type Props = {
   productsError: boolean;
   productsErrorValue?: unknown;
   onRetryProducts: () => void;
+  buyerPricingFallback: boolean;
   categoriesLoading: boolean;
   categoriesError: boolean;
   categoriesErrorValue?: unknown;
@@ -210,6 +211,7 @@ export default function BuyerHomeCatalog({
   productsError,
   productsErrorValue,
   onRetryProducts,
+  buyerPricingFallback,
   categoriesLoading,
   categoriesError,
   categoriesErrorValue,
@@ -234,6 +236,14 @@ export default function BuyerHomeCatalog({
 
   return (
     <>
+      {buyerPricingFallback ? (
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 10, padding: 10, borderRadius: 13, backgroundColor: colors.secondary }}>
+          <Feather name="info" size={14} color={colors.accent} style={{ marginTop: 1 }} />
+          <Text style={{ flex: 1, color: colors.mutedForeground, fontSize: 10, lineHeight: 15 }}>
+            VIP pricing is temporarily unavailable; showing published catalogue prices.
+          </Text>
+        </View>
+      ) : null}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
