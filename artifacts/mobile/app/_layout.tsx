@@ -40,6 +40,7 @@ import { isBuyerAppRoute, isBuyerRoutePublicBeforeAuth } from '@/lib/post-auth-r
 import { BuyerSessionHandoff } from '@/components/BuyerSessionHandoff';
 import { BrandedAlertProvider } from '@/components/BrandedAlertProvider';
 import { BrandHeaderBackground } from '@/components/BrandHeaderBackground';
+import { GlobalPageLoadingIndicator } from '@/components/GlobalPageLoadingIndicator';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -297,6 +298,7 @@ export default function RootLayout() {
                     <MotionProvider>
                       <BrandedAlertProvider>
                         <RootLayoutNav />
+                        <GlobalPageLoadingIndicator />
                       </BrandedAlertProvider>
                     </MotionProvider>
                   </AppPreferencesProvider>

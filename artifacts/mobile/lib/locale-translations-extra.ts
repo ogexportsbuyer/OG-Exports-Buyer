@@ -14252,5 +14252,12 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "fr": "Ce type de fichier ne peut pas être prévisualisé ici. Utilisez Enregistrer / partager pour l’ouvrir.",
     "es": "Este tipo de archivo no se puede previsualizar aquí. Usa Guardar / compartir para abrirlo.",
     "de": "Dieser Dateityp kann hier nicht in der Vorschau angezeigt werden. Öffnen Sie ihn über Speichern / teilen."
+  },
+  "Loading page": {
+    "ru": "Загрузка страницы",
+    "zh-CN": "正在加载页面",
+    "fr": "Chargement de la page",
+    "es": "Cargando página",
+    "de": "Seite wird geladen"
   }
 };

@@ -1291,6 +1291,7 @@ const phrases: ReadonlyArray<readonly [string, string, string]> = [
   ["Gallery saving is only available in the mobile app.","گیلری میں محفوظ کرنا صرف موبائل ایپ میں دستیاب ہے۔","حفظ الصور في المعرض متاح في تطبيق الهاتف فقط."],
   ["Close document preview","دستاویز کا پیش منظر بند کریں","إغلاق معاينة المستند"],
   ["This file type cannot be previewed here. Use Save / share to open it.","اس فائل کی قسم کا پیش منظر یہاں نہیں دکھایا جا سکتا۔ اسے کھولنے کے لیے محفوظ / شیئر کریں۔","لا يمكن معاينة نوع هذا الملف هنا. استخدم الحفظ / المشاركة لفتحه."],
+  ["Loading page","صفحہ لوڈ ہو رہا ہے","جارٍ تحميل الصفحة"],
 ];
 
 const translations = new Map<string, Readonly<Partial<Record<Exclude<AppLanguage, 'en'>, string>>>>(
