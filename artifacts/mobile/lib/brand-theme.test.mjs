@@ -100,18 +100,24 @@ function pngDimensions(relativePath) {
   return [data.readUInt32BE(16), data.readUInt32BE(20)];
 }
 
-test('buyer launcher uses the supplied OG cart icon without changing other app branding', () => {
+test('buyer launcher uses the supplied OG icon with a correctly separated Android foreground', () => {
   const config = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8')).expo;
   assert.equal(config.name, 'OG Buyer');
   assert.equal(config.icon, './assets/images/og-buyer-launcher-icon.png');
   assert.equal(config.ios.icon, config.icon);
   assert.equal(config.android.icon, config.icon);
   assert.deepEqual(pngDimensions(config.icon), [1024, 1024]);
-  assert.equal(config.android.adaptiveIcon.foregroundImage, config.icon);
+  assert.equal(config.android.adaptiveIcon.foregroundImage, './assets/images/og-adaptive-foreground.png');
   assert.deepEqual(pngDimensions(config.android.adaptiveIcon.foregroundImage), [1024, 1024]);
   assert.equal(config.android.adaptiveIcon.backgroundColor, colors.light.splashEnd);
   assert.equal(config.android.adaptiveIcon.backgroundImage, './assets/images/og-icon-background.png');
   assert.deepEqual(pngDimensions(config.android.adaptiveIcon.backgroundImage), [1024, 1024]);
+  const launcherSvg = readFileSync(new URL('../assets/images/og-buyer-launcher-icon.svg', import.meta.url), 'utf8');
+  const adaptiveSvg = readFileSync(new URL('../assets/images/og-buyer-adaptive-foreground.svg', import.meta.url), 'utf8');
+  assert.match(launcherSvg, /xlink:href="#ogmark"/);
+  assert.match(launcherSvg, /xlink:href="#cart"/);
+  assert.doesNotMatch(launcherSvg, /<text[^>]*>3<\/text>/);
+  assert.match(adaptiveSvg, /xlink:href="#ogmark"/);
   assert.equal(config.web.favicon, './assets/images/og-favicon.png');
   assert.deepEqual(pngDimensions(config.web.favicon), [128, 128]);
   const splash = config.plugins.find(plugin => Array.isArray(plugin) && plugin[0] === 'expo-splash-screen')?.[1];
