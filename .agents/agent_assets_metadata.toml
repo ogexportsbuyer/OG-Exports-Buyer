@@ -168,3 +168,17 @@ mtime_ms = 1795758722925
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:f4e473f4-6ce4-483c-abb3-f8df0ba6670a/c8076553-c9a9-4679-9a18-e404c1bf962e/8204916f-7d27-4bf0-887c-bdd24538a331"
 storage_version_token = "1795758835770831"
 content_type = "image/png"
+
+[[outputs]]
+id = "f6S0KBhxcbLafs3Ze-arx"
+uri = "file://generated-artifacts/OG-Exports-Buyer-1.1.6-code6.aab"
+type = "unspecified"
+title = "OG Exports Buyer 1.1.6 Android AAB"
+description = "Production Android App Bundle for com.ogexports.buyer, version 1.1.6, Android version code 6. Not submitted to Google Play."
+logical_id = "d41648c6-b8fd-46f5-8c33-7e062e46b553"
+content_hash = "sha256:2acd77693acdf577cc634f84271dcfcafc930728852f36e30486280d6424c84b"
+size = 82721098
+mtime_ms = 1795779948470
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:f4e473f4-6ce4-483c-abb3-f8df0ba6670a/d41648c6-b8fd-46f5-8c33-7e062e46b553/667d3ef7-37a7-4fe6-bf89-77f3a429e6c9"
+storage_version_token = "1795779951599074"
+content_type = "application/octet-stream"
