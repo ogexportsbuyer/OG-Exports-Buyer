@@ -69,7 +69,7 @@ test('buyer homepage product sections use consistent premium spacing', () => {
   assert.match(homeCatalog, /categoryRow:\s*\{\s*flexDirection: 'row',\s*gap: 12,[\s\S]*?paddingBottom: 14,/);
   assert.match(homeCatalog, /styles\.sectionHeader, \{ marginTop: 8, marginBottom: 12 \}/);
   assert.match(homeCatalog, /styles\.sectionHeader, \{ marginTop: 12, marginBottom: 12 \}/);
-  assert.match(homeCatalog, /marginTop: 14, marginBottom: 16/);
+  assert.doesNotMatch(homeCatalog, /buyer-home-contact/);
 });
 
 test('buyer homepage avoids a duplicate product grid and gives single-item categories landscape cards', () => {

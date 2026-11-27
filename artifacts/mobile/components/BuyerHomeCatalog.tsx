@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Card, EmptyState, ErrorState, LoadingCard } from '@/components/InvestorUI';
 import { BuyerProductPrice } from '@/components/BuyerProductPrice';
@@ -194,19 +193,6 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingHorizontal: 10,
     paddingBottom: 9,
-  },
-  supportRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 11,
-    padding: 14,
-  },
-  supportIcon: {
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
   },
 });
 
@@ -448,29 +434,6 @@ export default function BuyerHomeCatalog({
         );
       })}
 
-      <Card style={{ marginTop: 14, marginBottom: 16, borderRadius: colors.radius + 2 }}>
-        <View style={styles.supportRow}>
-          <View style={[styles.supportIcon, { backgroundColor: colors.lightGreen }]}>
-            <Feather name="message-circle" size={18} color={colors.primary} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '700' }}>A sourcing question?</Text>
-            <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginTop: 4 }}>
-              Tell our team what you need. We’ll help you find a way forward.
-            </Text>
-          </View>
-          <Pressable
-            testID="buyer-home-contact"
-            accessibilityRole="button"
-            accessibilityLabel="Message OG Exports"
-            onPress={() => router.push('/(buyer-tabs)/buyer-messages')}
-            hitSlop={8}
-            style={({ pressed }) => ({ padding: 5, opacity: pressed ? 0.6 : 1 })}
-          >
-            <Feather name="arrow-up-right" size={18} color={colors.accent} />
-          </Pressable>
-        </View>
-      </Card>
     </>
   );
 }
