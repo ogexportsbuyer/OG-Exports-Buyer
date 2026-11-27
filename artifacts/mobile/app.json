@@ -22,8 +22,8 @@
       "icon": "./assets/images/og-buyer-launcher-icon.png",
       "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/og-adaptive-foreground.png",
-        "backgroundImage": "./assets/images/og-icon-background.png",
+        "foregroundImage": "./assets/images/og-adaptive-empty-foreground.png",
+        "backgroundImage": "./assets/images/og-buyer-launcher-icon.png",
         "backgroundColor": "#0A3335"
       }
     },
