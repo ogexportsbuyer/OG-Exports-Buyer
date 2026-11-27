@@ -7,7 +7,7 @@
         <?php echo $__env->make('pdf.partials.brand-styles', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
         .balance { font-weight: bold; background: #f1f6f2; }
         .section { margin: 18px 0 8px; color: #0a3637; font-size: 10px; font-weight: bold; letter-spacing: .65px; text-transform: uppercase; }
-        .statement-table th { padding: 7px; border-bottom: 2px solid #b08d57; background: #eaf2ee; color: #284c42; font-size: 7px; text-align: left; }
+        .statement-table th { padding: 7px; border-bottom: 2px solid #F0B43D; background: #eaf2ee; color: #284c42; font-size: 7px; text-align: left; }
         .statement-table td { padding: 7px; border-bottom: 1px solid #dce7e2; color: #183b36; font-size: 8px; vertical-align: top; }
         .amount { text-align: right; white-space: nowrap; }
         .summary-table td { padding: 8px 9px; border: 1px solid #dce7e2; }

@@ -137,6 +137,7 @@ class InvestorMonthlyStatementTest extends TestCase
             'statement' => $statement,
             'investor' => $investor,
         ])->render();
+        $this->assertStringContainsString('border-bottom: 2px solid #F0B43D;', $html);
         $htmlText = preg_replace('/\s+/', ' ', preg_replace('/<br\s*\/?>/i', ' ', $html) ?? $html) ?? $html;
         $this->assertStringContainsString('Payout:', $htmlText);
         $this->assertStringContainsString('PKR 27,850.00 (USD 100.00)', $htmlText);

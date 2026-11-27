@@ -68,7 +68,7 @@ tr,
 .pdf-brand-lockup {
   margin: 0 0 17px;
   padding: 8px 0 12px;
-  border-top: 3px solid #b08d57;
+  border-top: 3px solid #F0B43D;
   border-bottom: 2px solid #0a3637;
 }
 
@@ -98,7 +98,7 @@ tr,
 .pdf-brand-subtitle,
 .pdf-generation-label,
 .pdf-kicker {
-  color: #8a672a;
+  color: #F0B43D;
   font-size: 7px;
   font-weight: 700;
   letter-spacing: 1.15px;
@@ -141,7 +141,7 @@ tr,
   margin: 9px 0 14px;
   padding: 11px 12px;
   border: 1px solid #d9e5df;
-  border-left: 3px solid #b08d57;
+  border-left: 3px solid #F0B43D;
   border-radius: 7px;
   background: #f5f8f5;
 }

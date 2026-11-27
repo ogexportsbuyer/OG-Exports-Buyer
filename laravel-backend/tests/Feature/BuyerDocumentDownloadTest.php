@@ -43,6 +43,17 @@ it('uses the official mobile app mark for PDF headers and watermarks', function 
         ->and($styles)->toContain('opacity: .045');
 });
 
+it('uses the approved gold across shared receipt PDF branding', function () {
+    $styles = File::get(resource_path('views/pdf/partials/brand-styles.blade.php'));
+
+    expect($styles)
+        ->toContain('border-top: 3px solid #F0B43D')
+        ->and($styles)->toContain('border-left: 3px solid #F0B43D')
+        ->and($styles)->toContain('color: #F0B43D')
+        ->and($styles)->not->toContain('#b08d57')
+        ->and($styles)->not->toContain('#8a672a');
+});
+
 it('downloads an available buyer trade document', function () {
     $path = 'upload/trade-documents/downloadable.pdf';
     File::ensureDirectoryExists(public_path('upload/trade-documents'));
