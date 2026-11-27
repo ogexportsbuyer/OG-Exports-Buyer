@@ -26,6 +26,19 @@ export type ShipmentDocument = {
   extension: string;
 };
 
+export type ShipmentDocumentPreviewKind = 'pdf' | 'image' | 'unsupported';
+
+export function shipmentDocumentPreviewKind(document: Pick<ShipmentDocument, 'mimeType' | 'extension'>): ShipmentDocumentPreviewKind {
+  const mimeType = document.mimeType.toLowerCase().split(';', 1)[0].trim();
+  const extension = document.extension.toLowerCase().replace(/^\./, '');
+  if (mimeType === 'application/pdf' || extension === 'pdf') return 'pdf';
+  if (
+    mimeType.startsWith('image/')
+    || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(extension)
+  ) return 'image';
+  return 'unsupported';
+}
+
 export type BuyerShipmentView = {
   id: string;
   orderId: string;

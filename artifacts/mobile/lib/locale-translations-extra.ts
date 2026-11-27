@@ -14238,5 +14238,19 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "fr": "L’enregistrement dans la galerie est disponible uniquement dans l’application mobile.",
     "es": "Guardar en la galería solo está disponible en la aplicación móvil.",
     "de": "Das Speichern in der Galerie ist nur in der mobilen App verfügbar."
+  },
+  "Close document preview": {
+    "ru": "Закрыть предпросмотр документа",
+    "zh-CN": "关闭文档预览",
+    "fr": "Fermer l’aperçu du document",
+    "es": "Cerrar vista previa del documento",
+    "de": "Dokumentvorschau schließen"
+  },
+  "This file type cannot be previewed here. Use Save / share to open it.": {
+    "ru": "Этот тип файла нельзя просмотреть здесь. Используйте «Сохранить / поделиться», чтобы открыть его.",
+    "zh-CN": "此处无法预览此文件类型。请使用“保存 / 分享”打开。",
+    "fr": "Ce type de fichier ne peut pas être prévisualisé ici. Utilisez Enregistrer / partager pour l’ouvrir.",
+    "es": "Este tipo de archivo no se puede previsualizar aquí. Usa Guardar / compartir para abrirlo.",
+    "de": "Dieser Dateityp kann hier nicht in der Vorschau angezeigt werden. Öffnen Sie ihn über Speichern / teilen."
   }
 };

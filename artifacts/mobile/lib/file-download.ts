@@ -27,6 +27,23 @@ function safeFileName(name: string) {
   return name.replace(/[^a-z0-9_-]/gi, '-').replace(/-+/g, '-').slice(0, 70) || 'og-exports-document';
 }
 
+export async function prepareInvestorFilePreview(path: string, name: string, origin: string, mimeType: string, extension: string) {
+  const contents = await fetchAuthorizedFile(path, origin, mimeType);
+  if (Platform.OS === 'web') {
+    return URL.createObjectURL(new Blob([contents], { type: mimeType }));
+  }
+
+  const safeExtension = extension.replace(/[^a-z0-9]/gi, '').slice(0, 8) || 'file';
+  const file = new File(Paths.cache, `${safeFileName(name)}-preview-${Date.now()}.${safeExtension}`);
+  file.create({ overwrite: true });
+  file.write(contents);
+  return file.uri;
+}
+
+export function releaseInvestorFilePreview(uri: string) {
+  if (Platform.OS === 'web' && uri.startsWith('blob:')) URL.revokeObjectURL(uri);
+}
+
 export async function shareInvestorFile(downloadUrl: string, name: string, origin: string, mimeType: string, extension: string, ensurePdf = false) {
   const contents = await fetchAuthorizedFile(downloadUrl, origin, mimeType);
   if (ensurePdf) {

@@ -5,9 +5,18 @@ import {
   isShipmentInTransit,
   mapBuyerShipment,
   shipmentSearchText,
+  shipmentDocumentPreviewKind,
   shipmentStatusLabel,
   SHIPMENT_TIMELINE_STEPS,
 } from './buyer-shipment-data.ts';
+
+test('classifies shipment files for safe in-app previews', () => {
+  assert.equal(shipmentDocumentPreviewKind({ mimeType: 'application/pdf', extension: 'pdf' }), 'pdf');
+  assert.equal(shipmentDocumentPreviewKind({ mimeType: 'application/octet-stream', extension: 'PDF' }), 'pdf');
+  assert.equal(shipmentDocumentPreviewKind({ mimeType: 'image/jpeg', extension: 'jpg' }), 'image');
+  assert.equal(shipmentDocumentPreviewKind({ mimeType: 'application/octet-stream', extension: 'webp' }), 'image');
+  assert.equal(shipmentDocumentPreviewKind({ mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', extension: 'docx' }), 'unsupported');
+});
 
 test('maps website shipment details and authenticated document routes', () => {
   const shipment = mapBuyerShipment({
