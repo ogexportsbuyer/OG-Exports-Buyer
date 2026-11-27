@@ -38,14 +38,16 @@ function BuyerTabIcon({
   isDashboard: boolean;
 }) {
   const colors = useColors();
-  const iconColor = focused ? colors.accentForeground : colors.mutedForeground;
+  const iconColor = focused
+    ? Platform.OS === 'android' ? colors.navigationAccent : colors.accentForeground
+    : colors.mutedForeground;
   const icon = Platform.OS === 'ios' && !isDashboard
     ? <SymbolView name={focused ? iosSelectedName : iosName} tintColor={iconColor} size={22} />
     : <Feather name={featherName as React.ComponentProps<typeof Feather>['name']} size={21} color={iconColor} />;
 
   return (
     <View style={styles.tabIconFrame}>
-      <View style={[styles.tabIconBadge, focused && { backgroundColor: colors.accentSurface }]}>
+      <View style={[styles.tabIconBadge, focused && Platform.OS !== 'android' && { backgroundColor: colors.accentSurface }]}>
         {icon}
       </View>
     </View>
