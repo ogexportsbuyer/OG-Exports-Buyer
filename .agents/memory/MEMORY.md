@@ -49,3 +49,4 @@
 - [Expo SDK 58 Android system bars](expo-sdk58-system-bars.md) — edge-to-edge is enforced; navigation-bar contrast settings need a native build, not Expo Go.
 - [Buyer support calls and translations](buyer-support-calls-translations.md) — keep calls inside buyer chat and route them to the planned admin mobile app; respect explicit voice-processing consent and caps.
 - [Android launcher icon layers](android-launcher-icon-layers.md) — use a transparent adaptive foreground with a separate background, not a full composite image.
+- [Expo gallery image saving](expo-media-library-gallery-save.md) — on SDK 58, save local images through `Asset.create` and request photo write access only when the user saves.

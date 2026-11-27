@@ -176,7 +176,7 @@ function escapeHtml(value: string): string {
   })[character] ?? character);
 }
 
-function receiptRows(receipt: TransactionReceipt): Array<[string, string]> {
+export function transactionReceiptRows(receipt: TransactionReceipt): Array<[string, string]> {
   const t = (source: string) => translateUi(source, receipt.language);
   const notProvided = t('Not provided');
   const dateValue = (value: string) => {
@@ -208,18 +208,23 @@ function receiptRows(receipt: TransactionReceipt): Array<[string, string]> {
   ];
 }
 
-export function transactionReceiptHtml(receipt: TransactionReceipt): string {
+export function transactionReceiptDisplayAmount(receipt: TransactionReceipt): string {
   const t = (source: string) => translateUi(source, receipt.language);
-  const rows = [...receiptRows(receipt), ...receipt.details].map(([label, value]) =>
-    `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`,
-  ).join('');
   const parsedAmount = Number(receipt.amount);
   const displayAmount = receipt.amount && Number.isFinite(parsedAmount)
     ? new Intl.NumberFormat(getAppLocale(receipt.language), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parsedAmount)
     : receipt.amount || t('Not provided');
-  const amount = receipt.currency && receipt.amount
+  return receipt.currency && receipt.amount
     ? `${displayAmount} ${receipt.currency}`
     : displayAmount;
+}
+
+export function transactionReceiptHtml(receipt: TransactionReceipt): string {
+  const t = (source: string) => translateUi(source, receipt.language);
+  const rows = [...transactionReceiptRows(receipt), ...receipt.details].map(([label, value]) =>
+    `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`,
+  ).join('');
+  const amount = transactionReceiptDisplayAmount(receipt);
   const direction = isRightToLeftLanguage(receipt.language) ? 'rtl' : 'ltr';
   return `<!doctype html>
 <html lang="${escapeHtml(receipt.language)}" dir="${direction}">

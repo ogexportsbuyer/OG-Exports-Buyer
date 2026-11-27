@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
@@ -24,7 +25,8 @@ import {
   withdrawalPaymentMethod,
 } from '@/lib/withdrawal-history';
 import { resolveTransactionDisplayId } from '@/lib/transaction-id';
-import { createTransactionReceipt, saveTransactionReceipt, type TransactionReceipt } from '@/lib/transaction-receipt';
+import { createTransactionReceipt, type TransactionReceipt } from '@/lib/transaction-receipt';
+import { TransactionReceiptPreview } from '@/components/TransactionReceiptPreview';
 import { investmentTransactionTarget } from '@/lib/transaction-detail-route';
 import { rememberFinancialDetail } from '@/lib/financial-detail-cache';
 import { resolveTransactionPaymentMethod } from '@/lib/transaction-payment-method';
@@ -221,8 +223,7 @@ export default function Transactions() {
   const [depositDateTo, setDepositDateTo] = useState('');
   const [historyDateFrom, setHistoryDateFrom] = useState(typeof params.date_from === 'string' ? params.date_from : '');
   const [historyDateTo, setHistoryDateTo] = useState(typeof params.date_to === 'string' ? params.date_to : '');
-  const [busyReceiptKey, setBusyReceiptKey] = useState('');
-  const [receiptError, setReceiptError] = useState('');
+  const [receiptPreview, setReceiptPreview] = useState<TransactionReceipt | null>(null);
 
   useEffect(() => {
     const nextFilter = filterFromRoute(typeof params.tab === 'string' ? params.tab : undefined) ?? 'All';
@@ -236,7 +237,6 @@ export default function Transactions() {
     setHistoryDateFrom(typeof params.date_from === 'string' ? params.date_from : '');
     setHistoryDateTo(typeof params.date_to === 'string' ? params.date_to : '');
     setPage(1);
-    setReceiptError('');
   }, [params.tab, params.search, params.selected, params.status, params.date_from, params.date_to]);
   const invalidWithdrawalDate = filter === 'Withdrawals'
     && (!isValidDateFilter(withdrawalDateFrom) || !isValidDateFilter(withdrawalDateTo));
@@ -661,16 +661,8 @@ export default function Transactions() {
     return lastPage != null ? page < lastPage : list(source.data).length >= pageSize;
   });
 
-  async function accessReceipt(row: TransactionRow) {
-    setBusyReceiptKey(row.key);
-    setReceiptError('');
-    try {
-      await saveTransactionReceipt(row.receipt);
-    } catch (error) {
-      setReceiptError(messageOf(error));
-    } finally {
-      setBusyReceiptKey('');
-    }
+  function accessReceipt(row: TransactionRow) {
+    setReceiptPreview(row.receipt);
   }
 
   async function retryFailedSources() {
@@ -691,7 +683,6 @@ export default function Transactions() {
           setFilter(item);
           setSelectedId('');
           setPage(1);
-          setReceiptError('');
         }} style={{ borderRadius: 18, paddingVertical: 9, paddingHorizontal: 14, backgroundColor: active ? colors.primary : colors.secondary, borderWidth: 1, borderColor: active ? colors.primary : colors.border }}>
           <Text style={{ color: active ? colors.primaryForeground : colors.mutedForeground, fontSize: 12, fontWeight: '700' }}>{item}</Text>
         </Pressable>;
@@ -956,7 +947,6 @@ export default function Transactions() {
       return <MotionReveal key={`${row.key}-${active}`} delay={Math.min(index * MOTION.revealStagger, MOTION.staggerCap)}>
       <Pressable accessibilityRole="button" accessibilityLabel={`Open details for ${row.title}`} accessibilityState={{ selected: active }} onPress={() => {
         motionHaptic('micro');
-        setReceiptError('');
         if (row.detailKind === 'investment') {
           const target = investmentTransactionTarget(row.detailId, row.transactionId);
           if (target) {
@@ -1016,12 +1006,12 @@ export default function Transactions() {
             {row.paymentReference && row.paymentReference !== row.reference
               ? <DetailLine label="Payment reference" value={row.paymentReference} />
               : null}
-            {receiptError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, lineHeight: 18, marginTop: 9 }}>{receiptError}</Text> : null}
-            <Pressable accessibilityRole="button" testID={`transaction-receipt-${row.key}`} disabled={busyReceiptKey === row.key} onPress={event => {
+            <Pressable accessibilityRole="button" testID={`transaction-receipt-${row.key}`} onPress={event => {
               event.stopPropagation();
-              void accessReceipt(row);
-            }} style={{ marginTop: 12, borderRadius: 12, padding: 12, alignItems: 'center', backgroundColor: colors.secondary, opacity: busyReceiptKey === row.key ? 0.5 : 1 }}>
-              <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>{busyReceiptKey === row.key ? 'Preparing receipt…' : 'Save / share transaction receipt PDF'}</Text>
+              accessReceipt(row);
+            }} style={{ marginTop: 12, minHeight: 44, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, backgroundColor: colors.secondary }}>
+              <Feather name="file-text" size={16} color={colors.primary} />
+              <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>View receipt</Text>
             </Pressable>
           </View> : null}
         </Card>
@@ -1047,5 +1037,6 @@ export default function Transactions() {
         </Pressable>
       </View>
     </View>
+    <TransactionReceiptPreview receipt={receiptPreview} onClose={() => setReceiptPreview(null)} />
   </Screen>;
 }

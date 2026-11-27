@@ -21,6 +21,7 @@ import {
   useInvestInProject,
 } from '@workspace/api-client-react';
 import { Action, Card, ErrorState, Field, Screen, Status, SuccessFeedback } from '@/components/InvestorUI';
+import { TransactionReceiptPreview } from '@/components/TransactionReceiptPreview';
 import { amount, availableBalanceFromDashboard, convertAmountToCurrency, first, messageOf, money, record, unwrap } from '@/lib/data';
 import { OpportunityDetailOverview } from '@/components/OpportunityDetailOverview';
 import { useAuth } from '@/context/AuthContext';
@@ -30,7 +31,7 @@ import { getInvestorKycStatus, isInvestorKycVerified } from '@/lib/kyc';
 import { verifyAppPin } from '@/lib/app-pin';
 import { motionHaptic } from '@/lib/motion';
 import { formatAppNumber } from '@/lib/strings';
-import { createTransactionReceipt, saveTransactionReceipt } from '@/lib/transaction-receipt';
+import { createTransactionReceipt, type TransactionReceipt } from '@/lib/transaction-receipt';
 import { goBackOrReplace } from '@/lib/safe-navigation';
 import {
   formatEstimatedDistributionDate,
@@ -67,8 +68,7 @@ export default function OpportunityDetail() {
   const [documentError, setDocumentError] = useState('');
   const [documentBusy, setDocumentBusy] = useState('');
   const [confirmation, setConfirmation] = useState<Record<string, unknown> | null>(null);
-  const [receiptError, setReceiptError] = useState('');
-  const [receiptBusy, setReceiptBusy] = useState(false);
+  const [receiptPreview, setReceiptPreview] = useState<TransactionReceipt | null>(null);
   const [successFeedbackVisible, setSuccessFeedbackVisible] = useState(false);
   const project = unwrap(query.data);
   const tradeData = record(project.trade ?? project.project ?? project.trade_details);
@@ -366,17 +366,9 @@ export default function OpportunityDetail() {
       setDocumentBusy('');
     }
   }
-  async function downloadInvestmentReceipt() {
+  function viewInvestmentReceipt() {
     if (!confirmation) return;
-    setReceiptError('');
-    setReceiptBusy(true);
-    try {
-      await saveTransactionReceipt(createTransactionReceipt('investment', confirmation.serverRecord));
-    } catch (err) {
-      setReceiptError(messageOf(err));
-    } finally {
-      setReceiptBusy(false);
-    }
+    setReceiptPreview(createTransactionReceipt('investment', confirmation.serverRecord));
   }
   const confirmedStatus = first(confirmation ?? {}, ['status', 'state'], '—');
   const normalizedConfirmationStatus = confirmedStatus.toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -639,14 +631,11 @@ export default function OpportunityDetail() {
           ].map(([label, value]) => <View key={label} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: colors.border }}>
             <Text style={{ color: colors.mutedForeground }}>{label}</Text><Text style={{ color: value === 'Unavailable' ? colors.mutedForeground : colors.foreground, fontWeight: '700', flex: 1, textAlign: 'right' }}>{value}</Text>
           </View>)}
-          {receiptError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, lineHeight: 18, marginTop: 10 }}>{receiptError}</Text> : null}
           <View style={{ marginTop: 14 }}>
             <Action
-              title={receiptBusy ? 'Preparing receipt…' : 'Save / share receipt PDF'}
-              icon="download"
-              loading={receiptBusy}
-              disabled={receiptBusy}
-              onPress={() => void downloadInvestmentReceipt()}
+              title="View receipt"
+              icon="file-text"
+              onPress={viewInvestmentReceipt}
             />
           </View>
           <View style={{ marginTop: 15 }}>
@@ -666,5 +655,6 @@ export default function OpportunityDetail() {
       onDismiss={() => setSuccessFeedbackVisible(false)}
       testID="investment-success-feedback"
     />
+    <TransactionReceiptPreview receipt={receiptPreview} onClose={() => setReceiptPreview(null)} />
   </Screen>;
 }

@@ -10,6 +10,8 @@ test('receipt PDFs embed the official OG logo as a self-contained vector', () =>
   const svg = decodeURIComponent(officialPdfLogoDataUri.split(',').slice(1).join(','));
   assert.match(svg, /viewBox="100 230 820 570"/);
   assert.match(svg, /stroke="url\(#og-pdf-metal\)"/);
+  assert.match(svg, /stroke="#F0B43D"/);
+  assert.doesNotMatch(svg, /#8A672A/i);
   assert.match(svg, /stroke="#0A3335"/);
   assert.doesNotMatch(svg, /<rect[^>]+fill=/);
 

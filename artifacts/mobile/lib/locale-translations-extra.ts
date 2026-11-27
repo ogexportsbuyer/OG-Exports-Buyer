@@ -14140,5 +14140,103 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "fr": "Généré le {date} à partir des registres de compte OG Exports. Ce document reflète les informations disponibles dans votre compte lors de sa création.",
     "es": "Generado el {date} a partir de los registros de cuenta de OG Exports. Este documento refleja la información disponible en su cuenta cuando se creó.",
     "de": "Erstellt am {date} aus den Kontodatensätzen von OG Exports. Dieses Dokument spiegelt die Informationen wider, die zum Zeitpunkt der Erstellung in Ihrem Konto verfügbar waren."
+  },
+  "View receipt": {
+    "ru": "Посмотреть квитанцию",
+    "zh-CN": "查看收据",
+    "fr": "Voir le reçu",
+    "es": "Ver recibo",
+    "de": "Beleg ansehen"
+  },
+  "Official transaction receipt": {
+    "ru": "Официальная квитанция об операции",
+    "zh-CN": "官方交易收据",
+    "fr": "Reçu officiel de transaction",
+    "es": "Recibo oficial de transacción",
+    "de": "Offizieller Transaktionsbeleg"
+  },
+  "Secure account record": {
+    "ru": "Защищенная запись счета",
+    "zh-CN": "安全账户记录",
+    "fr": "Relevé de compte sécurisé",
+    "es": "Registro seguro de la cuenta",
+    "de": "Sicherer Kontodatensatz"
+  },
+  "Save to Gallery": {
+    "ru": "Сохранить в галерею",
+    "zh-CN": "保存到图库",
+    "fr": "Enregistrer dans la galerie",
+    "es": "Guardar en la galería",
+    "de": "In Galerie speichern"
+  },
+  "Saving receipt…": {
+    "ru": "Сохранение квитанции…",
+    "zh-CN": "正在保存收据…",
+    "fr": "Enregistrement du reçu…",
+    "es": "Guardando recibo…",
+    "de": "Beleg wird gespeichert…"
+  },
+  "Receipt image saved to your gallery.": {
+    "ru": "Изображение квитанции сохранено в галерее.",
+    "zh-CN": "收据图片已保存到图库。",
+    "fr": "L’image du reçu a été enregistrée dans votre galerie.",
+    "es": "La imagen del recibo se guardó en tu galería.",
+    "de": "Das Belegbild wurde in deiner Galerie gespeichert."
+  },
+  "Photo access needed": {
+    "ru": "Нужен доступ к фото",
+    "zh-CN": "需要访问照片",
+    "fr": "Accès aux photos requis",
+    "es": "Se necesita acceso a las fotos",
+    "de": "Zugriff auf Fotos erforderlich"
+  },
+  "Allow photo access to save this receipt to your gallery.": {
+    "ru": "Разрешите доступ к фото, чтобы сохранить эту квитанцию в галерее.",
+    "zh-CN": "允许访问照片，以便将此收据保存到图库。",
+    "fr": "Autorisez l’accès aux photos pour enregistrer ce reçu dans votre galerie.",
+    "es": "Permite el acceso a las fotos para guardar este recibo en tu galería.",
+    "de": "Erlaube den Fotozugriff, um diesen Beleg in deiner Galerie zu speichern."
+  },
+  "Open Settings": {
+    "ru": "Открыть настройки",
+    "zh-CN": "打开设置",
+    "fr": "Ouvrir les réglages",
+    "es": "Abrir ajustes",
+    "de": "Einstellungen öffnen"
+  },
+  "Could not save receipt image. Please try again.": {
+    "ru": "Не удалось сохранить изображение квитанции. Повторите попытку.",
+    "zh-CN": "无法保存收据图片，请重试。",
+    "fr": "Impossible d’enregistrer l’image du reçu. Veuillez réessayer.",
+    "es": "No se pudo guardar la imagen del recibo. Inténtalo de nuevo.",
+    "de": "Das Belegbild konnte nicht gespeichert werden. Bitte versuche es erneut."
+  },
+  "Share PDF": {
+    "ru": "Поделиться PDF",
+    "zh-CN": "分享 PDF",
+    "fr": "Partager le PDF",
+    "es": "Compartir PDF",
+    "de": "PDF teilen"
+  },
+  "Could not share receipt PDF.": {
+    "ru": "Не удалось поделиться квитанцией в PDF.",
+    "zh-CN": "无法分享 PDF 收据。",
+    "fr": "Impossible de partager le reçu PDF.",
+    "es": "No se pudo compartir el recibo PDF.",
+    "de": "Der PDF-Beleg konnte nicht geteilt werden."
+  },
+  "Close receipt": {
+    "ru": "Закрыть квитанцию",
+    "zh-CN": "关闭收据",
+    "fr": "Fermer le reçu",
+    "es": "Cerrar recibo",
+    "de": "Beleg schließen"
+  },
+  "Gallery saving is only available in the mobile app.": {
+    "ru": "Сохранение в галерею доступно только в мобильном приложении.",
+    "zh-CN": "仅移动应用支持保存到图库。",
+    "fr": "L’enregistrement dans la galerie est disponible uniquement dans l’application mobile.",
+    "es": "Guardar en la galería solo está disponible en la aplicación móvil.",
+    "de": "Das Speichern in der Galerie ist nur in der mobilen App verfügbar."
   }
 };

@@ -13,6 +13,7 @@ import {
   useSendInvestorWithdrawalOtp,
 } from '@workspace/api-client-react';
 import { Action, Card, EmptyState, ErrorState, Field, Screen, Section, Status, SuccessFeedback, SuccessMark } from '@/components/InvestorUI';
+import { TransactionReceiptPreview } from '@/components/TransactionReceiptPreview';
 import { formatUiStatus } from '@/lib/strings';
 import { TransactionPasswordResetModal } from '@/components/TransactionPasswordResetModal';
 import { amount as readAmount, availableBalanceFromDashboard, first, list, messageOf, money, record, unwrap, walletCurrencyFromSources } from '@/lib/data';
@@ -21,7 +22,7 @@ import { useAppPreferences } from '@/context/AppPreferencesContext';
 import { useColors } from '@/hooks/useColors';
 import { buildWithdrawalRequest, maximumWithdrawalPayout, parseWithdrawalAmount, resolveWithdrawalDisplayTerms, withSubmittedWithdrawalBreakdown } from '@/lib/withdrawal-flow';
 import { motionHaptic } from '@/lib/motion';
-import { createTransactionReceipt, saveTransactionReceipt } from '@/lib/transaction-receipt';
+import { createTransactionReceipt, type TransactionReceipt } from '@/lib/transaction-receipt';
 import { rememberFinancialDetail } from '@/lib/financial-detail-cache';
 import { GlassLayers } from '@/components/GlassSurface';
 
@@ -226,8 +227,7 @@ export default function Withdraw() {
   const [confirmation, setConfirmation] = useState<Record<string, unknown> | null>(null);
   const [successFeedbackVisible, setSuccessFeedbackVisible] = useState(false);
   const [selectedWithdrawalId, setSelectedWithdrawalId] = useState('');
-  const [receiptBusy, setReceiptBusy] = useState(false);
-  const [receiptError, setReceiptError] = useState('');
+  const [receiptPreview, setReceiptPreview] = useState<TransactionReceipt | null>(null);
   const withdrawalCurrency = 'USD';
   const maxPayout = maximumWithdrawalPayout(availableBalance, fee);
   const minimumPayoutForValidation = minimumWithdrawalAmount ?? withdrawalTerms.minimumWithdrawalUsd;
@@ -242,16 +242,8 @@ export default function Withdraw() {
   const historySelection = withdrawals.find(item => first(item, ['id', 'reference', 'withdraw_id']) === selectedWithdrawalId);
   const progressWithdrawal = confirmation ?? (historySelection ? record(historySelection) : null);
 
-  async function downloadReceipt(source: Record<string, unknown>) {
-    setReceiptError('');
-    setReceiptBusy(true);
-    try {
-      await saveTransactionReceipt(createTransactionReceipt('withdrawal', source));
-    } catch (err) {
-      setReceiptError(messageOf(err));
-    } finally {
-      setReceiptBusy(false);
-    }
+  function viewReceipt(source: Record<string, unknown>) {
+    setReceiptPreview(createTransactionReceipt('withdrawal', source));
   }
 
   useEffect(() => {
@@ -733,14 +725,11 @@ export default function Withdraw() {
       <DetailRow label="Processing time" value={first(confirmation, ['estimated_processing_time'], processingTime || 'Not provided')} />
       <WithdrawalProgress withdrawal={confirmation} />
       {notice ? <Text style={{ color: colors.primary, lineHeight: 19, marginTop: 10 }}>{notice}</Text> : null}
-      {receiptError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, marginTop: 10 }}>{receiptError}</Text> : null}
       <View style={{ marginTop: 12 }}>
         <Action
-          title={receiptBusy ? 'Preparing receipt…' : 'Save / share receipt PDF'}
-          icon="download"
-          loading={receiptBusy}
-          disabled={receiptBusy}
-          onPress={() => void downloadReceipt(confirmation)}
+          title="View receipt"
+          icon="file-text"
+          onPress={() => viewReceipt(confirmation)}
         />
       </View>
       <View style={{ marginTop: 14 }}><Action title="Request another withdrawal" secondary onPress={() => {
@@ -816,14 +805,11 @@ export default function Withdraw() {
           ? 'Not provided'
           : money(readAmount(historySelection, ['total_debit']), first(historySelection, ['total_debit_currency', 'wallet_currency', 'currency']))}
       />
-      {receiptError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, marginTop: 8 }}>{receiptError}</Text> : null}
       <View style={{ marginTop: 10 }}>
         <Action
-          title={receiptBusy ? 'Preparing receipt…' : 'Save / share receipt PDF'}
-          icon="download"
-          loading={receiptBusy}
-          disabled={receiptBusy}
-          onPress={() => void downloadReceipt(record(historySelection))}
+          title="View receipt"
+          icon="file-text"
+          onPress={() => viewReceipt(record(historySelection))}
         />
       </View>
     </Card> : null}
@@ -844,5 +830,6 @@ export default function Withdraw() {
       onDismiss={() => setSuccessFeedbackVisible(false)}
       testID="withdraw-success-feedback"
     />
+    <TransactionReceiptPreview receipt={receiptPreview} onClose={() => setReceiptPreview(null)} />
   </Screen>;
 }

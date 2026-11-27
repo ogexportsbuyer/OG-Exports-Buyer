@@ -19,7 +19,7 @@ const logoSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="820" height="570
 </g>
 <circle cx="390" cy="510" r="215" fill="none" stroke="#0A3335" stroke-width="76"/>
 <circle cx="390" cy="510" r="215" fill="none" stroke="url(#og-pdf-metal)" stroke-width="60"/>
-<path d="M510 372 A185 185 0 0 0 510 648" fill="none" stroke="#8A672A" stroke-width="5" stroke-linecap="round"/>
+<path d="M510 372 A185 185 0 0 0 510 648" fill="none" stroke="#F0B43D" stroke-width="5" stroke-linecap="round"/>
 <g fill="none" stroke="#ffffff" stroke-opacity=".65" stroke-width="8" stroke-linecap="round">
   <path d="M202 442 A200 200 0 0 1 355 313"/><path d="M445 442 A200 200 0 0 1 595 313"/>
 </g>

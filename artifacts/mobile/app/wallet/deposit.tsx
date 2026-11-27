@@ -17,6 +17,7 @@ import {
   useGetInvestorWallet,
 } from '@workspace/api-client-react';
 import { Action, Card, EmptyState, ErrorState, Field, Screen, Section, Status, SuccessFeedback, SuccessMark } from '@/components/InvestorUI';
+import { TransactionReceiptPreview } from '@/components/TransactionReceiptPreview';
 import { GlassPopupSurface } from '@/components/GlassPopupSurface';
 import { formatUiStatus } from '@/lib/strings';
 import { amount as readAmount, first, list, messageOf, money, record, unwrap, walletCurrencyFromSources } from '@/lib/data';
@@ -30,7 +31,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useAppPreferences } from '@/context/AppPreferencesContext';
 import { useColors } from '@/hooks/useColors';
 import { motionHaptic } from '@/lib/motion';
-import { createTransactionReceipt, saveTransactionReceipt } from '@/lib/transaction-receipt';
+import { createTransactionReceipt, type TransactionReceipt } from '@/lib/transaction-receipt';
 import { rememberFinancialDetail } from '@/lib/financial-detail-cache';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -185,8 +186,7 @@ export default function Deposit() {
   const [confirmation, setConfirmation] = useState<Record<string, unknown> | null>(null);
   const [successFeedbackVisible, setSuccessFeedbackVisible] = useState(false);
   const [selectedDepositId, setSelectedDepositId] = useState('');
-  const [receiptBusy, setReceiptBusy] = useState(false);
-  const [receiptError, setReceiptError] = useState('');
+  const [receiptPreview, setReceiptPreview] = useState<TransactionReceipt | null>(null);
   const copyResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const defaultBank = banks.find(item => isEnabled(first(item, ['is_default'])));
   const selectedBank = banks.find(item => first(item, ['id']) === bankId) ?? defaultBank;
@@ -248,16 +248,8 @@ export default function Deposit() {
     enterDepositDetails(pendingPaymentMethodId);
   }, [enterDepositDetails, identityPromptVisible, pendingPaymentMethodId, identityStatusVerified]);
 
-  async function downloadReceipt(source: Record<string, unknown>) {
-    setReceiptError('');
-    setReceiptBusy(true);
-    try {
-      await saveTransactionReceipt(createTransactionReceipt('deposit', source));
-    } catch (err) {
-      setReceiptError(messageOf(err));
-    } finally {
-      setReceiptBusy(false);
-    }
+  function viewReceipt(source: Record<string, unknown>) {
+    setReceiptPreview(createTransactionReceipt('deposit', source));
   }
 
   useEffect(() => () => {
@@ -655,14 +647,11 @@ export default function Deposit() {
       <DetailRow label="OG Exports fee (0%)" value={money(0, confirmationCurrency || 'USD')} />
       <Text style={{ color: colors.mutedForeground, fontSize: 12, lineHeight: 18, marginTop: 8 }}>Your deposit request is under review. Your wallet balance will update when the deposit is credited.</Text>
       <DepositProgress deposit={confirmation} />
-      {receiptError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, marginTop: 10 }}>{receiptError}</Text> : null}
       <View style={{ marginTop: 12 }}>
         <Action
-          title={receiptBusy ? 'Preparing receipt…' : 'Save / share receipt PDF'}
-          icon="download"
-          loading={receiptBusy}
-          disabled={receiptBusy}
-          onPress={() => void downloadReceipt(confirmation)}
+          title="View receipt"
+          icon="file-text"
+          onPress={() => viewReceipt(confirmation)}
         />
       </View>
       <View style={{ marginTop: 14 }}><Action title="Record another deposit" secondary onPress={() => {
@@ -721,14 +710,11 @@ export default function Deposit() {
         )}
       />
       <DetailRow label="Date returned by OG Exports" value={first(record(timelineDeposit), ['created_at', 'date'], 'Not provided')} />
-      {receiptError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, marginTop: 8 }}>{receiptError}</Text> : null}
       <View style={{ marginTop: 10 }}>
         <Action
-          title={receiptBusy ? 'Preparing receipt…' : 'Save / share receipt PDF'}
-          icon="download"
-          loading={receiptBusy}
-          disabled={receiptBusy}
-          onPress={() => void downloadReceipt(record(timelineDeposit))}
+          title="View receipt"
+          icon="file-text"
+          onPress={() => viewReceipt(record(timelineDeposit))}
         />
       </View>
     </Card> : null}
@@ -815,5 +801,6 @@ export default function Deposit() {
         </GlassPopupSurface>
       </View>
     </Modal>
+    <TransactionReceiptPreview receipt={receiptPreview} onClose={() => setReceiptPreview(null)} />
   </Screen>;
 }

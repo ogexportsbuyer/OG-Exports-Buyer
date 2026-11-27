@@ -15,10 +15,11 @@ import {
 } from '@workspace/api-client-react';
 import { Card, ErrorState, Screen, Section, Status } from '@/components/InvestorUI';
 import { LocalizedPressable, LocalizedText as Text } from '@/components/LocalizedText';
+import { TransactionReceiptPreview } from '@/components/TransactionReceiptPreview';
 import { amount, displayCurrencyCode, first, list, messageOf, money, record, unwrap } from '@/lib/data';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
-import { createTransactionReceipt, saveTransactionReceipt } from '@/lib/transaction-receipt';
+import { createTransactionReceipt, type TransactionReceipt } from '@/lib/transaction-receipt';
 import { findCachedTransactionDetail, findFinancialDetailRecord } from '@/lib/financial-detail-record';
 import { getRememberedFinancialDetail, loadFinancialDetail, saveFinancialDetail } from '@/lib/financial-detail-cache';
 import { resolveTransactionPaymentMethod } from '@/lib/transaction-payment-method';
@@ -394,29 +395,20 @@ export default function TransactionDetails() {
   const exchangeRateLabel = exchangeRate === null
     ? breakdownCurrency.trim().toUpperCase() === 'USD' ? 'Not applicable (USD)' : 'Not recorded'
     : `1 USD = ${formatAppNumber(exchangeRate, { maximumFractionDigits: 8 })} ${breakdownCurrency || 'PKR'}`;
-  const [receiptBusy, setReceiptBusy] = useState(false);
-  const [receiptError, setReceiptError] = useState('');
+  const [receiptPreview, setReceiptPreview] = useState<TransactionReceipt | null>(null);
   const [copiedRecordId, setCopiedRecordId] = useState('');
   const [copyError, setCopyError] = useState('');
   const recordIdCopied = transactionCopyTarget !== null && copiedRecordId === transactionCopyTarget.value;
   const copyActionLabel = transactionCopyTarget?.kind === 'id' ? 'Copy transaction ID' : 'Copy financial reference';
   const copiedActionLabel = transactionCopyTarget?.kind === 'id' ? 'Transaction ID copied' : 'Financial reference copied';
 
-  async function saveReceipt() {
-    setReceiptBusy(true);
-    setReceiptError('');
-    try {
-      const receiptKind = isWithdrawalTransaction
-        ? 'withdrawal'
-        : kind === 'wallet'
-          ? 'transaction'
-          : kind;
-      await saveTransactionReceipt(createTransactionReceipt(receiptKind, transaction));
-    } catch (error) {
-      setReceiptError(messageOf(error));
-    } finally {
-      setReceiptBusy(false);
-    }
+  function viewReceipt() {
+    const receiptKind = isWithdrawalTransaction
+      ? 'withdrawal'
+      : kind === 'wallet'
+        ? 'transaction'
+        : kind;
+    setReceiptPreview(createTransactionReceipt(receiptKind, transaction));
   }
 
   async function copyFinancialReferenceFromRecord() {
@@ -523,17 +515,14 @@ export default function TransactionDetails() {
           <DetailLine label="Saved exchange rate" value={exchangeRateLabel} />
         </Card>
       </> : null}
-      {receiptError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, marginTop: 8 }}>{receiptError}</Text> : null}
       <Pressable
         accessibilityRole="button"
-        accessibilityState={{ disabled: receiptBusy }}
-        disabled={receiptBusy}
-        onPress={() => void saveReceipt()}
-        style={{ alignSelf: 'flex-start', paddingVertical: 12 }}
+        testID="transaction-detail-view-receipt"
+        onPress={viewReceipt}
+        style={{ alignSelf: 'flex-start', minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, borderRadius: 13, backgroundColor: colors.secondary }}
       >
-        <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '700' }}>
-          {receiptBusy ? 'Preparing receipt…' : 'Save / share receipt PDF'}
-        </Text>
+        <Feather name="file-text" size={16} color={colors.primary} />
+        <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '700' }}>View receipt</Text>
       </Pressable>
     </> : null}
     {!detailIsLoading && !detailIsError && !id ? <ErrorState message="This transaction link is invalid." /> : null}
@@ -541,5 +530,6 @@ export default function TransactionDetails() {
     <Pressable accessibilityRole="button" onPress={() => router.replace('/account/transactions')} style={{ alignSelf: 'flex-start', paddingVertical: 14 }}>
       <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '700' }}>Open transaction history</Text>
     </Pressable>
+    <TransactionReceiptPreview receipt={receiptPreview} onClose={() => setReceiptPreview(null)} />
   </Screen>;
 }

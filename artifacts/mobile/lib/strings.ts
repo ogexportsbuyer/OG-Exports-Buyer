@@ -1275,6 +1275,20 @@ const phrases: ReadonlyArray<readonly [string, string, string]> = [
   ["Values reflect purchase data reported by OG Exports. Savings include only discounts recorded when an order was placed.","یہ اعدادوشمار OG Exports کے فراہم کردہ خریداری کے ریکارڈز پر مبنی ہیں۔ بچت میں صرف آرڈر دیتے وقت درج کی گئی رعایتیں شامل ہیں۔","تعكس القيم بيانات الشراء التي أبلغت عنها OG Exports. تشمل الوفورات الخصومات المسجلة عند تقديم الطلب فقط."],
   ["Order snapshot","آرڈرز کا خلاصہ","ملخص الطلبات"],
   ["Quick actions","فوری اقدامات","إجراءات سريعة"],
+  ["View receipt","رسید دیکھیں","عرض الإيصال"],
+  ["Official transaction receipt","لین دین کی سرکاری رسید","إيصال المعاملة الرسمي"],
+  ["Secure account record","محفوظ اکاؤنٹ ریکارڈ","سجل حساب آمن"],
+  ["Save to Gallery","گیلری میں محفوظ کریں","حفظ في المعرض"],
+  ["Saving receipt…","رسید محفوظ کی جا رہی ہے…","جارٍ حفظ الإيصال…"],
+  ["Receipt image saved to your gallery.","رسید کی تصویر آپ کی گیلری میں محفوظ ہو گئی ہے۔","تم حفظ صورة الإيصال في معرض الصور."],
+  ["Photo access needed","تصاویر تک رسائی درکار ہے","يلزم الوصول إلى الصور"],
+  ["Allow photo access to save this receipt to your gallery.","اس رسید کو گیلری میں محفوظ کرنے کے لیے تصاویر تک رسائی کی اجازت دیں۔","اسمح بالوصول إلى الصور لحفظ هذا الإيصال في معرض الصور."],
+  ["Open Settings","سیٹنگز کھولیں","فتح الإعدادات"],
+  ["Could not save receipt image. Please try again.","رسید کی تصویر محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔","تعذر حفظ صورة الإيصال. يُرجى المحاولة مجددًا."],
+  ["Share PDF","PDF شیئر کریں","مشاركة PDF"],
+  ["Could not share receipt PDF.","رسید کی PDF شیئر نہیں ہو سکی۔","تعذرت مشاركة إيصال PDF."],
+  ["Close receipt","رسید بند کریں","إغلاق الإيصال"],
+  ["Gallery saving is only available in the mobile app.","گیلری میں محفوظ کرنا صرف موبائل ایپ میں دستیاب ہے۔","حفظ الصور في المعرض متاح في تطبيق الهاتف فقط."],
 ];
 
 const translations = new Map<string, Readonly<Partial<Record<Exclude<AppLanguage, 'en'>, string>>>>(
