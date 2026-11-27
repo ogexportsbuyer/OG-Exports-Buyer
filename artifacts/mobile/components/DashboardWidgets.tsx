@@ -121,11 +121,11 @@ export function RecentAlertsPreview({ records, loading, error, onRetry }: {
   onRetry: () => void;
 }) {
   const colors = useColors();
+  if (!loading && !error && records.length === 0) return null;
   return <>
     <SectionHeading title="Recent Alerts" route="/account/notifications" />
     {loading ? <LoadingCard label="Loading alerts…" /> : null}
     {error ? <ErrorState message="Recent alerts could not be loaded." onRetry={onRetry} /> : null}
-    {!loading && !error && records.length === 0 ? <EmptyState title="No recent alerts" body="Investor notifications from OG Exports will appear here." icon="bell" /> : null}
     {records.length > 0 ? <Card style={{ paddingHorizontal: 14, paddingVertical: 3 }}>
       {records.map((raw, index) => {
         const item = record(raw);

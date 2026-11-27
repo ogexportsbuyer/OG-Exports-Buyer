@@ -365,41 +365,38 @@ function BuyerOverviewContent() {
             );
           }) : <EmptyState title="No upcoming deliveries" body="Shipment updates will appear here when an order is dispatched." icon="truck" />}
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9, marginTop: 5 }}>
-            <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800' }}>Recent alerts</Text>
-            <Pressable accessibilityRole="button" onPress={() => router.push('/buyer-notifications')}>
-              <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '800' }}>View all</Text>
-            </Pressable>
-          </View>
-          {notificationsQuery.isLoading ? <LoadingCard label="Checking recent alerts…" lines={2} /> : null}
-          {notificationsQuery.isError ? (
-            <Card style={{ padding: 12, marginBottom: 10 }}>
-              <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Recent alerts are unavailable right now.</Text>
-              <View style={{ marginTop: 10 }}>
-                <Action title="Retry recent alerts" icon="refresh-cw" secondary testID="buyer-dashboard-alerts-retry" onPress={() => void notificationsQuery.refetch()} />
-              </View>
-            </Card>
-          ) : null}
-          {notificationsQuery.isSuccess && unreadNotifications.length === 0 ? (
-            <Card style={{ padding: 14, marginBottom: 10, alignItems: 'center' }}>
-              <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>No new approval alerts.</Text>
-            </Card>
-          ) : null}
-          {unreadNotifications.map((item, index) => (
-            <Pressable key={first(item, ['id'], String(index))} accessibilityRole="button" onPress={() => router.push('/buyer-notifications')}>
-              <Card style={{ padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <View style={{ width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
-                  <Feather name="bell" size={14} color={colors.primary} />
+          {(notificationsQuery.isLoading || notificationsQuery.isError || unreadNotifications.length > 0) ? <>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9, marginTop: 5 }}>
+              <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800' }}>Recent alerts</Text>
+              <Pressable accessibilityRole="button" onPress={() => router.push('/buyer-notifications')}>
+                <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '800' }}>View all</Text>
+              </Pressable>
+            </View>
+            {notificationsQuery.isLoading ? <LoadingCard label="Checking recent alerts…" lines={2} /> : null}
+            {notificationsQuery.isError ? (
+              <Card style={{ padding: 12, marginBottom: 10 }}>
+                <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Recent alerts are unavailable right now.</Text>
+                <View style={{ marginTop: 10 }}>
+                  <Action title="Retry recent alerts" icon="refresh-cw" secondary testID="buyer-dashboard-alerts-retry" onPress={() => void notificationsQuery.refetch()} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text numberOfLines={1} style={{ color: colors.foreground, fontSize: 11, fontWeight: '800' }}>{first(item, ['title', 'subject'], 'Account update')}</Text>
-                  <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 3 }}>{first(item, ['message', 'body', 'description'], 'Open notifications to review this update.')}</Text>
-                  <Text style={{ color: colors.mutedForeground, fontSize: 9, marginTop: 4 }}>{buyerDashboardAlertTime(first(item, ['created_at', 'sent_at']))}</Text>
-                </View>
-                <Feather name="chevron-right" size={14} color={colors.mutedForeground} />
               </Card>
-            </Pressable>
-          ))}
+            ) : null}
+            {unreadNotifications.map((item, index) => (
+              <Pressable key={first(item, ['id'], String(index))} accessibilityRole="button" onPress={() => router.push('/buyer-notifications')}>
+                <Card style={{ padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{ width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary }}>
+                    <Feather name="bell" size={14} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text numberOfLines={1} style={{ color: colors.foreground, fontSize: 11, fontWeight: '800' }}>{first(item, ['title', 'subject'], 'Account update')}</Text>
+                    <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 3 }}>{first(item, ['message', 'body', 'description'], 'Open notifications to review this update.')}</Text>
+                    <Text style={{ color: colors.mutedForeground, fontSize: 9, marginTop: 4 }}>{buyerDashboardAlertTime(first(item, ['created_at', 'sent_at']))}</Text>
+                  </View>
+                  <Feather name="chevron-right" size={14} color={colors.mutedForeground} />
+                </Card>
+              </Pressable>
+            ))}
+          </> : null}
 
           <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800', marginBottom: 9, marginTop: 5 }}>Company profile completion</Text>
           <Card style={{ padding: 15, marginBottom: 12, borderColor: colors.accent }}>
