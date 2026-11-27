@@ -90,22 +90,8 @@ export function GlobalPageLoadingIndicator() {
       }}
     >
       <View
-        testID="global-page-loading-card"
-        style={{
-          minWidth: 148,
-          alignItems: 'center',
-          paddingHorizontal: 22,
-          paddingVertical: 17,
-          borderRadius: 22,
-          borderWidth: 1,
-          borderColor: colors.glassBorder,
-          backgroundColor: colors.glassFill,
-          shadowColor: colors.shadowColor,
-          shadowOpacity: 0.14,
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: 7 },
-          elevation: 8,
-        }}
+        testID="global-page-loading-content"
+        style={{ alignItems: 'center' }}
       >
         <View
           style={{
@@ -114,7 +100,6 @@ export function GlobalPageLoadingIndicator() {
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: 35,
-            backgroundColor: colors.glassTintGold,
           }}
         >
           <Animated.View
@@ -137,10 +122,6 @@ export function GlobalPageLoadingIndicator() {
               height: 38,
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: 19,
-              borderWidth: 1,
-              borderColor: colors.glassBorder,
-              backgroundColor: colors.card,
             }}
           >
             <Feather name="package" size={17} color={colors.primary} />

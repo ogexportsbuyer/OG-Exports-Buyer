@@ -18,8 +18,10 @@ test('global centered loader follows route transitions and initial page requests
   assert.match(component, /borderTopColor: colors\.accent/);
   assert.match(component, /transform: \[\{ rotate: rotation \}\]/);
   assert.match(component, /reduceMotion/);
-  assert.match(component, /testID="global-page-loading-card"/);
+  assert.match(component, /testID="global-page-loading-content"/);
   assert.doesNotMatch(component, /segmentWidth|translateX|height: 3,/);
+  assert.doesNotMatch(component, /backgroundColor: colors\.(glassFill|glassTintGold|card)/);
+  assert.doesNotMatch(component, /shadowOpacity|shadowRadius|elevation: 8/);
 });
 
 test('root mounts the global loader inside the query and motion providers', () => {
