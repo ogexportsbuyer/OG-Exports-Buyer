@@ -11278,6 +11278,27 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "es": "Condiciones de pago",
     "de": "Zahlungsbedingungen"
   },
+  "Payment term": {
+    "ru": "Условие оплаты",
+    "zh-CN": "付款条件",
+    "fr": "Condition de paiement",
+    "es": "Condición de pago",
+    "de": "Zahlungsbedingung"
+  },
+  "Select a valid payment term.": {
+    "ru": "Выберите допустимое условие оплаты.",
+    "zh-CN": "请选择有效的付款条件。",
+    "fr": "Sélectionnez une condition de paiement valide.",
+    "es": "Selecciona una condición de pago válida.",
+    "de": "Wählen Sie eine gültige Zahlungsbedingung aus."
+  },
+  "No payment term found.": {
+    "ru": "Условия оплаты не найдены.",
+    "zh-CN": "未找到付款条件。",
+    "fr": "Aucune condition de paiement trouvée.",
+    "es": "No se encontró ninguna condición de pago.",
+    "de": "Keine Zahlungsbedingung gefunden."
+  },
   "Payments are made through your bank": {
     "ru": "Платежи осуществляются через ваш банк",
     "zh-CN": "付款通过您的银行进行",

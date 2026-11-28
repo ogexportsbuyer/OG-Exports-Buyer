@@ -99,6 +99,11 @@ export function isFutureBuyerDeliveryDate(value: string, now = new Date()): bool
   return selected.getTime() > today.getTime();
 }
 
+export function buildBuyerCheckoutNotes(notes: string, paymentTerms: string): string {
+  const paymentTermLine = paymentTerms.trim() ? `Payment term: ${paymentTerms.trim()}` : '';
+  return [notes.trim(), paymentTermLine].filter(Boolean).join('\n\n');
+}
+
 export function buildBuyerOrderNotes(
   notes: string,
   bankDetails: string,

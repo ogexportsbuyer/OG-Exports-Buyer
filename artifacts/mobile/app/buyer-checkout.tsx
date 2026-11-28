@@ -33,10 +33,12 @@ import { amount, first, list, messageOf, record } from '@/lib/data';
 import { rowsFromResponse } from '@/lib/buyer-data';
 import { formatFobPrice } from '@/lib/format-fob-price';
 import {
+  buildBuyerCheckoutNotes,
   buildBuyerOrderNotes,
   formatBuyerDeliveryDateLabel,
   isFutureBuyerDeliveryDate,
 } from '@/lib/buyer-cart-flow';
+import { BUYER_RFQ_PAYMENT_TERMS } from '@/lib/buyer-rfq';
 import { buyerGuestCartRow, type BuyerGuestCheckoutDraft } from '@/lib/buyer-guest-flow';
 
 type CheckoutStep = 1 | 2 | 3;
@@ -115,6 +117,7 @@ export default function BuyerCheckout() {
   const [portId, setPortId] = useState<number | null>(null);
   const [portSearch, setPortSearch] = useState('');
   const [incoterm, setIncoterm] = useState('');
+  const [paymentTerms, setPaymentTerms] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [paymentMethodCode, setPaymentMethodCode] = useState('');
@@ -167,6 +170,7 @@ export default function BuyerCheckout() {
       return { value: code, label: label ? `${code} · ${label}` : code, keywords: first(term, ['name']) };
     })
     .filter(option => Boolean(option.value));
+  const paymentTermOptions: BuyerRfqOption[] = BUYER_RFQ_PAYMENT_TERMS.map(value => ({ value, label: value }));
   const paymentMethods = rowsFromResponse(paymentMethodsQuery.data);
   const bankAccounts = rowsFromResponse(bankAccountsQuery.data);
   const selectedCountry = countries.find(country => amount(country, ['id']) === countryId);
@@ -207,6 +211,7 @@ export default function BuyerCheckout() {
       setPortId(draft.portId);
       setPortSearch(draft.portSearch);
       setIncoterm(draft.incoterm);
+      setPaymentTerms(draft.paymentTerms ?? '');
       setDeliveryDate(draft.deliveryDate);
       setNotes(draft.notes);
       setPaymentMethodCode(draft.paymentMethodCode);
@@ -246,6 +251,7 @@ export default function BuyerCheckout() {
       portId,
       portSearch,
       incoterm,
+      paymentTerms,
       deliveryDate,
       notes,
       paymentMethodCode,
@@ -274,6 +280,10 @@ export default function BuyerCheckout() {
     if (portId === null || !selectedPort) { setError('Select a destination port.'); return false; }
     if (!incoterm || !incoterms.some(term => first(term, ['code', 'name']) === incoterm)) {
       setError('Select a valid delivery term.');
+      return false;
+    }
+    if (!BUYER_RFQ_PAYMENT_TERMS.includes(paymentTerms as typeof BUYER_RFQ_PAYMENT_TERMS[number])) {
+      setError('Select a valid payment term.');
       return false;
     }
     if (!isFutureBuyerDeliveryDate(deliveryDate)) {
@@ -346,7 +356,7 @@ export default function BuyerCheckout() {
           destination_port_id: portId,
           incoterm,
           required_delivery_date: deliveryDate,
-          notes: notes.trim(),
+          notes: buildBuyerCheckoutNotes(notes, paymentTerms),
         },
       });
       const payload = record(record(response).data);
@@ -393,7 +403,7 @@ export default function BuyerCheckout() {
     const paymentDetails = methodFields
       .map(field => paymentFieldValues[field]?.trim() ? `${field}: ${paymentFieldValues[field].trim()}` : '')
       .filter(Boolean);
-    const orderNotes = buildBuyerOrderNotes(notes, bankDetails, paymentDetails);
+    const orderNotes = buildBuyerOrderNotes(buildBuyerCheckoutNotes(notes, paymentTerms), bankDetails, paymentDetails);
 
     try {
       const response = await placeOrder.mutateAsync({
@@ -618,6 +628,16 @@ export default function BuyerCheckout() {
                   />
                 ) : null}
 
+                <BuyerRfqPicker
+                  label="Payment term"
+                  value={paymentTerms}
+                  options={paymentTermOptions}
+                  placeholder="Select payment terms"
+                  testID="buyer-checkout-payment-term"
+                  emptyMessage="No payment term found."
+                  onSelect={value => { setPaymentTerms(value); setError(''); }}
+                />
+
                 <BuyerDeliveryDatePicker
                   label="Required delivery date"
                   value={deliveryDate}
@@ -804,6 +824,7 @@ export default function BuyerCheckout() {
                   <SummaryRow label="Destination" value={first(selectedCountry ?? {}, ['name'])} />
                   <SummaryRow label="Port" value={first(selectedPort ?? {}, ['name'])} />
                   <SummaryRow label="Delivery term" value={incoterm} />
+                  <SummaryRow label="Payment term" value={paymentTerms} />
                   <SummaryRow label="Required by" value={formatBuyerDeliveryDateLabel(deliveryDate)} />
                 </View>
                 {notes.trim() ? <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 17, marginTop: 12 }}>Your notes: {notes.trim()}</Text> : null}
@@ -855,6 +876,7 @@ export default function BuyerCheckout() {
                 <SummaryRow label="Country" value={first(selectedCountry ?? {}, ['name'])} />
                 <SummaryRow label="Port" value={first(selectedPort ?? {}, ['name'])} />
                 <SummaryRow label="Delivery term" value={incoterm} />
+                <SummaryRow label="Payment term" value={paymentTerms} />
                 <SummaryRow label="Required by" value={formatBuyerDeliveryDateLabel(deliveryDate)} />
               </Card>
 

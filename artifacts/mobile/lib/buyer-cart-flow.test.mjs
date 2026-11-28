@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
+  buildBuyerCheckoutNotes,
   buildBuyerOrderNotes,
   buyerCartItemMinimumQuantity,
   formatBuyerDeliveryDateInput,
@@ -63,4 +64,12 @@ test('order notes retain buyer instructions and selected payment details', () =>
     'Handle as fragile\n\nPay to Bank A · IBAN XX00\nIssuing bank: Example Bank',
   );
   assert.equal(buildBuyerOrderNotes('  ', '', []), '');
+});
+
+test('checkout notes retain the selected commercial payment term', () => {
+  assert.equal(
+    buildBuyerCheckoutNotes('  Keep products dry  ', '30% Advance + 70% BL'),
+    'Keep products dry\n\nPayment term: 30% Advance + 70% BL',
+  );
+  assert.equal(buildBuyerCheckoutNotes('', 'LC at Sight'), 'Payment term: LC at Sight');
 });
