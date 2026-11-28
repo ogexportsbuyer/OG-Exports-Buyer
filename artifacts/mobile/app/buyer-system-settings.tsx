@@ -22,7 +22,6 @@ import { APP_LANGUAGE_OPTIONS, type AppLanguage } from '@/lib/strings';
 const appearanceOptions: { value: AppearancePreference; label: string; icon: keyof typeof Feather.glyphMap }[] = [
   { value: 'light', label: 'Light', icon: 'sun' },
   { value: 'dark', label: 'Dark', icon: 'moon' },
-  { value: 'system', label: 'System', icon: 'smartphone' },
 ];
 
 const languageOptions = APP_LANGUAGE_OPTIONS;
@@ -186,7 +185,7 @@ export default function BuyerSystemSettings() {
       {notificationError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, lineHeight: 18, marginBottom: 9 }}>{notificationError}</Text> : null}
       {notice ? <Text accessibilityLiveRegion="polite" style={{ color: colors.primary, fontSize: 12, lineHeight: 18, marginBottom: 9 }}>{notice}</Text> : null}
 
-      <SectionTitle title="Appearance" detail="Choose Light, Dark, or follow your device. Your choice is saved to your buyer account." />
+      <SectionTitle title="Appearance" />
       <Card style={{ paddingHorizontal: 14, marginBottom: 16 }}>
         <ChoiceRow
           title="App theme"

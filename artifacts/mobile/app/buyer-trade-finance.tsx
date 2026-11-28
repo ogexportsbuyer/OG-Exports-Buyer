@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetBuyerOrdersQueryKey,
@@ -18,7 +19,7 @@ import {
 } from '@workspace/api-client-react';
 import { BuyerAuthGate } from '@/components/BuyerAuthGate';
 import { Action, Card, EmptyState, ErrorState, Field, LoadingCard, Screen, Status } from '@/components/InvestorUI';
-import { LocalizedText as Text } from '@/components/LocalizedText';
+import { LocalizedPressable, LocalizedText as Text } from '@/components/LocalizedText';
 import { useAuth } from '@/context/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { amount, first, list, messageOf, record } from '@/lib/data';
@@ -40,6 +41,49 @@ function money(value: number | null) {
   return value === null ? 'Price confirmed separately' : `USD ${formatAppNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+function CopyableTradeBankDetail({ label, value, copied, copyLabel, copiedLabel, testID, onCopy }: {
+  label: string;
+  value: string;
+  copied: boolean;
+  copyLabel: string;
+  copiedLabel: string;
+  testID: string;
+  onCopy: () => void;
+}) {
+  const colors = useColors();
+  return (
+    <View style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '700', textTransform: 'uppercase' }}>{label}</Text>
+        <Text selectable numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}
+          style={{ color: colors.foreground, fontSize: 12, lineHeight: 17, fontWeight: '600', marginTop: 3, writingDirection: 'ltr', textAlign: 'left' }}>
+          {value}
+        </Text>
+      </View>
+      <LocalizedPressable
+        accessibilityRole="button"
+        accessibilityLabel={copied ? copiedLabel : copyLabel}
+        accessibilityHint="Copies value to clipboard"
+        testID={testID}
+        onPress={onCopy}
+        style={({ pressed }) => ({
+          width: 44,
+          height: 44,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderWidth: 1,
+          borderColor: copied ? colors.primary : colors.border,
+          borderRadius: 13,
+          backgroundColor: copied || pressed ? colors.lightGreen : colors.secondary,
+          opacity: pressed ? 0.78 : 1,
+        })}
+      >
+        <Feather name={copied ? 'check' : 'copy'} size={17} color={colors.primary} />
+      </LocalizedPressable>
+    </View>
+  );
+}
+
 export default function BuyerTradeFinance() {
   const colors = useColors();
   const { token } = useAuth();
@@ -55,6 +99,9 @@ export default function BuyerTradeFinance() {
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [copiedBankField, setCopiedBankField] = useState<string | null>(null);
+  const [bankDetailCopyError, setBankDetailCopyError] = useState<{ accountId: string; message: string } | null>(null);
+  const copyResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const accountsQuery = useGetBuyerBankAccounts({
     query: { queryKey: getGetBuyerBankAccountsQueryKey(), enabled: !!token, staleTime: 300_000 },
   });
@@ -87,6 +134,24 @@ export default function BuyerTradeFinance() {
   useEffect(() => {
     if (!methodCode && methods.length) setMethodCode(first(methods[0], ['code']));
   }, [methodCode, methods]);
+
+  useEffect(() => () => {
+    if (copyResetTimer.current) clearTimeout(copyResetTimer.current);
+  }, []);
+
+  async function copyBankDetail(accountId: string, field: string, value: string) {
+    setBankDetailCopyError(null);
+    setCopiedBankField(null);
+    if (copyResetTimer.current) clearTimeout(copyResetTimer.current);
+    try {
+      const didCopy = await Clipboard.setStringAsync(value);
+      if (!didCopy) throw new Error('Clipboard did not confirm the copy.');
+      setCopiedBankField(`${accountId}:${field}`);
+      copyResetTimer.current = setTimeout(() => setCopiedBankField(null), 1600);
+    } catch {
+      setBankDetailCopyError({ accountId, message: 'Could not copy the bank detail. Select and copy the value instead.' });
+    }
+  }
 
   async function submitDetails() {
     setError('');
@@ -165,24 +230,59 @@ export default function BuyerTradeFinance() {
             </Card>
           ) : null}
           {accounts.length === 0 && accountsQuery.isSuccess ? <EmptyState title="No bank accounts listed" body="Contact OG Exports support to confirm the correct transfer details." icon="credit-card" /> : null}
-          {accounts.map((account, index) => (
-            <Card key={first(account, ['id'], String(index))} style={{ padding: 15, marginBottom: 10 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                <Text style={{ flex: 1, color: colors.foreground, fontSize: 13, fontWeight: '800' }}>{first(account, ['bank_name'], 'OG Exports Bank Account')}</Text>
-                {account.is_default ? <Status value="Default" /> : null}
-              </View>
-              {[
-                ['Account title', first(account, ['account_title', 'account_name'])],
-                ...(kycApproved ? [['IBAN / account', first(account, ['iban', 'account_number'])] as [string, string]] : []),
-                ['SWIFT code', first(account, ['swift_code', 'swift'])],
-              ].filter(([, value]) => !!value).map(([label, value]) => (
-                <View key={label} style={{ marginTop: 10 }}>
-                  <Text style={{ color: colors.mutedForeground, fontSize: 9, fontWeight: '700', textTransform: 'uppercase' }}>{label}</Text>
-                  <Text selectable style={{ color: colors.foreground, fontSize: 12, fontWeight: '600', marginTop: 3 }}>{value}</Text>
+          {accounts.map((account, index) => {
+            const accountId = first(account, ['id'], String(index));
+            const accountTitle = first(account, ['account_title', 'account_name']);
+            const transferAccount = first(account, ['iban', 'account_number']);
+            const hasIban = !!first(account, ['iban']);
+            const swift = first(account, ['swift_code', 'swift']);
+            return (
+              <Card key={accountId} style={{ padding: 15, marginBottom: 10 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                  <Text style={{ flex: 1, color: colors.foreground, fontSize: 13, fontWeight: '800' }}>{first(account, ['bank_name'], 'OG Exports Bank Account')}</Text>
+                  {account.is_default ? <Status value="Default" /> : null}
                 </View>
-              ))}
-            </Card>
-          ))}
+                {accountTitle ? (
+                  <CopyableTradeBankDetail
+                    label="Account title"
+                    value={accountTitle}
+                    copied={copiedBankField === `${accountId}:account-title`}
+                    copyLabel="Copy account title"
+                    copiedLabel="Account title copied"
+                    testID={`copy-trade-bank-${index}-account-title`}
+                    onCopy={() => void copyBankDetail(accountId, 'account-title', accountTitle)}
+                  />
+                ) : null}
+                {kycApproved && transferAccount ? (
+                  <CopyableTradeBankDetail
+                    label="IBAN / account"
+                    value={transferAccount}
+                    copied={copiedBankField === `${accountId}:transfer-account`}
+                    copyLabel={hasIban ? 'Copy IBAN' : 'Copy account number'}
+                    copiedLabel={hasIban ? 'IBAN copied' : 'Account number copied'}
+                    testID={`copy-trade-bank-${index}-transfer-account`}
+                    onCopy={() => void copyBankDetail(accountId, 'transfer-account', transferAccount)}
+                  />
+                ) : null}
+                {swift ? (
+                  <CopyableTradeBankDetail
+                    label="SWIFT code"
+                    value={swift}
+                    copied={copiedBankField === `${accountId}:swift`}
+                    copyLabel="Copy SWIFT / BIC"
+                    copiedLabel="SWIFT / BIC copied"
+                    testID={`copy-trade-bank-${index}-swift`}
+                    onCopy={() => void copyBankDetail(accountId, 'swift', swift)}
+                  />
+                ) : null}
+                {bankDetailCopyError?.accountId === accountId ? (
+                  <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 11, lineHeight: 16, marginTop: 7 }}>
+                    {bankDetailCopyError.message}
+                  </Text>
+                ) : null}
+              </Card>
+            );
+          })}
         </>
       ) : null}
 

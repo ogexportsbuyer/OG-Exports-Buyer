@@ -330,6 +330,27 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "es": "Número de cuenta copiado",
     "de": "Kontonummer kopiert"
   },
+  "Account title": {
+    "ru": "Название счёта",
+    "zh-CN": "账户名称",
+    "fr": "Titulaire du compte",
+    "es": "Titular de la cuenta",
+    "de": "Kontoinhaber"
+  },
+  "Copy account title": {
+    "ru": "Копировать название счёта",
+    "zh-CN": "复制账户名称",
+    "fr": "Copier le titulaire du compte",
+    "es": "Copiar titular de la cuenta",
+    "de": "Kontoinhaber kopieren"
+  },
+  "Account title copied": {
+    "ru": "Название счёта скопировано",
+    "zh-CN": "账户名称已复制",
+    "fr": "Titulaire du compte copié",
+    "es": "Titular de la cuenta copiado",
+    "de": "Kontoinhaber kopiert"
+  },
   "Copy investment ID": {
     "ru": "Копировать ID инвестиции",
     "zh-CN": "复制投资编号",
@@ -371,6 +392,13 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "fr": "SWIFT / BIC copié",
     "es": "SWIFT / BIC copiado",
     "de": "SWIFT / BIC kopiert"
+  },
+  "SWIFT code": {
+    "ru": "Код SWIFT",
+    "zh-CN": "SWIFT代码",
+    "fr": "Code SWIFT",
+    "es": "Código SWIFT",
+    "de": "SWIFT-Code"
   },
   "Copy transaction ID": {
     "ru": "Скопировать ID транзакции",

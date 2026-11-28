@@ -126,6 +126,7 @@ function BuyerOverviewContent() {
       up: kpis.orders_trend_up !== false,
       icon: 'shopping-bag' as const,
       tone: colors.primary,
+      route: '/buyer-orders',
     },
     {
       label: 'Active shipments',
@@ -135,6 +136,7 @@ function BuyerOverviewContent() {
       up: kpis.shipments_trend_up !== false,
       icon: 'truck' as const,
       tone: colors.primary,
+      route: '/buyer-shipments',
     },
     {
       label: 'Pending RFQs',
@@ -144,6 +146,7 @@ function BuyerOverviewContent() {
       up: kpis.rfqs_trend_up !== false,
       icon: 'file-text' as const,
       tone: colors.accentSurface,
+      route: '/buyer-orders?view=rfqs',
     },
   ];
 
@@ -216,17 +219,29 @@ function BuyerOverviewContent() {
           <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '800', marginBottom: 9 }}>Order snapshot</Text>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 7, marginBottom: 12 }}>
             {activityMetricCards.map(metric => (
-              <Card key={metric.label} style={{ flex: 1, minWidth: 0, minHeight: 103, padding: 9, marginBottom: 2 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 3 }}>
-                  <View style={{ width: 27, height: 27, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: metric.tone === colors.accentSurface ? colors.accentSurface : colors.lightGreen }}>
-                    <Feather name={metric.icon} size={13} color={metric.tone === colors.accentSurface ? colors.accentForeground : metric.tone} />
+              <Pressable
+                key={metric.label}
+                testID={`buyer-dashboard-snapshot-${metric.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                accessibilityRole="button"
+                accessibilityLabel={`${metric.label}, ${metric.value}`}
+                onPress={() => navigateTo(metric.route)}
+                style={({ pressed }) => ({ flex: 1, minWidth: 0, opacity: pressed ? 0.84 : 1 })}
+              >
+                <Card style={{ minHeight: 103, padding: 9, marginBottom: 2 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 3 }}>
+                    <View style={{ width: 27, height: 27, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: metric.tone === colors.accentSurface ? colors.accentSurface : colors.lightGreen }}>
+                      <Feather name={metric.icon} size={13} color={metric.tone === colors.accentSurface ? colors.accentForeground : metric.tone} />
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                      {metric.trend ? <Feather name={metric.up ? 'trending-up' : 'trending-down'} size={11} color={metric.up ? colors.primary : colors.destructive} /> : null}
+                      <Feather name="chevron-right" size={13} color={colors.mutedForeground} />
+                    </View>
                   </View>
-                  {metric.trend ? <Feather name={metric.up ? 'trending-up' : 'trending-down'} size={11} color={metric.up ? colors.primary : colors.destructive} /> : null}
-                </View>
-                <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.foreground, fontSize: 17, fontWeight: '800', marginTop: 9 }}>{metric.value}</Text>
-                <Text numberOfLines={2} style={{ color: colors.mutedForeground, fontSize: 9, lineHeight: 12, marginTop: 2 }}>{metric.label}</Text>
-                {metric.detail ? <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 8, marginTop: 3 }}>{metric.detail}</Text> : null}
-              </Card>
+                  <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.foreground, fontSize: 17, fontWeight: '800', marginTop: 9 }}>{metric.value}</Text>
+                  <Text numberOfLines={2} style={{ color: colors.mutedForeground, fontSize: 9, lineHeight: 12, marginTop: 2 }}>{metric.label}</Text>
+                  {metric.detail ? <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: 8, marginTop: 3 }}>{metric.detail}</Text> : null}
+                </Card>
+              </Pressable>
             ))}
           </View>
 

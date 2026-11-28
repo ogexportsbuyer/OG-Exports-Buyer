@@ -48,6 +48,19 @@ test('dashboard actions include the buyer orders, quotations, RFQ, shipment and 
   }
 });
 
+test('order snapshot cards open their matching listing pages with accessible press feedback', () => {
+  const snapshotMetrics = screen.slice(screen.indexOf('const activityMetricCards'), screen.indexOf('if (!token)', screen.indexOf('const activityMetricCards')));
+  const snapshotCards = screen.slice(screen.indexOf('Order snapshot'), screen.indexOf('Quick actions', screen.indexOf('Order snapshot')));
+
+  for (const route of ['/buyer-orders', '/buyer-shipments', '/buyer-orders?view=rfqs']) {
+    assert.ok(snapshotMetrics.includes(`route: '${route}'`), `missing order snapshot destination: ${route}`);
+  }
+  assert.match(snapshotCards, /testID=\{`buyer-dashboard-snapshot-\$\{metric\.label/);
+  assert.match(snapshotCards, /accessibilityRole="button"/);
+  assert.match(snapshotCards, /onPress=\{\(\) => navigateTo\(metric\.route\)\}/);
+  assert.match(snapshotCards, /name="chevron-right"/);
+});
+
 test('dashboard prioritizes purchase value and preserves the recent activity preview', () => {
   const purchaseOverview = screen.indexOf('Purchase overview');
   const quickActions = screen.indexOf('Quick actions');

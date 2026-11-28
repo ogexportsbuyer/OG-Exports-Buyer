@@ -27,7 +27,23 @@ test('the Trade Finance bank-details view hides identifiers until KYC approval',
   const { readFile } = await import('node:fs/promises');
   const source = await readFile(new URL('../app/buyer-trade-finance.tsx', import.meta.url), 'utf8');
   assert.match(source, /isBuyerKycApproved/);
-  assert.match(source, /kycApproved\s*\?\s*\[\['IBAN \/ account'/);
+  assert.match(source, /kycApproved && transferAccount/);
   assert.match(source, /transfer-iban-kyc-gate/);
   assert.match(source, /Current status:/);
+});
+
+test('Trade Finance exposes large copy icons for account title, transfer account, and SWIFT', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL('../app/buyer-trade-finance.tsx', import.meta.url), 'utf8');
+  assert.match(source, /import \* as Clipboard from 'expo-clipboard'/);
+  assert.match(source, /Clipboard\.setStringAsync\(value\)/);
+  assert.match(source, /Feather name=\{copied \? 'check' : 'copy'\}/);
+  assert.match(source, /width: 44,\s*height: 44/);
+  assert.match(source, /copyLabel="Copy account title"/);
+  assert.match(source, /copiedLabel="Account title copied"/);
+  assert.match(source, /copyLabel=\{hasIban \? 'Copy IBAN' : 'Copy account number'\}/);
+  assert.match(source, /copyLabel="Copy SWIFT \/ BIC"/);
+  for (const field of ['account-title', 'transfer-account', 'swift']) {
+    assert.ok(source.includes('copy-trade-bank-${index}-' + field), `missing copy control for ${field}`);
+  }
 });

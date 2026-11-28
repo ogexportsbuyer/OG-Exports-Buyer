@@ -34,7 +34,10 @@ test('preferences accept all supported options and migrate legacy theme/device s
     assert.equal(parsePreferences({ language }).language, language);
   }
   for (const currency of ['USD', 'PKR', 'EUR', 'GBP']) assert.equal(parsePreferences({ currency }).currency, currency);
-  for (const appearance of ['light', 'dark', 'system']) assert.equal(parsePreferences({ appearance }).appearance, appearance);
+  for (const appearance of ['light', 'dark']) assert.equal(parsePreferences({ appearance }).appearance, appearance);
+  assert.equal(parsePreferences({ appearance: 'system' }).appearance, undefined, 'device-following mode is not applied automatically');
+  assert.equal(readPreferenceSnapshot({ appearance: 'system' }).preferences.appearance, 'light');
+  assert.equal(readPreferenceSnapshot({ theme: 'system' }).preferences.appearance, 'light');
   assert.deepEqual(parsePreferences({ language: 'invalid', currency: 'bad', theme: 'dark' }), { appearance: 'dark' });
   assert.equal(readPreferenceSnapshot({ language: 'ur', currency: 'PKR' }).preferences.language, 'ur');
   assert.deepEqual(readPreferenceSnapshot({ pendingSync: { currency: 'GBP' } }).pending, { currency: 'GBP' });
@@ -292,10 +295,15 @@ test('settings no longer reject selections using the stale readiness ref or bloc
 test('buyer appearance choices live in System settings, not Profile', () => {
   const profile = readFileSync(new URL('../app/(buyer-tabs)/buyer-profile.tsx', import.meta.url), 'utf8');
   const settings = readFileSync(new URL('../app/buyer-system-settings.tsx', import.meta.url), 'utf8');
+  const accountSettings = readFileSync(new URL('../app/account/settings.tsx', import.meta.url), 'utf8');
+  const provider = readFileSync(new URL('../context/AppPreferencesContext.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(profile, /buyer-profile-appearance|changeAppearance/);
   assert.match(profile, /\['System settings', '\/buyer-system-settings'/);
   assert.match(settings, /testID="buyer-settings-appearance"/);
   assert.match(settings, /value: 'light'/);
   assert.match(settings, /value: 'dark'/);
-  assert.match(settings, /value: 'system'/);
+  assert.doesNotMatch(settings, /value: 'system'|follow your device/i);
+  assert.doesNotMatch(accountSettings, /\['system', 'System'\]/);
+  assert.doesNotMatch(provider, /useColorScheme/);
+  assert.match(provider, /const resolvedAppearance = preferences\.appearance/);
 });

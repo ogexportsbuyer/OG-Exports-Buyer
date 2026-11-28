@@ -371,7 +371,6 @@ export default function Settings() {
         {([
           ['light', 'Light'],
           ['dark', 'Dark'],
-          ['system', 'System'],
         ] as const).map(([appearance, label]) => {
           const selected = appPreferences.preferences.appearance === appearance;
           return <Pressable

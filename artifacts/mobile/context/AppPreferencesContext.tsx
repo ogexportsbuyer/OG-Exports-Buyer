@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform, useColorScheme } from 'react-native';
+import { Platform } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getInvestorMe,
@@ -56,7 +56,6 @@ function normalizeRates(value: unknown, base: string): Record<string, number> {
 export function AppPreferencesProvider({ children }: { children: React.ReactNode }) {
   const { token, user } = useAuth();
   const queryClient = useQueryClient();
-  const systemAppearance = useColorScheme();
   const isBuyer = hasBuyerAccount(user);
   const authUserId = preferenceAccountId(user);
   const [recoveredOwner, setRecoveredOwner] = useState<{ token: string; id: string } | null>(null);
@@ -160,9 +159,7 @@ export function AppPreferencesProvider({ children }: { children: React.ReactNode
   const rates = normalizeRates(rateResponse.rates, first(rateResponse, ['base']).toUpperCase());
   const ratesAsOf = first(rateResponse, ['as_of', 'updated_at']);
   const isRTL = isRightToLeftLanguage(preferences.language);
-  const resolvedAppearance = preferences.appearance === 'system'
-    ? systemAppearance === 'dark' ? 'dark' : 'light'
-    : preferences.appearance;
+  const resolvedAppearance = preferences.appearance;
 
   configureMoneyDisplay({
     language: preferences.language,

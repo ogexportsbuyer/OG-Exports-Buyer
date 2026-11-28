@@ -1,6 +1,6 @@
 import { isAppLanguage, type AppLanguage } from './strings.ts';
 
-export type AppearancePreference = 'light' | 'dark' | 'system';
+export type AppearancePreference = 'light' | 'dark';
 export type DisplayCurrency = 'USD' | 'PKR' | 'EUR' | 'GBP';
 export type AppPreferences = {
   language: AppLanguage;
@@ -19,7 +19,7 @@ export function parsePreferences(value: unknown): PreferencePatch {
   const currency = typeof source.currency === 'string' ? source.currency.toUpperCase() : '';
   if (currency === 'USD' || currency === 'PKR' || currency === 'EUR' || currency === 'GBP') next.currency = currency;
   const appearance = source.appearance ?? source.theme;
-  if (appearance === 'light' || appearance === 'dark' || appearance === 'system') next.appearance = appearance;
+  if (appearance === 'light' || appearance === 'dark') next.appearance = appearance;
   return next;
 }
 
