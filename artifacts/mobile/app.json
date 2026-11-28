@@ -3,7 +3,7 @@
     "name": "OG Buyer",
     "slug": "og-buyer",
     "owner": "og-exports-buyer",
-    "version": "3.3.10",
+    "version": "4.4.11",
     "orientation": "portrait",
     "icon": "./assets/images/og-buyer-launcher-icon.png",
     "scheme": "mobile",
@@ -18,7 +18,7 @@
     "android": {
       "package": "com.ogexports.buyer",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 10,
+      "versionCode": 11,
       "icon": "./assets/images/og-buyer-launcher-icon.png",
       "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
