@@ -117,14 +117,14 @@ content_type = "application/octet-stream"
 id = "3KRB2Lz0obu4jHf9M9QEh"
 uri = "file://artifacts/mobile/assets/images/og-buyer-launcher-icon.png"
 type = "image"
-title = "OG Buyer icon — supplied background"
-description = "Same supplied full artwork and background, resized to the standard 1024 × 1024 launcher icon."
+title = "Updated OG Buyer app icon"
+description = "Larger official OG mark with a more readable shopping-cart badge on the branded teal background."
 logical_id = "c8076553-c9a9-4679-9a18-e404c1bf962e"
-content_hash = "sha256:198b850278d114ffd763a83d4ec49865648ba2b31a6e6855146d019dc0fdcb1b"
-size = 1004189
-mtime_ms = 1795758722925
-storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:f4e473f4-6ce4-483c-abb3-f8df0ba6670a/c8076553-c9a9-4679-9a18-e404c1bf962e/8204916f-7d27-4bf0-887c-bdd24538a331"
-storage_version_token = "1795758835770831"
+content_hash = "sha256:5be10620a3397cde47f9bd11aa83c9e6e336cab4e7bc18f6b5d0081f415573dc"
+size = 183569
+mtime_ms = 1795877844508
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:f4e473f4-6ce4-483c-abb3-f8df0ba6670a/c8076553-c9a9-4679-9a18-e404c1bf962e/801830e1-b88e-4e3c-a567-4c598387cbe0"
+storage_version_token = "1795877944815347"
 content_type = "image/png"
 
 [[outputs]]
