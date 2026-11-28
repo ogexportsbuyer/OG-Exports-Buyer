@@ -46,8 +46,9 @@ test('buyer product price surfaces consistently show the FOB basis', () => {
   const productCard = readFileSync(new URL('../components/BuyerProductCard.tsx', import.meta.url), 'utf8');
   const priceComponent = readFileSync(new URL('../components/BuyerProductPrice.tsx', import.meta.url), 'utf8');
   const productDetails = readFileSync(new URL('../app/buyer-product/[id].tsx', import.meta.url), 'utf8');
-  const cart = readFileSync(new URL('../components/BuyerCartScreen.tsx', import.meta.url), 'utf8');
-  const checkout = readFileSync(new URL('../app/buyer-checkout.tsx', import.meta.url), 'utf8');
+  const cart = readFileSync(new URL('../components/BuyerCheckoutFlow.tsx', import.meta.url), 'utf8');
+  const cartEditor = readFileSync(new URL('../components/BuyerCheckoutCartEditor.tsx', import.meta.url), 'utf8');
+  const checkout = readFileSync(new URL('../components/BuyerCheckoutFlow.tsx', import.meta.url), 'utf8');
   const quotation = readFileSync(new URL('../app/buyer-quotation/[id].tsx', import.meta.url), 'utf8');
 
   assert.match(homeCatalog, /displayPrice\(product\)/);
@@ -57,6 +58,7 @@ test('buyer product price surfaces consistently show the FOB basis', () => {
   assert.match(priceComponent, /FadeInDown/);
   assert.match(priceComponent, /% OFF/);
   assert.match(cart, /BuyerProductPrice product=\{item\}/);
+  assert.match(cartEditor, /BuyerProductImage/);
   assert.match(checkout, /formatFobPrice\(/);
   assert.match(quotation, /FOB unit price:/);
 });
@@ -210,7 +212,7 @@ test('all Buyer product photos use URL normalization, lazy requests, and disk ca
   const productSurfaces = [
     readFileSync(new URL('../components/BuyerProductCard.tsx', import.meta.url), 'utf8'),
     readFileSync(new URL('../components/BuyerHomeCatalog.tsx', import.meta.url), 'utf8'),
-    readFileSync(new URL('../components/BuyerCartScreen.tsx', import.meta.url), 'utf8'),
+    readFileSync(new URL('../components/BuyerCheckoutCartEditor.tsx', import.meta.url), 'utf8'),
     readFileSync(new URL('../app/buyer-product/[id].tsx', import.meta.url), 'utf8'),
   ];
 

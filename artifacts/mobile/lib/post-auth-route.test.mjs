@@ -88,6 +88,14 @@ test('returns buyer sign-in to the requested marketplace destination', () => {
     pathname: '/buyer-checkout',
     params: { resumeAction: 'quote' },
   });
+  assert.deepEqual(resolveBuyerPostAuthHref('/buyer-cart?resumeAction=order'), {
+    pathname: '/buyer-cart',
+    params: { resumeAction: 'order' },
+  });
+  assert.deepEqual(resolveBuyerPostAuthHref('/buyer-cart?resumeAction=quote'), {
+    pathname: '/buyer-cart',
+    params: { resumeAction: 'quote' },
+  });
   assert.deepEqual(
     resolveBuyerPostAuthHref('/buyer-products?pendingProduct=42'),
     { pathname: '/(buyer-tabs)/buyer-products', params: { pendingProduct: '42' } },
@@ -263,7 +271,7 @@ test('buyer bottom navigation places Dashboard before Messages and keeps home ca
   const dashboardRoute = readFileSync(new URL('../app/(buyer-tabs)/dashboard.tsx', import.meta.url), 'utf8');
   const profile = readFileSync(new URL('../app/(buyer-tabs)/buyer-profile.tsx', import.meta.url), 'utf8');
   const rootLayout = readFileSync(new URL('../app/_layout.tsx', import.meta.url), 'utf8');
-  const cartScreen = readFileSync(new URL('../components/BuyerCartScreen.tsx', import.meta.url), 'utf8');
+  const cartScreen = readFileSync(new URL('../components/BuyerCheckoutFlow.tsx', import.meta.url), 'utf8');
   const homeHeader = readFileSync(new URL('../components/BuyerHomeHeader.tsx', import.meta.url), 'utf8');
   const dashboard = readFileSync(new URL('../app/buyer-overview.tsx', import.meta.url), 'utf8');
   assert.match(layout, /\['dashboard', 'Dashboard', 'bar-chart-2', 'chart\.bar', 'chart\.bar\.fill'\]/);

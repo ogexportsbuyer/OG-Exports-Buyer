@@ -58,6 +58,7 @@ export type BuyerPostAuthHref =
   | { pathname: '/buyer-product/[id]'; params: { id: string } }
   | { pathname: '/buyer-rfq'; params: { mode: 'new'; resumeAfterAuth?: '1'; product_id?: string } }
   | { pathname: '/buyer-checkout'; params: { resumeAction: 'quote' | 'order' } }
+  | { pathname: '/buyer-cart'; params: { resumeAction: 'quote' | 'order' } }
   | { pathname: '/buyer-rfq/[id]'; params: { id: string } }
   | { pathname: '/buyer-order/[id]'; params: { id: string } }
   | { pathname: '/buyer-quotation/[id]'; params: { id: string } }
@@ -87,6 +88,12 @@ export function resolveBuyerPostAuthHref(returnTo?: string | string[]): BuyerPos
     const resumeAction = queryValue(query, 'resumeAction');
     if (resumeAction === 'quote' || resumeAction === 'order') {
       return { pathname: '/buyer-checkout', params: { resumeAction } };
+    }
+  }
+  if (path === '/buyer-cart') {
+    const resumeAction = queryValue(query, 'resumeAction');
+    if (resumeAction === 'quote' || resumeAction === 'order') {
+      return { pathname: '/buyer-cart', params: { resumeAction } };
     }
   }
   if (path === '/buyer-orders' || path === '/(buyer-tabs)/buyer-orders') {

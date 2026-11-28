@@ -7582,6 +7582,20 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "es": "Carrito",
     "de": "Warenkorb"
   },
+  "Cart items": {
+    "ru": "Товары в корзине",
+    "zh-CN": "购物车商品",
+    "fr": "Articles du panier",
+    "es": "Artículos del carrito",
+    "de": "Warenkorb-Artikel"
+  },
+  "Review quantities and FOB prices": {
+    "ru": "Проверьте количество и цены FOB",
+    "zh-CN": "核对数量和 FOB 价格",
+    "fr": "Vérifiez les quantités et les prix FOB",
+    "es": "Revise las cantidades y los precios FOB",
+    "de": "Mengen und FOB-Preise prüfen"
+  },
   "Create buyer account": {
     "ru": "Создать аккаунт покупателя",
     "zh-CN": "创建买家账户",
@@ -11089,6 +11103,13 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "es": "Tamaño de pedido y suministro",
     "de": "Auftragsgröße und Lieferung"
   },
+  "Order summary": {
+    "ru": "Сводка заказа",
+    "zh-CN": "订单摘要",
+    "fr": "Récapitulatif de la commande",
+    "es": "Resumen del pedido",
+    "de": "Bestellübersicht"
+  },
   "Orders": {
     "ru": "Заказы",
     "zh-CN": "订单",
@@ -14336,5 +14357,201 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "fr": "Chargement de la page",
     "es": "Cargando página",
     "de": "Seite wird geladen"
+  },
+  "edit quantities here": {
+    "ru": "измените количество здесь",
+    "zh-CN": "在此修改数量",
+    "fr": "modifier les quantités ici",
+    "es": "editar cantidades aquí",
+    "de": "Mengen hier bearbeiten"
+  },
+  "Commodity total": {
+    "ru": "Стоимость товаров",
+    "zh-CN": "商品总额",
+    "fr": "Total des marchandises",
+    "es": "Total de mercancías",
+    "de": "Warenwert"
+  },
+  "Documentation fee (2%)": {
+    "ru": "Документационный сбор (2%)",
+    "zh-CN": "文件费（2%）",
+    "fr": "Frais documentaires (2 %)",
+    "es": "Tarifa de documentación (2%)",
+    "de": "Dokumentationsgebühr (2 %)"
+  },
+  "Freight / insurance": {
+    "ru": "Фрахт / страхование",
+    "zh-CN": "运费 / 保险",
+    "fr": "Fret / assurance",
+    "es": "Flete / seguro",
+    "de": "Fracht / Versicherung"
+  },
+  "Quoted separately": {
+    "ru": "Рассчитывается отдельно",
+    "zh-CN": "另行报价",
+    "fr": "Devis séparé",
+    "es": "Se cotiza por separado",
+    "de": "Separates Angebot"
+  },
+  "Estimated total": {
+    "ru": "Предварительный итог",
+    "zh-CN": "预计总额",
+    "fr": "Total estimé",
+    "es": "Total estimado",
+    "de": "Geschätzter Gesamtbetrag"
+  },
+  "Grand total": {
+    "ru": "Итого",
+    "zh-CN": "总计",
+    "fr": "Total général",
+    "es": "Total general",
+    "de": "Gesamtsumme"
+  },
+  "Estimated grand total": {
+    "ru": "Предварительный общий итог",
+    "zh-CN": "预计总计",
+    "fr": "Total général estimé",
+    "es": "Total general estimado",
+    "de": "Geschätzte Gesamtsumme"
+  },
+  "Payment details": {
+    "ru": "Платёжные данные",
+    "zh-CN": "付款详情",
+    "fr": "Détails de paiement",
+    "es": "Detalles de pago",
+    "de": "Zahlungsdetails"
+  },
+  "Price by quotation": {
+    "ru": "Цена по запросу",
+    "zh-CN": "按报价定价",
+    "fr": "Prix sur devis",
+    "es": "Precio según cotización",
+    "de": "Preis auf Anfrage"
+  },
+  "Confirmed on quotation": {
+    "ru": "Подтверждается в предложении",
+    "zh-CN": "以报价确认为准",
+    "fr": "Confirmé dans le devis",
+    "es": "Se confirma en la cotización",
+    "de": "Wird im Angebot bestätigt"
+  },
+  "Review & confirm order": {
+    "ru": "Проверка и подтверждение заказа",
+    "zh-CN": "审核并确认订单",
+    "fr": "Vérifier et confirmer la commande",
+    "es": "Revisar y confirmar el pedido",
+    "de": "Bestellung prüfen und bestätigen"
+  },
+  "Verify every item, delivery choice, and payment detail before placing the trade order.": {
+    "ru": "Проверьте товары, доставку и оплату перед оформлением торгового заказа.",
+    "zh-CN": "提交贸易订单前，请核对商品、交付选项和付款详情。",
+    "fr": "Vérifiez les articles, la livraison et le paiement avant de passer la commande.",
+    "es": "Verifica los artículos, la entrega y el pago antes de realizar el pedido.",
+    "de": "Prüfen Sie Artikel, Lieferung und Zahlungsdetails vor der Handelsbestellung."
+  },
+  "Order items": {
+    "ru": "Товары заказа",
+    "zh-CN": "订单商品",
+    "fr": "Articles de la commande",
+    "es": "Artículos del pedido",
+    "de": "Bestellpositionen"
+  },
+  "Quantity": {
+    "ru": "Количество",
+    "zh-CN": "数量",
+    "fr": "Quantité",
+    "es": "Cantidad",
+    "de": "Menge"
+  },
+  "Unit price": {
+    "ru": "Цена за единицу",
+    "zh-CN": "单价",
+    "fr": "Prix unitaire",
+    "es": "Precio unitario",
+    "de": "Stückpreis"
+  },
+  "Subtotal": {
+    "ru": "Промежуточный итог",
+    "zh-CN": "小计",
+    "fr": "Sous-total",
+    "es": "Subtotal",
+    "de": "Zwischensumme"
+  },
+  "Secure trade process": {
+    "ru": "Безопасная торговая процедура",
+    "zh-CN": "安全贸易流程",
+    "fr": "Processus commercial sécurisé",
+    "es": "Proceso comercial seguro",
+    "de": "Sicherer Handelsprozess"
+  },
+  "Proforma Invoice within 24 hours": {
+    "ru": "Проформа-счёт в течение 24 часов",
+    "zh-CN": "24小时内提供形式发票",
+    "fr": "Facture pro forma sous 24 heures",
+    "es": "Factura proforma en 24 horas",
+    "de": "Proforma-Rechnung innerhalb von 24 Stunden"
+  },
+  "Payment details are confirmed with OG Exports": {
+    "ru": "Платёжные данные подтверждаются OG Exports",
+    "zh-CN": "付款详情由 OG Exports 确认",
+    "fr": "Les détails de paiement sont confirmés par OG Exports",
+    "es": "OG Exports confirma los detalles de pago",
+    "de": "Zahlungsdetails werden von OG Exports bestätigt"
+  },
+  "No payment is collected by placing this order": {
+    "ru": "При оформлении заказа оплата не взимается",
+    "zh-CN": "提交订单时不会收款",
+    "fr": "Aucun paiement n'est prélevé lors de la commande",
+    "es": "No se cobra ningún pago al realizar el pedido",
+    "de": "Bei dieser Bestellung wird keine Zahlung eingezogen"
+  },
+  "No payment is taken in this app.": {
+    "ru": "Оплата в этом приложении не принимается.",
+    "zh-CN": "此应用不会收取付款。",
+    "fr": "Aucun paiement n'est effectué dans cette application.",
+    "es": "Esta aplicación no procesa pagos.",
+    "de": "In dieser App wird keine Zahlung entgegengenommen."
+  },
+  "Freight and final adjustments are confirmed separately.": {
+    "ru": "Фрахт и окончательные корректировки подтверждаются отдельно.",
+    "zh-CN": "运费和最终调整将另行确认。",
+    "fr": "Le fret et les ajustements finaux sont confirmés séparément.",
+    "es": "El flete y los ajustes finales se confirman por separado.",
+    "de": "Fracht und endgültige Anpassungen werden separat bestätigt."
+  },
+  "The 2% documentation fee is an estimate.": {
+    "ru": "Сбор за документацию в размере 2% является предварительным.",
+    "zh-CN": "2% 文件费为预估金额。",
+    "fr": "Les frais documentaires de 2 % sont estimatifs.",
+    "es": "La tarifa de documentación del 2% es estimada.",
+    "de": "Die Dokumentationsgebühr von 2 % ist ein Schätzwert."
+  },
+  "OG Exports confirms final fees and freight on the Proforma Invoice.": {
+    "ru": "OG Exports указывает окончательные сборы и фрахт в проформа-счёте.",
+    "zh-CN": "最终费用和运费由 OG Exports 在形式发票中确认。",
+    "fr": "OG Exports confirme les frais finaux et le fret sur la facture pro forma.",
+    "es": "OG Exports confirma las tarifas finales y el flete en la factura proforma.",
+    "de": "OG Exports bestätigt endgültige Gebühren und Fracht in der Proforma-Rechnung."
+  },
+  "By placing this order, I confirm the details and agree to OG Exports' Terms & Conditions, selected payment terms, and export compliance requirements.": {
+    "ru": "Оформляя заказ, я подтверждаю данные и принимаю условия OG Exports, выбранные условия оплаты и требования экспортного соответствия.",
+    "zh-CN": "提交此订单即表示我确认详情，并同意 OG Exports 条款、所选付款条件及出口合规要求。",
+    "fr": "En passant cette commande, je confirme les détails et accepte les conditions d’OG Exports, les conditions de paiement choisies et les exigences de conformité à l’exportation.",
+    "es": "Al realizar este pedido, confirmo los datos y acepto los términos de OG Exports, las condiciones de pago seleccionadas y los requisitos de cumplimiento de exportación.",
+    "de": "Mit dieser Bestellung bestätige ich die Angaben und akzeptiere die Bedingungen von OG Exports, die gewählten Zahlungsbedingungen und die Export-Compliance-Anforderungen."
+  },
+  "Clear your cart?": {
+    "ru": "Очистить корзину?",
+    "zh-CN": "清空购物车？",
+    "fr": "Vider votre panier ?",
+    "es": "¿Vaciar el carrito?",
+    "de": "Warenkorb leeren?"
+  },
+  "Remove all": {
+    "ru": "Удалить всё",
+    "zh-CN": "全部移除",
+    "fr": "Tout retirer",
+    "es": "Quitar todo",
+    "de": "Alles entfernen"
   }
 };

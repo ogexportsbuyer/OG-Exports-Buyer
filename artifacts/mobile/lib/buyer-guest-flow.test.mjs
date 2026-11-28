@@ -82,7 +82,7 @@ test('guest flow snapshots accept only the supported storage version', () => {
 
 test('final RFQ and checkout actions preserve guest drafts before opening sign-in', () => {
   const rfq = readFileSync(new URL('../components/BuyerRfqForm.tsx', import.meta.url), 'utf8');
-  const checkout = readFileSync(new URL('../app/buyer-checkout.tsx', import.meta.url), 'utf8');
+  const checkout = readFileSync(new URL('../components/BuyerCheckoutFlow.tsx', import.meta.url), 'utf8');
   const flow = readFileSync(new URL('../context/BuyerGuestFlowContext.tsx', import.meta.url), 'utf8');
   assert.match(rfq, /returnTo: '\/buyer-rfq\?mode=new&resumeAfterAuth=1'/);
   assert.match(rfq, /saveRfqDraft\(draft\)/);

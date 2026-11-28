@@ -40,7 +40,7 @@ test('KYC nationality uses its own controlled searchable picker, not a text fiel
 });
 
 test('buyer destination and profile country fields use the searchable upward picker', () => {
-  const checkout = readFileSync(new URL('../app/buyer-checkout.tsx', import.meta.url), 'utf8');
+  const checkout = readFileSync(new URL('../components/BuyerCheckoutFlow.tsx', import.meta.url), 'utf8');
   const profile = readFileSync(new URL('../app/buyer-profile-details.tsx', import.meta.url), 'utf8');
   const company = readFileSync(new URL('../app/buyer-company.tsx', import.meta.url), 'utf8');
   const rfqPicker = readFileSync(new URL('../components/BuyerRfqPicker.tsx', import.meta.url), 'utf8');

@@ -8,7 +8,7 @@ import {
   parseBuyerDeliveryDate,
 } from './buyer-cart-flow.ts';
 
-const checkoutScreen = readFileSync(new URL('../app/buyer-checkout.tsx', import.meta.url), 'utf8');
+const checkoutScreen = readFileSync(new URL('../components/BuyerCheckoutFlow.tsx', import.meta.url), 'utf8');
 const datePicker = readFileSync(new URL('../components/BuyerDeliveryDatePicker.tsx', import.meta.url), 'utf8');
 
 test('delivery calendar creates the right month grid, including leap days', () => {

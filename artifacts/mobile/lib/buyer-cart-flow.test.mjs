@@ -11,7 +11,10 @@ import {
   parseBuyerCartQuantityInput,
 } from './buyer-cart-flow.ts';
 
-const cartScreen = readFileSync(new URL('../components/BuyerCartScreen.tsx', import.meta.url), 'utf8');
+const cartScreen = readFileSync(new URL('../components/BuyerCheckoutFlow.tsx', import.meta.url), 'utf8');
+const cartEditor = readFileSync(new URL('../components/BuyerCheckoutCartEditor.tsx', import.meta.url), 'utf8');
+const quantityControl = readFileSync(new URL('../components/BuyerCartQuantityControl.tsx', import.meta.url), 'utf8');
+const cartRoute = readFileSync(new URL('../components/BuyerCartScreen.tsx', import.meta.url), 'utf8');
 
 test('buyer cart quantity never drops below the product minimum order', () => {
   assert.equal(nextBuyerCartQuantity(20, -1, 20), 20);
@@ -34,18 +37,31 @@ test('typed cart quantity accepts whole numbers and clamps to the product MOQ', 
 });
 
 test('cart keeps both step buttons around an editable numeric quantity input', () => {
-  assert.match(cartScreen, /testID=\{`buyer-cart-decrease-\$\{itemId\}`\}/);
-  assert.match(cartScreen, /testID=\{`buyer-cart-quantity-input-\$\{itemId\}`\}/);
-  assert.match(cartScreen, /keyboardType="number-pad"/);
-  assert.match(cartScreen, /onBlur=\{\(\) => void commitQuantity\(draft\)\}/);
-  assert.match(cartScreen, /testID=\{`buyer-cart-increase-\$\{itemId\}`\}/);
-  assert.match(cartScreen, /parseBuyerCartQuantityInput\(value, minimumQuantity\)/);
+  assert.match(quantityControl, /testID=\{`buyer-cart-decrease-\$\{itemId\}`\}/);
+  assert.match(quantityControl, /testID=\{`buyer-cart-quantity-input-\$\{itemId\}`\}/);
+  assert.match(quantityControl, /width: 72,[\s\S]*?height: 42/);
+  assert.match(quantityControl, /keyboardType="number-pad"/);
+  assert.match(quantityControl, /onBlur=\{\(\) => void commitQuantity\(draft\)\}/);
+  assert.match(quantityControl, /testID=\{`buyer-cart-increase-\$\{itemId\}`\}/);
+  assert.match(quantityControl, /parseBuyerCartQuantityInput\(value, minimumQuantity\)/);
+  assert.match(cartEditor, /<BuyerCartQuantityControl/);
+  assert.match(cartRoute, /BuyerCheckoutFlow cartMode/);
 });
 
 test('cart minimum order uses the product value and falls back to the cart item', () => {
   assert.equal(buyerCartItemMinimumQuantity({ product: { moq: '25 MT' }, moq: '10 MT' }), 25);
   assert.equal(buyerCartItemMinimumQuantity({ product: {}, moq: '5 cases' }), 5);
   assert.equal(buyerCartItemMinimumQuantity({ product: {} }), 1);
+});
+
+test('cart includes FOB prices, quote status, the web fee estimate and order placement', () => {
+  assert.match(cartEditor, /BuyerProductPrice product=\{item\} compact/);
+  assert.match(cartEditor, /formatFobPrice\(subtotal, cartCurrency\)/);
+  assert.match(cartEditor, /Some products need a confirmed price\./);
+  assert.match(cartEditor, /Documentation fee \(2%\)/);
+  assert.match(cartEditor, /No payment is taken in this app\./);
+  assert.match(cartScreen, /Estimated grand total/);
+  assert.match(cartScreen, /testID="buyer-checkout-submit-order"/);
 });
 
 test('delivery date input formats digits and accepts only real future calendar dates', () => {
