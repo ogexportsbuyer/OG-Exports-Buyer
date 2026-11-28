@@ -117,14 +117,14 @@ content_type = "application/octet-stream"
 id = "3KRB2Lz0obu4jHf9M9QEh"
 uri = "file://artifacts/mobile/assets/images/og-buyer-launcher-icon.png"
 type = "image"
-title = "Updated OG Buyer app icon"
-description = "Larger official OG mark with a more readable shopping-cart badge on the branded teal background."
+title = "Revised OG Buyer icon with the reference cart"
+description = "The cart badge now follows the supplied gold medallion artwork with a bold, larger shopping-cart silhouette."
 logical_id = "c8076553-c9a9-4679-9a18-e404c1bf962e"
-content_hash = "sha256:5be10620a3397cde47f9bd11aa83c9e6e336cab4e7bc18f6b5d0081f415573dc"
-size = 183569
-mtime_ms = 1795877844508
-storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:f4e473f4-6ce4-483c-abb3-f8df0ba6670a/c8076553-c9a9-4679-9a18-e404c1bf962e/801830e1-b88e-4e3c-a567-4c598387cbe0"
-storage_version_token = "1795877944815347"
+content_hash = "sha256:d5acfb828c0a2d37db6c71c3a82454b36107c08d02d066025dc6ace375501ef7"
+size = 204357
+mtime_ms = 1795878585445
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:f4e473f4-6ce4-483c-abb3-f8df0ba6670a/c8076553-c9a9-4679-9a18-e404c1bf962e/f5950515-b8cf-4689-af63-a6682025c5ab"
+storage_version_token = "1795878663714846"
 content_type = "image/png"
 
 [[outputs]]
