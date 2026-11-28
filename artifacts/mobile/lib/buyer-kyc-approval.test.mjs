@@ -32,13 +32,15 @@ test('the Trade Finance bank-details view hides identifiers until KYC approval',
   assert.match(source, /Current status:/);
 });
 
-test('Trade Finance exposes large copy icons for account title, transfer account, and SWIFT', async () => {
+test('Trade Finance uses icon-only copy buttons with accessible tap areas', async () => {
   const { readFile } = await import('node:fs/promises');
   const source = await readFile(new URL('../app/buyer-trade-finance.tsx', import.meta.url), 'utf8');
+  const copyButton = source.slice(source.indexOf('function CopyableTradeBankDetail'), source.indexOf('export default function BuyerTradeFinance'));
   assert.match(source, /import \* as Clipboard from 'expo-clipboard'/);
   assert.match(source, /Clipboard\.setStringAsync\(value\)/);
-  assert.match(source, /Feather name=\{copied \? 'check' : 'copy'\}/);
-  assert.match(source, /width: 44,\s*height: 44/);
+  assert.match(copyButton, /Feather name=\{copied \? 'check' : 'copy'\} size=\{19\}/);
+  assert.match(copyButton, /width: 44,\s*height: 44/);
+  assert.doesNotMatch(copyButton, /borderWidth|borderColor|backgroundColor/);
   assert.match(source, /copyLabel="Copy account title"/);
   assert.match(source, /copiedLabel="Account title copied"/);
   assert.match(source, /copyLabel=\{hasIban \? 'Copy IBAN' : 'Copy account number'\}/);

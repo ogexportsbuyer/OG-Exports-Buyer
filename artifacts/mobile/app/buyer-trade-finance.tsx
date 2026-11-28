@@ -71,14 +71,10 @@ function CopyableTradeBankDetail({ label, value, copied, copyLabel, copiedLabel,
           height: 44,
           alignItems: 'center',
           justifyContent: 'center',
-          borderWidth: 1,
-          borderColor: copied ? colors.primary : colors.border,
-          borderRadius: 13,
-          backgroundColor: copied || pressed ? colors.lightGreen : colors.secondary,
-          opacity: pressed ? 0.78 : 1,
+          opacity: pressed ? 0.62 : 1,
         })}
       >
-        <Feather name={copied ? 'check' : 'copy'} size={17} color={colors.primary} />
+        <Feather name={copied ? 'check' : 'copy'} size={19} color={colors.primary} />
       </LocalizedPressable>
     </View>
   );
