@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { LocalizedText as Text } from '@/components/LocalizedText';
 import { Card, EmptyState, ErrorState, LoadingCard } from '@/components/InvestorUI';
@@ -176,26 +177,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 20,
-    paddingBottom: 10,
+    paddingBottom: 14,
   },
-  categoryCard: {
-    width: 148,
-    minHeight: 82,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-    paddingHorizontal: 10,
-    paddingVertical: 11,
+  categoryImage: {
+    height: 125,
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
     borderWidth: 1,
-    borderRadius: 17,
-  },
-  categoryIcon: {
-    width: 36,
-    height: 36,
-    flexShrink: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
     borderRadius: 12,
+  },
+  categoryCaption: {
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingBottom: 9,
   },
 });
 
@@ -239,6 +237,17 @@ export default function BuyerHomeCatalog({
   const categorySections = useMemo(
     () => buyerHomeCategoryProducts(products, apiCategories, 2, mainProductKeys),
     [apiCategories, mainProductKeys, products],
+  );
+  const displayedProductKeys = useMemo(
+    () => new Set([
+      ...mainProductKeys,
+      ...categorySections.flatMap(section => section.products.map(buyerHomeProductKey)),
+    ]),
+    [categorySections, mainProductKeys],
+  );
+  const categoryImageSections = useMemo(
+    () => buyerHomeCategoryProducts(products, apiCategories, 1, displayedProductKeys),
+    [apiCategories, displayedProductKeys, products],
   );
   const categoryOptions = useMemo(
     () => buyerHomeCategories(products, apiCategories),
@@ -372,6 +381,8 @@ export default function BuyerHomeCatalog({
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={styles.categoryRow}>
         {categoryOptions.map(category => {
           const label = buyerHomeCategoryLabel(category.name);
+          const categoryProduct = categoryImageSections.find(section => section.name === category.name)?.products[0];
+          const image = categoryProduct ? first(categoryProduct, ['image_url', 'imageUrl']) : '';
           return (
             <Pressable
               key={category.name}
@@ -379,16 +390,22 @@ export default function BuyerHomeCatalog({
               accessibilityRole="button"
               accessibilityLabel={`Browse ${label}`}
               onPress={() => onSelectCategory(category.name)}
-              style={({ pressed }) => ({ opacity: pressed ? 0.84 : 1 })}
+              style={({ pressed }) => ({ width: 137, opacity: pressed ? 0.84 : 1 })}
             >
-              <View style={[styles.categoryCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={[styles.categoryIcon, { backgroundColor: colors.glassTintGold }]}>
-                  <Feather name={categoryIcon(category.name)} size={17} color={colors.primary} />
+              <View style={[styles.categoryImage, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
+                <BuyerProductImage uri={image} label={`${label} category`} fallbackIcon="grid" style={StyleSheet.absoluteFill} priority="low" />
+                <LinearGradient
+                  colors={['transparent', colors.splashEnd] as const}
+                  start={{ x: 0, y: 0.15 }}
+                  end={{ x: 0, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={styles.categoryCaption}>
+                  <Text numberOfLines={2} style={{ flex: 1, color: colors.splashText, fontSize: 10, lineHeight: 13, fontWeight: '700' }}>
+                    {label}
+                  </Text>
+                  <Feather name="arrow-up-right" size={13} color={colors.accentForeground} />
                 </View>
-                <Text numberOfLines={2} style={{ flex: 1, color: colors.foreground, fontSize: 11, lineHeight: 14, fontWeight: '700' }}>
-                  {label}
-                </Text>
-                <Feather name="arrow-up-right" size={13} color={colors.accent} />
               </View>
             </Pressable>
           );
@@ -445,13 +462,6 @@ export default function BuyerHomeCatalog({
 
     </>
   );
-}
-
-function categoryIcon(name: string): React.ComponentProps<typeof Feather>['name'] {
-  if (name === 'Fresh Produce') return 'sun';
-  if (name === 'Grains & Cereals') return 'box';
-  if (name === 'Seeds & Oilseeds') return 'droplet';
-  return 'grid';
 }
 
 type HomeProductCardProps = {

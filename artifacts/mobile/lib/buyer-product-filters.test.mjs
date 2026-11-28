@@ -151,6 +151,26 @@ test('homepage main products are featured only and do not repeat in category row
   assert.deepEqual(sections.map(section => section.name), ['Fresh Produce', 'Grains & Cereals']);
 });
 
+test('homepage category image representatives avoid repeating main and category-row products', () => {
+  const catalogue = [
+    { id: 1, name: 'Featured Wheat', category: { name: 'Grains' }, featured: true },
+    { id: 2, name: 'Wheat Grade A', category: { name: 'Grains' } },
+    { id: 3, name: 'Wheat Grade B', category: { name: 'Grains' } },
+    { id: 4, name: 'Wheat Grade C', category: { name: 'Grains' } },
+  ];
+  const mainProducts = buyerHomeMainProducts(catalogue);
+  const mainProductKeys = new Set(mainProducts.map(buyerHomeProductKey));
+  const categorySections = buyerHomeCategoryProducts(catalogue, [{ name: 'Grains' }], 2, mainProductKeys);
+  const displayedProductKeys = new Set([
+    ...mainProductKeys,
+    ...categorySections.flatMap(section => section.products.map(buyerHomeProductKey)),
+  ]);
+  const categoryImageSections = buyerHomeCategoryProducts(catalogue, [{ name: 'Grains' }], 1, displayedProductKeys);
+
+  assert.deepEqual(categoryImageSections.flatMap(section => section.products.map(product => product.name)), ['Wheat Grade C']);
+  assert.ok(categoryImageSections.flatMap(section => section.products).every(product => !displayedProductKeys.has(buyerHomeProductKey(product))));
+});
+
 test('trade, price, origin, MOQ, supply capacity, currency, and availability filters compose', () => {
   const filters = {
     ...emptyBuyerProductFilters(),
