@@ -31,7 +31,8 @@ export type BuyerGuestCheckoutDraft = {
   portId: number | null;
   portSearch: string;
   incoterm: string;
-  paymentTerms: string;
+  paymentTermsByItem: Record<string, string>;
+  paymentTerms?: string;
   deliveryDate: string;
   notes: string;
   paymentMethodCode: string;

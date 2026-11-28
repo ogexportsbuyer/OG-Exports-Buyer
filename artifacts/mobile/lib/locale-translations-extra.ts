@@ -11285,6 +11285,27 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "es": "Condición de pago",
     "de": "Zahlungsbedingung"
   },
+  "Payment terms by product": {
+    "ru": "Условия оплаты по продуктам",
+    "zh-CN": "按产品划分的付款条件",
+    "fr": "Conditions de paiement par produit",
+    "es": "Condiciones de pago por producto",
+    "de": "Zahlungsbedingungen pro Produkt"
+  },
+  "Admin payment terms are not set for this product. Contact OG Exports before continuing.": {
+    "ru": "Для этого продукта администратор не указал условия оплаты. Перед продолжением свяжитесь с OG Exports.",
+    "zh-CN": "管理员尚未为此产品设置付款条件。请联系 OG Exports 后再继续。",
+    "fr": "Les conditions de paiement administratives ne sont pas définies pour ce produit. Contactez OG Exports avant de continuer.",
+    "es": "El administrador no ha establecido las condiciones de pago de este producto. Contacta con OG Exports antes de continuar.",
+    "de": "Für dieses Produkt wurden keine Zahlungsbedingungen festgelegt. Wenden Sie sich vor dem Fortfahren an OG Exports."
+  },
+  "Select a payment term for every product from its admin-provided options.": {
+    "ru": "Выберите для каждого продукта условие оплаты из вариантов, заданных администратором.",
+    "zh-CN": "请为每件产品选择管理员设置的付款条件。",
+    "fr": "Choisissez pour chaque produit une condition de paiement parmi les options définies par l'administrateur.",
+    "es": "Selecciona para cada producto una condición de pago entre las opciones establecidas por el administrador.",
+    "de": "Wählen Sie für jedes Produkt eine vom Administrator festgelegte Zahlungsbedingung."
+  },
   "Select a valid payment term.": {
     "ru": "Выберите допустимое условие оплаты.",
     "zh-CN": "请选择有效的付款条件。",

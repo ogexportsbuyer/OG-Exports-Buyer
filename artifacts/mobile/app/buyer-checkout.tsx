@@ -32,13 +32,13 @@ import {
 import { amount, first, list, messageOf, record } from '@/lib/data';
 import { rowsFromResponse } from '@/lib/buyer-data';
 import { formatFobPrice } from '@/lib/format-fob-price';
+import { buyerCartPaymentTerms } from '@/lib/buyer-product-data';
 import {
   buildBuyerCheckoutNotes,
   buildBuyerOrderNotes,
   formatBuyerDeliveryDateLabel,
   isFutureBuyerDeliveryDate,
 } from '@/lib/buyer-cart-flow';
-import { BUYER_RFQ_PAYMENT_TERMS } from '@/lib/buyer-rfq';
 import { buyerGuestCartRow, type BuyerGuestCheckoutDraft } from '@/lib/buyer-guest-flow';
 
 type CheckoutStep = 1 | 2 | 3;
@@ -117,7 +117,7 @@ export default function BuyerCheckout() {
   const [portId, setPortId] = useState<number | null>(null);
   const [portSearch, setPortSearch] = useState('');
   const [incoterm, setIncoterm] = useState('');
-  const [paymentTerms, setPaymentTerms] = useState('');
+  const [paymentTermsByItem, setPaymentTermsByItem] = useState<Record<string, string>>({});
   const [deliveryDate, setDeliveryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [paymentMethodCode, setPaymentMethodCode] = useState('');
@@ -170,7 +170,11 @@ export default function BuyerCheckout() {
       return { value: code, label: label ? `${code} · ${label}` : code, keywords: first(term, ['name']) };
     })
     .filter(option => Boolean(option.value));
-  const paymentTermOptions: BuyerRfqOption[] = BUYER_RFQ_PAYMENT_TERMS.map(value => ({ value, label: value }));
+  const productPaymentTerms = buyerCartPaymentTerms(cartItems);
+  const selectedProductPaymentTerms = productPaymentTerms.map(product => ({
+    productName: product.productName,
+    term: paymentTermsByItem[product.key] ?? '',
+  }));
   const paymentMethods = rowsFromResponse(paymentMethodsQuery.data);
   const bankAccounts = rowsFromResponse(bankAccountsQuery.data);
   const selectedCountry = countries.find(country => amount(country, ['id']) === countryId);
@@ -203,7 +207,7 @@ export default function BuyerCheckout() {
   }, [guestFlow.cart, guestFlow.mergeGuestCart, guestFlow.ready, guestMergeKey, token]);
 
   useEffect(() => {
-    if (!resumeAction || !guestFlow.ready || restoredDraft.current) return;
+    if (!resumeAction || !guestFlow.ready || restoredDraft.current || cartQuery.isLoading || waitingForGuestCart) return;
     const draft = guestFlow.checkoutDraft;
     if (draft) {
       setStep(draft.step);
@@ -211,7 +215,11 @@ export default function BuyerCheckout() {
       setPortId(draft.portId);
       setPortSearch(draft.portSearch);
       setIncoterm(draft.incoterm);
-      setPaymentTerms(draft.paymentTerms ?? '');
+      const restoredTerms = { ...(draft.paymentTermsByItem ?? {}) };
+      if (!Object.keys(restoredTerms).length && draft.paymentTerms && productPaymentTerms.length === 1) {
+        restoredTerms[productPaymentTerms[0].key] = draft.paymentTerms;
+      }
+      setPaymentTermsByItem(restoredTerms);
       setDeliveryDate(draft.deliveryDate);
       setNotes(draft.notes);
       setPaymentMethodCode(draft.paymentMethodCode);
@@ -221,7 +229,7 @@ export default function BuyerCheckout() {
     }
     restoredDraft.current = true;
     setRestoredDraftReady(true);
-  }, [guestFlow.checkoutDraft, guestFlow.ready, resumeAction]);
+  }, [cartQuery.isLoading, guestFlow.checkoutDraft, guestFlow.ready, resumeAction, waitingForGuestCart]);
 
   function selectCountry(countryIdValue: string) {
     const country = countries.find(option => first(option, ['id']) === countryIdValue);
@@ -251,7 +259,7 @@ export default function BuyerCheckout() {
       portId,
       portSearch,
       incoterm,
-      paymentTerms,
+      paymentTermsByItem,
       deliveryDate,
       notes,
       paymentMethodCode,
@@ -282,8 +290,8 @@ export default function BuyerCheckout() {
       setError('Select a valid delivery term.');
       return false;
     }
-    if (!BUYER_RFQ_PAYMENT_TERMS.includes(paymentTerms as typeof BUYER_RFQ_PAYMENT_TERMS[number])) {
-      setError('Select a valid payment term.');
+    if (productPaymentTerms.some(product => !product.terms.includes(paymentTermsByItem[product.key] ?? ''))) {
+      setError('Select a payment term for every product from its admin-provided options.');
       return false;
     }
     if (!isFutureBuyerDeliveryDate(deliveryDate)) {
@@ -356,7 +364,7 @@ export default function BuyerCheckout() {
           destination_port_id: portId,
           incoterm,
           required_delivery_date: deliveryDate,
-          notes: buildBuyerCheckoutNotes(notes, paymentTerms),
+          notes: buildBuyerCheckoutNotes(notes, selectedProductPaymentTerms),
         },
       });
       const payload = record(record(response).data);
@@ -403,7 +411,7 @@ export default function BuyerCheckout() {
     const paymentDetails = methodFields
       .map(field => paymentFieldValues[field]?.trim() ? `${field}: ${paymentFieldValues[field].trim()}` : '')
       .filter(Boolean);
-    const orderNotes = buildBuyerOrderNotes(buildBuyerCheckoutNotes(notes, paymentTerms), bankDetails, paymentDetails);
+    const orderNotes = buildBuyerOrderNotes(buildBuyerCheckoutNotes(notes, selectedProductPaymentTerms), bankDetails, paymentDetails);
 
     try {
       const response = await placeOrder.mutateAsync({
@@ -628,15 +636,32 @@ export default function BuyerCheckout() {
                   />
                 ) : null}
 
-                <BuyerRfqPicker
-                  label="Payment term"
-                  value={paymentTerms}
-                  options={paymentTermOptions}
-                  placeholder="Select payment terms"
-                  testID="buyer-checkout-payment-term"
-                  emptyMessage="No payment term found."
-                  onSelect={value => { setPaymentTerms(value); setError(''); }}
-                />
+                <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '700', marginTop: 15, marginBottom: 8 }}>Payment terms by product</Text>
+                {productPaymentTerms.map(product => (
+                  <View key={product.key} style={{ marginBottom: 2 }}>
+                    <Text style={{ color: colors.mutedForeground, fontSize: 11, fontWeight: '700', marginBottom: 2 }}>
+                      {product.productName}
+                    </Text>
+                    {product.terms.length ? (
+                      <BuyerRfqPicker
+                        label="Payment term"
+                        value={paymentTermsByItem[product.key] ?? ''}
+                        options={product.terms.map(value => ({ value, label: value }))}
+                        placeholder="Select payment terms"
+                        testID={`buyer-checkout-payment-term-${product.key}`}
+                        emptyMessage="No payment term found."
+                        onSelect={value => {
+                          setPaymentTermsByItem(current => ({ ...current, [product.key]: value }));
+                          setError('');
+                        }}
+                      />
+                    ) : (
+                      <Text accessibilityRole="alert" style={{ color: colors.accentText, fontSize: 11, lineHeight: 16, marginBottom: 12 }}>
+                        Admin payment terms are not set for this product. Contact OG Exports before continuing.
+                      </Text>
+                    )}
+                  </View>
+                ))}
 
                 <BuyerDeliveryDatePicker
                   label="Required delivery date"
@@ -824,7 +849,10 @@ export default function BuyerCheckout() {
                   <SummaryRow label="Destination" value={first(selectedCountry ?? {}, ['name'])} />
                   <SummaryRow label="Port" value={first(selectedPort ?? {}, ['name'])} />
                   <SummaryRow label="Delivery term" value={incoterm} />
-                  <SummaryRow label="Payment term" value={paymentTerms} />
+                  <Text style={{ color: colors.mutedForeground, fontSize: 10, fontWeight: '700', marginTop: 10 }}>Payment terms by product</Text>
+                  {productPaymentTerms.map(product => (
+                    <SummaryRow key={product.key} label={product.productName} value={paymentTermsByItem[product.key] ?? '—'} />
+                  ))}
                   <SummaryRow label="Required by" value={formatBuyerDeliveryDateLabel(deliveryDate)} />
                 </View>
                 {notes.trim() ? <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 17, marginTop: 12 }}>Your notes: {notes.trim()}</Text> : null}
@@ -876,7 +904,10 @@ export default function BuyerCheckout() {
                 <SummaryRow label="Country" value={first(selectedCountry ?? {}, ['name'])} />
                 <SummaryRow label="Port" value={first(selectedPort ?? {}, ['name'])} />
                 <SummaryRow label="Delivery term" value={incoterm} />
-                <SummaryRow label="Payment term" value={paymentTerms} />
+                <Text style={{ color: colors.mutedForeground, fontSize: 10, fontWeight: '700', marginTop: 10 }}>Payment terms by product</Text>
+                {productPaymentTerms.map(product => (
+                  <SummaryRow key={product.key} label={product.productName} value={paymentTermsByItem[product.key] ?? '—'} />
+                ))}
                 <SummaryRow label="Required by" value={formatBuyerDeliveryDateLabel(deliveryDate)} />
               </Card>
 

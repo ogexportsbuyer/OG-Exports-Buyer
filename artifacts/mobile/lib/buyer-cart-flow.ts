@@ -99,9 +99,21 @@ export function isFutureBuyerDeliveryDate(value: string, now = new Date()): bool
   return selected.getTime() > today.getTime();
 }
 
-export function buildBuyerCheckoutNotes(notes: string, paymentTerms: string): string {
-  const paymentTermLine = paymentTerms.trim() ? `Payment term: ${paymentTerms.trim()}` : '';
-  return [notes.trim(), paymentTermLine].filter(Boolean).join('\n\n');
+export function buildBuyerCheckoutNotes(
+  notes: string,
+  paymentTerms: string | Array<{ productName: string; term: string }>,
+): string {
+  const paymentTermLines = typeof paymentTerms === 'string'
+    ? (paymentTerms.trim() ? [`Payment term: ${paymentTerms.trim()}`] : [])
+    : paymentTerms.map(({ productName, term }) => {
+      const normalizedTerm = term.trim();
+      if (!normalizedTerm) return '';
+      const normalizedProductName = productName.trim();
+      return normalizedProductName
+        ? `Payment term for ${normalizedProductName}: ${normalizedTerm}`
+        : `Payment term: ${normalizedTerm}`;
+    }).filter(Boolean);
+  return [notes.trim(), ...paymentTermLines].filter(Boolean).join('\n\n');
 }
 
 export function buildBuyerOrderNotes(

@@ -73,6 +73,24 @@ export function buyerProductValues(product: Json, field: string): string[] {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
 }
 
+export type BuyerCartPaymentTerms = {
+  key: string;
+  productName: string;
+  terms: string[];
+};
+
+export function buyerCartPaymentTerms(items: Json[]): BuyerCartPaymentTerms[] {
+  return items.map((item, index) => {
+    const nestedProduct = objectValue(item.product);
+    const product = Object.keys(nestedProduct).length ? nestedProduct : item;
+    return {
+      key: firstText(item, ['product_id', 'id']) || `cart-product-${index}`,
+      productName: firstText(product, ['name']) || firstText(item, ['product_name']) || 'Product',
+      terms: buyerProductValues(product, 'payment_terms'),
+    };
+  });
+}
+
 function productMediaPath(value: unknown): string {
   if (typeof value === 'string') return value.trim();
   const media = objectValue(value);

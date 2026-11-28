@@ -35,11 +35,12 @@ test('checkout uses branded searchable pickers for ports and delivery terms', ()
   assert.match(checkoutScreen, /label="Destination port"/);
   assert.match(checkoutScreen, /keywords: first\(port, \['unlocode'\]\)/);
   assert.match(checkoutScreen, /label="Delivery term"/);
-  assert.match(checkoutScreen, /label="Payment term"/);
-  assert.match(checkoutScreen, /BUYER_RFQ_PAYMENT_TERMS\.map/);
-  assert.match(checkoutScreen, /testID="buyer-checkout-payment-term"/);
-  assert.match(checkoutScreen, /buildBuyerCheckoutNotes\(notes, paymentTerms\)/);
-  assert.match(checkoutScreen, /label="Payment term"\s+value=\{paymentTerms\}/);
+  assert.match(checkoutScreen, /buyerCartPaymentTerms\(cartItems\)/);
+  assert.match(checkoutScreen, /product\.terms\.map\(value => \(\{ value, label: value \}\)\)/);
+  assert.match(checkoutScreen, /testID=\{`buyer-checkout-payment-term-\$\{product\.key\}`\}/);
+  assert.match(checkoutScreen, /paymentTermsByItem\[product\.key\]/);
+  assert.match(checkoutScreen, /buildBuyerCheckoutNotes\(notes, selectedProductPaymentTerms\)/);
+  assert.doesNotMatch(checkoutScreen, /BUYER_RFQ_PAYMENT_TERMS/);
   assert.match(checkoutScreen, /<BuyerDeliveryDatePicker/);
   assert.doesNotMatch(checkoutScreen, /label="Search port"/);
 });

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import {
+  buyerCartPaymentTerms,
   buyerProductGalleryImages,
   buyerProductHasPdfReport,
   buyerProductReportDownloadPath,
@@ -118,6 +119,30 @@ test('product list fields accept delimited text and safely ignore absent data', 
     'SBLC',
   ]);
   assert.deepEqual(buyerProductValues({}, 'packaging_options'), []);
+});
+
+test('checkout reads separate payment terms directly from each cart product', () => {
+  assert.deepEqual(buyerCartPaymentTerms([
+    {
+      product_id: 12,
+      product: { name: 'Basmati Rice', payment_terms: ['LC at Sight', 'TT (30% advance)'] },
+    },
+    {
+      product_id: 18,
+      product: { name: 'Sesame Seeds', payment_terms: ['SBLC', 'TT (50% advance)'] },
+    },
+  ]), [
+    {
+      key: '12',
+      productName: 'Basmati Rice',
+      terms: ['LC at Sight', 'TT (30% advance)'],
+    },
+    {
+      key: '18',
+      productName: 'Sesame Seeds',
+      terms: ['SBLC', 'TT (50% advance)'],
+    },
+  ]);
 });
 
 test('product gallery shows every uploaded image, ordered and without duplicate cover photos', () => {

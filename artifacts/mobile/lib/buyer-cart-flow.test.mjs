@@ -72,4 +72,11 @@ test('checkout notes retain the selected commercial payment term', () => {
     'Keep products dry\n\nPayment term: 30% Advance + 70% BL',
   );
   assert.equal(buildBuyerCheckoutNotes('', 'LC at Sight'), 'Payment term: LC at Sight');
+  assert.equal(
+    buildBuyerCheckoutNotes('', [
+      { productName: 'Basmati Rice', term: 'LC at Sight' },
+      { productName: 'Sesame Seeds', term: 'SBLC' },
+    ]),
+    'Payment term for Basmati Rice: LC at Sight\n\nPayment term for Sesame Seeds: SBLC',
+  );
 });
