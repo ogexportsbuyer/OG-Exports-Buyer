@@ -14525,5 +14525,47 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "fr": "Tout retirer",
     "es": "Quitar todo",
     "de": "Alles entfernen"
+  },
+  "Main products": {
+    "ru": "Основные продукты",
+    "zh-CN": "主要产品",
+    "fr": "Produits principaux",
+    "es": "Productos principales",
+    "de": "Hauptprodukte"
+  },
+  "Main products could not be loaded.": {
+    "ru": "Не удалось загрузить основные продукты.",
+    "zh-CN": "无法加载主要产品。",
+    "fr": "Impossible de charger les produits principaux.",
+    "es": "No se pudieron cargar los productos principales.",
+    "de": "Hauptprodukte konnten nicht geladen werden."
+  },
+  "No main products are available right now.": {
+    "ru": "Сейчас основные продукты недоступны.",
+    "zh-CN": "目前没有可用的主要产品。",
+    "fr": "Aucun produit principal n'est disponible pour le moment.",
+    "es": "No hay productos principales disponibles en este momento.",
+    "de": "Derzeit sind keine Hauptprodukte verfügbar."
+  },
+  "Fresh": {
+    "ru": "Свежие продукты",
+    "zh-CN": "新鲜产品",
+    "fr": "Produits frais",
+    "es": "Productos frescos",
+    "de": "Frische Produkte"
+  },
+  "Grains": {
+    "ru": "Зерновые",
+    "zh-CN": "谷物",
+    "fr": "Céréales",
+    "es": "Granos",
+    "de": "Getreide"
+  },
+  "Seeds & Oilseeds": {
+    "ru": "Семена и масличные",
+    "zh-CN": "种子和油料作物",
+    "fr": "Graines et oléagineux",
+    "es": "Semillas y oleaginosas",
+    "de": "Samen und Ölsaaten"
   }
 };

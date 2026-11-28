@@ -340,6 +340,56 @@ export function buyerProductFilterCount(filters: BuyerProductFilterState): numbe
   return values.filter(value => typeof value === 'boolean' ? value : Boolean(value.trim())).length;
 }
 
+export function buyerHomeProductKey(product: Json): string {
+  const id = first(product, ['id', 'sku']).toLowerCase();
+  if (id) return `product:${id}`;
+  return `${categoryName(product).toLowerCase()}:${first(product, ['name']).toLowerCase()}`;
+}
+
+export function buyerHomeMainProducts(products: Json[], productLimit = Number.MAX_SAFE_INTEGER): Json[] {
+  const limit = Math.max(0, Math.floor(productLimit));
+  if (limit === 0) return [];
+  const seen = new Set<string>();
+  const mainProducts: Json[] = [];
+  for (const product of products) {
+    if (fieldBoolean(product, ['featured']) !== true) continue;
+    const key = buyerHomeProductKey(product);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    mainProducts.push(product);
+    if (mainProducts.length >= limit) break;
+  }
+  return mainProducts;
+}
+
+const BUYER_HOME_CATEGORY_PRIORITY = ['Fresh Produce', 'Grains & Cereals', 'Seeds & Oilseeds'];
+
+function orderedBuyerHomeCategories(apiCategories: Json[]): BuyerProductCategory[] {
+  return mergeBuyerProductCategories(apiCategories)
+    .map((category, index) => ({ category, index }))
+    .sort((left, right) => {
+      const leftPriority = BUYER_HOME_CATEGORY_PRIORITY.indexOf(left.category.name);
+      const rightPriority = BUYER_HOME_CATEGORY_PRIORITY.indexOf(right.category.name);
+      const leftOrder = leftPriority < 0 ? BUYER_HOME_CATEGORY_PRIORITY.length : leftPriority;
+      const rightOrder = rightPriority < 0 ? BUYER_HOME_CATEGORY_PRIORITY.length : rightPriority;
+      return leftOrder - rightOrder || left.index - right.index;
+    })
+    .map(({ category }) => category);
+}
+
+export function buyerHomeCategoryLabel(name: string): string {
+  if (name === 'Fresh Produce') return 'Fresh';
+  if (name === 'Grains & Cereals') return 'Grains';
+  return name;
+}
+
+export function buyerHomeCategories(products: Json[], apiCategories: Json[]): BuyerProductCategory[] {
+  return orderedBuyerHomeCategories(apiCategories).filter(category => {
+    const categoryFilter = filtersFromBuyerCategoryRoute(category.name);
+    return filterBuyerProducts(products, { ...emptyBuyerProductFilters(), ...categoryFilter }).length > 0;
+  });
+}
+
 export function filterBuyerProducts(products: Json[], filters: BuyerProductFilterState, search = ''): Json[] {
   const term = search.trim().toLowerCase();
   const minMoq = numericInput(filters.moqMinMt);
@@ -387,15 +437,26 @@ export function buyerHomeCategoryProducts(
   products: Json[],
   apiCategories: Json[],
   productLimit = 2,
+  excludedProductKeys: ReadonlySet<string> = new Set(),
 ): Array<BuyerProductCategory & { products: Json[] }> {
   const limit = Math.max(0, Math.floor(productLimit));
-  return mergeBuyerProductCategories(apiCategories)
+  if (limit === 0) return [];
+  const seen = new Set(excludedProductKeys);
+  return buyerHomeCategories(products, apiCategories)
     .map(category => {
       const categoryFilter = filtersFromBuyerCategoryRoute(category.name);
       const filters = { ...emptyBuyerProductFilters(), ...categoryFilter };
+      const matchingProducts: Json[] = [];
+      for (const product of filterBuyerProducts(products, filters)) {
+        const key = buyerHomeProductKey(product);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        matchingProducts.push(product);
+        if (matchingProducts.length >= limit) break;
+      }
       return {
         ...category,
-        products: filterBuyerProducts(products, filters).slice(0, limit),
+        products: matchingProducts,
       };
     })
     .filter(category => category.products.length > 0);

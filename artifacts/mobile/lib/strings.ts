@@ -1326,6 +1326,12 @@ const phrases: ReadonlyArray<readonly [string, string, string]> = [
   ["Clear your cart?","کارٹ خالی کریں؟","هل تريد إفراغ السلة؟"],
   ["Keep cart","کارٹ برقرار رکھیں","الاحتفاظ بالسلة"],
   ["Remove all","سب ہٹا دیں","إزالة الكل"],
+  ["Main products","اہم مصنوعات","المنتجات الرئيسية"],
+  ["Main products could not be loaded.","اہم مصنوعات لوڈ نہیں ہو سکیں۔","تعذر تحميل المنتجات الرئيسية."],
+  ["No main products are available right now.","اس وقت کوئی اہم مصنوعات دستیاب نہیں ہیں۔","لا تتوفر منتجات رئيسية حالياً."],
+  ["Fresh","تازہ","طازج"],
+  ["Grains","اناج","الحبوب"],
+  ["Seeds & Oilseeds","بیج اور تیل دار بیج","البذور والبذور الزيتية"],
 ];
 
 const translations = new Map<string, Readonly<Partial<Record<Exclude<AppLanguage, 'en'>, string>>>>(

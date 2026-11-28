@@ -67,18 +67,24 @@ test('buyer homepage product sections use consistent premium spacing', () => {
   const homeCatalog = readFileSync(new URL('../components/BuyerHomeCatalog.tsx', import.meta.url), 'utf8');
 
   assert.match(homeCatalog, /const productGridCardWidth = Math\.min\(224, \(windowWidth - 54\) \/ 2\);/);
-  assert.match(homeCatalog, /recommendationRow:\s*\{\s*flexDirection: 'row',\s*gap: 12,[\s\S]*?paddingBottom: 18,/);
+  assert.match(homeCatalog, /mainProductRow:\s*\{\s*flexDirection: 'row',\s*gap: 12,[\s\S]*?paddingBottom: 18,/);
   assert.match(homeCatalog, /productGrid:\s*\{\s*flexDirection: 'row',\s*flexWrap: 'wrap',\s*gap: 14,[\s\S]*?paddingBottom: 10,/);
-  assert.match(homeCatalog, /categoryRow:\s*\{\s*flexDirection: 'row',\s*gap: 12,[\s\S]*?paddingBottom: 14,/);
+  assert.match(homeCatalog, /categoryRow:\s*\{\s*flexDirection: 'row',\s*gap: 12,[\s\S]*?paddingBottom: 10,/);
   assert.match(homeCatalog, /styles\.sectionHeader, \{ marginTop: 8, marginBottom: 12 \}/);
   assert.match(homeCatalog, /styles\.sectionHeader, \{ marginTop: 12, marginBottom: 12 \}/);
   assert.doesNotMatch(homeCatalog, /buyer-home-contact/);
 });
 
-test('buyer homepage avoids a duplicate product grid and gives single-item categories landscape cards', () => {
+test('buyer homepage shows featured main products once and keeps single-item category cards landscape', () => {
   const homeCatalog = readFileSync(new URL('../components/BuyerHomeCatalog.tsx', import.meta.url), 'utf8');
 
-  assert.match(homeCatalog, /filteredProducts\.slice\(0, 6\)/, 'the Products to explore row remains');
+  assert.match(homeCatalog, /buyerHomeMainProducts\(filteredProducts\)/, 'the main row contains all featured products only');
+  assert.match(homeCatalog, /buyerHomeCategoryProducts\(products, apiCategories, 2, mainProductKeys\)/, 'featured products are excluded from category lists');
+  assert.match(homeCatalog, /buyerHomeCategoryLabel\(section\.name\)/, 'category headings use the shorter home labels');
+  assert.match(homeCatalog, /testID="buyer-home-main-products"/);
+  assert.match(homeCatalog, /testID="buyer-home-explore-categories"/);
+  assert.match(homeCatalog, /No main products are available right now\./);
+  assert.doesNotMatch(homeCatalog, /Products to explore/);
   assert.doesNotMatch(homeCatalog, /filteredProducts\.slice\(0,\s*8\)/, 'the second homepage-wide product grid is removed');
   assert.match(homeCatalog, /section\.products\.length === 1/);
   assert.match(homeCatalog, /const landscapeCardWidth = Math\.max\(0, Math\.min\(620, windowWidth - 40\)\)/);
