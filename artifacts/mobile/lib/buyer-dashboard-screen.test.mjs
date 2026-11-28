@@ -35,6 +35,9 @@ test('partial and empty API data stays explicit rather than becoming invented me
 });
 
 test('dashboard actions include the buyer orders, quotations, RFQ, shipment and document routes', () => {
+  assert.match(screen, /label: 'Trade Finance', detail: 'Review payment terms', route: '\/buyer-trade-finance'/);
+  assert.ok(strings.includes('["Trade Finance","'), 'missing localized Trade Finance action label');
+
   for (const route of [
     '/buyer-rfq?mode=new',
     '/buyer-orders',

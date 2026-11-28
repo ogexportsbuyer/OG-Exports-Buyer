@@ -2374,6 +2374,13 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "es": "Oportunidades de operación",
     "de": "Handelsmöglichkeiten"
   },
+  "Trade Finance": {
+    "ru": "Торговое финансирование",
+    "zh-CN": "贸易融资",
+    "fr": "Financement du commerce",
+    "es": "Financiación comercial",
+    "de": "Handelsfinanzierung"
+  },
   "Trade overview": {
     "ru": "Обзор сделки",
     "zh-CN": "交易概览",

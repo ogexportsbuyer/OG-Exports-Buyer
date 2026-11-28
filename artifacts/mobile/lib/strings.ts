@@ -411,6 +411,7 @@ const phrases: ReadonlyArray<readonly [string, string, string]> = [
   ["Trade Information","ٹریڈ کی معلومات","معلومات الصفقة"],
   ["Trade cycle progress","ٹریڈ سائیکل کی پیش رفت","تقدم دورة التداول"],
   ["Trade documents","ٹریڈ دستاویزات","وثائق الصفقة"],
+  ["Trade Finance","ٹریڈ فنانس","التمويل التجاري"],
   ["Trade opportunities","ٹریڈ کے مواقع","فرص التداول"],
   ["Trade overview","ٹریڈ کا جائزہ","نظرة عامة على الصفقة"],
   ["Trade status","ٹریڈ کا اسٹیٹس","حالة الصفقة"],

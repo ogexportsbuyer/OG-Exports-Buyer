@@ -29,7 +29,7 @@ const quickActions = [
   { label: 'Request quote', detail: 'Browse export products', route: '/(buyer-tabs)/buyer-products', icon: 'search' as const },
   { label: 'Orders', detail: 'Track order progress', route: '/buyer-orders', icon: 'shopping-bag' as const },
   { label: 'Quotations', detail: 'Review supplier quotes', route: '/buyer-orders?view=quotations', icon: 'clipboard' as const },
-  { label: 'Pay invoice', detail: 'Review payment terms', route: '/buyer-trade-finance', icon: 'credit-card' as const },
+  { label: 'Trade Finance', detail: 'Review payment terms', route: '/buyer-trade-finance', icon: 'credit-card' as const },
 ] as const;
 const primaryQuickActions = [
   quickActions[0],
