@@ -26,8 +26,6 @@ export function BuyerCheckoutCartEditor({
   cartCurrency,
   discountTotal,
   subtotal,
-  documentationFee,
-  grandTotal,
   hasUnpricedItems,
   mutationPending,
   syncError,
@@ -39,8 +37,6 @@ export function BuyerCheckoutCartEditor({
   cartCurrency: string;
   discountTotal: number;
   subtotal: number;
-  documentationFee: number;
-  grandTotal: number;
   hasUnpricedItems: boolean;
   mutationPending: boolean;
   syncError: string;
@@ -168,11 +164,10 @@ export function BuyerCheckoutCartEditor({
       ) : null}
       <View style={{ borderTopWidth: 1, borderTopColor: colors.border, marginTop: 13, paddingTop: 11 }}>
         <SummaryRow label="Commodity total" value={subtotal > 0 ? formatFobPrice(subtotal, cartCurrency) : 'Price by quotation'} />
-        <SummaryRow label="Documentation fee (2%)" value={hasUnpricedItems ? 'Confirmed on quotation' : formatFobPrice(documentationFee, cartCurrency)} />
         <SummaryRow label="Freight / insurance" value="Quoted separately" />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 11, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border }}>
           <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '800' }}>Estimated total</Text>
-          <Text style={{ color: colors.accentText, fontSize: 12, fontWeight: '800' }}>{hasUnpricedItems || subtotal <= 0 ? 'Price by quotation' : formatFobPrice(grandTotal, cartCurrency)}</Text>
+          <Text style={{ color: colors.accentText, fontSize: 12, fontWeight: '800' }}>{hasUnpricedItems || subtotal <= 0 ? 'Price by quotation' : formatFobPrice(subtotal, cartCurrency)}</Text>
         </View>
       </View>
       {hasUnpricedItems ? <Text style={{ color: colors.accentText, fontSize: 10, lineHeight: 15, marginTop: 8 }}>Some products need a confirmed price. Use a non-FOB term to send a quotation request.</Text> : null}

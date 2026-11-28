@@ -54,13 +54,15 @@ test('cart minimum order uses the product value and falls back to the cart item'
   assert.equal(buyerCartItemMinimumQuantity({ product: {} }), 1);
 });
 
-test('cart includes FOB prices, quote status, the web fee estimate and order placement', () => {
+test('cart includes FOB prices and uses the product subtotal without an added fee', () => {
   assert.match(cartEditor, /BuyerProductPrice product=\{item\} compact/);
   assert.match(cartEditor, /formatFobPrice\(subtotal, cartCurrency\)/);
   assert.match(cartEditor, /Some products need a confirmed price\./);
-  assert.match(cartEditor, /Documentation fee \(2%\)/);
+  assert.doesNotMatch(cartEditor, /Documentation fee|documentationFee|2%/i);
   assert.match(cartEditor, /No payment is taken in this app\./);
-  assert.match(cartScreen, /Estimated grand total/);
+  assert.doesNotMatch(cartScreen, /Documentation fee|documentationFee|2%|Estimated grand total/i);
+  assert.match(cartScreen, /Grand total/);
+  assert.match(cartScreen, /formatFobPrice\(subtotal, cartCurrency\)/);
   assert.match(cartScreen, /testID="buyer-checkout-submit-order"/);
 });
 

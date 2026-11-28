@@ -199,8 +199,6 @@ export function BuyerCheckoutFlow({ cartMode = false }: { cartMode?: boolean }) 
   const discountTotal = cartItems.reduce((sum, item) => {
     return sum + (amount(item, ['qty']) ?? 0) * (amount(item, ['discount_amount_per_unit']) ?? 0);
   }, 0);
-  const documentationFee = subtotal * 0.02;
-  const grandTotal = subtotal + documentationFee;
   const cartMutationPending = updateCartItem.isPending || removeCartItem.isPending || guestFlow.isMergingCart;
   const waitingForGuestCart = Boolean(token && guestFlow.cart.length && !guestFlow.mergeError);
   const canRenderCart = !cartQuery.isLoading && !waitingForGuestCart
@@ -676,8 +674,6 @@ export function BuyerCheckoutFlow({ cartMode = false }: { cartMode?: boolean }) 
                 cartCurrency={cartCurrency}
                 discountTotal={discountTotal}
                 subtotal={subtotal}
-                documentationFee={documentationFee}
-                grandTotal={grandTotal}
                 hasUnpricedItems={hasUnpricedItems}
                 mutationPending={cartMutationPending}
                 syncError={guestFlow.mergeError}
@@ -981,15 +977,13 @@ export function BuyerCheckoutFlow({ cartMode = false }: { cartMode?: boolean }) 
                 ) : null}
                 <View style={{ borderTopWidth: 1, borderTopColor: colors.border, marginTop: 13, paddingTop: 11 }}>
                   <SummaryRow label="Commodity total" value={formatFobPrice(subtotal, cartCurrency)} />
-                  <SummaryRow label="Documentation fee (2%)" value={formatFobPrice(documentationFee, cartCurrency)} />
                   <SummaryRow label="Freight / insurance" value="Quoted separately" />
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 11, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border }}>
-                    <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '800' }}>Estimated grand total</Text>
-                    <Text style={{ color: colors.accentText, fontSize: 14, fontWeight: '900' }}>{formatFobPrice(grandTotal, cartCurrency)}</Text>
+                    <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '800' }}>Grand total</Text>
+                    <Text style={{ color: colors.accentText, fontSize: 14, fontWeight: '900' }}>{formatFobPrice(subtotal, cartCurrency)}</Text>
                   </View>
                 </View>
-                <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginTop: 8 }}>The 2% documentation fee is an estimate.</Text>
-                <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginTop: 4 }}>OG Exports confirms final fees and freight on the Proforma Invoice.</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginTop: 8 }}>Freight and final adjustments are confirmed separately.</Text>
                 <Text style={{ color: colors.mutedForeground, fontSize: 10, lineHeight: 15, marginTop: 4 }}>No payment is taken in this app.</Text>
               </Card>
 

@@ -14372,13 +14372,6 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "es": "Total de mercancías",
     "de": "Warenwert"
   },
-  "Documentation fee (2%)": {
-    "ru": "Документационный сбор (2%)",
-    "zh-CN": "文件费（2%）",
-    "fr": "Frais documentaires (2 %)",
-    "es": "Tarifa de documentación (2%)",
-    "de": "Dokumentationsgebühr (2 %)"
-  },
   "Freight / insurance": {
     "ru": "Фрахт / страхование",
     "zh-CN": "运费 / 保险",
@@ -14406,13 +14399,6 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "fr": "Total général",
     "es": "Total general",
     "de": "Gesamtsumme"
-  },
-  "Estimated grand total": {
-    "ru": "Предварительный общий итог",
-    "zh-CN": "预计总计",
-    "fr": "Total général estimé",
-    "es": "Total general estimado",
-    "de": "Geschätzte Gesamtsumme"
   },
   "Payment details": {
     "ru": "Платёжные данные",
@@ -14518,20 +14504,6 @@ export const additionalLocaleTranslations: Readonly<Record<string, Readonly<Reco
     "fr": "Le fret et les ajustements finaux sont confirmés séparément.",
     "es": "El flete y los ajustes finales se confirman por separado.",
     "de": "Fracht und endgültige Anpassungen werden separat bestätigt."
-  },
-  "The 2% documentation fee is an estimate.": {
-    "ru": "Сбор за документацию в размере 2% является предварительным.",
-    "zh-CN": "2% 文件费为预估金额。",
-    "fr": "Les frais documentaires de 2 % sont estimatifs.",
-    "es": "La tarifa de documentación del 2% es estimada.",
-    "de": "Die Dokumentationsgebühr von 2 % ist ein Schätzwert."
-  },
-  "OG Exports confirms final fees and freight on the Proforma Invoice.": {
-    "ru": "OG Exports указывает окончательные сборы и фрахт в проформа-счёте.",
-    "zh-CN": "最终费用和运费由 OG Exports 在形式发票中确认。",
-    "fr": "OG Exports confirme les frais finaux et le fret sur la facture pro forma.",
-    "es": "OG Exports confirma las tarifas finales y el flete en la factura proforma.",
-    "de": "OG Exports bestätigt endgültige Gebühren und Fracht in der Proforma-Rechnung."
   },
   "By placing this order, I confirm the details and agree to OG Exports' Terms & Conditions, selected payment terms, and export compliance requirements.": {
     "ru": "Оформляя заказ, я подтверждаю данные и принимаю условия OG Exports, выбранные условия оплаты и требования экспортного соответствия.",
