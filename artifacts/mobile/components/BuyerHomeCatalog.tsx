@@ -249,6 +249,10 @@ export default function BuyerHomeCatalog({
     () => buyerHomeCategoryProducts(products, apiCategories, 1, displayedProductKeys),
     [apiCategories, displayedProductKeys, products],
   );
+  const categoryImageFallbackSections = useMemo(
+    () => buyerHomeCategoryProducts(products, apiCategories, 1),
+    [apiCategories, products],
+  );
   const categoryOptions = useMemo(
     () => buyerHomeCategories(products, apiCategories),
     [apiCategories, products],
@@ -381,7 +385,8 @@ export default function BuyerHomeCatalog({
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={styles.categoryRow}>
         {categoryOptions.map(category => {
           const label = buyerHomeCategoryLabel(category.name);
-          const categoryProduct = categoryImageSections.find(section => section.name === category.name)?.products[0];
+          const categoryProduct = categoryImageSections.find(section => section.name === category.name)?.products[0]
+            ?? categoryImageFallbackSections.find(section => section.name === category.name)?.products[0];
           const image = categoryProduct ? first(categoryProduct, ['image_url', 'imageUrl']) : '';
           return (
             <Pressable

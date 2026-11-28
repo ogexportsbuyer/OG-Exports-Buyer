@@ -169,6 +169,8 @@ test('homepage category image representatives avoid repeating main and category-
 
   assert.deepEqual(categoryImageSections.flatMap(section => section.products.map(product => product.name)), ['Wheat Grade C']);
   assert.ok(categoryImageSections.flatMap(section => section.products).every(product => !displayedProductKeys.has(buyerHomeProductKey(product))));
+  const fallbackCategoryImages = buyerHomeCategoryProducts(catalogue, [{ name: 'Grains' }], 1);
+  assert.deepEqual(fallbackCategoryImages.flatMap(section => section.products.map(product => product.name)), ['Featured Wheat']);
 });
 
 test('trade, price, origin, MOQ, supply capacity, currency, and availability filters compose', () => {

@@ -83,7 +83,9 @@ test('buyer homepage shows featured main products once and keeps single-item cat
   assert.match(homeCatalog, /buyerHomeMainProducts\(filteredProducts\)/, 'the main row contains all featured products only');
   assert.match(homeCatalog, /buyerHomeCategoryProducts\(products, apiCategories, 2, mainProductKeys\)/, 'featured products are excluded from category lists');
   assert.match(homeCatalog, /buyerHomeCategoryProducts\(products, apiCategories, 1, displayedProductKeys\)/, 'category images use products not already shown elsewhere');
+  assert.match(homeCatalog, /buyerHomeCategoryProducts\(products, apiCategories, 1\)/, 'category tiles fall back to a matching product image when needed');
   assert.match(homeCatalog, /categoryImageSections\.find/);
+  assert.match(homeCatalog, /categoryImageFallbackSections\.find/);
   assert.match(homeCatalog, /buyerHomeCategoryLabel\(section\.name\)/, 'category headings use the shorter home labels');
   assert.match(homeCatalog, /testID="buyer-home-main-products"/);
   assert.match(homeCatalog, /testID="buyer-home-explore-categories"/);
