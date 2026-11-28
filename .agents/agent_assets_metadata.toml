@@ -2,48 +2,6 @@ uploads = []
 generated = []
 
 [[outputs]]
-id = "ZH6YrrafT3LX2GUTe9g9p"
-uri = "file://exports/OG%20Exports%20Backend%2009-10-26.zip"
-type = "unspecified"
-title = "OG Exports Backend 09-10-26.zip"
-description = "Laravel backend source ZIP; environment secrets, database snapshot, user uploads, and runtime logs are excluded."
-logical_id = "79cc42df-e728-4729-9bd0-86df0dfb80ef"
-content_hash = "sha256:14ba546b542154bf703e7a971852638a2d0c3eaafd565c4e5c6e86f9d12d0130"
-size = 8816194
-mtime_ms = 1791551557378
-storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:f4e473f4-6ce4-483c-abb3-f8df0ba6670a/79cc42df-e728-4729-9bd0-86df0dfb80ef/4c7638fd-d034-4478-b061-99076127c83d"
-storage_version_token = "1791551605407276"
-content_type = "application/octet-stream"
-
-[[outputs]]
-id = "W6JzVxdoBZyJM33sVo2Qy"
-uri = "file://artifacts/mobile/preview-temp.jpg"
-type = "image"
-title = "OG Exports Investor Mobile — current preview"
-description = "Verified Replit preview showing the first onboarding screen."
-logical_id = "ab37c7c6-e394-4900-ae44-156fb3b8bf31"
-content_hash = "sha256:543b7b3ddefc6720e93d9f6d05f5436c1c2f615b73d2b3edb1c16b11ff2bdae4"
-size = 26590
-mtime_ms = 1791911821842
-storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:f4e473f4-6ce4-483c-abb3-f8df0ba6670a/ab37c7c6-e394-4900-ae44-156fb3b8bf31/b629b663-041e-4dd6-8526-fc1ef6d658bf"
-storage_version_token = "1791911831230589"
-content_type = "image/jpeg"
-
-[[outputs]]
-id = "CDDVhWWnCoIHsJ6H8fVMu"
-uri = "file://artifacts/mobile/android/app/build/ogexports-upload-certificate.pem"
-type = "unspecified"
-title = "OG Exports upload-key certificate (.pem)"
-description = "Play Console ke Upload key reset request mein upload karne wala public certificate. Private keystore (.jks) is file mein nahi hai."
-logical_id = "dc2939f0-8ad2-4ea0-9178-eb47a2a18cdf"
-content_hash = "sha256:057a5bb20527faa2be1569f31e5395bee90c6fe52be66d2ed96376a2761c7a27"
-size = 1307
-mtime_ms = 1792255784990
-storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:f4e473f4-6ce4-483c-abb3-f8df0ba6670a/dc2939f0-8ad2-4ea0-9178-eb47a2a18cdf/de676c81-24dc-4db3-aa89-ac0ba4703286"
-storage_version_token = "1792255802783922"
-content_type = "application/octet-stream"
-
-[[outputs]]
 id = "DpP87IskgU9H5BT0lYU4q"
 uri = "file://generated-artifacts/OG%20Investor%2017-10-26.zip"
 type = "unspecified"
